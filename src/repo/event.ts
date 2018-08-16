@@ -1,6 +1,5 @@
 
 import * as factory from '@cinerino/factory';
-import * as moment from 'moment';
 import { Connection } from 'mongoose';
 import eventModel from './mongoose/model/event';
 
