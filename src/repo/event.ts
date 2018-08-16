@@ -24,13 +24,10 @@ export abstract class Repository {
  */
 export class MongoRepository implements Repository {
     public readonly eventModel: typeof eventModel;
-
     constructor(connection: Connection) {
         this.eventModel = connection.model(eventModel.modelName);
     }
-
     /**
-     * save a screening event
      * 上映イベントを保管する
      * @param screeningEvent screeningEvent object
      */
@@ -44,7 +41,6 @@ export class MongoRepository implements Repository {
             { upsert: true }
         ).exec();
     }
-
     /**
      * 上映イベントを保管する
      */
@@ -58,54 +54,31 @@ export class MongoRepository implements Repository {
             { new: true, upsert: true }
         ).exec();
     }
-
     /**
      * 上映イベントをキャンセルする
      */
     public async cancelScreeningEvent(id: string) {
         await this.eventModel.findOneAndUpdate(
             {
-                id: id,
+                _id: id,
                 typeOf: factory.chevre.eventType.ScreeningEvent
             },
             { eventStatus: factory.chevre.eventStatusType.EventCancelled },
             { new: true }
         ).exec();
     }
-
     /**
-     * 個々の上映イベントを検索する
-     * @param searchConditions 検索条件
+     * 上映イベントを検索する
      */
     public async searchScreeningEvents(
         searchConditions: factory.chevre.event.screeningEvent.ISearchConditions
     ): Promise<factory.chevre.event.screeningEvent.IEvent[]> {
-        // dayプロパティがあればstartFrom & startThroughに変換(互換性維持のため)
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if ((<any>searchConditions).day !== undefined) {
-            searchConditions.startFrom = moment(`${(<any>searchConditions).day} +09:00`, 'YYYYMMDD Z').toDate();
-            searchConditions.startThrough = moment(`${(<any>searchConditions).day} +09:00`, 'YYYYMMDD Z').add(1, 'day').toDate();
-        }
-
         // MongoDB検索条件
         const andConditions: any[] = [
             {
                 typeOf: factory.chevre.eventType.ScreeningEvent
             }
         ];
-
-        // theaterプロパティがあればbranchCodeで検索(互換性維持のため)
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if ((<any>searchConditions).theater !== undefined) {
-            andConditions.push({
-                'superEvent.location.branchCode': {
-                    $exists: true,
-                    $eq: (<any>searchConditions).theater
-                }
-            });
-        }
 
         // 場所の識別子条件
         // tslint:disable-next-line:no-single-line-block-comment
@@ -175,14 +148,13 @@ export class MongoRepository implements Repository {
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
-
     /**
      * IDで上映イベントを取得する
      */
     public async findScreeningEventById(id: string): Promise<factory.chevre.event.screeningEvent.IEvent> {
         const event = await this.eventModel.findOne({
             typeOf: factory.chevre.eventType.ScreeningEvent,
-            id: id
+            _id: id
         }).exec();
         if (event === null) {
             throw new factory.errors.NotFound('screeningEvent');
