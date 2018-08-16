@@ -98,7 +98,8 @@ export function sendOrder(transactionId: string) {
             await repos.order.changeStatus(transactionResult.order.orderNumber, factory.orderStatus.OrderDelivered);
 
             // 会員プログラムがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
-            const programMembershipOwnershipInfos = <factory.ownershipInfo.IOwnershipInfo<'ProgramMembership'>[]>
+            const programMembershipOwnershipInfos =
+                <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<'ProgramMembership'>>[]>
                 ownershipInfos.filter((o) => o.typeOfGood.typeOf === 'ProgramMembership');
             await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
                 const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
@@ -134,10 +135,10 @@ export function sendOrder(transactionId: string) {
 export function createOwnershipInfosFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
-}): factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodType>[] {
+}): factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[] {
     return params.order.acceptedOffers.map((acceptedOffer, offerIndex) => {
         const itemOffered = acceptedOffer.itemOffered;
-        let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodType>;
+        let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
         // ownershipInfoのidentifierはコレクション内でuniqueである必要があるので、この仕様には要注意
         const identifier = util.format(
             '%s-%s-%s',

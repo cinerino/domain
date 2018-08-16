@@ -2,7 +2,8 @@ import * as factory from '@cinerino/factory';
 import { Connection } from 'mongoose';
 import ownershipInfoModel from './mongoose/model/ownershipInfo';
 
-export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> = factory.ownershipInfo.IOwnershipInfo<T>;
+export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> =
+    factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<T>>;
 
 /**
  * 所有権リポジトリー
@@ -14,9 +15,8 @@ export class MongoRepository {
     }
     /**
      * 所有権情報を保管する
-     * @param ownershipInfo ownershipInfo object
      */
-    public async save(ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
+    public async save(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
         await this.ownershipInfoModel.findOneAndUpdate(
             {
                 identifier: ownershipInfo.identifier
