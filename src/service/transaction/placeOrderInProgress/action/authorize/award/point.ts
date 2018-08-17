@@ -115,7 +115,7 @@ export function create(params: {
                 },
                 amount: params.amount,
                 // tslint:disable-next-line:no-single-line-block-comment
-                notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'シネマサンシャイン 注文取引インセンティブ',
+                notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'Cinerino 注文取引インセンティブ',
                 accountType: factory.accountType.Point,
                 toAccountNumber: params.toAccountNumber
             });

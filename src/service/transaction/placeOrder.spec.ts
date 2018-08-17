@@ -96,30 +96,6 @@ describe('exportTasksById()', () => {
         sandbox.verify();
     });
 
-    it('期限切れ取引であれば5つのタスクがエクスポートされるはず', async () => {
-        const numberOfTasks = 5;
-        const transaction = {
-            id: 'transactionId',
-            status: domain.factory.transactionStatusType.Expired
-        };
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').exactly(numberOfTasks).resolves();
-
-        const result = await domain.service.transaction.placeOrder.exportTasksById(
-            transaction.id
-        )({
-            task: taskRepo,
-            transaction: transactionRepo
-        });
-
-        assert(Array.isArray(result));
-        assert.equal(result.length, numberOfTasks);
-        sandbox.verify();
-    });
-
     it('非対応ステータスの取引であれば、NotImplementedエラーになるはず', async () => {
         const transaction = {
             id: 'transactionId',

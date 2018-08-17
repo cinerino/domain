@@ -123,7 +123,7 @@ export function create(params: {
                 },
                 amount: params.amount,
                 // tslint:disable-next-line:no-single-line-block-comment
-                notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'シネマサンシャイン 注文取引',
+                notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'Cinerino 注文取引',
                 fromLocation: {
                     typeOf: mocoinapi.factory.ownershipInfo.AccountGoodType.Account,
                     accountType: mocoinapi.factory.accountType.Coin,

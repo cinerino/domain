@@ -24,10 +24,13 @@ describe('action.authorize.creditCard.create()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -132,10 +135,13 @@ describe('action.authorize.creditCard.create()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -190,10 +196,13 @@ describe('action.authorize.creditCard.create()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -246,10 +255,13 @@ describe('action.authorize.creditCard.create()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -308,10 +320,13 @@ describe('action.authorize.creditCard.create()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -370,10 +385,13 @@ describe('action.authorize.creditCard.create()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -438,10 +456,13 @@ describe('action.authorize.creditCard.cancel()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -485,10 +506,13 @@ describe('action.authorize.creditCard.cancel()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const actionId = 'actionId';
         const transaction = {
@@ -526,10 +550,13 @@ describe('action.authorize.creditCard.cancel()', () => {
         const seller = {
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
-            gmoInfo: {
-                shopId: 'shopId',
-                shopPass: 'shopPass'
-            }
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.CreditCard,
+                gmoInfo: {
+                    shopId: 'shopId',
+                    shopPass: 'shopPass'
+                }
+            }]
         };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,

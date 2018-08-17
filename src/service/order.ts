@@ -119,10 +119,10 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
             // Pecorino決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.payPoint)) {
-                taskAttributes.push(...orderPotentialActions.payPoint.map((a): factory.task.payPoint.IAttributes => {
+            if (Array.isArray(orderPotentialActions.payAccount)) {
+                taskAttributes.push(...orderPotentialActions.payAccount.map((a): factory.task.payAccount.IAttributes => {
                     return {
-                        name: factory.taskName.PayPoint,
+                        name: factory.taskName.PayAccount,
                         status: factory.taskStatus.Ready,
                         runsAt: now, // なるはやで実行
                         remainingNumberOfTries: 10,
@@ -294,14 +294,14 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
                 taskAttributes.push(task);
             }
 
-            // Pecorino返金タスク
+            // 口座返金タスク
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(returnActionAttributes.potentialActions.refundPoint)) {
-                taskAttributes.push(...returnActionAttributes.potentialActions.refundPoint.map(
-                    (a): factory.task.refundPoint.IAttributes => {
+            if (Array.isArray(returnActionAttributes.potentialActions.refundAccount)) {
+                taskAttributes.push(...returnActionAttributes.potentialActions.refundAccount.map(
+                    (a): factory.task.refundAccount.IAttributes => {
                         return {
-                            name: factory.taskName.RefundPoint,
+                            name: factory.taskName.RefundAccount,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,

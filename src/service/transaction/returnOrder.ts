@@ -252,10 +252,10 @@ export function confirm(
                     }
                 };
             });
-        // Pecorino返金アクション
-        const refundPointActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.Point>[]>payActions)
-            .filter((a) => a.object.paymentMethod.paymentMethod === factory.paymentMethodType.Point)
-            .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.Point> => {
+        // 口座返金アクション
+        const refundAccountActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
+            .filter((a) => a.object.paymentMethod.paymentMethod === factory.paymentMethodType.Account)
+            .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account> => {
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                     object: a,
@@ -288,7 +288,7 @@ export function confirm(
             recipient: placeOrderTransaction.seller,
             potentialActions: {
                 refundCreditCard: refundCreditCardActions[0],
-                refundPoint: refundPointActions,
+                refundAccount: refundAccountActions,
                 returnPointAward: returnPointAwardActions
             }
         };

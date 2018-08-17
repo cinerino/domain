@@ -90,8 +90,8 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                         transactionId: transaction.id
                     }
                 };
-                const cancelPointTaskAttributes: factory.task.cancelPoint.IAttributes = {
-                    name: factory.taskName.CancelPoint,
+                const cancelAccountTaskAttributes: factory.task.cancelAccount.IAttributes = {
+                    name: factory.taskName.CancelAccount,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
@@ -117,7 +117,7 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                 taskAttributes.push(
                     cancelSeatReservationTaskAttributes,
                     cancelCreditCardTaskAttributes,
-                    cancelPointTaskAttributes,
+                    cancelAccountTaskAttributes,
                     cancelPointAwardTaskAttributes
                 );
 

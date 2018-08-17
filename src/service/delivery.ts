@@ -340,7 +340,7 @@ export function returnPointAward(params: factory.task.returnPointAward.IData) {
                     url: params.recipient.url
                 },
                 amount: pecorinoAwardAuthorizeActionResult.pointTransaction.object.amount,
-                notes: 'シネマサンシャイン 返品によるポイントインセンティブ取消',
+                notes: 'Cinerino 返品によるポイントインセンティブ取消',
                 accountType: factory.accountType.Point,
                 fromAccountNumber: pecorinoAwardAuthorizeActionResult.pointTransaction.object.toAccountNumber
             });

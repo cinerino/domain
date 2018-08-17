@@ -26,6 +26,10 @@ export interface IConnectionSettings {
      */
     redisClient?: redis.RedisClient;
     /**
+     * PecorinoAPIエンドポイント
+     */
+    pecorinoEndpoint?: string;
+    /**
      * PecorinoAPI認証クライアント
      */
     pecorinoAuthClient?: pecorinoapi.auth.ClientCredentials;

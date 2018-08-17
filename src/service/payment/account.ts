@@ -1,5 +1,5 @@
 /**
- * ポイント決済サービス
+ * 口座決済サービス
  */
 import * as factory from '@cinerino/factory';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
@@ -12,38 +12,30 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 const debug = createDebug('cinerino-domain:*');
 
 /**
- * ポイント支払実行
+ * 口座支払実行
  */
-export function payPoint(params: factory.task.payPoint.IData) {
+export function payAccount(params: factory.task.payAccount.IData) {
     return async (repos: {
         action: ActionRepo;
-        pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
+        withdrawService: pecorinoapi.service.transaction.Withdraw;
+        transferService: pecorinoapi.service.transaction.Transfer;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
-
         try {
-            const pecorinoTransaction = params.object.pointTransaction;
-            switch (pecorinoTransaction.typeOf) {
+            const pendingTransaction = params.object.pendingTransaction;
+            switch (pendingTransaction.typeOf) {
                 case pecorinoapi.factory.transactionType.Withdraw:
                     // 支払取引の場合、確定
-                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                        endpoint: params.object.pointAPIEndpoint,
-                        auth: repos.pecorinoAuthClient
-                    });
-                    await withdrawService.confirm({
-                        transactionId: pecorinoTransaction.id
+                    await repos.withdrawService.confirm({
+                        transactionId: pendingTransaction.id
                     });
                     break;
 
                 case pecorinoapi.factory.transactionType.Transfer:
                     // 転送取引の場合確定
-                    const transferTransactionService = new pecorinoapi.service.transaction.Transfer({
-                        endpoint: params.object.pointAPIEndpoint,
-                        auth: repos.pecorinoAuthClient
-                    });
-                    await transferTransactionService.confirm({
-                        transactionId: pecorinoTransaction.id
+                    await repos.transferService.confirm({
+                        transactionId: pendingTransaction.id
                     });
                     break;
 
@@ -51,7 +43,7 @@ export function payPoint(params: factory.task.payPoint.IData) {
                 /* istanbul ignore next */
                 default:
                     throw new factory.errors.NotImplemented(
-                        `transaction type '${(<any>pecorinoTransaction).typeOf}' not implemented.`
+                        `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
                     );
             }
         } catch (error) {
@@ -69,7 +61,7 @@ export function payPoint(params: factory.task.payPoint.IData) {
 
         // アクション完了
         debug('ending action...');
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Point> = {};
+        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
         await repos.action.complete(action.typeOf, action.id, actionResult);
     };
 }
@@ -78,19 +70,20 @@ export function payPoint(params: factory.task.payPoint.IData) {
  * Pecorinoオーソリ取消
  * @param transactionId 取引ID
  */
-export function cancelPointAuth(transactionId: string) {
+export function cancelAccountAuth(transactionId: string) {
     return async (repos: {
         action: ActionRepo;
-        pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
+        withdrawService: pecorinoapi.service.transaction.Withdraw;
+        transferService: pecorinoapi.service.transaction.Transfer;
     }) => {
-        // Pecorino承認アクションを取得
-        const authorizeActions = <factory.action.authorize.paymentMethod.point.IAction[]>await repos.action.findAuthorizeByTransactionId(
-            transactionId
-        ).then((actions) => actions
-            .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.point.ObjectType.PointPayment)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        );
-
+        // 口座承認アクションを取得
+        const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+            await repos.action.findAuthorizeByTransactionId(
+                transactionId
+            ).then((actions) => actions
+                .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            );
         await Promise.all(authorizeActions.map(async (action) => {
             // 承認アクション結果は基本的に必ずあるはず
             // tslint:disable-next-line:no-single-line-block-comment
@@ -99,26 +92,16 @@ export function cancelPointAuth(transactionId: string) {
                 throw new factory.errors.NotFound('action.result');
             }
 
-            switch (action.result.pointTransaction.typeOf) {
+            switch (action.result.pendingTransaction.typeOf) {
                 case pecorinoapi.factory.transactionType.Withdraw:
-                    // 支払取引の場合、中止
-                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                        endpoint: action.result.pointAPIEndpoint,
-                        auth: repos.pecorinoAuthClient
-                    });
-                    await withdrawService.cancel({
-                        transactionId: action.result.pointTransaction.id
+                    await repos.withdrawService.cancel({
+                        transactionId: action.result.pendingTransaction.id
                     });
                     break;
 
                 case pecorinoapi.factory.transactionType.Transfer:
-                    // 転送取引の場合、中止
-                    const transferTransactionService = new pecorinoapi.service.transaction.Transfer({
-                        endpoint: action.result.pointAPIEndpoint,
-                        auth: repos.pecorinoAuthClient
-                    });
-                    await transferTransactionService.cancel({
-                        transactionId: action.result.pointTransaction.id
+                    await repos.transferService.cancel({
+                        transactionId: action.result.pendingTransaction.id
                     });
                     break;
 
@@ -126,7 +109,7 @@ export function cancelPointAuth(transactionId: string) {
                 /* istanbul ignore next */
                 default:
                     throw new factory.errors.NotImplemented(
-                        `transaction type '${(<any>action.result.pointTransaction).typeOf}' not implemented.`
+                        `transaction type '${(<any>action.result.pendingTransaction).typeOf}' not implemented.`
                     );
             }
         }));
@@ -134,62 +117,52 @@ export function cancelPointAuth(transactionId: string) {
 }
 
 /**
- * ポイント口座返金処理を実行する
+ * 口座返金処理を実行する
  */
-export function refundPoint(params: factory.task.refundPoint.IData) {
+export function refundAccount(params: factory.task.refundAccount.IData) {
     return async (repos: {
         action: ActionRepo;
         task: TaskRepo;
-        pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
+        depositService: pecorinoapi.service.transaction.Deposit;
+        transferService: pecorinoapi.service.transaction.Transfer;
     }) => {
         const action = await repos.action.start(params);
 
         try {
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
-            const pecorinoTransaction = payActionAttributes.object.pointTransaction;
-            const pecorinoEndpoint = payActionAttributes.object.pointAPIEndpoint;
-            const notes = 'シネマサンシャイン 返金';
+            const pendingTransaction = payActionAttributes.object.pendingTransaction;
+            const notes = 'Cinerino 返金';
 
-            switch (pecorinoTransaction.typeOf) {
+            switch (pendingTransaction.typeOf) {
                 case factory.pecorino.transactionType.Withdraw:
-                    // Pecorino入金取引で返金実行
-                    const depositService = new pecorinoapi.service.transaction.Deposit({
-                        endpoint: pecorinoEndpoint,
-                        auth: repos.pecorinoAuthClient
-                    });
-                    const depositTransaction = await depositService.start({
-                        accountType: factory.accountType.Point,
-                        toAccountNumber: pecorinoTransaction.object.fromAccountNumber,
+                    const depositTransaction = await repos.depositService.start({
+                        accountType: pendingTransaction.object.accountType,
+                        toAccountNumber: pendingTransaction.object.fromAccountNumber,
                         // tslint:disable-next-line:no-magic-numbers
                         expires: moment().add(5, 'minutes').toDate(),
-                        agent: pecorinoTransaction.recipient,
-                        recipient: pecorinoTransaction.agent,
-                        amount: pecorinoTransaction.object.amount,
+                        agent: pendingTransaction.recipient,
+                        recipient: pendingTransaction.agent,
+                        amount: pendingTransaction.object.amount,
                         notes: notes
                     });
-                    await depositService.confirm({ transactionId: depositTransaction.id });
+                    await repos.depositService.confirm({ transactionId: depositTransaction.id });
 
                     break;
 
                 case factory.pecorino.transactionType.Transfer:
-                    // 口座振込の場合、逆の振込取引実行
-                    const transferService = new pecorinoapi.service.transaction.Transfer({
-                        endpoint: pecorinoEndpoint,
-                        auth: repos.pecorinoAuthClient
-                    });
-                    const transferTransaction = await transferService.start({
-                        accountType: factory.accountType.Point,
-                        toAccountNumber: pecorinoTransaction.object.fromAccountNumber,
-                        fromAccountNumber: pecorinoTransaction.object.toAccountNumber,
+                    const transferTransaction = await repos.transferService.start({
+                        accountType: pendingTransaction.object.accountType,
+                        toAccountNumber: pendingTransaction.object.fromAccountNumber,
+                        fromAccountNumber: pendingTransaction.object.toAccountNumber,
                         // tslint:disable-next-line:no-magic-numbers
                         expires: moment().add(5, 'minutes').toDate(),
-                        agent: pecorinoTransaction.recipient,
-                        recipient: pecorinoTransaction.agent,
-                        amount: pecorinoTransaction.object.amount,
+                        agent: pendingTransaction.recipient,
+                        recipient: pendingTransaction.agent,
+                        amount: pendingTransaction.object.amount,
                         notes: notes
                     });
-                    await transferService.confirm({ transactionId: transferTransaction.id });
+                    await repos.transferService.confirm({ transactionId: transferTransaction.id });
 
                     break;
 
@@ -197,7 +170,7 @@ export function refundPoint(params: factory.task.refundPoint.IData) {
                 /* istanbul ignore next */
                 default:
                     throw new factory.errors.NotImplemented(
-                        `transaction type '${(<any>pecorinoTransaction).typeOf}' not implemented.`
+                        `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
                     );
 
             }

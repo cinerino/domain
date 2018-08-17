@@ -17,9 +17,9 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
 import * as ProgramMembershipAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/programMembership';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
+import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/account';
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
 import * as MocoinAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/mocoin';
-import * as AuthorizePointActionService from './placeOrderInProgress/action/authorize/paymentMethod/point';
 
 const debug = createDebug('cinerino-domain:*');
 
@@ -177,14 +177,17 @@ export namespace action {
         }
         export namespace paymentMethod {
             /**
+             * 口座承認アクションサービス
+             */
+            export import account = AuthorizeAccountPaymentActionService;
+            /**
              * クレジットカード承認アクションサービス
              */
             export import creditCard = CreditCardAuthorizeActionService;
-            export import mocoin = MocoinAuthorizeActionService;
             /**
-             * ポイント承認アクションサービス
+             * Mocoin承認アクションサービス
              */
-            export import point = AuthorizePointActionService;
+            export import mocoin = MocoinAuthorizeActionService;
         }
     }
 }
@@ -328,29 +331,26 @@ export function confirm(params: {
  * 取引が確定可能な状態かどうかをチェックする
  */
 export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
-    type IAuthorizeActionResult =
-        factory.action.authorize.paymentMethod.creditCard.IResult |
-        factory.action.authorize.paymentMethod.point.IResult |
-        factory.action.authorize.offer.programMembership.IResult |
-        factory.action.authorize.offer.seatReservation.IResult |
-        factory.action.authorize.award.point.IResult;
     const authorizeActions = transaction.object.authorizeActions;
+    let priceByAgent = 0;
+    let priceBySeller = 0;
 
-    // クレジットカードオーソリをひとつに限定
+    // クレジットカードオーソリを確認
     const creditCardAuthorizeActions = authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard);
-    if (creditCardAuthorizeActions.length > 1) {
-        throw new factory.errors.Argument('transactionId', 'The number of credit card authorize actions must be one');
-    }
+    priceByAgent += creditCardAuthorizeActions.reduce(
+        (a, b) => a + (<factory.action.authorize.paymentMethod.creditCard.IResult>b.result).price, 0
+    );
 
-    // ムビチケ着券情報をひとつに限定
-    // const mvtkAuthorizeActions = authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk);
-    // if (mvtkAuthorizeActions.length > 1) {
-    //     throw new factory.errors.Argument('transactionId', 'The number of mvtk authorize actions must be one');
-    // }
+    // コインオーソリを確認
+    const authorizeCoinActions = authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
+        .filter((a) => a.object.accountType === factory.accountType.Coin);
+    priceByAgent += authorizeCoinActions.reduce(
+        (a, b) => a + (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType.Coin>>b.result).amount, 0
+    );
 
     // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
     const pointAwardAuthorizeActions = <factory.action.authorize.award.point.IAction[]>authorizeActions
@@ -361,46 +361,39 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         throw new factory.errors.Argument('transactionId', 'Incentive amount must be 1');
     }
 
-    // agentとsellerで、承認アクションの金額が合うかどうか
-    const priceByAgent = transaction.object.authorizeActions
-        .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((authorizeAction) => authorizeAction.agent.id === transaction.agent.id)
-        .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
-    const priceBySeller = transaction.object.authorizeActions
-        .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
-        .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
-    debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
-
-    // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
-    let requiredPoint = 0;
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>transaction.object.authorizeActions
+    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
     if (seatReservationAuthorizeActions.length > 1) {
         throw new factory.errors.Argument('transactionId', 'The number of seat reservation authorize actions must be one');
     }
+    priceBySeller += seatReservationAuthorizeActions.reduce(
+        (a, b) => a + (<factory.action.authorize.offer.seatReservation.IResult>b.result).price, 0
+    );
+
+    // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
+    let requiredPoint = 0;
     const seatReservationAuthorizeAction = seatReservationAuthorizeActions.shift();
     if (seatReservationAuthorizeAction !== undefined) {
         requiredPoint = (<factory.action.authorize.offer.seatReservation.IResult>seatReservationAuthorizeAction.result).point;
         // 必要ポイントがある場合、Pecorinoのオーソリ金額と比較
         if (requiredPoint > 0) {
-            const authorizedPecorinoAmount =
-                (<factory.action.authorize.paymentMethod.point.IAction[]>transaction.object.authorizeActions)
+            const authorizedPointAmount =
+                (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Point>[]>authorizeActions)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                    .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.point.ObjectType.PointPayment)
+                    .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
+                    .filter((a) => a.object.accountType === factory.accountType.Point)
                     .reduce((a, b) => a + b.object.amount, 0);
-            if (requiredPoint !== authorizedPecorinoAmount) {
-                throw new factory.errors.Argument('transactionId', 'Required pecorino amount not satisfied');
+            if (requiredPoint !== authorizedPointAmount) {
+                throw new factory.errors.Argument('transactionId', 'Required point amount not satisfied');
             }
         }
     }
 
-    // JPYオーソリ金額もPecorinoオーソリポイントも0より大きくなければ取引成立不可
-    if (priceByAgent <= 0 && requiredPoint <= 0) {
+    // JPYオーソリ金額もオーソリポイントも0より大きくなければ取引成立不可
+    if (priceByAgent < 0 && requiredPoint < 0) {
         throw new factory.errors.Argument('transactionId', 'Price or point must be over 0');
     }
-
     if (priceByAgent !== priceBySeller) {
         throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched');
     }
@@ -549,16 +542,16 @@ export function createOrderFromTransaction(params: {
             });
         });
 
-    // pecorino決済があれば決済方法に追加
+    // 口座決済があれば決済方法に追加
     params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.point.ObjectType.PointPayment)
-        .forEach((pecorinoAuthorizeAction: factory.action.authorize.paymentMethod.point.IAction) => {
-            const actionResult = <factory.action.authorize.paymentMethod.point.IResult>pecorinoAuthorizeAction.result;
+        .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
+        .forEach((a: factory.action.authorize.paymentMethod.account.IAction<factory.accountType>) => {
+            const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
             paymentMethods.push({
-                name: 'Pecorino',
-                paymentMethod: factory.paymentMethodType.Point,
-                paymentMethodId: actionResult.pointTransaction.id
+                name: a.object.accountType,
+                paymentMethod: factory.paymentMethodType.Account,
+                paymentMethodId: actionResult.pendingTransaction.id
             });
         });
 
@@ -718,22 +711,23 @@ export async function createPotentialActionsFromTransaction(params: {
         };
     }
 
-    // Pecorino支払いアクション
-    const pecorinotAuthorizeActions = <factory.action.authorize.paymentMethod.point.IAction[]>params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.point.ObjectType.PointPayment);
-    const payPointActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Point>[] =
-        pecorinotAuthorizeActions.map((a) => {
+    // 口座支払いアクション
+    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment);
+    const payAccountActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[] =
+        authorizeAccountActions.map((a) => {
             return {
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: {
                     paymentMethod: {
-                        name: 'Pecorino',
-                        paymentMethod: <factory.paymentMethodType.Point>factory.paymentMethodType.Point,
+                        name: factory.paymentMethodType.Account,
+                        paymentMethod: <factory.paymentMethodType.Account>factory.paymentMethodType.Account,
                         paymentMethodId: a.id
                     },
-                    pointTransaction: (<factory.action.authorize.paymentMethod.point.IResult>a.result).pointTransaction,
-                    pointAPIEndpoint: (<factory.action.authorize.paymentMethod.point.IResult>a.result).pointAPIEndpoint
+                    pendingTransaction:
+                        (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
                 },
                 agent: params.transaction.agent,
                 purpose: params.order
@@ -882,7 +876,7 @@ export async function createPotentialActionsFromTransaction(params: {
                 // クレジットカード決済があれば支払アクション追加
                 payCreditCard: (payCreditCardAction !== null) ? payCreditCardAction : undefined,
                 // Pecorino決済があれば支払アクション追加
-                payPoint: payPointActions,
+                payAccount: payAccountActions,
                 payMocoin: payMocoinActions,
                 // useMvtk: (useMvtkAction !== null) ? useMvtkAction : undefined,
                 sendOrder: sendOrderActionAttributes,

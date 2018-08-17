@@ -4,6 +4,7 @@
  */
 import * as chevre from '@chevre/api-nodejs-client';
 import * as factory from '@cinerino/factory';
+import * as pecorino from '@pecorino/api-nodejs-client';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
@@ -44,8 +45,13 @@ export function cancelCreditCard(data: factory.task.cancelCreditCard.IData): IOp
         await PaymentService.creditCard.cancelCreditCardAuth(data.transactionId)({ action: actionRepo });
     };
 }
-export function cancelPoint(data: factory.task.cancelPoint.IData): IOperation<void> {
+export function cancelAccount(data: factory.task.cancelAccount.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (settings.pecorinoEndpoint === undefined) {
+            throw new Error('settings.pecorinoEndpoint undefined.');
+        }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (settings.pecorinoAuthClient === undefined) {
@@ -53,9 +59,18 @@ export function cancelPoint(data: factory.task.cancelPoint.IData): IOperation<vo
         }
 
         const actionRepo = new ActionRepo(settings.connection);
-        await PaymentService.pecorino.cancelPointAuth(data.transactionId)({
+        const withdrawService = new pecorino.service.transaction.Withdraw({
+            endpoint: settings.pecorinoEndpoint,
+            auth: settings.pecorinoAuthClient
+        });
+        const transferService = new pecorino.service.transaction.Transfer({
+            endpoint: settings.pecorinoEndpoint,
+            auth: settings.pecorinoAuthClient
+        });
+        await PaymentService.account.cancelAccountAuth(data.transactionId)({
             action: actionRepo,
-            pecorinoAuthClient: settings.pecorinoAuthClient
+            withdrawService: withdrawService,
+            transferService: transferService
         });
     };
 }
@@ -83,8 +98,13 @@ export function payCreditCard(data: factory.task.payCreditCard.IData): IOperatio
         });
     };
 }
-export function payPoint(data: factory.task.payPoint.IData): IOperation<void> {
+export function payAccount(data: factory.task.payAccount.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (settings.pecorinoEndpoint === undefined) {
+            throw new Error('settings.pecorinoEndpoint undefined.');
+        }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (settings.pecorinoAuthClient === undefined) {
@@ -92,9 +112,18 @@ export function payPoint(data: factory.task.payPoint.IData): IOperation<void> {
         }
 
         const actionRepo = new ActionRepo(settings.connection);
-        await PaymentService.pecorino.payPoint(data)({
+        const withdrawService = new pecorino.service.transaction.Withdraw({
+            endpoint: settings.pecorinoEndpoint,
+            auth: settings.pecorinoAuthClient
+        });
+        const transferService = new pecorino.service.transaction.Transfer({
+            endpoint: settings.pecorinoEndpoint,
+            auth: settings.pecorinoAuthClient
+        });
+        await PaymentService.account.payAccount(data)({
             action: actionRepo,
-            pecorinoAuthClient: settings.pecorinoAuthClient
+            withdrawService: withdrawService,
+            transferService: transferService
         });
     };
 }
@@ -139,8 +168,13 @@ export function refundCreditCard(data: factory.task.refundCreditCard.IData): IOp
         });
     };
 }
-export function refundPoint(data: factory.task.refundPoint.IData): IOperation<void> {
+export function refundAccount(data: factory.task.refundAccount.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (settings.pecorinoEndpoint === undefined) {
+            throw new Error('settings.pecorinoEndpoint undefined.');
+        }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (settings.pecorinoAuthClient === undefined) {
@@ -149,10 +183,19 @@ export function refundPoint(data: factory.task.refundPoint.IData): IOperation<vo
 
         const actionRepo = new ActionRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
-        await PaymentService.pecorino.refundPoint(data)({
+        const depositService = new pecorino.service.transaction.Deposit({
+            endpoint: settings.pecorinoEndpoint,
+            auth: settings.pecorinoAuthClient
+        });
+        const transferService = new pecorino.service.transaction.Transfer({
+            endpoint: settings.pecorinoEndpoint,
+            auth: settings.pecorinoAuthClient
+        });
+        await PaymentService.account.refundAccount(data)({
             action: actionRepo,
             task: taskRepo,
-            pecorinoAuthClient: settings.pecorinoAuthClient
+            depositService: depositService,
+            transferService: transferService
         });
     };
 }

@@ -11,12 +11,14 @@ import * as domain from '../index';
 import * as TaskFunctionsService from './taskFunctions';
 
 let sandbox: sinon.SinonSandbox;
+let chevreAuthClient: domain.chevre.auth.ClientCredentials;
 let pecorinoAuthClient: domain.pecorinoapi.auth.ClientCredentials;
 let redisClient: redis.RedisClient;
 let cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
 
 before(() => {
     sandbox = sinon.createSandbox();
+    chevreAuthClient = new domain.chevre.auth.ClientCredentials(<any>{});
     pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
     redisClient = redis.createClient();
     cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
@@ -62,17 +64,18 @@ describe('TaskFunctionsService.cancelCreditCard()', () => {
     });
 });
 
-describe('TaskFunctionsService.cancelPoint()', () => {
+describe('TaskFunctionsService.cancelAccount()', () => {
     beforeEach(() => {
         sandbox.restore();
     });
 
     it('Pecorino決済サービスが正常であればエラーにならないはず', async () => {
         const data = {};
-        sandbox.mock(domain.service.payment.pecorino).expects('cancelPointAuth').once().returns(async () => Promise.resolve());
+        sandbox.mock(domain.service.payment.account).expects('cancelAccountAuth').once().returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.cancelPoint(<any>data)({
+        const result = await TaskFunctionsService.cancelAccount(<any>data)({
             connection: domain.mongoose.connection,
+            pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
         });
         assert.equal(result, undefined);
@@ -91,6 +94,7 @@ describe('TaskFunctionsService.cancelPointAward()', () => {
 
         const result = await TaskFunctionsService.cancelPointAward(<any>data)({
             connection: domain.mongoose.connection,
+            pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
         });
         assert.equal(result, undefined);
@@ -179,17 +183,18 @@ describe('TaskFunctionsService.refundCreditCard()', () => {
     });
 });
 
-describe('TaskFunctionsService.refundPoint()', () => {
+describe('TaskFunctionsService.refundAccount()', () => {
     beforeEach(() => {
         sandbox.restore();
     });
 
     it('Pecorino決済サービスが正常であればエラーにならないはず', async () => {
         const data = {};
-        sandbox.mock(domain.service.payment.pecorino).expects('refundPoint').once().returns(async () => Promise.resolve());
+        sandbox.mock(domain.service.payment.account).expects('refundAccount').once().returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.refundPoint(<any>data)({
+        const result = await TaskFunctionsService.refundAccount(<any>data)({
             connection: domain.mongoose.connection,
+            pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
         });
         assert.equal(result, undefined);
@@ -210,7 +215,12 @@ describe('TaskFunctionsService.returnOrder()', () => {
         sandbox.mock(domain.service.order).expects('cancelReservations').once()
             .withArgs(data.transactionId).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.returnOrder(<any>data)({ connection: domain.mongoose.connection });
+        const result = await TaskFunctionsService.returnOrder(<any>data)({
+            connection: domain.mongoose.connection,
+            redisClient: redis.createClient(),
+            chevreEndpoint: 'chevreEndpoint',
+            chevreAuthClient: chevreAuthClient
+        });
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -232,7 +242,9 @@ describe('TaskFunctionsService.sendOrder()', () => {
 
         const result = await TaskFunctionsService.sendOrder(<any>data)({
             connection: domain.mongoose.connection,
-            redisClient: redis.createClient()
+            redisClient: redis.createClient(),
+            chevreEndpoint: 'chevreEndpoint',
+            chevreAuthClient: chevreAuthClient
         });
 
         assert.equal(result, undefined);
@@ -240,17 +252,18 @@ describe('TaskFunctionsService.sendOrder()', () => {
     });
 });
 
-describe('TaskFunctionsService.payPoint()', () => {
+describe('TaskFunctionsService.payAccount()', () => {
     beforeEach(() => {
         sandbox.restore();
     });
 
     it('決済サービスが正常であればエラーにならないはず', async () => {
         const data = {};
-        sandbox.mock(domain.service.payment.pecorino).expects('payPoint').once().returns(async () => Promise.resolve());
+        sandbox.mock(domain.service.payment.account).expects('payAccount').once().returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.payPoint(<any>data)({
+        const result = await TaskFunctionsService.payAccount(<any>data)({
             connection: domain.mongoose.connection,
+            pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
         });
 
@@ -263,9 +276,9 @@ describe('TaskFunctionsService.payPoint()', () => {
             transactionId: 'transactionId'
         };
 
-        sandbox.mock(domain.service.payment.pecorino).expects('payPoint').never();
+        sandbox.mock(domain.service.payment.account).expects('payAccount').never();
 
-        const result = await TaskFunctionsService.payPoint(<any>data)({
+        const result = await TaskFunctionsService.payAccount(<any>data)({
             connection: domain.mongoose.connection
         }).catch((err) => err);
 
@@ -285,6 +298,7 @@ describe('TaskFunctionsService.givePointAward()', () => {
 
         const result = await TaskFunctionsService.givePointAward(<any>data)({
             connection: domain.mongoose.connection,
+            pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
         });
         assert.equal(result, undefined);
@@ -303,6 +317,7 @@ describe('TaskFunctionsService.returnPointAward()', () => {
 
         const result = await TaskFunctionsService.returnPointAward(<any>data)({
             connection: domain.mongoose.connection,
+            pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
         });
         assert.equal(result, undefined);
