@@ -38,13 +38,18 @@ export function create<T extends factory.accountType>(params: {
      */
     amount: number;
     /**
-     * 口座タイプ
+     * 確保口座
      */
-    accountType: T;
-    /**
-     * 口座番号
-     */
-    fromAccountNumber: string;
+    fromAccount: {
+        /**
+         * 口座タイプ
+         */
+        accountType: T;
+        /**
+         * 口座番号
+         */
+        accountNumber: string;
+    };
     /**
      * 取引メモ
      */
@@ -95,8 +100,8 @@ export function create<T extends factory.accountType>(params: {
             object: {
                 typeOf: factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment,
                 amount: params.amount,
-                accountType: params.accountType,
-                fromAccountNumber: params.fromAccountNumber
+                accountType: params.fromAccount.accountType,
+                fromAccountNumber: params.fromAccount.accountNumber
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -128,8 +133,8 @@ export function create<T extends factory.accountType>(params: {
                     },
                     amount: params.amount,
                     notes: (params.notes !== undefined) ? params.notes : 'Cinerino PlaceOrderTransaction',
-                    accountType: params.accountType,
-                    fromAccountNumber: params.fromAccountNumber
+                    accountType: params.fromAccount.accountType,
+                    fromAccountNumber: params.fromAccount.accountNumber
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
             } else if (repos.transferTransactionService !== undefined) {
@@ -142,11 +147,11 @@ export function create<T extends factory.accountType>(params: {
                 }
                 const accountPaymentsAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.Account>[]>
                     seller.paymentAccepted.filter((a) => a.paymentMethodType === factory.paymentMethodType.Account);
-                const paymentAccepted = accountPaymentsAccepted.find((a) => a.accountType === params.accountType);
+                const paymentAccepted = accountPaymentsAccepted.find((a) => a.accountType === params.fromAccount.accountType);
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore if */
                 if (paymentAccepted === undefined) {
-                    throw new factory.errors.Argument('transactionId', `${params.accountType} payment not accepted`);
+                    throw new factory.errors.Argument('transactionId', `${params.fromAccount.accountType} payment not accepted`);
                 }
 
                 debug('starting pecorino pay transaction...', params.amount);
@@ -168,8 +173,8 @@ export function create<T extends factory.accountType>(params: {
                     amount: params.amount,
                     // tslint:disable-next-line:no-single-line-block-comment
                     notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'Cinerino PlaceOrderTransaction',
-                    accountType: params.accountType,
-                    fromAccountNumber: params.fromAccountNumber,
+                    accountType: params.fromAccount.accountType,
+                    fromAccountNumber: params.fromAccount.accountNumber,
                     toAccountNumber: paymentAccepted.accountNumber
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
