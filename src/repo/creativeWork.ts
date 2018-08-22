@@ -14,15 +14,11 @@ export abstract class Repository {
  */
 export class MongoRepository implements Repository {
     public readonly creativeWorkModel: typeof creativeWorkModel;
-
     constructor(connection: Connection) {
         this.creativeWorkModel = connection.model(creativeWorkModel.modelName);
     }
-
     /**
-     * save a movie
      * 映画作品を保管する
-     * @param movie movie object
      */
     public async saveMovie(movie: factory.creativeWork.movie.ICreativeWork) {
         await this.creativeWorkModel.findOneAndUpdate(
