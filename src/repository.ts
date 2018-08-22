@@ -5,6 +5,7 @@
 import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgress } from './repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as CodeRepo } from './repo/code';
 import { MongoRepository as CreativeWorkRepo } from './repo/creativeWork';
 import { MongoRepository as EventRepo } from './repo/event';
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
@@ -25,6 +26,7 @@ export class Action extends ActionRepo { }
 export namespace action {
     export class RegisterProgramMembershipInProgress extends RegisterProgramMembershipActionInProgress { }
 }
+export class Code extends CodeRepo { }
 export class CreativeWork extends CreativeWorkRepo { }
 export class Event extends EventRepo { }
 export class GMONotification extends GMONotificationRepo { }

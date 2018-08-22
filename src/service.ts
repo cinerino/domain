@@ -3,6 +3,7 @@
  * service module
  */
 import * as AccountService from './service/account';
+import * as CodeService from './service/code';
 import * as DeliveryService from './service/delivery';
 import * as EventService from './service/event';
 import * as MasterSyncService from './service/masterSync';
@@ -21,6 +22,7 @@ import * as ReturnOrderTransactionService from './service/transaction/returnOrde
 import * as UtilService from './service/util';
 
 export import account = AccountService;
+export import code = CodeService;
 export import delivery = DeliveryService;
 export import event = EventService;
 export import masterSync = MasterSyncService;
