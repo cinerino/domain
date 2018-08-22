@@ -56,7 +56,9 @@ const schema = new mongoose.Schema(
         subtitleLanguage: String,
         kanaName: String,
         alternativeHeadline: String,
-        ticketTypeGroup: String
+        ticketTypeGroup: String,
+        maximumAttendeeCapacity: Number,
+        remainingAttendeeCapacity: Number
     },
     {
         collection: 'events',
