@@ -142,8 +142,8 @@ export async function findMovieImage(params: {
                 if (!(err instanceof Error)) {
                     if (typeof res.data === 'object' && Array.isArray(res.data.items) && res.data.items.length > 0) {
                         debug('custome search result:', res.data);
-                        // resolve(<string>res.data.items[0].image.thumbnailLink);
-                        resolve(<string>res.data.items[0].link);
+                        resolve(<string>res.data.items[0].image.thumbnailLink);
+                        // resolve(<string>res.data.items[0].link);
 
                         return;
                         // thumbnails.push({
