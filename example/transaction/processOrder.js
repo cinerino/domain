@@ -74,7 +74,7 @@ async function main() {
 
     // 券種検索
     console.log('searching event ticket types...', screeningEvent.id);
-    const ticketTypes = await eventService.searchScreeningEventTicketTyps({ eventId: screeningEvent.id });
+    const ticketTypes = await eventService.searchScreeningEventTicketTypes({ eventId: screeningEvent.id });
     console.log(ticketTypes.length, 'ticket types found');
     const ticketType = ticketTypes[0];
 
