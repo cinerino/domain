@@ -18,8 +18,8 @@ const customsearch = google.customsearch('v1');
 /**
  * 映画作品インポート
  */
-export function importMovies(_: {
-    theaterCode: string;
+export function importMovies(params: {
+    locationBranchCode: string;
     importFrom: Date;
     importThrough: Date;
 }) {
@@ -28,10 +28,14 @@ export function importMovies(_: {
         eventService: chevre.service.Event;
     }) => {
         // 上映イベントシリーズ検索
-        const screeningEventSeries = await repos.eventService.searchScreeningEventSeries({
-            // startFrom: params.importFrom,
-            // endThrough: params.importThrough
+        const searchScreeningEventSeriesResult = await repos.eventService.searchScreeningEventSeries({
+            inSessionFrom: params.importFrom,
+            inSessionThrough: params.importThrough,
+            location: {
+                branchCodes: [params.locationBranchCode]
+            }
         });
+        const screeningEventSeries = searchScreeningEventSeriesResult.data;
         debug('importing', screeningEventSeries.length, 'screeningEventSeries...');
         // 永続化
         await Promise.all(screeningEventSeries.map(async (series) => {
@@ -61,7 +65,7 @@ export function importMovies(_: {
  * 上映イベントをインポートする
  */
 export function importScreeningEvents(params: {
-    theaterCode: string;
+    locationBranchCode: string;
     importFrom: Date;
     importThrough: Date;
 }) {
@@ -72,12 +76,14 @@ export function importScreeningEvents(params: {
         eventService: chevre.service.Event;
     }) => {
         // 上映スケジュール取得
-        const screeningEvents = await repos.eventService.searchScreeningEvents({
-            // superEventLocationIds:[],
-            // theaterCode: theaterCode,
-            startFrom: params.importFrom,
-            endThrough: params.importThrough
+        const searchScreeningEventsResult = await repos.eventService.searchScreeningEvents({
+            inSessionFrom: params.importFrom,
+            inSessionThrough: params.importThrough,
+            superEvent: {
+                locationBranchCodes: [params.locationBranchCode]
+            }
         });
+        const screeningEvents = searchScreeningEventsResult.data;
         // 各作品画像を検索
         const movies = screeningEvents
             .map((e) => e.superEvent.workPerformed)
@@ -89,17 +95,17 @@ export function importScreeningEvents(params: {
             };
         }));
         // 上映イベントごとに永続化トライ
-        await Promise.all(screeningEvents.map(async (screeningEvent) => {
+        await Promise.all(screeningEvents.map(async (e) => {
             try {
                 // サムネイル画像があれば情報追加
                 const thumbnailOfMovie = thumbnailsByMovie.find(
-                    (t) => t.identifier === screeningEvent.superEvent.workPerformed.identifier
+                    (t) => t.identifier === e.superEvent.workPerformed.identifier
                 );
                 if (thumbnailOfMovie !== undefined && thumbnailOfMovie.thumbnail !== undefined) {
-                    screeningEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
-                    screeningEvent.superEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
+                    e.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
+                    e.superEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
                 }
-                await repos.event.saveScreeningEvent(screeningEvent);
+                await repos.event.saveScreeningEvent(e);
             } catch (error) {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
