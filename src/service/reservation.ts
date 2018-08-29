@@ -36,11 +36,11 @@ export function searchScreeningEventReservations(params: {
             });
             const reservationIds = ownershipInfos.map((o) => o.typeOfGood.id);
             if (reservationIds.length > 0) {
-                const reservations = await repos.reservationService.searchScreeningEventReservations({
+                const searchReservationsResult = await repos.reservationService.searchScreeningEventReservations({
                     ids: reservationIds
                 });
                 ownershipInfosWithDetail = ownershipInfos.map((o) => {
-                    const reservation = reservations.find((r) => r.id === o.typeOfGood.id);
+                    const reservation = searchReservationsResult.data.find((r) => r.id === o.typeOfGood.id);
                     if (reservation === undefined) {
                         throw new factory.errors.NotFound('Reservation');
                     }

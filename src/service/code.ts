@@ -5,6 +5,7 @@ import * as factory from '@cinerino/factory';
 import * as jwt from 'jsonwebtoken';
 import * as uuid from 'uuid';
 
+import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as CodeRepo } from '../repo/code';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 
@@ -67,5 +68,55 @@ export function getToken(params: {
                 }
             );
         });
+    };
+}
+export function verifyToken<T>(params: {
+    agent: factory.action.check.token.IAgent;
+    token: string;
+    secret: string;
+    issuer: string;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+    }): Promise<T> => {
+        const actionAttributes: factory.action.check.token.IAttributes = {
+            typeOf: factory.actionType.CheckAction,
+            agent: params.agent,
+            object: {
+                token: params.token
+            }
+        };
+        const action = await repos.action.start(actionAttributes);
+        let result: any;
+        try {
+            result = await new Promise<any>((resolve, reject) => {
+                jwt.verify(
+                    params.token,
+                    params.secret,
+                    {
+                        issuer: params.issuer
+                    },
+                    (err, decoded) => {
+                        if (err instanceof Error) {
+                            reject(err);
+                        } else {
+                            resolve(decoded);
+                        }
+                    });
+            });
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, ...{ message: error.message, name: error.name } };
+                await repos.action.giveUp(actionAttributes.typeOf, action.id, actionError);
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+        await repos.action.complete(actionAttributes.typeOf, action.id, result);
+
+        return result;
     };
 }

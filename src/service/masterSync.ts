@@ -9,7 +9,7 @@ import { google } from 'googleapis';
 // import * as difference from 'lodash.difference';
 
 import { Repository as CreativeWorkRepo } from '../repo/creativeWork';
-import { Repository as EventRepo } from '../repo/event';
+import { MongoRepository as EventRepo } from '../repo/event';
 import { Repository as PlaceRepo } from '../repo/place';
 
 const debug = createDebug('cinerino-domain:*');
@@ -105,7 +105,7 @@ export function importScreeningEvents(params: {
                     e.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
                     e.superEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
                 }
-                await repos.event.saveScreeningEvent(e);
+                await repos.event.save<factory.chevre.eventType.ScreeningEvent>(e);
             } catch (error) {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */

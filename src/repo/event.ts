@@ -4,159 +4,170 @@ import { Connection } from 'mongoose';
 import eventModel from './mongoose/model/event';
 
 /**
- * イベント抽象リポジトリー
- */
-export abstract class Repository {
-    public abstract async saveScreeningEventSeries(screeningEvent: factory.chevre.event.screeningEvent.IEvent): Promise<void>;
-    public abstract async saveScreeningEvent(
-        screeningEvent: factory.chevre.event.screeningEvent.IEvent
-    ): Promise<void>;
-    public abstract async cancelScreeningEvent(id: string): Promise<void>;
-    public abstract async searchScreeningEvents(
-        searchConditions: factory.chevre.event.screeningEvent.ISearchConditions
-    ): Promise<factory.chevre.event.screeningEvent.IEvent[]>;
-    public abstract async findScreeningEventById(id: string): Promise<factory.chevre.event.screeningEvent.IEvent>;
-}
-
-/**
  * イベントリポジトリー
  */
-export class MongoRepository implements Repository {
+export class MongoRepository {
     public readonly eventModel: typeof eventModel;
     constructor(connection: Connection) {
         this.eventModel = connection.model(eventModel.modelName);
     }
-    /**
-     * 上映イベントを保管する
-     * @param screeningEvent screeningEvent object
-     */
-    public async saveScreeningEventSeries(screeningEvent: factory.chevre.event.screeningEvent.IEvent) {
-        await this.eventModel.findOneAndUpdate(
-            {
-                _id: screeningEvent.id,
-                typeOf: factory.chevre.eventType.ScreeningEventSeries
-            },
-            screeningEvent,
-            { upsert: true }
-        ).exec();
-    }
-    /**
-     * 上映イベントを保管する
-     */
-    public async saveScreeningEvent(screeningEvent: factory.chevre.event.screeningEvent.IEvent) {
-        await this.eventModel.findOneAndUpdate(
-            {
-                _id: screeningEvent.id,
-                typeOf: factory.chevre.eventType.ScreeningEvent
-            },
-            screeningEvent,
-            { new: true, upsert: true }
-        ).exec();
-    }
-    /**
-     * 上映イベントをキャンセルする
-     */
-    public async cancelScreeningEvent(id: string) {
-        await this.eventModel.findOneAndUpdate(
-            {
-                _id: id,
-                typeOf: factory.chevre.eventType.ScreeningEvent
-            },
-            { eventStatus: factory.chevre.eventStatusType.EventCancelled },
-            { new: true }
-        ).exec();
-    }
-    /**
-     * 上映イベントを検索する
-     */
-    public async searchScreeningEvents(
-        searchConditions: factory.chevre.event.screeningEvent.ISearchConditions
-    ): Promise<factory.chevre.event.screeningEvent.IEvent[]> {
-        // MongoDB検索条件
+    public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params: factory.chevre.event.screeningEvent.ISearchConditions) {
         const andConditions: any[] = [
             {
                 typeOf: factory.chevre.eventType.ScreeningEvent
             }
         ];
-
-        // 場所の識別子条件
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (Array.isArray(searchConditions.superEventLocationIds)) {
+        if (params.name !== undefined) {
             andConditions.push({
-                'superEvent.location.id': {
-                    $exists: true,
-                    $in: searchConditions.superEventLocationIds
-                }
+                $or: [
+                    { 'name.ja': new RegExp(params.name, 'i') },
+                    { 'name.en': new RegExp(params.name, 'i') }
+                ]
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.superEvent !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.superEvent.locationBranchCodes)) {
+                andConditions.push({
+                    'superEvent.location.branchCode': {
+                        $exists: true,
+                        $in: params.superEvent.locationBranchCodes
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.superEvent.workPerformedIdentifiers)) {
+                andConditions.push({
+                    'superEvent.workPerformed.identifier': {
+                        $exists: true,
+                        $in: params.superEvent.workPerformedIdentifiers
+                    }
+                });
+            }
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray(params.eventStatuses)) {
+            andConditions.push({
+                eventStatus: { $in: params.eventStatuses }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.inSessionFrom !== undefined) {
+            andConditions.push({
+                endDate: { $gt: params.inSessionFrom }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.inSessionThrough !== undefined) {
+            andConditions.push({
+                startDate: { $lt: params.inSessionThrough }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.startFrom !== undefined) {
+            andConditions.push({
+                startDate: { $gte: params.startFrom }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.startThrough !== undefined) {
+            andConditions.push({
+                startDate: { $lt: params.startThrough }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.endFrom !== undefined) {
+            andConditions.push({
+                endDate: { $gte: params.endFrom }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.endThrough !== undefined) {
+            andConditions.push({
+                endDate: { $lt: params.endThrough }
             });
         }
 
-        // イベントステータス条件
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (Array.isArray(searchConditions.eventStatuses)) {
-            andConditions.push({
-                eventStatus: { $in: searchConditions.eventStatuses }
-            });
+        return andConditions;
+    }
+    /**
+     * イベントを保管する
+     */
+    public async save<T extends factory.chevre.eventType>(params: factory.chevre.event.IEvent<T>) {
+        await this.eventModel.findOneAndUpdate(
+            {
+                _id: params.id,
+                typeOf: params.typeOf
+            },
+            params,
+            { new: true, upsert: true }
+        ).exec();
+    }
+    public async countScreeningEvents(params: factory.chevre.event.screeningEvent.ISearchConditions): Promise<number> {
+        const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
+
+        return this.eventModel.countDocuments(
+            { $and: conditions }
+        ).setOptions({ maxTimeMS: 10000 })
+            .exec();
+    }
+    /**
+     * 上映イベントを検索する
+     */
+    public async searchScreeningEvents(
+        params: factory.chevre.event.screeningEvent.ISearchConditions
+    ): Promise<factory.chevre.event.screeningEvent.IEvent[]> {
+        const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
+        const query = this.eventModel.find(
+            { $and: conditions },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        );
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit).skip(params.limit * (params.page - 1));
         }
 
-        // 作品識別子条件
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (Array.isArray(searchConditions.workPerformedIds)) {
-            andConditions.push({
-                'workPerformed.id': { $in: searchConditions.workPerformedIds }
-            });
-        }
-
-        // 開始日時条件
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (searchConditions.startFrom !== undefined) {
-            andConditions.push({
-                startDate: { $gte: searchConditions.startFrom }
-            });
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (searchConditions.startThrough !== undefined) {
-            andConditions.push({
-                startDate: { $lt: searchConditions.startThrough }
-            });
-        }
-
-        // 終了日時条件
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (searchConditions.endFrom !== undefined) {
-            andConditions.push({
-                endDate: { $gte: searchConditions.endFrom }
-            });
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (searchConditions.endThrough !== undefined) {
-            andConditions.push({
-                endDate: { $lt: searchConditions.endThrough }
-            });
-        }
-
-        return <factory.chevre.event.screeningEvent.IEvent[]>await this.eventModel.find({ $and: andConditions })
-            .sort({ startDate: 1 })
+        return query.sort({ startDate: 1 })
             .setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
     /**
-     * IDで上映イベントを取得する
+     * IDでイベントを取得する
      */
-    public async findScreeningEventById(id: string): Promise<factory.chevre.event.screeningEvent.IEvent> {
-        const event = await this.eventModel.findOne({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
-            _id: id
-        }).exec();
+    public async findById<T extends factory.chevre.eventType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<factory.chevre.event.IEvent<T>> {
+        const event = await this.eventModel.findOne(
+            {
+                typeOf: params.typeOf,
+                _id: params.id
+            },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        ).exec();
         if (event === null) {
-            throw new factory.errors.NotFound('screeningEvent');
+            throw new factory.errors.NotFound('Event');
         }
 
         return event.toObject();
