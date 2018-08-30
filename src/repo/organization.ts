@@ -1,35 +1,49 @@
 import * as factory from '@cinerino/factory';
-import * as createDebug from 'debug';
 import { Connection } from 'mongoose';
 import organizationModel from './mongoose/model/organization';
-
-const debug = createDebug('cinerino-domain:*');
 
 export type IOrganization<T> =
     T extends factory.organizationType.Corporation ? factory.organization.corporation.IOrganization :
     T extends factory.organizationType.MovieTheater ? factory.organization.movieTheater.IOrganization :
     factory.organization.IOrganization;
-
 /**
  * 組織リポジトリー
  */
 export class MongoRepository {
     public readonly organizationModel: typeof organizationModel;
-
     constructor(connection: Connection) {
         this.organizationModel = connection.model(organizationModel.modelName);
     }
+    public static CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params: factory.organization.movieTheater.ISearchConditions) {
+        // MongoDB検索条件
+        const andConditions: any[] = [
+            {
+                typeOf: factory.organizationType.MovieTheater
+            }
+        ];
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.name !== undefined) {
+            andConditions.push({
+                $or: [
+                    { 'name.ja': new RegExp(params.name, 'i') },
+                    { 'name.en': new RegExp(params.name, 'i') }
+                ]
+            });
+        }
+
+        return andConditions;
+    }
     /**
      * IDで組織を取得する
-     * @param id organization id
      */
-    public async findById<T extends factory.organizationType>(
-        typeOf: T,
-        id: string
-    ): Promise<IOrganization<T>> {
+    public async findById<T extends factory.organizationType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<IOrganization<T>> {
         const doc = await this.organizationModel.findOne({
-            typeOf: typeOf,
-            _id: id
+            typeOf: params.typeOf,
+            _id: params.id
         }).exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Organization');
@@ -50,57 +64,38 @@ export class MongoRepository {
             { upsert: true }
         ).exec();
     }
+    public async countMovieTheaters(params: factory.organization.movieTheater.ISearchConditions): Promise<number> {
+        const conditions = MongoRepository.CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params);
+
+        return this.organizationModel.countDocuments(
+            { $and: conditions }
+        ).setOptions({ maxTimeMS: 10000 })
+            .exec();
+    }
     /**
      * 劇場検索
      */
-    public async searchMovieTheaters(searchConditions: {
-    }): Promise<factory.organization.movieTheater.IOrganization[]> {
-        // 検索条件を作成
-        const conditions: any = {
-            typeOf: factory.organizationType.MovieTheater
-        };
-        debug('searchConditions:', searchConditions);
-
-        // todo 検索条件を指定できるように改修
-
-        debug('searching movie theaters...', conditions);
-
-        // GMOのセキュアな情報を公開しないように注意
-        return this.organizationModel.find(
-            conditions,
+    public async searchMovieTheaters(
+        params: factory.organization.movieTheater.ISearchConditions
+    ): Promise<factory.organization.movieTheater.IOrganization[]> {
+        const conditions = MongoRepository.CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params);
+        const query = this.organizationModel.find(
+            { $and: conditions },
             {
                 __v: 0,
                 createdAt: 0,
                 updatedAt: 0,
+                // GMOのセキュアな情報を公開しないように注意
                 'paymentAccepted.gmoInfo.shopPass': 0
             }
-        )
+        );
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit).skip(params.limit * (params.page - 1));
+        }
+
+        return query.sort({ _id: 1 })
             .setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
-    }
-    /**
-     * 枝番号で劇場検索
-     */
-    public async findMovieTheaterByBranchCode(params: {
-        branchCode: string;
-    }): Promise<factory.organization.movieTheater.IOrganization> {
-        const doc = await this.organizationModel.findOne(
-            {
-                typeOf: factory.organizationType.MovieTheater,
-                'location.branchCode': params.branchCode
-            },
-            {
-                __v: 0,
-                createdAt: 0,
-                updatedAt: 0,
-                'paymentAccepted.gmoInfo.shopPass': 0
-            }
-        ).exec();
-        if (doc === null) {
-            throw new factory.errors.NotFound('movieTheater');
-        }
-
-        return doc.toObject();
     }
 }

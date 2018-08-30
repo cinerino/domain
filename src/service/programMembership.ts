@@ -93,7 +93,10 @@ export function createRegisterTask(params: {
         if (offer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
-        const seller = await repos.organization.findById(params.seller.typeOf, params.seller.id);
+        const seller = await repos.organization.findById({
+            typeOf: params.seller.typeOf,
+            id: params.seller.id
+        });
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
         programMembership.hostingOrganization = {
             id: seller.id,

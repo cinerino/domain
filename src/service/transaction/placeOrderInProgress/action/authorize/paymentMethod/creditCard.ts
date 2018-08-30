@@ -52,7 +52,10 @@ export function create(params: {
         // }
 
         // GMOショップ情報取得
-        const movieTheater = await repos.organization.findById(factory.organizationType.MovieTheater, transaction.seller.id);
+        const movieTheater = await repos.organization.findById({
+            typeOf: factory.organizationType.MovieTheater,
+            id: transaction.seller.id
+        });
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {

@@ -163,7 +163,7 @@ describe('注文を検索する', () => {
             orderDateFrom: new Date(),
             orderDateThrough: new Date(),
             confirmationNumbers: ['confirmationNumber'],
-            reservedEventIdentifiers: ['identifier']
+            reservedEventIds: ['id']
         });
         assert(Array.isArray(result));
         sandbox.verify();

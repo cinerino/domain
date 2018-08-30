@@ -209,10 +209,10 @@ export function confirm(
             throw new factory.errors.NotFound('customerContact');
         }
 
-        const seller = await repos.organization.findById(
-            <factory.organizationType.MovieTheater>placeOrderTransaction.seller.typeOf,
-            placeOrderTransaction.seller.id
-        );
+        const seller = await repos.organization.findById({
+            typeOf: <factory.organizationType.MovieTheater>placeOrderTransaction.seller.typeOf,
+            id: placeOrderTransaction.seller.id
+        });
 
         const actionsOnOrder = await repos.action.findByOrderNumber(placeOrderTransactionResult.order.orderNumber);
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder

@@ -68,7 +68,7 @@ export function start(params: IStartParams):
         transaction: TransactionRepo;
     }) => {
         // 売り手を取得
-        const seller = await repos.organization.findById(params.seller.typeOf, params.seller.id);
+        const seller = await repos.organization.findById({ typeOf: params.seller.typeOf, id: params.seller.id });
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
@@ -266,10 +266,10 @@ export function confirm(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const seller = await repos.organization.findById(
-            <factory.organizationType.MovieTheater>transaction.seller.typeOf,
-            transaction.seller.id
-        );
+        const seller = await repos.organization.findById({
+            typeOf: <factory.organizationType.MovieTheater>transaction.seller.typeOf,
+            id: transaction.seller.id
+        });
         debug('seller found.', seller.identifier);
 
         const customerContact = transaction.object.customerContact;

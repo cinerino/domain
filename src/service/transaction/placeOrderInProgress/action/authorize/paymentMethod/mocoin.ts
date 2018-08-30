@@ -89,7 +89,10 @@ export function create(params: {
             mocoinEndpoint = repos.transferService.options.endpoint;
 
             // 組織から転送先口座IDを取得する
-            const seller = await repos.organization.findById(transaction.seller.typeOf, transaction.seller.id);
+            const seller = await repos.organization.findById({
+                typeOf: transaction.seller.typeOf,
+                id: transaction.seller.id
+            });
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore if */
             if (seller.paymentAccepted === undefined) {
