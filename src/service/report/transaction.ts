@@ -249,20 +249,6 @@ export function transaction2report(params: {
 
                         break;
 
-                    case 'ProgramMembership':
-                        // 会員プログラムオファーの場合
-                        item = {
-                            typeOf: offer.typeOf,
-                            ticketToken: '',
-                            totalPrice: orderItem.price,
-                            name: offer.programName,
-                            numItems: 1,
-                            reservationStatus: '',
-                            numCheckInActions: 0
-                        };
-
-                        break;
-
                     default:
                 }
 

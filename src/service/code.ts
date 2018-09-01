@@ -13,17 +13,17 @@ import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
  * コード発行
  * 所有権をコードに変換する
  */
-export function publish(params: {
-    goodType: factory.ownershipInfo.IGoodType;
-    identifier: string;
+export function publish<T extends factory.ownershipInfo.IGoodType>(params: {
+    ownedBy: { id: string };
+    typeOfGood: factory.ownershipInfo.Identifier<T>;
 }) {
     return async (repos: {
         code: CodeRepo;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
         const ownershipInfos = await repos.ownershipInfo.search({
-            goodType: params.goodType,
-            identifier: params.identifier
+            ownedBy: params.ownedBy,
+            typeOfGood: params.typeOfGood
         });
         if (ownershipInfos.length === 0) {
             throw new factory.errors.NotFound('OwnershipInfo');

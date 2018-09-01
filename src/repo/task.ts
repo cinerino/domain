@@ -3,10 +3,7 @@ import * as moment from 'moment';
 import { Connection } from 'mongoose';
 import taskModel from './mongoose/model/task';
 
-export type ITask<T extends factory.taskName> =
-    T extends factory.taskName.RegisterProgramMembership ? factory.task.registerProgramMembership.ITask :
-    factory.task.ITask;
-
+export type ITask = factory.task.ITask;
 /**
  * タスク実行時のソート条件
  * @const
@@ -26,13 +23,13 @@ export class MongoRepository {
         this.taskModel = connection.model(taskModel.modelName);
     }
 
-    public async save(taskAttributes: factory.task.IAttributes): Promise<ITask<factory.taskName>> {
+    public async save(taskAttributes: factory.task.IAttributes): Promise<ITask> {
         return this.taskModel.create(taskAttributes).then(
             (doc) => <factory.task.ITask>doc.toObject()
         );
     }
 
-    public async executeOneByName(taskName: factory.taskName): Promise<ITask<factory.taskName>> {
+    public async executeOneByName(taskName: factory.taskName): Promise<ITask> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Ready,

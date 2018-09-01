@@ -2,7 +2,7 @@
 /**
  * ownershipInfo repository test
  */
-import * as factory from '@cinerino/factory';
+// import * as factory from '@cinerino/factory';
 import { } from 'mocha';
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
@@ -36,28 +36,6 @@ describe('OwnershipInfoRepo.save()', () => {
         const result = await repository.save(<any>ownershipInfo);
 
         assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('所有権検索', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('MongoDBの状態が正常であれば、配列を返すはず', async () => {
-        const searchConditions = {
-            identifier: 'identifier',
-            goodType: factory.chevre.reservationType.EventReservation,
-            ownedBy: '',
-            ownedAt: new Date()
-        };
-        const repository = new OwnershipInfoRepo(mongoose.connection);
-        sandbox.mock(repository.ownershipInfoModel).expects('find').once()
-            .chain('exec').resolves([new repository.ownershipInfoModel()]);
-
-        const result = await repository.search(searchConditions);
-        assert(Array.isArray(result));
         sandbox.verify();
     });
 });

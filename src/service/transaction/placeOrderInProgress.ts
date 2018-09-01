@@ -15,7 +15,6 @@ import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
-import * as ProgramMembershipAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/programMembership';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
 import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/account';
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
@@ -166,10 +165,6 @@ export namespace action {
         export namespace discount {
         }
         export namespace offer {
-            /**
-             * 会員プログラム承認アクションサービス
-             */
-            export import programMembership = ProgramMembershipAuthorizeActionService;
             /**
              * 座席予約承認アクションサービス
              */
@@ -603,9 +598,7 @@ export async function createEmailMessageFromTransaction(params: {
     return new Promise<factory.creativeWork.message.email.ICreativeWork>((resolve, reject) => {
         const seller = params.transaction.seller;
         if (params.order.acceptedOffers[0].itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-            const event =
-                // tslint:disable-next-line:max-line-length
-                (<factory.chevre.reservation.event.IReservation<factory.chevre.event.screeningEvent.IEvent>>params.order.acceptedOffers[0].itemOffered).reservationFor;
+            const event = params.order.acceptedOffers[0].itemOffered.reservationFor;
 
             pug.renderFile(
                 `${__dirname}/../../../emails/sendOrder/text.pug`,
@@ -817,53 +810,13 @@ export async function createPotentialActionsFromTransaction(params: {
         };
     }
 
-    // 会員プログラムが注文アイテムにあれば、プログラム更新タスクを追加
-    const registerProgramMembershipTaskAttributes: factory.task.registerProgramMembership.IAttributes[] = [];
-    const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
-        params.order.acceptedOffers.filter(
-            (o) => o.itemOffered.typeOf === <factory.programMembership.ProgramMembershipType>'ProgramMembership'
-        );
-    if (programMembershipOffers.length > 0) {
-        registerProgramMembershipTaskAttributes.push(...programMembershipOffers.map((o) => {
-            const actionAttributes: factory.action.interact.register.programMembership.IAttributes = {
-                typeOf: factory.actionType.RegisterAction,
-                agent: params.transaction.agent,
-                object: o
-            };
-
-            // どういう期間でいくらのオファーなのか
-            const eligibleDuration = o.eligibleDuration;
-            if (eligibleDuration === undefined) {
-                throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
-            }
-            // 期間単位としては秒のみ実装
-            if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
-                throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
-            }
-            // プログラム更新日時は、今回のプログラムの所有期限
-            const runsAt = moment(params.order.orderDate).add(eligibleDuration.value, 'seconds').toDate();
-
-            return {
-                name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
-                status: factory.taskStatus.Ready,
-                runsAt: runsAt,
-                remainingNumberOfTries: 10,
-                lastTriedAt: null,
-                numberOfTried: 0,
-                executionResults: [],
-                data: actionAttributes
-            };
-        }));
-    }
-
     const sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes = {
         typeOf: factory.actionType.SendAction,
         object: params.order,
         agent: params.transaction.seller,
         recipient: params.transaction.agent,
         potentialActions: {
-            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined,
-            registerProgramMembership: registerProgramMembershipTaskAttributes
+            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined
         }
     };
 

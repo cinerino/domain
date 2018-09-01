@@ -9,11 +9,7 @@ import * as pecorino from '@pecorino/api-nodejs-client';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
-import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
-import { MongoRepository as OrganizationRepo } from '../repo/organization';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
-import { CognitoRepository as PersonRepo } from '../repo/person';
-import { MongoRepository as ProgramMembershipRepo } from '../repo/programMembership';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -21,7 +17,6 @@ import * as DeliveryService from '../service/delivery';
 import * as NotificationService from '../service/notification';
 import * as OrderService from '../service/order';
 import * as PaymentService from '../service/payment';
-import * as ProgramMembershipService from '../service/programMembership';
 import * as StockService from '../service/stock';
 import { IConnectionSettings } from './task';
 
@@ -286,40 +281,6 @@ export function returnPointAward(data: factory.task.returnPointAward.IData): IOp
         await DeliveryService.returnPointAward(data)({
             action: actionRepo,
             pecorinoAuthClient: settings.pecorinoAuthClient
-        });
-    };
-}
-export function registerProgramMembership(data: factory.task.registerProgramMembership.IData): IOperation<void> {
-    return async (settings: IConnectionSettings) => {
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (settings.redisClient === undefined) {
-            throw new Error('settings.redisClient undefined.');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (settings.cognitoIdentityServiceProvider === undefined) {
-            throw new Error('settings.cognitoIdentityServiceProvider undefined.');
-        }
-
-        await ProgramMembershipService.register(data)({
-            action: new ActionRepo(settings.connection),
-            orderNumber: new OrderNumberRepo(settings.redisClient),
-            organization: new OrganizationRepo(settings.connection),
-            ownershipInfo: new OwnershipInfoRepo(settings.connection),
-            person: new PersonRepo(settings.cognitoIdentityServiceProvider),
-            programMembership: new ProgramMembershipRepo(settings.connection),
-            registerActionInProgressRepo: new RegisterProgramMembershipActionInProgressRepo(settings.redisClient),
-            transaction: new TransactionRepo(settings.connection)
-        });
-    };
-}
-export function unRegisterProgramMembership(data: factory.task.unRegisterProgramMembership.IData): IOperation<void> {
-    return async (settings: IConnectionSettings) => {
-        await ProgramMembershipService.unRegister(data)({
-            action: new ActionRepo(settings.connection),
-            ownershipInfo: new OwnershipInfoRepo(settings.connection),
-            task: new TaskRepo(settings.connection)
         });
     };
 }

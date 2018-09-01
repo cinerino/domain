@@ -10,18 +10,16 @@ import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 
 type IOwnershipInfoWithDetail =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType>>;
-type ISearchScreeningEventReservationsOperation<T> = (repos: {
+export type ISearchScreeningEventReservationsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     reservationService: chevre.service.Reservation;
 }) => Promise<T>;
-
 /**
  * 上映イベント予約検索
  */
-export function searchScreeningEventReservations(params: {
-    personId: string;
-    ownedAt: Date;
-}): ISearchScreeningEventReservationsOperation<IOwnershipInfoWithDetail[]> {
+export function searchScreeningEventReservations(
+    params: factory.ownershipInfo.ISearchConditions<factory.chevre.reservationType.EventReservation>
+): ISearchScreeningEventReservationsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
         reservationService: chevre.service.Reservation;
@@ -29,11 +27,8 @@ export function searchScreeningEventReservations(params: {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 所有権検索
-            const ownershipInfos = await repos.ownershipInfo.search({
-                goodType: factory.chevre.reservationType.EventReservation,
-                ownedBy: params.personId,
-                ownedAt: params.ownedAt
-            });
+            const ownershipInfos = await repos.ownershipInfo.search(params);
+
             const reservationIds = ownershipInfos.map((o) => o.typeOfGood.id);
             if (reservationIds.length > 0) {
                 const searchReservationsResult = await repos.reservationService.searchScreeningEventReservations({

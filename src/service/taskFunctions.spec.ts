@@ -2,7 +2,6 @@
 /**
  * taskFunctions test
  */
-import * as AWS from 'aws-sdk';
 import * as assert from 'power-assert';
 import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
@@ -13,15 +12,11 @@ import * as TaskFunctionsService from './taskFunctions';
 let sandbox: sinon.SinonSandbox;
 let chevreAuthClient: domain.chevre.auth.ClientCredentials;
 let pecorinoAuthClient: domain.pecorinoapi.auth.ClientCredentials;
-let redisClient: redis.RedisClient;
-let cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
 
 before(() => {
     sandbox = sinon.createSandbox();
     chevreAuthClient = new domain.chevre.auth.ClientCredentials(<any>{});
     pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
-    redisClient = redis.createClient();
-    cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 });
 
 describe('TaskFunctionsService.cancelSeatReservation()', () => {
@@ -319,42 +314,6 @@ describe('TaskFunctionsService.returnPointAward()', () => {
             connection: domain.mongoose.connection,
             pecorinoEndpoint: 'pecorinoEndpoint',
             pecorinoAuthClient: pecorinoAuthClient
-        });
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('TaskFunctionsService.registerProgramMembership()', () => {
-    beforeEach(() => {
-        sandbox.restore();
-    });
-
-    it('会員プログラムサービスが正常であればエラーにならないはず', async () => {
-        const data = {};
-        sandbox.mock(domain.service.programMembership).expects('register').once().returns(async () => Promise.resolve());
-
-        const result = await TaskFunctionsService.registerProgramMembership(<any>data)({
-            connection: domain.mongoose.connection,
-            redisClient: redisClient,
-            cognitoIdentityServiceProvider: cognitoIdentityServiceProvider
-        });
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('TaskFunctionsService.unRegisterProgramMembership()', () => {
-    beforeEach(() => {
-        sandbox.restore();
-    });
-
-    it('会員プログラムサービスが正常であればエラーにならないはず', async () => {
-        const data = {};
-        sandbox.mock(domain.service.programMembership).expects('unRegister').once().returns(async () => Promise.resolve());
-
-        const result = await TaskFunctionsService.unRegisterProgramMembership(<any>data)({
-            connection: domain.mongoose.connection
         });
         assert.equal(result, undefined);
         sandbox.verify();

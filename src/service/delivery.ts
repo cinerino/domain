@@ -11,7 +11,7 @@ import * as factory from '@cinerino/factory';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
-import * as util from 'util';
+// import * as util from 'util';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
@@ -96,18 +96,6 @@ export function sendOrder(transactionId: string) {
 
             // 注文ステータス変更
             await repos.order.changeStatus(transactionResult.order.orderNumber, factory.orderStatus.OrderDelivered);
-
-            // 会員プログラムがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
-            const programMembershipOwnershipInfos =
-                <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<'ProgramMembership'>>[]>
-                ownershipInfos.filter((o) => o.typeOfGood.typeOf === 'ProgramMembership');
-            await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
-                const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
-                await repos.registerActionInProgressRepo.unlock({
-                    membershipNumber: <string>memberOf.membershipNumber,
-                    programMembershipId: <string>o.typeOfGood.id
-                });
-            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -136,43 +124,20 @@ export function createOwnershipInfosFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
 }): factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[] {
-    return params.order.acceptedOffers.map((acceptedOffer, offerIndex) => {
+    return params.order.acceptedOffers.map((acceptedOffer) => {
         const itemOffered = acceptedOffer.itemOffered;
         let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
         // ownershipInfoのidentifierはコレクション内でuniqueである必要があるので、この仕様には要注意
-        const identifier = util.format(
-            '%s-%s-%s',
-            itemOffered.typeOf,
-            params.order.orderNumber,
-            offerIndex
-        );
+        // const identifier = util.format(
+        //     '%s-%s-%s',
+        //     itemOffered.typeOf,
+        //     params.order.orderNumber,
+        //     offerIndex
+        // );
         const ownedFrom = params.order.orderDate;
         let ownedThrough: Date;
 
         switch (itemOffered.typeOf) {
-            case 'ProgramMembership':
-                // どういう期間でいくらのオファーなのか
-                const eligibleDuration = acceptedOffer.eligibleDuration;
-                if (eligibleDuration === undefined) {
-                    throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
-                }
-                // 期間単位としては秒のみ実装
-                if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
-                    throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
-                }
-                ownedThrough = moment(params.order.orderDate).add(eligibleDuration.value, 'seconds').toDate();
-                ownershipInfo = {
-                    typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                    identifier: identifier,
-                    ownedBy: params.transaction.agent,
-                    acquiredFrom: params.transaction.seller,
-                    ownedFrom: ownedFrom,
-                    ownedThrough: ownedThrough,
-                    typeOfGood: itemOffered
-                };
-
-                break;
-
             case factory.chevre.reservationType.EventReservation:
                 // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
                 // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
@@ -180,7 +145,7 @@ export function createOwnershipInfosFromTransaction(params: {
                 ownedThrough = itemOffered.reservationFor.endDate;
                 ownershipInfo = {
                     typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                    identifier: identifier,
+                    // identifier: identifier,
                     ownedBy: params.transaction.agent,
                     acquiredFrom: params.transaction.seller,
                     ownedFrom: ownedFrom,
@@ -244,11 +209,6 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
                     };
                     taskAttributes.push(sendEmailMessageTask);
                 }
-            }
-
-            // 会員プログラム更新タスクがあれば追加
-            if (Array.isArray(potentialActions.registerProgramMembership)) {
-                taskAttributes.push(...potentialActions.registerProgramMembership);
             }
         }
 
