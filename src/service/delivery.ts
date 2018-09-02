@@ -126,13 +126,6 @@ export function createOwnershipInfosFromTransaction(params: {
     return params.order.acceptedOffers.map((acceptedOffer) => {
         const itemOffered = acceptedOffer.itemOffered;
         let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
-        // ownershipInfoのidentifierはコレクション内でuniqueである必要があるので、この仕様には要注意
-        // const identifier = util.format(
-        //     '%s-%s-%s',
-        //     itemOffered.typeOf,
-        //     params.order.orderNumber,
-        //     offerIndex
-        // );
         const ownedFrom = params.order.orderDate;
         let ownedThrough: Date;
 

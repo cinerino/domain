@@ -80,7 +80,7 @@ export function start(params: IStartParams):
             }
 
             // スコープを判別
-            if (!validatePassport(passport, seller.identifier)) {
+            if (!validatePassport(passport, seller.id)) {
                 throw new factory.errors.Argument('passportToken', 'Invalid passport.');
             }
         } else {
@@ -265,7 +265,7 @@ export function confirm(params: {
             typeOf: <factory.organizationType.MovieTheater>transaction.seller.typeOf,
             id: transaction.seller.id
         });
-        debug('seller found.', seller.identifier);
+        debug('seller found.', seller.id);
 
         const customerContact = transaction.object.customerContact;
         if (customerContact === undefined) {
@@ -439,7 +439,6 @@ export function createOrderFromTransaction(params: {
     const cutomerContact = params.transaction.object.customerContact;
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
-        identifier: params.transaction.seller.identifier,
         name: params.transaction.seller.name.ja,
         legalName: params.transaction.seller.legalName,
         typeOf: params.transaction.seller.typeOf,

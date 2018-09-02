@@ -51,19 +51,6 @@ export class MongoRepository {
 
         return doc.toObject();
     }
-    /**
-     * 劇場を保管する
-     */
-    public async openMovieTheaterShop(movieTheater: factory.organization.movieTheater.IOrganization) {
-        await this.organizationModel.findOneAndUpdate(
-            {
-                identifier: movieTheater.identifier,
-                typeOf: factory.organizationType.MovieTheater
-            },
-            movieTheater,
-            { upsert: true }
-        ).exec();
-    }
     public async countMovieTheaters(params: factory.organization.movieTheater.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params);
 

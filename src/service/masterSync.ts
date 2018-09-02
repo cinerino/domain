@@ -10,7 +10,6 @@ import { google } from 'googleapis';
 
 import { Repository as CreativeWorkRepo } from '../repo/creativeWork';
 import { MongoRepository as EventRepo } from '../repo/event';
-import { Repository as PlaceRepo } from '../repo/place';
 
 const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
@@ -72,7 +71,6 @@ export function importScreeningEvents(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
-        place: PlaceRepo;
         eventService: chevre.service.Event;
     }) => {
         // 上映スケジュール取得
@@ -113,20 +111,6 @@ export function importScreeningEvents(params: {
             }
         }));
         debug(`${screeningEvents.length} screeningEvents stored.`);
-    };
-}
-/**
- * 劇場インポート
- */
-export function importMovieTheater(params: { branchCode: string }) {
-    return async (repos: {
-        place: PlaceRepo;
-        placeService: chevre.service.Place;
-    }) => {
-        const movieTheater = await repos.placeService.findMovieTheaterByBranchCode({ branchCode: params.branchCode });
-        debug('storing movieTheater...', movieTheater);
-        await repos.place.saveMovieTheater(movieTheater);
-        debug('movieTheater stored.');
     };
 }
 export async function findMovieImage(params: {

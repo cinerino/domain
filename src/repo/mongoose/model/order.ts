@@ -186,12 +186,12 @@ schema.index(
 );
 schema.index(
     {
-        'acceptedOffers.itemOffered.reservationFor.identifier': 1
+        'acceptedOffers.itemOffered.reservationFor.id': 1
     },
     {
         name: 'searchOrdersByReservedEvent',
         partialFilterExpression: {
-            'acceptedOffers.itemOffered.reservationFor.identifier': { $exists: true }
+            'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
         }
     }
 );

@@ -5,7 +5,6 @@
 import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as CodeRepo } from './repo/code';
-import { MongoRepository as CreativeWorkRepo } from './repo/creativeWork';
 import { MongoRepository as EventRepo } from './repo/event';
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { MongoRepository as OrderRepo } from './repo/order';
@@ -13,7 +12,6 @@ import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
 import { CognitoRepository as PersonRepo } from './repo/person';
-import { MongoRepository as PlaceRepo } from './repo/place';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
 import { MongoRepository as SendGridEventRepo } from './repo/sendGridEvent';
 import { MongoRepository as TaskRepo } from './repo/task';
@@ -25,7 +23,6 @@ export class Action extends ActionRepo { }
 export namespace action {
 }
 export class Code extends CodeRepo { }
-export class CreativeWork extends CreativeWorkRepo { }
 export class Event extends EventRepo { }
 export class GMONotification extends GMONotificationRepo { }
 export class Order extends OrderRepo { }
@@ -33,7 +30,6 @@ export class OrderNumber extends OrderNumberRepo { }
 export class Organization extends OrganizationRepo { }
 export class OwnershipInfo extends OwnershipInfoRepo { }
 export class Person extends PersonRepo { }
-export class Place extends PlaceRepo { }
 export class ProgramMembership extends ProgramMembershipRepo { }
 export class SendGridEvent extends SendGridEventRepo { }
 export class Task extends TaskRepo { }

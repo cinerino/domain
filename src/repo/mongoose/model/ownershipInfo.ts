@@ -39,7 +39,6 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        identifier: String,
         ownedBy: ownedBySchema,
         acquiredFrom: acquiredFromSchema,
         ownedFrom: Date,
@@ -60,12 +59,6 @@ const schema = new mongoose.Schema(
         toJSON: { getters: true },
         toObject: { getters: true }
     }
-);
-
-// identifierはユニーク
-schema.index(
-    { identifier: 1 },
-    { unique: true }
 );
 
 // 所有権検索時に使用

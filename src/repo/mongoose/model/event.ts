@@ -41,7 +41,6 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        identifier: String,
         name: MultilingualStringSchemaType,
         description: MultilingualStringSchemaType,
         doorTime: Date,
@@ -88,25 +87,12 @@ schema.index(
         }
     }
 );
-schema.index(
-    {
-        typeOf: 1,
-        'superEvent.location.identifier': 1,
-        startDate: 1
-    },
-    {
-        partialFilterExpression: {
-            'superEvent.location.identifier': { $exists: true }
-        },
-        name: 'searchScreeningEventsConditions'
-    }
-);
 schema.index({ typeOf: 1, startDate: 1 });
 schema.index({ typeOf: 1, endDate: 1 });
 
 // 上映イベント取得に使用
 schema.index(
-    { identifier: 1, typeOf: 1 }
+    { _id: 1, typeOf: 1 }
 );
 
 export default mongoose.model('Event', schema).on(

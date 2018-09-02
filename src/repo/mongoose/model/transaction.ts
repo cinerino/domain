@@ -264,12 +264,12 @@ schema.index(
     {
         typeOf: 1,
         status: 1,
-        'result.order.acceptedOffers.itemOffered.reservationFor.identifier': 1
+        'result.order.acceptedOffers.itemOffered.reservationFor.id': 1
     },
     {
         name: 'searchPlaceOrderByEvent',
         partialFilterExpression: {
-            'result.order.acceptedOffers.itemOffered.reservationFor.identifier': { $exists: true }
+            'result.order.acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
         }
     }
 );
