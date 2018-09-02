@@ -13,53 +13,6 @@ import { MongoRepository as EventRepo } from '../repo/event';
 
 const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
-
-/**
- * 映画作品インポート
- */
-export function importMovies(params: {
-    locationBranchCode: string;
-    importFrom: Date;
-    importThrough: Date;
-}) {
-    return async (repos: {
-        creativeWork: CreativeWorkRepo;
-        eventService: chevre.service.Event;
-    }) => {
-        // 上映イベントシリーズ検索
-        const searchScreeningEventSeriesResult = await repos.eventService.searchScreeningEventSeries({
-            inSessionFrom: params.importFrom,
-            inSessionThrough: params.importThrough,
-            location: {
-                branchCodes: [params.locationBranchCode]
-            }
-        });
-        const screeningEventSeries = searchScreeningEventSeriesResult.data;
-        debug('importing', screeningEventSeries.length, 'screeningEventSeries...');
-        // 永続化
-        await Promise.all(screeningEventSeries.map(async (series) => {
-            const thumbnail = await findMovieImage({ query: series.workPerformed.name });
-            const movie: factory.creativeWork.movie.ICreativeWork = {
-                typeOf: factory.creativeWorkType.Movie,
-                identifier: <string>series.identifier,
-                name: series.workPerformed.name,
-                duration: <string>series.duration,
-                contentRating: []
-                // description?: string;
-                // copyrightHolder?: ICopyrightHolder;
-                // copyrightYear?: number;
-                // datePublished?: Date;
-                // license?: string;
-            };
-            if (thumbnail !== undefined) {
-                movie.thumbnailUrl = thumbnail;
-            }
-            debug('storing movie...', movie);
-            await repos.creativeWork.saveMovie(movie);
-            debug('movie stored.');
-        }));
-    };
-}
 /**
  * 上映イベントをインポートする
  */
