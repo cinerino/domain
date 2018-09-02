@@ -3,57 +3,29 @@
  */
 import * as factory from '@cinerino/factory';
 import * as jwt from 'jsonwebtoken';
-import * as uuid from 'uuid';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { RedisRepository as CodeRepo } from '../repo/code';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
+import { ICode, RedisRepository as CodeRepo } from '../repo/code';
 
+export type IToken = string;
 /**
- * コード発行
- * 所有権をコードに変換する
- */
-export function publish<T extends factory.ownershipInfo.IGoodType>(params: {
-    ownedBy: { id: string };
-    typeOfGood: factory.ownershipInfo.Identifier<T>;
-}) {
-    return async (repos: {
-        code: CodeRepo;
-        ownershipInfo: OwnershipInfoRepo;
-    }) => {
-        const ownershipInfos = await repos.ownershipInfo.search({
-            ownedBy: params.ownedBy,
-            typeOfGood: params.typeOfGood
-        });
-        if (ownershipInfos.length === 0) {
-            throw new factory.errors.NotFound('OwnershipInfo');
-        }
-        const ownershipInfo = ownershipInfos[0];
-        const code = uuid.v4();
-        await repos.code.save({ code: code, data: ownershipInfo });
-
-        return code;
-    };
-}
-/**
- * コード検証
- * コードの有効性を確認し、所有権トークンを発行する
+ * コードをトークンに変換する
  */
 export function getToken(params: {
-    code: string;
+    code: ICode;
     secret: string;
     issuer: string;
     expiresIn: number;
 }) {
     return async (repos: {
         code: CodeRepo;
-    }) => {
-        const ownershipInfo = await repos.code.findOne(params.code);
+    }): Promise<IToken> => {
+        const data = await repos.code.findOne({ code: params.code });
 
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<IToken>((resolve, reject) => {
             // 所有権を暗号化する
             jwt.sign(
-                ownershipInfo,
+                data,
                 params.secret,
                 {
                     issuer: params.issuer,
@@ -87,16 +59,16 @@ export function verifyToken<T>(params: {
             }
         };
         const action = await repos.action.start(actionAttributes);
-        let result: any;
+        let result: T;
         try {
-            result = await new Promise<any>((resolve, reject) => {
+            result = await new Promise<T>((resolve, reject) => {
                 jwt.verify(
                     params.token,
                     params.secret,
                     {
                         issuer: params.issuer
                     },
-                    (err, decoded) => {
+                    (err, decoded: any) => {
                         if (err instanceof Error) {
                             reject(err);
                         } else {

@@ -9,7 +9,7 @@ import * as moment from 'moment';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 /**
  * 口座支払実行

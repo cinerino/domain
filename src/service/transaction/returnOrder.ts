@@ -12,7 +12,7 @@ import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;

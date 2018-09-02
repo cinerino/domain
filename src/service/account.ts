@@ -5,6 +5,7 @@
 import * as factory from '@cinerino/factory';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
+import * as uuid from 'uuid';
 
 import { handlePecorinoError } from '../errorHandler';
 import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';
@@ -48,9 +49,7 @@ export function open<T extends factory.accountType>(params: {
             });
             const ownershipInfo: IOwnershipInfo = {
                 typeOf: 'OwnershipInfo',
-                // 十分にユニーク
-                // tslint:disable-next-line:max-line-length
-                // identifier: `${factory.ownershipInfo.AccountGoodType.Account}-${account.accountType}-${account.accountNumber}`,
+                id: uuid.v4(),
                 typeOfGood: {
                     typeOf: factory.ownershipInfo.AccountGoodType.Account,
                     accountType: account.accountType,

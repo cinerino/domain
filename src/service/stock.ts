@@ -6,7 +6,7 @@ import * as factory from '@cinerino/factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 
-// const debug = createDebug('cinerino-domain:*');
+// const debug = createDebug('cinerino-domain:service');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 

@@ -12,7 +12,7 @@ import { MongoRepository as GMONotificationRepo } from '../../repo/gmoNotificati
 export type GMONotificationOperation<T> = (gmoNotificationRepository: GMONotificationRepo) => Promise<T>;
 export type IGMOResultNotification = GMO.factory.resultNotification.creditCard.IResultNotification;
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 /**
  * GMO売上健康診断レポートインターフェース

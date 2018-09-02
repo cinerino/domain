@@ -12,7 +12,7 @@ import { Repository as CreativeWorkRepo } from '../repo/creativeWork';
 import { MongoRepository as EventRepo } from '../repo/event';
 import { Repository as PlaceRepo } from '../repo/place';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
 
 /**

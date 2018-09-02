@@ -11,16 +11,16 @@ import * as factory from '@cinerino/factory';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
+import * as uuid from 'uuid';
 // import * as util from 'util';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { RedisRepository as RegisterProgramMembershipActionInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 
@@ -35,7 +35,6 @@ export function sendOrder(transactionId: string) {
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipActionInProgressRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
         reserveService: chevre.service.transaction.Reserve;
@@ -145,7 +144,7 @@ export function createOwnershipInfosFromTransaction(params: {
                 ownedThrough = itemOffered.reservationFor.endDate;
                 ownershipInfo = {
                     typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                    // identifier: identifier,
+                    id: uuid.v4(),
                     ownedBy: params.transaction.agent,
                     acquiredFrom: params.transaction.seller,
                     ownedFrom: ownedFrom,

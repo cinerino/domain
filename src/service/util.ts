@@ -4,7 +4,7 @@
 import * as azureStorage from 'azure-storage';
 import * as createDebug from 'debug';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 /**
  * ファイルをアップロードする

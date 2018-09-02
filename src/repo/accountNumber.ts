@@ -4,7 +4,7 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as redis from 'redis';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 口座番号リポジトリー

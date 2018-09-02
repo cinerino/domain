@@ -3,7 +3,7 @@ import * as createDebug from 'debug';
 import { Connection } from 'mongoose';
 import programMembershipModel from './mongoose/model/programMembership';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 会員プログラムリポジトリー

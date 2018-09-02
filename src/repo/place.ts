@@ -3,7 +3,7 @@ import * as createDebug from 'debug';
 import { Connection } from 'mongoose';
 import placeModel from './mongoose/model/place';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 場所抽象リポジトリー

@@ -34,6 +34,7 @@ const typeOfGoodSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        _id: String,
         typeOf: {
             type: String,
             required: true

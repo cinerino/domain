@@ -59,7 +59,7 @@ export interface ISettings extends IConnectionSettings {
 export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
 export type IExecuteOperation<T> = (settings: ISettings) => Promise<T>;
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
 

@@ -20,7 +20,7 @@ import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/ac
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
 import * as MocoinAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/mocoin';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type IOrganizationAndTransactionAndTransactionCountOperation<T> = (repos: {

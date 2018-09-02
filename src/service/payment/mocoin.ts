@@ -9,7 +9,7 @@ import * as createDebug from 'debug';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 // import { MongoRepository as TaskRepo } from '../../repo/task';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 /**
  * Mocoin支払実行

@@ -4,7 +4,6 @@ import ownershipInfoModel from './mongoose/model/ownershipInfo';
 
 export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<T>>;
-
 /**
  * 所有権リポジトリー
  */
@@ -13,6 +12,7 @@ export class MongoRepository {
     constructor(connection: Connection) {
         this.ownershipInfoModel = connection.model(ownershipInfoModel.modelName);
     }
+    // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS<T extends factory.ownershipInfo.IGoodType>(
         params: factory.ownershipInfo.ISearchConditions<T>
     ) {
@@ -81,6 +81,13 @@ export class MongoRepository {
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.ids !== undefined) {
+            andConditions.push({
+                _id: { $in: params.ids }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (params.ownedBy !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
@@ -114,7 +121,15 @@ export class MongoRepository {
      * 所有権情報を保管する
      */
     public async save(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
-        await this.ownershipInfoModel.create(ownershipInfo);
+        await this.ownershipInfoModel.create({ ...ownershipInfo, _id: ownershipInfo.id });
+    }
+    public async findById(params: { id: string }): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
+        const doc = await this.ownershipInfoModel.findById(params.id).exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound('OwnershipInfo');
+        }
+
+        return doc.toObject();
     }
     public async count<T extends factory.ownershipInfo.IGoodType>(
         params: factory.ownershipInfo.ISearchConditions<T>

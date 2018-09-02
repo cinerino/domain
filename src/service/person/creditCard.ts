@@ -5,7 +5,7 @@ import * as factory from '@cinerino/factory';
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export type IOperation<T> = () => Promise<T>;
 export type IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;

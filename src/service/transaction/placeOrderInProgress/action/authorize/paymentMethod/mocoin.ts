@@ -12,7 +12,7 @@ import { MongoRepository as TransactionRepo } from '../../../../../../repo/trans
 
 import { handlePecorinoError } from '../../../../../../errorHandler';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;

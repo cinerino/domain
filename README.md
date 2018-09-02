@@ -23,19 +23,19 @@ npm install @cinerino/domain
 
 ### Environment variables
 
-| Name                                 | Required | Value    | Purpose                |
-|--------------------------------------|----------|----------|------------------------|
-| `DEBUG`                              | false    | domain:* | Debug                  |
-| `NODE_ENV`                           | true     |          | environment name       |
-| `MONGOLAB_URI`                       | true     |          | MongoDB connection URI |
-| `SENDGRID_API_KEY`                   | true     |          | SendGrid API Key       |
-| `GMO_ENDPOINT`                       | true     |          | GMO API endpoint       |
-| `GMO_SITE_ID`                        | true     |          | GMO SiteID             |
-| `GMO_SITE_PASS`                      | true     |          | GMO SitePass           |
-| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN` | true     |          | 開発者通知用LINEアクセストークン     |
-| `WAITER_SECRET`                      | true     |          | WAITER許可証トークン秘密鍵       |
-| `WAITER_PASSPORT_ISSUER`             | true     |          | WAITER許可証発行者           |
-| `ORDER_INQUIRY_ENDPOINT`             | true     |          | 注文照会エンドポイント            |
+| Name                                 | Required | Value             | Purpose                |
+|--------------------------------------|----------|-------------------|------------------------|
+| `DEBUG`                              | false    | cinerino-domain:* | Debug                  |
+| `NODE_ENV`                           | true     |                   | environment name       |
+| `MONGOLAB_URI`                       | true     |                   | MongoDB connection URI |
+| `SENDGRID_API_KEY`                   | true     |                   | SendGrid API Key       |
+| `GMO_ENDPOINT`                       | true     |                   | GMO API endpoint       |
+| `GMO_SITE_ID`                        | true     |                   | GMO SiteID             |
+| `GMO_SITE_PASS`                      | true     |                   | GMO SitePass           |
+| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN` | true     |                   | 開発者通知用LINEアクセストークン     |
+| `WAITER_SECRET`                      | true     |                   | WAITER許可証トークン秘密鍵       |
+| `WAITER_PASSPORT_ISSUER`             | true     |                   | WAITER許可証発行者           |
+| `ORDER_INQUIRY_ENDPOINT`             | true     |                   | 注文照会エンドポイント            |
 
 ### Search screening events sample
 

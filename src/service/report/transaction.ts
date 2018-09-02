@@ -9,7 +9,7 @@ import * as util from 'util';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:service');
 
 export type ITaskAndTransactionOperation<T> = (repos: {
     task: TaskRepo;

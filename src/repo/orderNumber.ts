@@ -4,7 +4,7 @@ import * as moment from 'moment-timezone';
 import * as redis from 'redis';
 import * as util from 'util';
 
-const debug = createDebug('cinerino-domain:*');
+const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 注文番号Redisリポジトリー

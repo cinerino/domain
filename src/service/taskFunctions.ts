@@ -7,7 +7,6 @@ import * as factory from '@cinerino/factory';
 import * as pecorino from '@pecorino/api-nodejs-client';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { RedisRepository as RegisterProgramMembershipActionInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -247,7 +246,6 @@ export function sendOrder(data: factory.task.returnOrder.IData): IOperation<void
             action: actionRepo,
             order: orderRepo,
             ownershipInfo: ownershipInfoRepo,
-            registerActionInProgressRepo: new RegisterProgramMembershipActionInProgressRepo(settings.redisClient),
             transaction: transactionRepo,
             task: taskRepo,
             reserveService: reserveService
