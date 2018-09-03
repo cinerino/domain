@@ -93,7 +93,7 @@ export function start(params: {
             throw new factory.errors.Argument('transaction', 'order status is not OrderDelivered');
         }
 
-        const actionsOnOrder = await repos.action.findByOrderNumber(order.orderNumber);
+        const actionsOnOrder = await repos.action.findByOrderNumber({ orderNumber: order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
@@ -214,7 +214,7 @@ export function confirm(
             id: placeOrderTransaction.seller.id
         });
 
-        const actionsOnOrder = await repos.action.findByOrderNumber(placeOrderTransactionResult.order.orderNumber);
+        const actionsOnOrder = await repos.action.findByOrderNumber({ orderNumber: placeOrderTransactionResult.order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
@@ -400,7 +400,7 @@ export function exportTasks(status: factory.transactionStatusType) {
         }
 
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        await exportTasksById(transaction.id)(repos);
+        await exportTasksById({ transactionId: transaction.id })(repos);
 
         await repos.transaction.setTasksExportedById(transaction.id);
     };
@@ -409,13 +409,13 @@ export function exportTasks(status: factory.transactionStatusType) {
 /**
  * ID指定で取引のタスク出力
  */
-export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask[]> {
+export function exportTasksById(params: { transactionId: string }): ITaskAndTransactionOperation<factory.task.ITask[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, transactionId);
+        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, params.transactionId);
 
         const taskAttributes: factory.task.IAttributes[] = [];
         switch (transaction.status) {

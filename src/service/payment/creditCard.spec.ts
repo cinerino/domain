@@ -291,7 +291,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
         sandbox.mock(taskRepo).expects('save').once();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard(returnOrderTransaction.id)({
+        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo
@@ -323,7 +323,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
         sandbox.mock(actionRepo).expects('start').never();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard(returnOrderTransaction.id)({
+        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo
@@ -363,7 +363,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
         sandbox.mock(actionRepo).expects('start').never();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard(returnOrderTransaction.id)({
+        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo
@@ -391,7 +391,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
         sandbox.mock(actionRepo).expects('start').never();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard(returnOrderTransaction.id)({
+        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo
@@ -440,7 +440,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').never();
         sandbox.mock(taskRepo).expects('save').once();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard(returnOrderTransaction.id)({
+        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo
@@ -490,7 +490,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects(alterTranResult);
         sandbox.mock(taskRepo).expects('save').never();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard(returnOrderTransaction.id)({
+        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo

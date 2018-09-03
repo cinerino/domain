@@ -29,7 +29,7 @@ export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction
  * COAに本予約連携を行い、内部的には所有権を作成する
  * @param transactionId 注文取引ID
  */
-export function sendOrder(transactionId: string) {
+export function sendOrder(params: { transactionId: string }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -39,7 +39,7 @@ export function sendOrder(transactionId: string) {
         task: TaskRepo;
         reserveService: chevre.service.transaction.Reserve;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, transactionId);
+        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -331,7 +331,7 @@ export function cancelPointAward(params: {
     }) => {
         // ポイントインセンティブ承認アクションを取得
         const authorizeActions = <factory.action.authorize.award.point.IAction[]>
-            await repos.action.findAuthorizeByTransactionId(params.transactionId)
+            await repos.action.findAuthorizeByTransactionId({ transactionId: params.transactionId })
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)

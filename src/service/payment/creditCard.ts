@@ -13,14 +13,13 @@ const debug = createDebug('cinerino-domain:service');
 
 /**
  * クレジットカード売上確定
- * @param transactionId 取引ID
  */
-export function payCreditCard(transactionId: string) {
+export function payCreditCard(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, transactionId);
+        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -106,13 +105,12 @@ export function payCreditCard(transactionId: string) {
 
 /**
  * クレジットカードオーソリ取消
- * @param transactionId 取引ID
  */
-export function cancelCreditCardAuth(transactionId: string) {
+export function cancelCreditCardAuth(params: { transactionId: string }) {
     return async (repos: { action: ActionRepo }) => {
         // クレジットカード仮売上アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
-            await repos.action.findAuthorizeByTransactionId(transactionId)
+            await repos.action.findAuthorizeByTransactionId(params)
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -141,15 +139,14 @@ export function cancelCreditCardAuth(transactionId: string) {
 
 /**
  * 注文返品取引からクレジットカード返金処理を実行する
- * @param transactionId 注文返品取引ID
  */
-export function refundCreditCard(transactionId: string) {
+export function refundCreditCard(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, transactionId);
+        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, params.transactionId);
         const potentialActions = transaction.potentialActions;
         const placeOrderTransaction = transaction.object.transaction;
         const placeOrderTransactionResult = placeOrderTransaction.result;

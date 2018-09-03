@@ -70,7 +70,7 @@ export function payAccount(params: factory.task.payAccount.IData) {
  * Pecorinoオーソリ取消
  * @param transactionId 取引ID
  */
-export function cancelAccountAuth(transactionId: string) {
+export function cancelAccountAuth(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
         withdrawService: pecorinoapi.service.transaction.Withdraw;
@@ -78,39 +78,34 @@ export function cancelAccountAuth(transactionId: string) {
     }) => {
         // 口座承認アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
-            await repos.action.findAuthorizeByTransactionId(
-                transactionId
-            ).then((actions) => actions
+            await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
                 .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             );
         await Promise.all(authorizeActions.map(async (action) => {
-            // 承認アクション結果は基本的に必ずあるはず
             // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (action.result === undefined) {
-                throw new factory.errors.NotFound('action.result');
-            }
+            /* istanbul ignore else */
+            if (action.result !== undefined) {
+                switch (action.result.pendingTransaction.typeOf) {
+                    case pecorinoapi.factory.transactionType.Withdraw:
+                        await repos.withdrawService.cancel({
+                            transactionId: action.result.pendingTransaction.id
+                        });
+                        break;
 
-            switch (action.result.pendingTransaction.typeOf) {
-                case pecorinoapi.factory.transactionType.Withdraw:
-                    await repos.withdrawService.cancel({
-                        transactionId: action.result.pendingTransaction.id
-                    });
-                    break;
+                    case pecorinoapi.factory.transactionType.Transfer:
+                        await repos.transferService.cancel({
+                            transactionId: action.result.pendingTransaction.id
+                        });
+                        break;
 
-                case pecorinoapi.factory.transactionType.Transfer:
-                    await repos.transferService.cancel({
-                        transactionId: action.result.pendingTransaction.id
-                    });
-                    break;
-
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-                    throw new factory.errors.NotImplemented(
-                        `transaction type '${(<any>action.result.pendingTransaction).typeOf}' not implemented.`
-                    );
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore next */
+                    default:
+                        throw new factory.errors.NotImplemented(
+                            `transaction type '${(<any>action.result.pendingTransaction).typeOf}' not implemented.`
+                        );
+                }
             }
         }));
     };

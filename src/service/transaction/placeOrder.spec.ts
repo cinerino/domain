@@ -85,7 +85,7 @@ describe('exportTasksById()', () => {
         sandbox.mock(taskRepo).expects('save').exactly(numberOfTasks).resolves();
 
         const result = await domain.service.transaction.placeOrder.exportTasksById(
-            transaction.id
+            { transactionId: transaction.id }
         )({
             task: taskRepo,
             transaction: transactionRepo
@@ -108,84 +108,12 @@ describe('exportTasksById()', () => {
         sandbox.mock(taskRepo).expects('save').never();
 
         const result = await domain.service.transaction.placeOrder.exportTasksById(
-            transaction.id
+            { transactionId: transaction.id }
         )({
             task: taskRepo,
             transaction: transactionRepo
         }).catch((err) => err);
         assert(result instanceof domain.factory.errors.NotImplemented);
-        sandbox.verify();
-    });
-});
-
-describe('sendEmail', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('DBが正常であれば、タスクが登録されるはず', async () => {
-        const transaction = {
-            id: 'id',
-            status: domain.factory.transactionStatusType.Confirmed,
-            seller: {},
-            agent: {},
-            result: { order: {} }
-        };
-        const emailMessageAttributes = {
-            sender: { name: 'name', email: 'test@example.com' },
-            toRecipient: { name: 'name', email: 'test@example.com' },
-            about: 'about',
-            text: 'text'
-        };
-        const task = {};
-
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').once().resolves(task);
-
-        const result = await domain.service.transaction.placeOrder.sendEmail(
-            transaction.id,
-            <any>emailMessageAttributes
-        )({
-            task: taskRepo,
-            transaction: transactionRepo
-        });
-
-        assert(typeof result === 'object');
-        sandbox.verify();
-    });
-
-    it('取引ステータスが確定済でなければ、Forbiddenエラーになるはず', async () => {
-        const transaction = {
-            id: 'id',
-            status: domain.factory.transactionStatusType.InProgress,
-            seller: {},
-            agent: {}
-        };
-        const emailMessageAttributes = {
-            sender: { name: 'name', email: 'test@example.com' },
-            toRecipient: { name: 'name', email: 'test@example.com' },
-            about: 'about',
-            text: 'text'
-        };
-
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').never();
-
-        const result = await domain.service.transaction.placeOrder.sendEmail(
-            transaction.id,
-            <any>emailMessageAttributes
-        )({
-            task: taskRepo,
-            transaction: transactionRepo
-        }).catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
     });
 });

@@ -8,12 +8,10 @@ export type ITransactionAttributes<T> =
     T extends factory.transactionType.PlaceOrder ? factory.transaction.placeOrder.IAttributes :
     T extends factory.transactionType.ReturnOrder ? factory.transaction.returnOrder.IAttributes :
     never;
-
 export type ITransaction<T> =
     T extends factory.transactionType.PlaceOrder ? factory.transaction.placeOrder.ITransaction :
     T extends factory.transactionType.ReturnOrder ? factory.transaction.returnOrder.ITransaction :
     never;
-
 /**
  * 取引検索条件インターフェース
  */
@@ -31,17 +29,14 @@ export interface ISearchConditions<T extends factory.transactionType> {
      */
     startThrough: Date;
 }
-
 /**
  * 取引リポジトリー
  */
 export class MongoRepository {
     public readonly transactionModel: typeof TransactionModel;
-
     constructor(connection: Connection) {
         this.transactionModel = connection.model(TransactionModel.modelName);
     }
-
     /**
      * 取引を開始する
      */
@@ -58,7 +53,6 @@ export class MongoRepository {
             tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
         }).then((doc) => doc.toObject());
     }
-
     /**
      * IDで取引を取得する
      * @param transactionId 取引ID
@@ -71,14 +65,12 @@ export class MongoRepository {
             _id: transactionId,
             typeOf: typeOf
         }).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('transaction');
+            throw new factory.errors.NotFound('Transaction');
         }
 
         return doc.toObject();
     }
-
     /**
      * 進行中の取引を取得する
      */
@@ -91,14 +83,12 @@ export class MongoRepository {
             typeOf: typeOf,
             status: factory.transactionStatusType.InProgress
         }).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
+            throw new factory.errors.NotFound('Transaction');
         }
 
         return doc.toObject();
     }
-
     /**
      * 取引中の所有者プロフィールを変更する
      * 匿名所有者として開始した場合のみ想定(匿名か会員に変更可能)
@@ -117,12 +107,10 @@ export class MongoRepository {
                 'object.customerContact': contact
             }
         ).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
+            throw new factory.errors.NotFound('Transaction');
         }
     }
-
     /**
      * 注文取引を確定する
      * @param transactionId transaction id
@@ -150,14 +138,23 @@ export class MongoRepository {
             },
             { new: true }
         ).exec();
-
+        // NotFoundであれば取引状態確認
         if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
+            const transaction = await this.findById(factory.transactionType.PlaceOrder, transactionId);
+            if (transaction.status === factory.transactionStatusType.Confirmed) {
+                // すでに確定済の場合
+                return transaction;
+            } else if (transaction.status === factory.transactionStatusType.Expired) {
+                throw new factory.errors.Argument('accountNumber', 'Transaction already expired');
+            } else if (transaction.status === factory.transactionStatusType.Canceled) {
+                throw new factory.errors.Argument('accountNumber', 'Transaction already canceled');
+            } else {
+                throw new factory.errors.NotFound('Transaction');
+            }
         }
 
-        return <factory.transaction.placeOrder.ITransaction>doc.toObject();
+        return doc.toObject();
     }
-
     /**
      * 注文返品取引を確定する
      * @param transactionId transaction id
@@ -182,14 +179,23 @@ export class MongoRepository {
             },
             { new: true }
         ).exec();
-
+        // NotFoundであれば取引状態確認
         if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
+            const transaction = await this.findById(factory.transactionType.ReturnOrder, transactionId);
+            if (transaction.status === factory.transactionStatusType.Confirmed) {
+                // すでに確定済の場合
+                return transaction;
+            } else if (transaction.status === factory.transactionStatusType.Expired) {
+                throw new factory.errors.Argument('accountNumber', 'Transaction already expired');
+            } else if (transaction.status === factory.transactionStatusType.Canceled) {
+                throw new factory.errors.Argument('accountNumber', 'Transaction already canceled');
+            } else {
+                throw new factory.errors.NotFound('Transaction');
+            }
         }
 
-        return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+        return doc.toObject();
     }
-
     /**
      * タスク未エクスポートの取引をひとつ取得してエクスポートを開始する
      * @param typeOf 取引タイプ
@@ -209,7 +215,6 @@ export class MongoRepository {
             { new: true }
         ).exec().then((doc) => (doc === null) ? null : doc.toObject());
     }
-
     /**
      * タスクエクスポートリトライ
      * todo updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
@@ -225,7 +230,6 @@ export class MongoRepository {
             }
         ).exec();
     }
-
     /**
      * set task status exported by transaction id
      * IDでタスクをエクスポート済に変更する
@@ -240,7 +244,6 @@ export class MongoRepository {
             }
         ).exec();
     }
-
     /**
      * 取引を期限切れにする
      */
@@ -260,7 +263,6 @@ export class MongoRepository {
             { multi: true }
         ).exec();
     }
-
     /**
      * 取引を中止する
      */
@@ -283,28 +285,43 @@ export class MongoRepository {
             },
             { new: true }
         ).exec();
-
+        // NotFoundであれば取引状態確認
         if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
+            const transaction = await this.findById<T>(typeOf, transactionId);
+            if (transaction.status === factory.transactionStatusType.Canceled) {
+                // すでに中止済の場合
+                return transaction;
+            } else if (transaction.status === factory.transactionStatusType.Expired) {
+                throw new factory.errors.Argument('accountNumber', 'Transaction already expired');
+            } else if (transaction.status === factory.transactionStatusType.Confirmed) {
+                throw new factory.errors.Argument('accountNumber', 'Confirmed transaction unable to cancel');
+            } else {
+                throw new factory.errors.NotFound('Transaction');
+            }
         }
 
         return doc.toObject();
     }
-
     /**
-     * 注文取引を検索する
+     * 取引を検索する
      * @param conditions 検索条件
      */
     public async search<T extends factory.transactionType>(conditions: ISearchConditions<T>): Promise<ITransaction<T>[]> {
-        return this.transactionModel.find(
+        const query = this.transactionModel.find(
             {
                 typeOf: conditions.typeOf,
                 startDate: {
                     $gte: conditions.startFrom,
                     $lte: conditions.startThrough
                 }
+            },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
             }
-        ).exec()
-            .then((docs) => docs.map((doc) => doc.toObject()));
+        );
+
+        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

@@ -18,14 +18,14 @@ export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction
  * 注文取引結果から注文を作成する
  * @param transactionId 注文取引ID
  */
-export function createFromTransaction(transactionId: string) {
+export function createFromTransaction(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, transactionId);
+        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -59,7 +59,7 @@ export function createFromTransaction(transactionId: string) {
         await repos.action.complete(orderActionAttributes.typeOf, action.id, {});
 
         // 潜在アクション
-        await onCreate(transactionId, orderActionAttributes)({ task: repos.task });
+        await onCreate(params.transactionId, orderActionAttributes)({ task: repos.task });
     };
 }
 

@@ -9,17 +9,14 @@ export type IAction<T extends factory.actionType> =
     T extends factory.actionType.OrderAction ? factory.action.trade.order.IAction :
     T extends factory.actionType.AuthorizeAction ? factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>> :
     factory.action.IAction<factory.action.IAttributes<T, any, any>>;
-
 /**
  * アクションリポジトリー
  */
 export class MongoRepository {
     public readonly actionModel: typeof ActionModel;
-
     constructor(connection: Connection) {
         this.actionModel = connection.model(ActionModel.modelName);
     }
-
     /**
      * アクション開始
      */
@@ -30,7 +27,6 @@ export class MongoRepository {
             startDate: new Date()
         }).then((doc) => doc.toObject());
     }
-
     /**
      * アクション完了
      */
@@ -58,7 +54,6 @@ export class MongoRepository {
             return doc.toObject();
         });
     }
-
     /**
      * アクション中止
      */
@@ -82,7 +77,6 @@ export class MongoRepository {
             return doc.toObject();
         });
     }
-
     /**
      * アクション失敗
      */
@@ -110,7 +104,6 @@ export class MongoRepository {
             return doc.toObject();
         });
     }
-
     /**
      * IDで取得する
      */
@@ -131,35 +124,31 @@ export class MongoRepository {
             return doc.toObject();
         });
     }
-
     /**
      * 取引内の承認アクションを取得する
-     * @param transactionId 取引ID
      */
-    public async findAuthorizeByTransactionId(transactionId: string): Promise<IAuthorizeAction[]> {
+    public async findAuthorizeByTransactionId(params: { transactionId: string }): Promise<IAuthorizeAction[]> {
         return this.actionModel.find({
             typeOf: factory.actionType.AuthorizeAction,
             'purpose.id': {
                 $exists: true,
-                $eq: transactionId
+                $eq: params.transactionId
             }
         }).exec().then((docs) => docs.map((doc) => doc.toObject()));
     }
-
     /**
      * 注文番号から、注文に対するアクションを検索する
      * @param orderNumber 注文番号
      */
-    public async findByOrderNumber(orderNumber: string): Promise<IAction<factory.actionType>[]> {
+    public async findByOrderNumber(params: { orderNumber: string }): Promise<IAction<factory.actionType>[]> {
         return this.actionModel.find({
             $or: [
-                { 'object.orderNumber': orderNumber },
-                { 'purpose.orderNumber': orderNumber }
+                { 'object.orderNumber': params.orderNumber },
+                { 'purpose.orderNumber': params.orderNumber }
             ]
         })
             .sort({ endDate: -1 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
-
     }
 }

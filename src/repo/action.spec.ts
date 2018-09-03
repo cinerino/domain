@@ -193,8 +193,7 @@ describe('findAuthorizeByTransactionId()', () => {
         sandbox.mock(repository.actionModel).expects('find').once()
             .chain('exec').resolves(actions.map((a) => new repository.actionModel(a)));
 
-        const result = await repository.findAuthorizeByTransactionId(transactionId);
-
+        const result = await repository.findAuthorizeByTransactionId({ transactionId });
         assert(Array.isArray(result));
         assert.equal(result.length, actions.length);
         sandbox.verify();
@@ -218,7 +217,7 @@ describe('findByOrderNumber()', () => {
         sandbox.mock(repository.actionModel).expects('find').once()
             .chain('sort').chain('exec').resolves(actions.map((a) => new repository.actionModel(a)));
 
-        const result = await repository.findByOrderNumber(orderNumber);
+        const result = await repository.findByOrderNumber({ orderNumber });
 
         assert(Array.isArray(result));
         assert.equal(result.length, actions.length);

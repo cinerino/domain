@@ -29,14 +29,27 @@ export function sendEmailMessage(data: factory.task.sendEmailMessage.IData): IOp
 }
 export function cancelSeatReservation(data: factory.task.cancelSeatReservation.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
+        if (settings.chevreEndpoint === undefined) {
+            throw new Error('settings.chevreEndpoint undefined.');
+        }
+        if (settings.chevreAuthClient === undefined) {
+            throw new Error('settings.chevreAuthClient undefined.');
+        }
         const actionRepo = new ActionRepo(settings.connection);
-        await StockService.cancelSeatReservationAuth(data.transactionId)({ action: actionRepo });
+        const reserveService = new chevre.service.transaction.Reserve({
+            endpoint: settings.chevreEndpoint,
+            auth: settings.chevreAuthClient
+        });
+        await StockService.cancelSeatReservationAuth(data)({
+            action: actionRepo,
+            reserveService: reserveService
+        });
     };
 }
 export function cancelCreditCard(data: factory.task.cancelCreditCard.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
-        await PaymentService.creditCard.cancelCreditCardAuth(data.transactionId)({ action: actionRepo });
+        await PaymentService.creditCard.cancelCreditCardAuth(data)({ action: actionRepo });
     };
 }
 export function cancelAccount(data: factory.task.cancelAccount.IData): IOperation<void> {
@@ -61,7 +74,7 @@ export function cancelAccount(data: factory.task.cancelAccount.IData): IOperatio
             endpoint: settings.pecorinoEndpoint,
             auth: settings.pecorinoAuthClient
         });
-        await PaymentService.account.cancelAccountAuth(data.transactionId)({
+        await PaymentService.account.cancelAccountAuth(data)({
             action: actionRepo,
             withdrawService: withdrawService,
             transferService: transferService
@@ -86,7 +99,7 @@ export function payCreditCard(data: factory.task.payCreditCard.IData): IOperatio
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
-        await PaymentService.creditCard.payCreditCard(data.transactionId)({
+        await PaymentService.creditCard.payCreditCard(data)({
             action: actionRepo,
             transaction: transactionRepo
         });
@@ -142,7 +155,7 @@ export function placeOrder(data: factory.task.placeOrder.IData): IOperation<void
         const orderRepo = new OrderRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
-        await OrderService.createFromTransaction(data.transactionId)({
+        await OrderService.createFromTransaction(data)({
             action: actionRepo,
             order: orderRepo,
             transaction: transactionRepo,
@@ -155,7 +168,7 @@ export function refundCreditCard(data: factory.task.refundCreditCard.IData): IOp
         const actionRepo = new ActionRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
-        await PaymentService.creditCard.refundCreditCard(data.transactionId)({
+        await PaymentService.creditCard.refundCreditCard(data)({
             action: actionRepo,
             transaction: transactionRepo,
             task: taskRepo
@@ -242,7 +255,7 @@ export function sendOrder(data: factory.task.returnOrder.IData): IOperation<void
             endpoint: settings.chevreEndpoint,
             auth: settings.chevreAuthClient
         });
-        await DeliveryService.sendOrder(data.transactionId)({
+        await DeliveryService.sendOrder(data)({
             action: actionRepo,
             order: orderRepo,
             ownershipInfo: ownershipInfoRepo,
