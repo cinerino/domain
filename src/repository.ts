@@ -5,6 +5,7 @@
 import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as CodeRepo } from './repo/code';
+import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as EventRepo } from './repo/event';
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { MongoRepository as OrderRepo } from './repo/order';
@@ -23,6 +24,7 @@ export class Action extends ActionRepo { }
 export namespace action {
 }
 export class Code extends CodeRepo { }
+export class ConfirmationNumber extends ConfirmationNumberRepo { }
 export class Event extends EventRepo { }
 export class GMONotification extends GMONotificationRepo { }
 export class Order extends OrderRepo { }

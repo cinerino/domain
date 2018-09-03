@@ -2,6 +2,7 @@ import * as chevre from '@chevre/api-nodejs-client';
 import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
+import * as moment from 'moment';
 
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
@@ -87,12 +88,10 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         };
         const action = await repos.action.start(actionAttributes);
 
-        // COA仮予約
-        const updTmpReserveSeatArgs = {
-        };
+        // 座席仮予約
         let response: chevre.factory.transaction.reserve.ITransaction;
         try {
-            debug('updTmpReserveSeat processing...', updTmpReserveSeatArgs);
+            debug('starting reserve transaction...');
             response = await repos.reserveService.start({
                 typeOf: chevre.factory.transactionType.Reserve,
                 agent: {
@@ -100,9 +99,9 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
                     name: transaction.agent.id
                 },
                 object: params,
-                expires: transaction.expires
+                expires: moment(transaction.expires).add(1, 'month').toDate() // 余裕を持って
             });
-            debug('updTmpReserveSeat processed', response);
+            debug('reserve transaction started', response.id);
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -112,15 +111,8 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
                 // 失敗したら仕方ない
             }
 
-            // メッセージ「座席取得失敗」の場合は、座席の重複とみなす
-            if (error.message === '座席取得失敗') {
-                throw new factory.errors.AlreadyInUse('action.object', ['offers'], error.message);
-            }
-
-            // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
+            // Chevreが500未満であればクライアントエラーとみなす
             const reserveServiceHttpStatusCode = error.code;
-
-            // 500未満であればクライアントエラーとみなす
             if (Number.isInteger(reserveServiceHttpStatusCode)) {
                 if (reserveServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
                     throw new factory.errors.Argument('ScreeningEvent', error.message);
@@ -160,28 +152,19 @@ export function cancel(params: {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
+        reserveService: chevre.service.transaction.Reserve;
     }) => {
         const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
-
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
-
-        // MongoDBでcompleteステータスであるにも関わらず、COAでは削除されている、というのが最悪の状況
+        // MongoDBでcompleteステータスであるにも関わらず、Chevreでは削除されている、というのが最悪の状況
         // それだけは回避するためにMongoDBを先に変更
         const action = await repos.action.cancel(factory.actionType.AuthorizeAction, params.actionId);
-        const actionResult = <factory.action.authorize.offer.seatReservation.IResult>action.result;
-
-        // 座席仮予約削除
-        debug('delTmpReserve processing...', actionResult);
-        // await COA.services.reserve.delTmpReserve({
-        //     theaterCode: actionResult.updTmpReserveSeatArgs.theaterCode,
-        //     dateJouei: actionResult.updTmpReserveSeatArgs.dateJouei,
-        //     titleCode: actionResult.updTmpReserveSeatArgs.titleCode,
-        //     titleBranchNum: actionResult.updTmpReserveSeatArgs.titleBranchNum,
-        //     timeBegin: actionResult.updTmpReserveSeatArgs.timeBegin,
-        //     tmpReserveNum: actionResult.updTmpReserveSeatResult.tmpReserveNum
-        // });
-        debug('delTmpReserve processed');
+        if (action.result !== undefined) {
+            const actionResult = <factory.action.authorize.offer.seatReservation.IResult>action.result;
+            // 座席予約キャンセル
+            await repos.reserveService.cancel({ transactionId: actionResult.responseBody.id });
+        }
     };
 }

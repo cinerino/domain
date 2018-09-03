@@ -10,6 +10,7 @@ import * as pug from 'pug';
 import * as util from 'util';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -255,6 +256,7 @@ export function confirm(params: {
         transaction: TransactionRepo;
         organization: OrganizationRepo;
         orderNumber: OrderNumberRepo;
+        confirmationNumber: ConfirmationNumberRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
         if (transaction.agent.id !== params.agentId) {
@@ -287,10 +289,14 @@ export function confirm(params: {
             sellerType: seller.typeOf,
             sellerBranchCode: seller.location.branchCode
         });
+        const confirmationNumber = await repos.confirmationNumber.publish({
+            orderDate: params.orderDate
+        });
         // 結果作成
         const order = createOrderFromTransaction({
             transaction: transaction,
             orderNumber: orderNumber,
+            confirmationNumber: confirmationNumber,
             orderDate: params.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
             isGift: false,
@@ -401,6 +407,7 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
 export function createOrderFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
+    confirmationNumber: number;
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
@@ -458,24 +465,14 @@ export function createOrderFromTransaction(params: {
         customer.memberOf = params.transaction.agent.memberOf;
     }
 
-    // とりいそぎ確認番号のデフォルトを0に設定しているが、座席予約以外の注文も含めて、本来はもっと丁寧に設計すべき。
-    let confirmationNumber = 0;
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = [];
-
     // 座席予約がある場合
     if (seatReservationAuthorizeAction !== undefined) {
         if (seatReservationAuthorizeAction.result === undefined) {
             throw new factory.errors.Argument('transaction', 'Seat reservation result does not exist.');
         }
-
         const reserveTransaction = seatReservationAuthorizeAction.result.responseBody;
         const screeningEvent = reserveTransaction.object.reservations[0].reservationFor;
-
-        // 確認番号
-        // confirmationNumber = updTmpReserveSeatResult.reservations[0].reservationId;
-        // tslint:disable-next-line:no-magic-numbers
-        confirmationNumber = 12345;
-
         // 座席仮予約からオファー情報を生成する
         acceptedOffers.push(...reserveTransaction.object.reservations.map((tmpReserve) => {
             return {
@@ -495,13 +492,6 @@ export function createOrderFromTransaction(params: {
     if (programMembershipAuthorizeAction !== undefined) {
         acceptedOffers.push(programMembershipAuthorizeAction.object);
     }
-
-    // 注文照会キーを作成
-    const orderInquiryKey: factory.order.IOrderInquiryKey = {
-        theaterCode: params.seller.location.branchCode,
-        confirmationNumber: confirmationNumber,
-        telephone: cutomerContact.telephone
-    };
 
     // 結果作成
     const discounts: factory.order.IDiscount[] = [];
@@ -563,10 +553,9 @@ export function createOrderFromTransaction(params: {
         });
 
     const url = util.format(
-        '%s/inquiry/login?theater=%s&reserve=%s',
+        '%s/inquiry/login?confirmationNumber=%s',
         process.env.ORDER_INQUIRY_ENDPOINT,
-        orderInquiryKey.theaterCode,
-        orderInquiryKey.confirmationNumber
+        params.confirmationNumber
     );
 
     return {
@@ -577,14 +566,13 @@ export function createOrderFromTransaction(params: {
         priceCurrency: factory.priceCurrency.JPY,
         paymentMethods: paymentMethods,
         discounts: discounts,
-        confirmationNumber: confirmationNumber,
+        confirmationNumber: params.confirmationNumber,
         orderNumber: params.orderNumber,
         acceptedOffers: acceptedOffers,
         url: url,
         orderStatus: params.orderStatus,
         orderDate: params.orderDate,
-        isGift: params.isGift,
-        orderInquiryKey: orderInquiryKey
+        isGift: params.isGift
     };
 }
 

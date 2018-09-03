@@ -26,7 +26,7 @@ export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction
 
 /**
  * 注文を配送する
- * COAに本予約連携を行い、内部的には所有権を作成する
+ * 座席本予約連携を行い、内部的には所有権を作成する
  * @param transactionId 注文取引ID
  */
 export function sendOrder(params: { transactionId: string }) {

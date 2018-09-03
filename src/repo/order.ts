@@ -79,22 +79,44 @@ export class MongoRepository {
         return andConditions;
     }
     /**
-     * find an order by an inquiry key
+     * 確認番号で検索
+     * 確認番号と購入者情報より、最新の注文を検索します
      */
-    public async findByOrderInquiryKey(orderInquiryKey: factory.order.IOrderInquiryKey) {
+    public async findByConfirmationNumber(params: {
+        confirmationNumber: number;
+        customer: {
+            email?: string;
+            telephone?: string;
+        };
+    }): Promise<factory.order.IOrder> {
+        const conditions: any = {
+            confirmationNumber: params.confirmationNumber
+        };
+        if (params.customer.email !== undefined) {
+            conditions['customer.email'] = {
+                $exists: true,
+                $eq: params.customer.email
+            };
+        }
+        if (params.customer.telephone !== undefined) {
+            conditions['customer.telephone'] = {
+                $exists: true,
+                $eq: params.customer.telephone
+            };
+        }
         const doc = await this.orderModel.findOne(
+            conditions,
             {
-                'orderInquiryKey.theaterCode': orderInquiryKey.theaterCode,
-                'orderInquiryKey.confirmationNumber': orderInquiryKey.confirmationNumber,
-                'orderInquiryKey.telephone': orderInquiryKey.telephone
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
             }
-        ).exec();
-
+        ).sort({ orderDate: -1 }).exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('order');
+            throw new factory.errors.NotFound('Order');
         }
 
-        return <factory.order.IOrder>doc.toObject();
+        return doc.toObject();
     }
     /**
      * なければ作成する
@@ -117,9 +139,8 @@ export class MongoRepository {
             { orderNumber: orderNumber },
             { orderStatus: orderStatus }
         ).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('order');
+            throw new factory.errors.NotFound('Order');
         }
     }
     /**
@@ -128,14 +149,18 @@ export class MongoRepository {
      */
     public async findByOrderNumber(orderNumber: string): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOne(
-            { orderNumber: orderNumber }
+            { orderNumber: orderNumber },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
         ).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('order');
+            throw new factory.errors.NotFound('Order');
         }
 
-        return <factory.order.IOrder>doc.toObject();
+        return doc.toObject();
     }
     public async count(params: factory.order.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
