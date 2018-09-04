@@ -12,7 +12,6 @@ import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as uuid from 'uuid';
-// import * as util from 'util';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OrderRepo } from '../repo/order';
@@ -69,7 +68,7 @@ export function sendOrder(params: { transactionId: string }) {
         // アクション開始
         const sendOrderActionAttributes = orderPotentialActions.sendOrder;
         const action = await repos.action.start(sendOrderActionAttributes);
-
+        let ownershipInfos: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[];
         try {
             // 座席予約確定
             const seatReservationAuthorizeAction = seatReservationAuthorizeActions.shift();
@@ -83,9 +82,8 @@ export function sendOrder(params: { transactionId: string }) {
 
                 await repos.reserveService.confirm({ transactionId: seatReservationAuthorizeActionResult.responseBody.id });
             }
-
             // 所有権作成
-            const ownershipInfos = createOwnershipInfosFromTransaction({
+            ownershipInfos = createOwnershipInfosFromTransaction({
                 transaction: transaction,
                 order: transactionResult.order
             });
@@ -109,13 +107,14 @@ export function sendOrder(params: { transactionId: string }) {
 
         // アクション完了
         debug('ending action...');
-        await repos.action.complete(sendOrderActionAttributes.typeOf, action.id, {});
-
+        const result: factory.action.transfer.send.order.IResult = {
+            ownershipInfos: ownershipInfos
+        };
+        await repos.action.complete(sendOrderActionAttributes.typeOf, action.id, result);
         // 潜在アクション
         await onSend(sendOrderActionAttributes)({ task: repos.task });
     };
 }
-
 /**
  * 取引から所有権を作成する
  */
@@ -158,7 +157,6 @@ export function createOwnershipInfosFromTransaction(params: {
         return ownershipInfo;
     });
 }
-
 /**
  * 注文配送後のアクション
  * @param transactionId 注文取引ID
@@ -210,7 +208,6 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
         }));
     };
 }
-
 /**
  * ポイントインセンティブ入金実行
  * 取引中に入金取引の承認アクションを完了しているはずなので、その取引を確定するだけの処理です。
@@ -249,7 +246,6 @@ export function givePointAward(params: factory.task.givePointAward.IData) {
         await repos.action.complete(params.typeOf, action.id, actionResult);
     };
 }
-
 /**
  * ポイントインセンティブ返却実行
  */
@@ -317,7 +313,6 @@ export function returnPointAward(params: factory.task.returnPointAward.IData) {
         await repos.action.complete(action.typeOf, action.id, actionResult);
     };
 }
-
 /**
  * ポイントインセンティブ承認取消
  * @param params.transactionId 取引ID
