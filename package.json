@@ -9,17 +9,17 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "^1.0.0-alpha.12",
-    "@cinerino/factory": "^1.0.0-alpha.14",
+    "@chevre/api-nodejs-client": "^1.0.0-alpha.13",
+    "@cinerino/factory": "^1.0.0-alpha.15",
     "@mocoin/api-nodejs-client": "0.0.0-alpha.6",
     "@motionpicture/gmo-service": "^4.2.1",
     "@pecorino/api-nodejs-client": "^1.1.0",
     "@sendgrid/mail": "^6.3.1",
     "@types/google-libphonenumber": "^7.4.16",
-    "@types/mongoose": "^5.2.9",
+    "@types/mongoose": "^5.2.11",
     "@types/redis": "^2.8.6",
     "@waiter/domain": "^2.0.4",
-    "aws-sdk": "^2.307.0",
+    "aws-sdk": "^2.310.0",
     "azure-storage": "^2.10.0",
     "debug": "^3.1.0",
     "google-libphonenumber": "^3.1.12",
@@ -30,12 +30,12 @@
     "lodash.difference": "^4.5.0",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.21",
-    "mongoose": "^5.2.12",
+    "mongoose": "^5.2.13",
     "pug": "^2.0.3",
     "redis": "^2.8.0",
     "request": "^2.88.0",
     "uuid": "^3.3.2",
-    "validator": "^10.7.0"
+    "validator": "^10.7.1"
   },
   "description": "Cinerino Domain Library for Node.js",
   "devDependencies": {
