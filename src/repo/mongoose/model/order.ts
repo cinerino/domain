@@ -47,15 +47,6 @@ const discountSchema = new mongoose.Schema(
     }
 );
 
-const orderInquiryKeySchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 注文スキーマ
  */
@@ -77,8 +68,7 @@ const schema = new mongoose.Schema(
         url: String,
         orderStatus: String,
         orderDate: Date,
-        isGift: Boolean,
-        orderInquiryKey: orderInquiryKeySchema
+        isGift: Boolean
     },
     {
         collection: 'orders',
@@ -103,16 +93,6 @@ schema.index(
         unique: true,
         name: 'uniqueOrderNumber'
     }
-);
-
-// 注文照会に使用
-schema.index(
-    {
-        'orderInquiryKey.telephone': 1,
-        'orderInquiryKey.confirmationNumber': 1,
-        'orderInquiryKey.theaterCode': 1
-    },
-    { name: 'orderInquiryKey' }
 );
 
 // 会員情報で注文検索
