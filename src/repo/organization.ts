@@ -2,10 +2,6 @@ import * as factory from '@cinerino/factory';
 import { Connection } from 'mongoose';
 import organizationModel from './mongoose/model/organization';
 
-export type IOrganization<T> =
-    T extends factory.organizationType.Corporation ? factory.organization.corporation.IOrganization :
-    T extends factory.organizationType.MovieTheater ? factory.organization.movieTheater.IOrganization :
-    factory.organization.IOrganization;
 /**
  * 組織リポジトリー
  */
@@ -40,7 +36,7 @@ export class MongoRepository {
     public async findById<T extends factory.organizationType>(params: {
         typeOf: T;
         id: string;
-    }): Promise<IOrganization<T>> {
+    }): Promise<factory.organization.IOrganization<T>> {
         const doc = await this.organizationModel.findOne({
             typeOf: params.typeOf,
             _id: params.id
@@ -50,6 +46,33 @@ export class MongoRepository {
         }
 
         return doc.toObject();
+    }
+    /**
+     * 組織を保管する
+     */
+    public async save<T extends factory.organizationType>(params: {
+        id?: string;
+        attributes: factory.organization.IAttributes<T>;
+    }): Promise<factory.organization.IOrganization<T>> {
+        let organization: factory.organization.IOrganization<T>;
+        if (params.id === undefined) {
+            const doc = await this.organizationModel.create(params.attributes);
+            organization = doc.toObject();
+        } else {
+            const doc = await this.organizationModel.findOneAndUpdate(
+                {
+                    _id: params.id
+                },
+                params.attributes,
+                { upsert: false, new: true }
+            ).exec();
+            if (doc === null) {
+                throw new factory.errors.NotFound('Organization');
+            }
+            organization = doc.toObject();
+        }
+
+        return organization;
     }
     public async countMovieTheaters(params: factory.organization.movieTheater.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params);
@@ -88,5 +111,19 @@ export class MongoRepository {
         }
 
         return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+    }
+    /**
+     * 組織を削除する
+     */
+    public async deleteById(params: {
+        id: string;
+        typeOf: factory.organizationType;
+    }): Promise<void> {
+        await this.organizationModel.findOneAndRemove(
+            {
+                _id: params.id,
+                typeOf: params.typeOf
+            }
+        ).exec();
     }
 }

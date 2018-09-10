@@ -37,35 +37,6 @@ npm install @cinerino/domain
 | `WAITER_PASSPORT_ISSUER`             | true     |                   | WAITER許可証発行者           |
 | `ORDER_INQUIRY_ENDPOINT`             | true     |                   | 注文照会エンドポイント            |
 
-### Search screening events sample
-
-```js
-const cinerino = require('@cinerino/domain');
-
-cinerino.mongoose.connect('MONGOLAB_URI');
-const redisClient = cinerino.redis.createClient({
-    host: '*****',
-    port: 6380,
-    password: '*****',
-    tls: { servername: 6380 }
-});
-
-const eventRepo = new cinerino.repository.Event(cinerino.mongoose.connection);
-const itemAvailabilityRepo = new cinerino.repository.itemAvailability.ScreeningEvent(redisClient);
-
-cinerino.service.offer.searchlScreeningEvents({
-    superEventLocationIdentifiers:['MovieTheater-118'],
-    startFrom: new Date(),
-    startThrough: new Date(),
-})({
-    event: eventRepo,
-    itemAvailability: itemAvailabilityRepo
-})
-    .then((events) => {
-        console.log('events:', events);
-    });
-```
-
 ## Code Samples
 
 Code sample are [here](https://github.com/cinerino/domain/tree/master/example).
