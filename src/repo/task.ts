@@ -3,33 +3,27 @@ import * as moment from 'moment';
 import { Connection } from 'mongoose';
 import taskModel from './mongoose/model/task';
 
-export type ITask = factory.task.ITask;
 /**
  * タスク実行時のソート条件
- * @const
  */
 const sortOrder4executionOfTasks = {
     numberOfTried: 1, // トライ回数の少なさ優先
     runsAt: 1 // 実行予定日時の早さ優先
 };
-
 /**
  * タスクリポジトリー
  */
 export class MongoRepository {
     public readonly taskModel: typeof taskModel;
-
     constructor(connection: Connection) {
         this.taskModel = connection.model(taskModel.modelName);
     }
-
-    public async save(taskAttributes: factory.task.IAttributes): Promise<ITask> {
+    public async save<T extends factory.taskName>(taskAttributes: factory.task.IAttributes<T>): Promise<factory.task.ITask<T>> {
         return this.taskModel.create(taskAttributes).then(
-            (doc) => <factory.task.ITask>doc.toObject()
+            (doc) => doc.toObject()
         );
     }
-
-    public async executeOneByName(taskName: factory.taskName): Promise<ITask> {
+    public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T>> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Ready,
@@ -46,14 +40,12 @@ export class MongoRepository {
             },
             { new: true }
         ).sort(sortOrder4executionOfTasks).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('executable task');
+            throw new factory.errors.NotFound('Task');
         }
 
-        return <factory.task.ITask>doc.toObject();
+        return doc.toObject();
     }
-
     public async retry(intervalInMinutes: number) {
         const lastTriedAtShoudBeLessThan = moment().add(-intervalInMinutes, 'minutes').toDate();
         await this.taskModel.update(
@@ -71,10 +63,8 @@ export class MongoRepository {
             { multi: true }
         ).exec();
     }
-
-    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask> {
+    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<factory.taskName>> {
         const lastTriedAtShoudBeLessThan = moment().add(-intervalInMinutes, 'minutes').toDate();
-
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Running,
@@ -89,14 +79,12 @@ export class MongoRepository {
             },
             { new: true }
         ).exec();
-
         if (doc === null) {
-            throw new factory.errors.NotFound('abortable task');
+            throw new factory.errors.NotFound('Task');
         }
 
-        return <factory.task.ITask>doc.toObject();
+        return doc.toObject();
     }
-
     public async pushExecutionResultById(
         id: string,
         status: factory.taskStatus,

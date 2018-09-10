@@ -74,7 +74,7 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
         // potentialActionsのためのタスクを生成
         const orderPotentialActions = orderActionAttributes.potentialActions;
         const now = new Date();
-        const taskAttributes: factory.task.IAttributes[] = [];
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -82,7 +82,7 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (orderPotentialActions.sendOrder !== undefined) {
-                const sendOrderTask: factory.task.sendOrder.IAttributes = {
+                const sendOrderTask: factory.task.IAttributes<factory.taskName.SendOrder> = {
                     name: factory.taskName.SendOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
@@ -101,7 +101,7 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (orderPotentialActions.payCreditCard !== undefined) {
-                const payCreditCardTask: factory.task.payCreditCard.IAttributes = {
+                const payCreditCardTask: factory.task.IAttributes<factory.taskName.PayCreditCard> = {
                     name: factory.taskName.PayCreditCard,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
@@ -120,36 +120,38 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(orderPotentialActions.payAccount)) {
-                taskAttributes.push(...orderPotentialActions.payAccount.map((a): factory.task.payAccount.IAttributes => {
-                    return {
-                        name: factory.taskName.PayAccount,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 10,
-                        lastTriedAt: null,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: a
-                    };
-                }));
+                taskAttributes.push(...orderPotentialActions.payAccount.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayAccount> => {
+                        return {
+                            name: factory.taskName.PayAccount,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
             }
 
             // Mocoin決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(orderPotentialActions.payMocoin)) {
-                taskAttributes.push(...orderPotentialActions.payMocoin.map((a): factory.task.payMocoin.IAttributes => {
-                    return {
-                        name: factory.taskName.PayMocoin,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 10,
-                        lastTriedAt: null,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: a
-                    };
-                }));
+                taskAttributes.push(...orderPotentialActions.payMocoin.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayMocoin> => {
+                        return {
+                            name: factory.taskName.PayMocoin,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
             }
 
             // ムビチケ使用
@@ -175,18 +177,19 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(orderPotentialActions.givePointAward)) {
-                taskAttributes.push(...orderPotentialActions.givePointAward.map((a): factory.task.givePointAward.IAttributes => {
-                    return {
-                        name: factory.taskName.GivePointAward,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 10,
-                        lastTriedAt: null,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: a
-                    };
-                }));
+                taskAttributes.push(...orderPotentialActions.givePointAward.map(
+                    (a): factory.task.IAttributes<factory.taskName.GivePointAward> => {
+                        return {
+                            name: factory.taskName.GivePointAward,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
             }
         }
 
@@ -270,7 +273,7 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
         task: TaskRepo;
     }) => {
         const now = new Date();
-        const taskAttributes: factory.task.IAttributes[] = [];
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -279,7 +282,7 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
             /* istanbul ignore else */
             if (returnActionAttributes.potentialActions.refundCreditCard !== undefined) {
                 // 返金タスク作成
-                const task: factory.task.refundCreditCard.IAttributes = {
+                const task: factory.task.IAttributes<factory.taskName.RefundCreditCard> = {
                     name: factory.taskName.RefundCreditCard,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
@@ -299,7 +302,7 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
             /* istanbul ignore else */
             if (Array.isArray(returnActionAttributes.potentialActions.refundAccount)) {
                 taskAttributes.push(...returnActionAttributes.potentialActions.refundAccount.map(
-                    (a): factory.task.refundAccount.IAttributes => {
+                    (a): factory.task.IAttributes<factory.taskName.RefundAccount> => {
                         return {
                             name: factory.taskName.RefundAccount,
                             status: factory.taskStatus.Ready,
@@ -319,7 +322,7 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
             /* istanbul ignore else */
             if (Array.isArray(returnActionAttributes.potentialActions.returnPointAward)) {
                 taskAttributes.push(...returnActionAttributes.potentialActions.returnPointAward.map(
-                    (a): factory.task.returnPointAward.IAttributes => {
+                    (a): factory.task.IAttributes<factory.taskName.ReturnPointAward> => {
                         return {
                             name: factory.taskName.ReturnPointAward,
                             status: factory.taskStatus.Ready,

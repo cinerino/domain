@@ -14,8 +14,8 @@ import * as redis from 'redis';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as NotificationService from './notification';
-import * as TaskFunctionsService from './taskFunctions';
 
+const debug = createDebug('cinerino-domain:service');
 export interface IConnectionSettings {
     /**
      * MongoDBコネクション
@@ -58,20 +58,17 @@ export interface ISettings extends IConnectionSettings {
 }
 export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
 export type IExecuteOperation<T> = (settings: ISettings) => Promise<T>;
-
-const debug = createDebug('cinerino-domain:service');
-
+export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
 export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
-
 /**
  * execute a task by taskName
  * タスク名でタスクをひとつ実行する
  * @param taskName タスク名
  */
-export function executeByName(taskName: factory.taskName): IExecuteOperation<void> {
+export function executeByName<T extends factory.taskName>(taskName: T): IExecuteOperation<void> {
     return async (settings: ISettings) => {
         // 未実行のタスクを取得
-        let task: factory.task.ITask | null = null;
+        let task: factory.task.ITask<T> | null = null;
         try {
             task = await settings.taskRepo.executeOneByName(taskName);
             debug('task found', task);
@@ -85,13 +82,12 @@ export function executeByName(taskName: factory.taskName): IExecuteOperation<voi
         }
     };
 }
-
 /**
  * execute a task
  * タスクを実行する
  * @param task タスクオブジェクト
  */
-export function execute(task: factory.task.ITask): IExecuteOperation<void> {
+export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOperation<void> {
     debug('executing a task...', task);
     const now = new Date();
 
@@ -104,8 +100,8 @@ export function execute(task: factory.task.ITask): IExecuteOperation<void> {
     }) => {
         try {
             // タスク名の関数が定義されていなければ、TypeErrorとなる
-            await (<any>TaskFunctionsService)[task.name](task.data)(settings);
-
+            const { call } = await import(`./task/${task.name}`);
+            await call(task.data)(settings);
             const result = {
                 executedAt: now,
                 error: ''
@@ -122,7 +118,6 @@ export function execute(task: factory.task.ITask): IExecuteOperation<void> {
         }
     };
 }
-
 /**
  * retry tasks in running status
  * 実行中ステータスのままになっているタスクをリトライする
@@ -133,7 +128,6 @@ export function retry(intervalInMinutes: number): TaskOperation<void> {
         await repos.task.retry(intervalInMinutes);
     };
 }
-
 /**
  * abort a task
  * トライ可能回数が0に達したタスクを実行中止する

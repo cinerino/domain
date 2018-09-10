@@ -1,0 +1,30 @@
+import * as chevre from '@chevre/api-nodejs-client';
+import * as factory from '@cinerino/factory';
+import { IConnectionSettings, IOperation } from '../task';
+
+import { MongoRepository as EventRepo } from '../../repo/event';
+
+import * as StockService from '../stock';
+
+/**
+ * タスク実行関数
+ */
+export function call(data: factory.task.IData<factory.taskName.ImportScreeningEvents>): IOperation<void> {
+    return async (settings: IConnectionSettings) => {
+        if (settings.chevreEndpoint === undefined) {
+            throw new Error('settings.chevreEndpoint undefined.');
+        }
+        if (settings.chevreAuthClient === undefined) {
+            throw new Error('settings.chevreAuthClient undefined.');
+        }
+        const eventRepo = new EventRepo(settings.connection);
+        const eventService = new chevre.service.Event({
+            endpoint: settings.chevreEndpoint,
+            auth: settings.chevreAuthClient
+        });
+        await StockService.importScreeningEvents(data)({
+            event: eventRepo,
+            eventService: eventService
+        });
+    };
+}

@@ -6,7 +6,7 @@ import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../index';
 
-import * as TaskFunctionsService from './taskFunctions';
+import * as PlaceOrderTask from './task/placeOrder';
 
 let sandbox: sinon.SinonSandbox;
 
@@ -29,7 +29,7 @@ describe('executeByName()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
         sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(task.name).resolves(task);
-        sandbox.mock(TaskFunctionsService).expects(task.name).once().withArgs(task.data).returns(async () => Promise.resolve());
+        sandbox.mock(PlaceOrderTask).expects('call').once().withArgs(task.data).returns(async () => Promise.resolve());
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, domain.factory.taskStatus.Executed).resolves();
 
         const result = await domain.service.task.executeByName(task.name)({
@@ -120,7 +120,7 @@ describe('execute()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
-        sandbox.mock(TaskFunctionsService).expects(task.name).once().withArgs(task.data).returns(async () => Promise.resolve());
+        sandbox.mock(PlaceOrderTask).expects('call').once().withArgs(task.data).returns(async () => Promise.resolve());
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, domain.factory.taskStatus.Executed).resolves();
 
         const result = await domain.service.task.execute(<any>task)({

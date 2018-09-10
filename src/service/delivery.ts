@@ -166,7 +166,7 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
     return async (repos: { task: TaskRepo }) => {
         const potentialActions = sendOrderActionAttributes.potentialActions;
         const now = new Date();
-        const taskAttributes: factory.task.IAttributes[] = [];
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -185,7 +185,7 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (sendEmailMessageTaskDoc === null) {
-                    const sendEmailMessageTask: factory.task.sendEmailMessage.IAttributes = {
+                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
                         name: factory.taskName.SendEmailMessage,
                         status: factory.taskStatus.Ready,
                         runsAt: now, // なるはやで実行
@@ -212,7 +212,7 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
  * ポイントインセンティブ入金実行
  * 取引中に入金取引の承認アクションを完了しているはずなので、その取引を確定するだけの処理です。
  */
-export function givePointAward(params: factory.task.givePointAward.IData) {
+export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
         pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
@@ -249,7 +249,7 @@ export function givePointAward(params: factory.task.givePointAward.IData) {
 /**
  * ポイントインセンティブ返却実行
  */
-export function returnPointAward(params: factory.task.returnPointAward.IData) {
+export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
         pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;

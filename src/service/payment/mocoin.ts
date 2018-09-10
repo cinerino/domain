@@ -14,7 +14,7 @@ const debug = createDebug('cinerino-domain:service');
 /**
  * Mocoin支払実行
  */
-export function payMocoin(params: factory.task.payMocoin.IData) {
+export function payMocoin(params: factory.task.IData<factory.taskName.PayMocoin>) {
     return async (repos: {
         action: ActionRepo;
         mocoinAuthClient: mocoinapi.auth.ClientCredentials;

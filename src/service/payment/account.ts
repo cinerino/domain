@@ -14,7 +14,7 @@ const debug = createDebug('cinerino-domain:service');
 /**
  * 口座支払実行
  */
-export function payAccount(params: factory.task.payAccount.IData) {
+export function payAccount(params: factory.task.IData<factory.taskName.PayAccount>) {
     return async (repos: {
         action: ActionRepo;
         withdrawService: pecorinoapi.service.transaction.Withdraw;
@@ -114,7 +114,7 @@ export function cancelAccountAuth(params: { transactionId: string }) {
 /**
  * 口座返金処理を実行する
  */
-export function refundAccount(params: factory.task.refundAccount.IData) {
+export function refundAccount(params: factory.task.IData<factory.taskName.RefundAccount>) {
     return async (repos: {
         action: ActionRepo;
         task: TaskRepo;
@@ -198,14 +198,14 @@ function onRefund(refundActionAttributes: factory.action.trade.refund.IAttribute
     return async (repos: { task: TaskRepo }) => {
         const potentialActions = refundActionAttributes.potentialActions;
         const now = new Date();
-        const taskAttributes: factory.task.IAttributes[] = [];
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (potentialActions !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (potentialActions.sendEmailMessage !== undefined) {
-                const sendEmailMessageTask: factory.task.sendEmailMessage.IAttributes = {
+                const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
                     name: factory.taskName.SendEmailMessage,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行

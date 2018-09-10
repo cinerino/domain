@@ -36,7 +36,7 @@ export function exportTasks(status: factory.transactionStatusType) {
 /**
  * ID指定で取引のタスク出力
  */
-export function exportTasksById(params: { transactionId: string }): ITaskAndTransactionOperation<factory.task.ITask[]> {
+export function exportTasksById(params: { transactionId: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
@@ -44,10 +44,10 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
     }) => {
         const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
 
-        const taskAttributes: factory.task.IAttributes[] = [];
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                const placeOrderTaskAttributes: factory.task.placeOrder.IAttributes = {
+                const placeOrderTaskAttributes: factory.task.IAttributes<factory.taskName.PlaceOrder> = {
                     name: factory.taskName.PlaceOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -66,7 +66,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
             // 期限切れor中止の場合は、タスクリストを作成する
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                const cancelSeatReservationTaskAttributes: factory.task.cancelSeatReservation.IAttributes = {
+                const cancelSeatReservationTaskAttributes: factory.task.IAttributes<factory.taskName.CancelSeatReservation> = {
                     name: factory.taskName.CancelSeatReservation,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -78,7 +78,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
                         transactionId: transaction.id
                     }
                 };
-                const cancelCreditCardTaskAttributes: factory.task.cancelCreditCard.IAttributes = {
+                const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
                     name: factory.taskName.CancelCreditCard,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -90,7 +90,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
                         transactionId: transaction.id
                     }
                 };
-                const cancelAccountTaskAttributes: factory.task.cancelAccount.IAttributes = {
+                const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
                     name: factory.taskName.CancelAccount,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -102,7 +102,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
                         transactionId: transaction.id
                     }
                 };
-                const cancelPointAwardTaskAttributes: factory.task.cancelPointAward.IAttributes = {
+                const cancelPointAwardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPointAward> = {
                     name: factory.taskName.CancelPointAward,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
