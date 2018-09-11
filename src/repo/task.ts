@@ -1,6 +1,7 @@
-import * as factory from '@cinerino/factory';
 import * as moment from 'moment';
 import { Connection } from 'mongoose';
+
+import * as factory from '../factory';
 import taskModel from './mongoose/model/task';
 
 /**

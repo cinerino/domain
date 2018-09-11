@@ -2,10 +2,10 @@
  * ヘルスチェックサービス
  * 実験的実装中
  */
-import * as factory from '@cinerino/factory';
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
+import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as GMONotificationRepo } from '../../repo/gmoNotification';
 

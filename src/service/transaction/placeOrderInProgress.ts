@@ -1,7 +1,6 @@
 /**
  * 進行中注文取引サービス
  */
-import * as factory from '@cinerino/factory';
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
@@ -9,6 +8,7 @@ import * as moment from 'moment-timezone';
 import * as pug from 'pug';
 import * as util from 'util';
 
+import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';

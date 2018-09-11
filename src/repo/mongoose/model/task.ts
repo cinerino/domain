@@ -1,5 +1,6 @@
-import * as factory from '@cinerino/factory';
 import * as mongoose from 'mongoose';
+
+import * as factory from '../../../factory';
 
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 

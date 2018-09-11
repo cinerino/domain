@@ -1,10 +1,10 @@
 /**
  * クレジットカード決済サービス
  */
-import * as factory from '@cinerino/factory';
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
+import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';

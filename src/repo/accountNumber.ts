@@ -1,8 +1,9 @@
 // tslint:disable:no-magic-numbers
-import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as redis from 'redis';
+
+import * as factory from '../factory';
 
 const debug = createDebug('cinerino-domain:repository');
 

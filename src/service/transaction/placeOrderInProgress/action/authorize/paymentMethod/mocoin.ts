@@ -1,11 +1,11 @@
 /**
  * Mocoin決済承認アクションサービス
  */
-import * as factory from '@cinerino/factory';
 import * as mocoinapi from '@mocoin/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
+import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';

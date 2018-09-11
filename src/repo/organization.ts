@@ -1,6 +1,7 @@
-import * as factory from '@cinerino/factory';
 import { Connection } from 'mongoose';
 import organizationModel from './mongoose/model/organization';
+
+import * as factory from '../factory';
 
 /**
  * 組織リポジトリー

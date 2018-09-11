@@ -2,8 +2,8 @@
  * エラーハンドラー
  * 外部サービスと連携している場合に、サービス(API)のエラーを本ドメインのエラーに変換する責任を担います。
  */
-import { errors } from '@cinerino/factory';
 import { BAD_REQUEST, FORBIDDEN, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
+import { errors } from './factory';
 
 /**
  * Chevreサービスエラーをハンドリングする

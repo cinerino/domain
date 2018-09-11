@@ -2,8 +2,6 @@
 /**
  * domain index
  */
-import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@cinerino/factory';
 import * as mocoinapi from '@mocoin/api-nodejs-client';
 import * as GMO from '@motionpicture/gmo-service';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
@@ -11,6 +9,8 @@ import * as AWS from 'aws-sdk';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
+import * as chevre from './chevre';
+import * as factory from './factory';
 import * as repository from './repository';
 import * as service from './service';
 

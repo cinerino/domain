@@ -1,6 +1,7 @@
-import * as factory from '@cinerino/factory';
 import * as AWS from 'aws-sdk';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
+
+import * as factory from '../factory';
 
 /**
  * 会員リポジトリー

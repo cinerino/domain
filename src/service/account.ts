@@ -2,10 +2,11 @@
  * 口座サービス
  * 口座の保管先はPecorinoサービスです。
  */
-import * as factory from '@cinerino/factory';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
 import * as uuid from 'uuid';
+
+import * as factory from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
 import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';

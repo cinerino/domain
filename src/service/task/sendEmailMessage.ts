@@ -1,6 +1,6 @@
-import * as factory from '@cinerino/factory';
 import { IConnectionSettings, IOperation } from '../task';
 
+import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 
 import * as NotificationService from '../notification';

@@ -1,7 +1,7 @@
-import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@cinerino/factory';
 import { IConnectionSettings, IOperation } from '../task';
 
+import * as chevre from '../../chevre';
+import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';

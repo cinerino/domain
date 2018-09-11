@@ -1,6 +1,7 @@
-import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import { Connection } from 'mongoose';
+
+import * as factory from '../factory';
 import programMembershipModel from './mongoose/model/programMembership';
 
 const debug = createDebug('cinerino-domain:repository');

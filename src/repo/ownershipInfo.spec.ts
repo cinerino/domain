@@ -2,7 +2,7 @@
 /**
  * ownershipInfo repository test
  */
-// import * as factory from '@cinerino/factory';
+// import * as factory from './factory';
 import { } from 'mocha';
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';

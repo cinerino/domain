@@ -1,5 +1,6 @@
-import * as factory from '@cinerino/factory';
 import { Connection } from 'mongoose';
+
+import * as factory from '../factory';
 import OrderModel from './mongoose/model/order';
 
 /**

@@ -1,8 +1,9 @@
-import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 import * as redis from 'redis';
 import * as util from 'util';
+
+import * as factory from '../factory';
 
 const debug = createDebug('cinerino-domain:repository');
 /**

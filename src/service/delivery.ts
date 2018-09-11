@@ -6,13 +6,13 @@
  * ポイントインセンティブで言えば、口座に振り込まれること
  * などが配送処理として考えられます。
  */
-import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@cinerino/factory';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as uuid from 'uuid';
 
+import * as chevre from '../chevre';
+import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';

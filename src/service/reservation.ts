@@ -2,8 +2,8 @@
  * 予約サービス
  * 予約の保管先はChevreサービスです。
  */
-import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@cinerino/factory';
+import * as chevre from '../chevre';
+import * as factory from '../factory';
 
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';

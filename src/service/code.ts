@@ -1,9 +1,9 @@
 /**
  * コード(所有権をpublicにするもの)サービス
  */
-import * as factory from '@cinerino/factory';
 import * as jwt from 'jsonwebtoken';
 
+import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { ICode, RedisRepository as CodeRepo } from '../repo/code';
 

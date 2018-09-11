@@ -1,11 +1,11 @@
 /**
  * 取引レポートサービス
  */
-import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import * as json2csv from 'json2csv';
 import * as util from 'util';
 
+import * as factory from '../../factory';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 

@@ -2,11 +2,11 @@
  * 在庫管理サービス
  * 在庫仕入れ、在庫調整等
  */
-import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import { google } from 'googleapis';
 
+import * as chevre from '../chevre';
+import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
 

@@ -1,6 +1,6 @@
-import * as factory from '@cinerino/factory';
 import { Connection } from 'mongoose';
 
+import * as factory from '../factory';
 import ActionModel from './mongoose/model/action';
 
 export type IAuthorizeAction = factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>;

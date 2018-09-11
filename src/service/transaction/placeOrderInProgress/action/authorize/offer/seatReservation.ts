@@ -1,9 +1,9 @@
-import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@cinerino/factory';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
+import * as chevre from '../../../../../../chevre';
+import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
