@@ -67,6 +67,7 @@ export function sendOrder(params: { transactionId: string }) {
 
         // アクション開始
         const sendOrderActionAttributes = orderPotentialActions.sendOrder;
+        const order = sendOrderActionAttributes.object;
         const action = await repos.action.start(sendOrderActionAttributes);
         let ownershipInfos: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[];
         try {
@@ -80,7 +81,17 @@ export function sendOrder(params: { transactionId: string }) {
                     throw new factory.errors.NotFound('authorizeAction.result');
                 }
 
-                await repos.reserveService.confirm({ transactionId: seatReservationAuthorizeActionResult.responseBody.id });
+                await repos.reserveService.confirm({
+                    transactionId: seatReservationAuthorizeActionResult.responseBody.id,
+                    issuedBy: {
+                        typeOf: order.seller.typeOf,
+                        name: order.seller.name
+                    },
+                    underName: {
+                        typeOf: order.customer.typeOf,
+                        name: order.customer.name
+                    }
+                });
             }
             // 所有権作成
             ownershipInfos = createOwnershipInfosFromTransaction({

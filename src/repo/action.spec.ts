@@ -6,6 +6,7 @@
 import { } from 'mocha';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
+import { } from 'sinon-mongoose';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
 import * as domain from '../index';

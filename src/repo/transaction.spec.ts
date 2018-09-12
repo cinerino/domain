@@ -96,25 +96,6 @@ describe('confirmPlaceOrder()', () => {
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
-
-    it('取引が存在しなければ、NotFoundエラーになるはず', async () => {
-        const transactionId = 'transactionId';
-        const authorizeActions: any[] = [];
-        const transactionResult = {};
-        const potentialActions = {};
-
-        const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
-        sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.confirmPlaceOrder(
-            transactionId, authorizeActions, <any>transactionResult, <any>potentialActions
-        )
-            .catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
 });
 
 describe('reexportTasks()', () => {
@@ -201,23 +182,6 @@ describe('confirmReturnOrder()', () => {
             transactionId, <any>transactionResult, <any>potentialActions
         );
         assert.equal(typeof result, 'object');
-        sandbox.verify();
-    });
-
-    it('取引が存在しなければ、NotFoundエラーになるはず', async () => {
-        const transactionId = 'transactionId';
-        const transactionResult = {};
-        const potentialActions = {};
-
-        const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
-        sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.confirmReturnOrder(
-            transactionId, <any>transactionResult, <any>potentialActions
-        ).catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
 });
@@ -327,16 +291,6 @@ describe('取引を中止する', () => {
 
         const result = await transactionRepo.cancel(domain.factory.transactionType.PlaceOrder, 'transactionId');
         assert.equal(typeof result, 'object');
-        sandbox.verify();
-    });
-
-    it('進行中取引が存在しなければNotFoundエラー', async () => {
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        sandbox.mock(transactionRepo.transactionModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
-
-        const result = await transactionRepo.cancel(domain.factory.transactionType.PlaceOrder, 'transactionId')
-            .catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
 });

@@ -116,12 +116,10 @@ describe('注文を検索する', () => {
 
     it('MongoDBが正常であれば配列を取得できるはず', async () => {
         const orderRepo = new domain.repository.Order(domain.mongoose.connection);
-
         sandbox.mock(orderRepo.orderModel).expects('find').once()
-            .chain('sort')
+            // .chain('sort')
             .chain('exec')
             .resolves([new orderRepo.orderModel()]);
-
         const result = await orderRepo.search({
             sellerIds: ['sellerId'],
             customerMembershipNumbers: ['customerMembershipNumber'],
