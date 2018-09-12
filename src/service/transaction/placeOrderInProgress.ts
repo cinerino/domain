@@ -258,7 +258,16 @@ export function confirm(params: {
         orderNumber: OrderNumberRepo;
         confirmationNumber: ConfirmationNumberRepo;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        let transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        if (transaction.status === factory.transactionStatusType.Confirmed) {
+            // すでに確定済の場合
+            return <factory.transaction.placeOrder.IResult>transaction.result;
+        } else if (transaction.status === factory.transactionStatusType.Expired) {
+            throw new factory.errors.Argument('transactionId', 'Transaction already expired');
+        } else if (transaction.status === factory.transactionStatusType.Canceled) {
+            throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
+        }
+
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
@@ -317,14 +326,14 @@ export function confirm(params: {
 
         // ステータス変更
         debug('updating transaction...');
-        await repos.transaction.confirmPlaceOrder(
+        transaction = await repos.transaction.confirmPlaceOrder(
             params.transactionId,
             authorizeActions,
             result,
             potentialActions
         );
 
-        return result;
+        return <factory.transaction.placeOrder.IResult>transaction.result;
     };
 }
 

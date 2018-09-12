@@ -25,12 +25,6 @@ export type ITaskAndTransactionOperation<T> = (repos: {
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
-export type IConfirmOperation<T> = (repos: {
-    action: ActionRepo;
-    transaction: TransactionRepo;
-    organization: OrganizationRepo;
-}) => Promise<T>;
-
 /**
  * 注文返品取引開始
  * @param params 開始パラメーター
@@ -182,18 +176,26 @@ export function start(params: {
 /**
  * 取引確定
  */
-// tslint:disable-next-line:max-func-body-length
 export function confirm(
     agentId: string,
     transactionId: string
-): IConfirmOperation<factory.transaction.returnOrder.IResult> {
+) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
         organization: OrganizationRepo;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.ReturnOrder, transactionId);
+        let transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, transactionId);
+        if (transaction.status === factory.transactionStatusType.Confirmed) {
+            // すでに確定済の場合
+            return transaction.result;
+        } else if (transaction.status === factory.transactionStatusType.Expired) {
+            throw new factory.errors.Argument('transactionId', 'Transaction already expired');
+        } else if (transaction.status === factory.transactionStatusType.Canceled) {
+            throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
+        }
+
         if (transaction.agent.id !== agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
@@ -300,13 +302,13 @@ export function confirm(
 
         // ステータス変更
         debug('updating transaction...');
-        await repos.transaction.confirmReturnOrder(
+        transaction = await repos.transaction.confirmReturnOrder(
             transactionId,
             result,
             potentialActions
         );
 
-        return result;
+        return transaction.result;
     };
 }
 

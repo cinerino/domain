@@ -145,9 +145,9 @@ export class MongoRepository {
                 // すでに確定済の場合
                 return transaction;
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('accountNumber', 'Transaction already expired');
+                throw new factory.errors.Argument('transactionId', 'Transaction already expired');
             } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('accountNumber', 'Transaction already canceled');
+                throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
             } else {
                 throw new factory.errors.NotFound('Transaction');
             }
@@ -186,9 +186,9 @@ export class MongoRepository {
                 // すでに確定済の場合
                 return transaction;
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('accountNumber', 'Transaction already expired');
+                throw new factory.errors.Argument('transactionId', 'Transaction already expired');
             } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('accountNumber', 'Transaction already canceled');
+                throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
             } else {
                 throw new factory.errors.NotFound('Transaction');
             }
@@ -292,9 +292,9 @@ export class MongoRepository {
                 // すでに中止済の場合
                 return transaction;
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('accountNumber', 'Transaction already expired');
+                throw new factory.errors.Argument('transactionId', 'Transaction already expired');
             } else if (transaction.status === factory.transactionStatusType.Confirmed) {
-                throw new factory.errors.Argument('accountNumber', 'Confirmed transaction unable to cancel');
+                throw new factory.errors.Argument('transactionId', 'Confirmed transaction unable to cancel');
             } else {
                 throw new factory.errors.NotFound('Transaction');
             }
