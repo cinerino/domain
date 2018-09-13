@@ -74,6 +74,7 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         //     await validateOffers((transaction.agent.memberOf !== undefined), screeningEvent, params.offers);
 
         // 承認アクションを開始
+        const seller = transaction.seller;
         const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -82,7 +83,15 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
                 tickets: params.tickets,
                 notes: params.notes
             },
-            agent: transaction.seller,
+            agent: {
+                id: transaction.seller.id,
+                typeOf: seller.typeOf,
+                name: seller.name,
+                location: seller.location,
+                telephone: seller.telephone,
+                url: seller.url,
+                image: seller.image
+            },
             recipient: transaction.agent,
             purpose: transaction // purposeは取引
         };

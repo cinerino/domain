@@ -137,6 +137,7 @@ export function createOwnershipInfosFromTransaction(params: {
         const itemOffered = acceptedOffer.itemOffered;
         let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
         const ownedFrom = params.order.orderDate;
+        const seller = params.transaction.seller;
         let ownedThrough: Date;
 
         switch (itemOffered.typeOf) {
@@ -149,7 +150,15 @@ export function createOwnershipInfosFromTransaction(params: {
                     typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
                     id: uuid.v4(),
                     ownedBy: params.transaction.agent,
-                    acquiredFrom: params.transaction.seller,
+                    acquiredFrom: {
+                        id: seller.id,
+                        typeOf: seller.typeOf,
+                        name: seller.name,
+                        location: seller.location,
+                        telephone: seller.telephone,
+                        url: seller.url,
+                        image: seller.image
+                    },
                     ownedFrom: ownedFrom,
                     ownedThrough: ownedThrough,
                     typeOfGood: {

@@ -78,6 +78,7 @@ export function create(params: {
         // }
 
         // 承認アクションを開始する
+        const seller = transaction.seller;
         const actionAttributes: factory.action.authorize.award.point.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -85,7 +86,15 @@ export function create(params: {
                 transactionId: params.transactionId,
                 amount: params.amount
             },
-            agent: transaction.seller,
+            agent: {
+                id: transaction.seller.id,
+                typeOf: seller.typeOf,
+                name: seller.name,
+                location: seller.location,
+                telephone: seller.telephone,
+                url: seller.url,
+                image: seller.image
+            },
             recipient: transaction.agent,
             purpose: transaction
         };

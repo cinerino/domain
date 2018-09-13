@@ -97,7 +97,15 @@ export function start(params: IStartParams):
             typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
             agent: params.customer,
-            seller: seller,
+            seller: {
+                id: seller.id,
+                typeOf: seller.typeOf,
+                name: seller.name,
+                location: seller.location,
+                telephone: seller.telephone,
+                url: seller.url,
+                image: seller.image
+            },
             object: {
                 passportToken: params.passportToken,
                 passport: <any>passport,
