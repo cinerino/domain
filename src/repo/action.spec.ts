@@ -201,7 +201,7 @@ describe('findAuthorizeByTransactionId()', () => {
     });
 });
 
-describe('findByOrderNumber()', () => {
+describe('searchByOrderNumber()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -214,12 +214,9 @@ describe('findByOrderNumber()', () => {
         ];
 
         const repository = new domain.repository.Action(domain.mongoose.connection);
-
         sandbox.mock(repository.actionModel).expects('find').once()
             .chain('sort').chain('exec').resolves(actions.map((a) => new repository.actionModel(a)));
-
-        const result = await repository.findByOrderNumber({ orderNumber });
-
+        const result = await repository.searchByOrderNumber({ orderNumber });
         assert(Array.isArray(result));
         assert.equal(result.length, actions.length);
         sandbox.verify();

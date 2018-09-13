@@ -87,7 +87,7 @@ export function start(params: {
             throw new factory.errors.Argument('transaction', 'order status is not OrderDelivered');
         }
 
-        const actionsOnOrder = await repos.action.findByOrderNumber({ orderNumber: order.orderNumber });
+        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
@@ -216,7 +216,7 @@ export function confirm(
             id: placeOrderTransaction.seller.id
         });
 
-        const actionsOnOrder = await repos.action.findByOrderNumber({ orderNumber: placeOrderTransactionResult.order.orderNumber });
+        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: placeOrderTransactionResult.order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
@@ -241,7 +241,7 @@ export function confirm(
         };
         // クレジットカード返金アクション
         const refundCreditCardActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
-            .filter((a) => a.object.paymentMethod.paymentMethod === factory.paymentMethodType.CreditCard)
+            .filter((a) => a.object.paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
             .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard> => {
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
@@ -256,7 +256,7 @@ export function confirm(
             });
         // 口座返金アクション
         const refundAccountActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
-            .filter((a) => a.object.paymentMethod.paymentMethod === factory.paymentMethodType.Account)
+            .filter((a) => a.object.paymentMethod.typeOf === factory.paymentMethodType.Account)
             .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account> => {
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
