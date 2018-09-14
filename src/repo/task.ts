@@ -99,4 +99,28 @@ export class MongoRepository {
             }
         ).exec();
     }
+    /**
+     * IDで取得する
+     */
+    public async findById<T extends factory.taskName>(params: {
+        name: T;
+        id: string;
+    }): Promise<factory.task.ITask<T>> {
+        const doc = await this.taskModel.findOne(
+            {
+                name: params.name,
+                _id: params.id
+            },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        ).exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound('Task');
+        }
+
+        return doc.toObject();
+    }
 }
