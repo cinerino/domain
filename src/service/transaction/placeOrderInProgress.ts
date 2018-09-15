@@ -208,30 +208,26 @@ export function setCustomerContact(params: {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(params.contact.telephone, 'JP'); // 日本の電話番号前提仕様
+            const phoneNumber = phoneUtil.parse(params.contact.telephone);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
-                throw new Error('invalid phone number format.');
+                throw new Error('Invalid phone number');
             }
-
             formattedTelephone = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
         } catch (error) {
             throw new factory.errors.Argument('contact.telephone', error.message);
         }
 
-        // 連絡先を再生成(validationの意味も含めて)
+        // 連絡先を生成
         const customerContact: factory.transaction.placeOrder.ICustomerContact = {
             familyName: params.contact.familyName,
             givenName: params.contact.givenName,
             email: params.contact.email,
             telephone: formattedTelephone
         };
-
         const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
-
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
-
         await repos.transaction.setCustomerContactOnPlaceOrderInProgress(params.transactionId, customerContact);
 
         return customerContact;

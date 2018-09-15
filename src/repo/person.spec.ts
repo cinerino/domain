@@ -145,10 +145,10 @@ describe('アクセストークンでユーザー属性を更新する', () => {
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         sandbox.mock(cognitoIdentityServiceProvider).expects('updateUserAttributes').once().callsArgWith(1, null);
 
-        const result = await personRepo.updateContactByAccessToken({
+        const result = await personRepo.updateProfileByAccessToken({
             accessToken: '',
-            contact: <any>{
-                telephone: '09012345678'
+            profile: <any>{
+                telephone: '+819012345678'
             }
         });
         assert.equal(result, undefined);
@@ -160,10 +160,10 @@ describe('アクセストークンでユーザー属性を更新する', () => {
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider).expects('updateUserAttributes').once().callsArgWith(1, awsError);
 
-        const result = await personRepo.updateContactByAccessToken({
+        const result = await personRepo.updateProfileByAccessToken({
             accessToken: '',
-            contact: <any>{
-                telephone: '09012345678'
+            profile: <any>{
+                telephone: '+819012345678'
             }
         }).catch((err) => err);
         assert(result instanceof domain.factory.errors.Argument);
@@ -174,9 +174,9 @@ describe('アクセストークンでユーザー属性を更新する', () => {
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         sandbox.mock(cognitoIdentityServiceProvider).expects('updateUserAttributes').never();
 
-        const result = await personRepo.updateContactByAccessToken({
+        const result = await personRepo.updateProfileByAccessToken({
             accessToken: '',
-            contact: <any>{
+            profile: <any>{
                 telephone: '00000000000000000'
             }
         }).catch((err) => err);

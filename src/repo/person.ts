@@ -12,8 +12,8 @@ export class CognitoRepository {
     constructor(cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider) {
         this.cognitoIdentityServiceProvider = cognitoIdentityServiceProvider;
     }
-    public static ATTRIBUTE2CONTACT(userAttributes: AWS.CognitoIdentityServiceProvider.AttributeListType) {
-        const contact: factory.person.IContact = {
+    public static ATTRIBUTE2PROFILE(userAttributes: AWS.CognitoIdentityServiceProvider.AttributeListType) {
+        const profile: factory.person.IProfile = {
             givenName: '',
             familyName: '',
             email: '',
@@ -24,25 +24,19 @@ export class CognitoRepository {
             switch (userAttribute.Name) {
                 case 'given_name':
                     // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    contact.givenName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                    profile.givenName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
                     break;
                 case 'family_name':
                     // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    contact.familyName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                    profile.familyName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
                     break;
                 case 'email':
                     // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    contact.email = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                    profile.email = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
                     break;
                 case 'phone_number':
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (userAttribute.Value !== undefined) {
-                        // format a phone number to a Japanese style
-                        const phoneUtil = PhoneNumberUtil.getInstance();
-                        const phoneNumber = phoneUtil.parse(userAttribute.Value, 'JP');
-                        contact.telephone = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
-                    }
+                    // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                    profile.telephone = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
                     break;
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
@@ -50,7 +44,7 @@ export class CognitoRepository {
             }
         });
 
-        return contact;
+        return profile;
     }
     /**
      * 管理者権限でユーザー属性を取得する
@@ -59,7 +53,7 @@ export class CognitoRepository {
         userPooId: string;
         username: string;
     }) {
-        return new Promise<factory.person.IContact>((resolve, reject) => {
+        return new Promise<factory.person.IProfile>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.adminGetUser(
                 {
                     UserPoolId: params.userPooId,
@@ -74,7 +68,7 @@ export class CognitoRepository {
                         if (data.UserAttributes === undefined) {
                             reject(new factory.errors.NotFound('User'));
                         } else {
-                            resolve(CognitoRepository.ATTRIBUTE2CONTACT(data.UserAttributes));
+                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
                         }
                     }
                 });
@@ -87,7 +81,7 @@ export class CognitoRepository {
         userPooId: string;
         userId: string;
     }) {
-        return new Promise<factory.person.IContact>((resolve, reject) => {
+        return new Promise<factory.person.IProfile>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.listUsers(
                 {
                     UserPoolId: params.userPooId,
@@ -106,7 +100,7 @@ export class CognitoRepository {
                             if (user === undefined || user.Attributes === undefined) {
                                 throw new factory.errors.NotFound('User');
                             }
-                            resolve(CognitoRepository.ATTRIBUTE2CONTACT(user.Attributes));
+                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(user.Attributes));
                         }
                     }
                 });
@@ -115,8 +109,8 @@ export class CognitoRepository {
     /**
      * アクセストークンでユーザー属性を取得する
      */
-    public async getUserAttributesByAccessToken(accessToken: string): Promise<factory.person.IContact> {
-        return new Promise<factory.person.IContact>((resolve, reject) => {
+    public async getUserAttributesByAccessToken(accessToken: string): Promise<factory.person.IProfile> {
+        return new Promise<factory.person.IProfile>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.getUser(
                 {
                     AccessToken: accessToken
@@ -125,7 +119,7 @@ export class CognitoRepository {
                     if (err instanceof Error) {
                         reject(err);
                     } else {
-                        resolve(CognitoRepository.ATTRIBUTE2CONTACT(data.UserAttributes));
+                        resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
                     }
                 });
         });
@@ -133,22 +127,21 @@ export class CognitoRepository {
     /**
      * 会員プロフィール更新
      */
-    public async updateContactByAccessToken(params: {
+    public async updateProfileByAccessToken(params: {
         accessToken: string;
-        contact: factory.person.IContact;
+        profile: factory.person.IProfile;
     }): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             let formatedPhoneNumber: string;
             try {
                 const phoneUtil = PhoneNumberUtil.getInstance();
-                const phoneNumber = phoneUtil.parse(params.contact.telephone, 'JP');
+                const phoneNumber = phoneUtil.parse(params.profile.telephone);
                 if (!phoneUtil.isValidNumber(phoneNumber)) {
-                    throw new Error('Invalid phone number format.');
+                    throw new Error('Invalid phone number');
                 }
-
                 formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
             } catch (error) {
-                reject(new factory.errors.Argument('telephone', 'invalid phone number format'));
+                reject(new factory.errors.Argument('telephone', 'Invalid phone number'));
 
                 return;
             }
@@ -159,11 +152,11 @@ export class CognitoRepository {
                     UserAttributes: [
                         {
                             Name: 'given_name',
-                            Value: params.contact.givenName
+                            Value: params.profile.givenName
                         },
                         {
                             Name: 'family_name',
-                            Value: params.contact.familyName
+                            Value: params.profile.familyName
                         },
                         {
                             Name: 'phone_number',
@@ -171,13 +164,13 @@ export class CognitoRepository {
                         },
                         {
                             Name: 'email',
-                            Value: params.contact.email
+                            Value: params.profile.email
                         }
                     ]
                 },
                 (err) => {
                     if (err instanceof Error) {
-                        reject(new factory.errors.Argument('contact', err.message));
+                        reject(new factory.errors.Argument('profile', err.message));
                     } else {
                         resolve();
                     }
