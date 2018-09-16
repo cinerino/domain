@@ -37,7 +37,9 @@ export function download(
 ) {
     return async (repos: { transaction: TransactionRepo }): Promise<string> => {
         // 取引検索
-        const transactions = await repos.transaction.search({ ...conditions, typeOf: factory.transactionType.PlaceOrder });
+        const transactions = await repos.transaction.search<factory.transactionType.PlaceOrder>(
+            { ...conditions, typeOf: factory.transactionType.PlaceOrder }
+        );
         debug('transactions:', transactions);
 
         // 取引ごとに詳細を検索し、csvを作成する
