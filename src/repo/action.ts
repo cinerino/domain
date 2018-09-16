@@ -137,6 +137,40 @@ export class MongoRepository {
         }).exec().then((docs) => docs.map((doc) => doc.toObject()));
     }
     /**
+     * 取引に対するアクションを検索する
+     */
+    public async searchByTransactionId(params: {
+        transactionType: factory.transactionType;
+        transactionId: string;
+        sort?: factory.action.ISortOrder;
+    }): Promise<IAction<factory.actionType>[]> {
+        const conditions = {
+            'purpose.typeOf': {
+                $exists: true,
+                $eq: params.transactionType
+            },
+            'purpose.id': {
+                $exists: true,
+                $eq: params.transactionId
+            }
+        };
+        const query = this.actionModel.find(
+            conditions,
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        );
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.sort !== undefined) {
+            query.sort(params.sort);
+        }
+
+        return query.exec().then((docs) => docs.map((doc) => doc.toObject()));
+    }
+    /**
      * 注文番号から、注文に対するアクションを検索する
      * @param orderNumber 注文番号
      */
