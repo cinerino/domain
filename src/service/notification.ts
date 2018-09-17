@@ -68,8 +68,8 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(actionAttributes.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: actionAttributes.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -79,7 +79,7 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
 
         // アクション完了
         debug('ending action...');
-        await repos.action.complete(actionAttributes.typeOf, action.id, result);
+        await repos.action.complete({ typeOf: actionAttributes.typeOf, id: action.id, result: result });
     };
 }
 

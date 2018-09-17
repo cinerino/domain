@@ -38,7 +38,10 @@ export function sendOrder(params: { transactionId: string }) {
         task: TaskRepo;
         reserveService: chevre.service.transaction.Reserve;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -107,8 +110,8 @@ export function sendOrder(params: { transactionId: string }) {
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(sendOrderActionAttributes.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -121,7 +124,7 @@ export function sendOrder(params: { transactionId: string }) {
         const result: factory.action.transfer.send.order.IResult = {
             ownershipInfos: ownershipInfos
         };
-        await repos.action.complete(sendOrderActionAttributes.typeOf, action.id, result);
+        await repos.action.complete({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, result: result });
         // 潜在アクション
         await onSend(sendOrderActionAttributes)({ task: repos.task });
     };
@@ -251,8 +254,8 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
             // actionにエラー結果を追加
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(params.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: params.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -263,7 +266,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
         // アクション完了
         debug('ending action...');
         const actionResult: factory.action.transfer.give.pointAward.IResult = {};
-        await repos.action.complete(params.typeOf, action.id, actionResult);
+        await repos.action.complete({ typeOf: params.typeOf, id: action.id, result: actionResult });
     };
 }
 /**
@@ -316,8 +319,8 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -330,12 +333,11 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const actionResult: factory.action.transfer.returnAction.pointAward.IResult = {
             pointTransaction: withdrawTransaction
         };
-        await repos.action.complete(action.typeOf, action.id, actionResult);
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
 /**
  * ポイントインセンティブ承認取消
- * @param params.transactionId 取引ID
  */
 export function cancelPointAward(params: {
     transactionId: string;
@@ -349,25 +351,21 @@ export function cancelPointAward(params: {
             await repos.action.findAuthorizeByTransactionId({ transactionId: params.transactionId })
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 );
-
         await Promise.all(authorizeActions.map(async (action) => {
-            // 承認アクション結果は基本的に必ずあるはず
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore if */
-            if (action.result === undefined) {
-                throw new factory.errors.NotFound('action.result');
+            if (action.result !== undefined) {
+                // アクションステータスに関係なく取消処理実行
+                const depositService = new pecorinoapi.service.transaction.Deposit({
+                    endpoint: action.result.pointAPIEndpoint,
+                    auth: repos.pecorinoAuthClient
+                });
+                await depositService.cancel({
+                    transactionId: action.result.pointTransaction.id
+                });
+                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
-
-            // 進行中の入金取引を中止する
-            const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: action.result.pointAPIEndpoint,
-                auth: repos.pecorinoAuthClient
-            });
-            await depositService.cancel({
-                transactionId: action.result.pointTransaction.id
-            });
         }));
     };
 }

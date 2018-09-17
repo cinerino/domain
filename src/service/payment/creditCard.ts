@@ -19,7 +19,7 @@ export function payCreditCard(params: { transactionId: string }) {
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -84,8 +84,8 @@ export function payCreditCard(params: { transactionId: string }) {
             } catch (error) {
                 // actionにエラー結果を追加
                 try {
-                    const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                    await repos.action.giveUp(payActionAttributes.typeOf, action.id, actionError);
+                    const actionError = { ...error, message: error.message, name: error.name };
+                    await repos.action.giveUp({ typeOf: payActionAttributes.typeOf, id: action.id, error: actionError });
                 } catch (__) {
                     // 失敗したら仕方ない
                 }
@@ -98,11 +98,10 @@ export function payCreditCard(params: { transactionId: string }) {
             const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.CreditCard> = {
                 creditCardSales: alterTranResult
             };
-            await repos.action.complete(payActionAttributes.typeOf, action.id, actionResult);
+            await repos.action.complete({ typeOf: payActionAttributes.typeOf, id: action.id, result: actionResult });
         }
     };
 }
-
 /**
  * クレジットカードオーソリ取消
  */
@@ -115,20 +114,19 @@ export function cancelCreditCardAuth(params: { transactionId: string }) {
                     .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 );
-
         await Promise.all(authorizeActions.map(async (action) => {
-            const entryTranArgs = (<factory.action.authorize.paymentMethod.creditCard.IResult>action.result).entryTranArgs;
-            const execTranArgs = (<factory.action.authorize.paymentMethod.creditCard.IResult>action.result).execTranArgs;
-
-            debug('calling alterTran...');
-            await GMO.services.credit.alterTran({
-                shopId: entryTranArgs.shopId,
-                shopPass: entryTranArgs.shopPass,
-                accessId: execTranArgs.accessId,
-                accessPass: execTranArgs.accessPass,
-                jobCd: GMO.utils.util.JobCd.Void,
-                amount: entryTranArgs.amount
-            });
+            if (action.result !== undefined) {
+                debug('calling alterTran...');
+                await GMO.services.credit.alterTran({
+                    shopId: action.result.entryTranArgs.shopId,
+                    shopPass: action.result.entryTranArgs.shopPass,
+                    accessId: action.result.execTranArgs.accessId,
+                    accessPass: action.result.execTranArgs.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Void,
+                    amount: action.result.entryTranArgs.amount
+                });
+                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+            }
         }));
 
         // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
@@ -136,7 +134,6 @@ export function cancelCreditCardAuth(params: { transactionId: string }) {
         // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
     };
 }
-
 /**
  * 注文返品取引からクレジットカード返金処理を実行する
  */
@@ -146,7 +143,7 @@ export function refundCreditCard(params: { transactionId: string }) {
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, params.transactionId);
+        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.transactionId });
         const potentialActions = transaction.potentialActions;
         const placeOrderTransaction = transaction.object.transaction;
         const placeOrderTransactionResult = placeOrderTransaction.result;
@@ -211,8 +208,8 @@ export function refundCreditCard(params: { transactionId: string }) {
             } catch (error) {
                 // actionにエラー結果を追加
                 try {
-                    const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                    await repos.action.giveUp(action.typeOf, action.id, actionError);
+                    const actionError = { ...error, message: error.message, name: error.name };
+                    await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
                 } catch (__) {
                     // 失敗したら仕方ない
                 }
@@ -222,7 +219,7 @@ export function refundCreditCard(params: { transactionId: string }) {
 
             // アクション完了
             debug('ending action...');
-            await repos.action.complete(action.typeOf, action.id, { alterTranResult });
+            await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
 
             // 潜在アクション
             await onRefund(refundActionAttributes)({ task: repos.task });

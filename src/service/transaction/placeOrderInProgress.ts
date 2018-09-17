@@ -119,7 +119,7 @@ export function start(params: IStartParams):
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
-            transaction = await repos.transaction.start(factory.transactionType.PlaceOrder, transactionAttributes);
+            transaction = await repos.transaction.start<factory.transactionType.PlaceOrder>(transactionAttributes);
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -224,11 +224,17 @@ export function setCustomerContact(params: {
             email: params.contact.email,
             telephone: formattedTelephone
         };
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
-        await repos.transaction.setCustomerContactOnPlaceOrderInProgress(params.transactionId, customerContact);
+        await repos.transaction.setCustomerContactOnPlaceOrderInProgress({
+            id: params.transactionId,
+            contact: customerContact
+        });
 
         return customerContact;
     };
@@ -262,7 +268,10 @@ export function confirm(params: {
         orderNumber: OrderNumberRepo;
         confirmationNumber: ConfirmationNumberRepo;
     }) => {
-        let transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        let transaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
         if (transaction.status === factory.transactionStatusType.Confirmed) {
             // すでに確定済の場合
             return <factory.transaction.placeOrder.IResult>transaction.result;
@@ -330,12 +339,12 @@ export function confirm(params: {
 
         // ステータス変更
         debug('updating transaction...');
-        transaction = await repos.transaction.confirmPlaceOrder(
-            params.transactionId,
-            authorizeActions,
-            result,
-            potentialActions
-        );
+        transaction = await repos.transaction.confirmPlaceOrder({
+            id: params.transactionId,
+            authorizeActions: authorizeActions,
+            result: result,
+            potentialActions: potentialActions
+        });
 
         return <factory.transaction.placeOrder.IResult>transaction.result;
     };

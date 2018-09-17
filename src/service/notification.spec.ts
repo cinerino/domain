@@ -117,7 +117,7 @@ describe('sendEmailMessage()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
 
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(actionRepo).expects('complete').once().withArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(sgMail).expects('send').once().resolves(sendResponse);
 
         const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({ action: actionRepo });
@@ -144,7 +144,7 @@ describe('sendEmailMessage()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
 
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(actionRepo).expects('giveUp').once().withArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
         sandbox.mock(sgMail).expects('send').once().resolves(sendResponse);
 

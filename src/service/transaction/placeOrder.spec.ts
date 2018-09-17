@@ -22,18 +22,16 @@ describe('exportTasks()', () => {
     it('タスクエクスポート待ちの取引があれば、エクスポートされるはず', async () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
         const status = domain.factory.transactionStatusType.Confirmed;
         const task = {};
         const transaction = {
             id: 'transactionId',
             status: status
         };
-
         sandbox.mock(transactionRepo).expects('startExportTasks').once().resolves(transaction);
         sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
         sandbox.mock(taskRepo).expects('save').atLeast(1).resolves(task);
-        sandbox.mock(transactionRepo).expects('setTasksExportedById').once().withArgs(transaction.id).resolves();
+        sandbox.mock(transactionRepo).expects('setTasksExportedById').once().resolves();
 
         const result = await domain.service.transaction.placeOrder.exportTasks(
             status
@@ -41,7 +39,6 @@ describe('exportTasks()', () => {
             task: taskRepo,
             transaction: transactionRepo
         });
-
         assert.equal(result, undefined);
         sandbox.verify();
     });

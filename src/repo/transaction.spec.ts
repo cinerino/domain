@@ -22,15 +22,12 @@ describe('start()', () => {
 
     it('repositoryの状態が正常であれば、開始できるはず', async () => {
         const transaction = { typeOf: domain.factory.transactionType.PlaceOrder, id: 'id' };
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel)
             .expects('create').once()
             .resolves(new repository.transactionModel());
 
-        const result = await repository.start(transaction.typeOf, <any>transaction);
-
+        const result = await repository.start(<any>transaction);
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -44,16 +41,13 @@ describe('setCustomerContactOnPlaceOrderInProgress()', () => {
     it('取引が存在すれば、エラーにならないはず', async () => {
         const transactionId = 'transactionId';
         const contact = {};
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel)
             .expects('findOneAndUpdate').once()
             .chain('exec')
             .resolves(new repository.transactionModel());
 
-        const result = await repository.setCustomerContactOnPlaceOrderInProgress(transactionId, <any>contact);
-
+        const result = await repository.setCustomerContactOnPlaceOrderInProgress({ id: transactionId, contact: <any>contact });
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -67,7 +61,10 @@ describe('setCustomerContactOnPlaceOrderInProgress()', () => {
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
 
-        const result = await repository.setCustomerContactOnPlaceOrderInProgress(transactionId, <any>contact).catch((err) => err);
+        const result = await repository.setCustomerContactOnPlaceOrderInProgress({
+            id: transactionId,
+            contact: <any>contact
+        }).catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -83,16 +80,17 @@ describe('confirmPlaceOrder()', () => {
         const authorizeActions: any[] = [];
         const transactionResult = {};
         const potentialActions = {};
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
         const doc = new repository.transactionModel();
-
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(doc);
 
-        const result = await repository.confirmPlaceOrder(
-            transactionId, authorizeActions, <any>transactionResult, <any>potentialActions
-        );
+        const result = await repository.confirmPlaceOrder({
+            id: transactionId,
+            authorizeActions: authorizeActions,
+            result: <any>transactionResult,
+            potentialActions: <any>potentialActions
+        });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -105,16 +103,13 @@ describe('reexportTasks()', () => {
 
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
         const intervalInMinutes = 10;
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel)
             .expects('findOneAndUpdate').once()
             .chain('exec')
             .resolves(new repository.transactionModel());
 
-        const result = await repository.reexportTasks(intervalInMinutes);
-
+        const result = await repository.reexportTasks({ intervalInMinutes: intervalInMinutes });
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -127,16 +122,13 @@ describe('setTasksExportedById()', () => {
 
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
         const transactionId = 'transactionId';
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel)
             .expects('findByIdAndUpdate').once().withArgs(transactionId)
             .chain('exec')
             .resolves(new repository.transactionModel());
 
-        const result = await repository.setTasksExportedById(transactionId);
-
+        const result = await repository.setTasksExportedById({ id: transactionId });
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -149,14 +141,12 @@ describe('makeExpired()', () => {
 
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel)
             .expects('update').once()
             .chain('exec')
             .resolves();
 
         const result = await repository.makeExpired();
-
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -171,16 +161,16 @@ describe('confirmReturnOrder()', () => {
         const transactionId = 'transactionId';
         const transactionResult = {};
         const potentialActions = {};
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
         const doc = new repository.transactionModel();
-
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(doc);
 
-        const result = await repository.confirmReturnOrder(
-            transactionId, <any>transactionResult, <any>potentialActions
-        );
+        const result = await repository.confirmReturnOrder({
+            id: transactionId,
+            result: <any>transactionResult,
+            potentialActions: <any>potentialActions
+        });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -197,14 +187,11 @@ describe('startExportTasks()', () => {
             id: 'transactionId',
             status: domain.factory.transactionStatusType.Confirmed
         };
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.transactionModel());
 
-        const result = await repository.startExportTasks(transaction.typeOf, transaction.status);
-
+        const result = await repository.startExportTasks({ typeOf: transaction.typeOf, status: transaction.status });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -215,14 +202,11 @@ describe('startExportTasks()', () => {
             id: 'transactionId',
             status: domain.factory.transactionStatusType.Confirmed
         };
-
         const repository = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
 
-        const result = await repository.startExportTasks(transaction.typeOf, transaction.status);
-
+        const result = await repository.startExportTasks({ typeOf: transaction.typeOf, status: transaction.status });
         assert.equal(result, null);
         sandbox.verify();
     });
@@ -238,7 +222,7 @@ describe('IDで取引を取得する', () => {
         sandbox.mock(transactionRepo.transactionModel).expects('findOne').once()
             .chain('exec').resolves(new transactionRepo.transactionModel());
 
-        const result = await transactionRepo.findById(domain.factory.transactionType.PlaceOrder, 'transactionId');
+        const result = await transactionRepo.findById({ typeOf: domain.factory.transactionType.PlaceOrder, id: 'transactionId' });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -247,7 +231,8 @@ describe('IDで取引を取得する', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         sandbox.mock(transactionRepo.transactionModel).expects('findOne').once().chain('exec').resolves(null);
 
-        const result = await transactionRepo.findById(domain.factory.transactionType.PlaceOrder, 'transactionId').catch((err) => err);
+        const result = await transactionRepo.findById({ typeOf: domain.factory.transactionType.PlaceOrder, id: 'transactionId' })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -263,7 +248,7 @@ describe('IDで進行中取引を取得する', () => {
         sandbox.mock(transactionRepo.transactionModel).expects('findOne').once()
             .chain('exec').resolves(new transactionRepo.transactionModel());
 
-        const result = await transactionRepo.findInProgressById(domain.factory.transactionType.PlaceOrder, 'transactionId');
+        const result = await transactionRepo.findInProgressById({ typeOf: domain.factory.transactionType.PlaceOrder, id: 'transactionId' });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -272,7 +257,7 @@ describe('IDで進行中取引を取得する', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         sandbox.mock(transactionRepo.transactionModel).expects('findOne').once().chain('exec').resolves(null);
 
-        const result = await transactionRepo.findInProgressById(domain.factory.transactionType.PlaceOrder, 'transactionId')
+        const result = await transactionRepo.findInProgressById({ typeOf: domain.factory.transactionType.PlaceOrder, id: 'transactionId' })
             .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
@@ -289,7 +274,7 @@ describe('取引を中止する', () => {
         sandbox.mock(transactionRepo.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new transactionRepo.transactionModel());
 
-        const result = await transactionRepo.cancel(domain.factory.transactionType.PlaceOrder, 'transactionId');
+        const result = await transactionRepo.cancel({ typeOf: domain.factory.transactionType.PlaceOrder, id: 'transactionId' });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });

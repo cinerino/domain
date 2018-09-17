@@ -22,14 +22,14 @@ export function exportTasks(status: factory.transactionStatusType) {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.startExportTasks(factory.transactionType.PlaceOrder, status);
+        const transaction = await repos.transaction.startExportTasks({ typeOf: factory.transactionType.PlaceOrder, status: status });
         if (transaction === null) {
             return;
         }
 
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
         await exportTasksById({ transactionId: transaction.id })(repos);
-        await repos.transaction.setTasksExportedById(transaction.id);
+        await repos.transaction.setTasksExportedById({ id: transaction.id });
     };
 }
 
@@ -42,7 +42,10 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
         switch (transaction.status) {

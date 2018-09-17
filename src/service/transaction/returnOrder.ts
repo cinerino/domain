@@ -71,7 +71,10 @@ export function start(params: {
         const now = new Date();
 
         // 返品対象の取引取得
-        const placeOrderTransaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        const placeOrderTransaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
         if (placeOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
             throw new factory.errors.Argument('transactionId', 'Status not Confirmed.');
         }
@@ -124,7 +127,7 @@ export function start(params: {
 
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;
         try {
-            returnOrderTransaction = await repos.transaction.start(factory.transactionType.ReturnOrder, returnOrderAttributes);
+            returnOrderTransaction = await repos.transaction.start<factory.transactionType.ReturnOrder>(returnOrderAttributes);
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 同一取引に対して返品取引を作成しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -186,7 +189,7 @@ export function confirm(
         transaction: TransactionRepo;
         organization: OrganizationRepo;
     }) => {
-        let transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, transactionId);
+        let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
         if (transaction.status === factory.transactionStatusType.Confirmed) {
             // すでに確定済の場合
             return transaction.result;
@@ -302,11 +305,11 @@ export function confirm(
 
         // ステータス変更
         debug('updating transaction...');
-        transaction = await repos.transaction.confirmReturnOrder(
-            transactionId,
-            result,
-            potentialActions
-        );
+        transaction = await repos.transaction.confirmReturnOrder({
+            id: transactionId,
+            result: result,
+            potentialActions: potentialActions
+        });
 
         return transaction.result;
     };
@@ -387,7 +390,6 @@ export async function createRefundEmail(params: {
         );
     });
 }
-
 /**
  * 返品取引のタスクをエクスポートする
  */
@@ -396,7 +398,7 @@ export function exportTasks(status: factory.transactionStatusType) {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.startExportTasks(factory.transactionType.ReturnOrder, status);
+        const transaction = await repos.transaction.startExportTasks({ typeOf: factory.transactionType.ReturnOrder, status: status });
         if (transaction === null) {
             return;
         }
@@ -404,7 +406,7 @@ export function exportTasks(status: factory.transactionStatusType) {
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
         await exportTasksById({ transactionId: transaction.id })(repos);
 
-        await repos.transaction.setTasksExportedById(transaction.id);
+        await repos.transaction.setTasksExportedById({ id: transaction.id });
     };
 }
 
@@ -416,7 +418,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, params.transactionId);
+        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.transactionId });
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:

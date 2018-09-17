@@ -155,11 +155,10 @@ export class MongoRepository {
      * 取引を開始する
      */
     public async start<T extends factory.transactionType>(
-        typeOf: T,
         attributes: factory.transaction.IAttributes<T>
     ): Promise<factory.transaction.ITransaction<T>> {
         return this.transactionModel.create({
-            typeOf: typeOf,
+            typeOf: attributes.typeOf,
             ...<Object>attributes,
             status: factory.transactionStatusType.InProgress,
             startDate: new Date(),
@@ -169,15 +168,14 @@ export class MongoRepository {
     }
     /**
      * IDで取引を取得する
-     * @param transactionId 取引ID
      */
-    public async findById<T extends factory.transactionType>(
-        typeOf: T,
-        transactionId: string
-    ): Promise<factory.transaction.ITransaction<T>> {
+    public async findById<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<factory.transaction.ITransaction<T>> {
         const doc = await this.transactionModel.findOne({
-            _id: transactionId,
-            typeOf: typeOf
+            _id: params.id,
+            typeOf: params.typeOf
         }).exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Transaction');
@@ -188,13 +186,13 @@ export class MongoRepository {
     /**
      * 進行中の取引を取得する
      */
-    public async findInProgressById<T extends factory.transactionType>(
-        typeOf: T,
-        transactionId: string
-    ): Promise<factory.transaction.ITransaction<T>> {
+    public async findInProgressById<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<factory.transaction.ITransaction<T>> {
         const doc = await this.transactionModel.findOne({
-            _id: transactionId,
-            typeOf: typeOf,
+            _id: params.id,
+            typeOf: params.typeOf,
             status: factory.transactionStatusType.InProgress
         }).exec();
         if (doc === null) {
@@ -207,18 +205,18 @@ export class MongoRepository {
      * 取引中の所有者プロフィールを変更する
      * 匿名所有者として開始した場合のみ想定(匿名か会員に変更可能)
      */
-    public async setCustomerContactOnPlaceOrderInProgress(
-        transactionId: string,
-        contact: factory.transaction.placeOrder.ICustomerContact
-    ): Promise<void> {
+    public async setCustomerContactOnPlaceOrderInProgress(params: {
+        id: string;
+        contact: factory.transaction.placeOrder.ICustomerContact;
+    }): Promise<void> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
-                _id: transactionId,
+                _id: params.id,
                 typeOf: factory.transactionType.PlaceOrder,
                 status: factory.transactionStatusType.InProgress
             },
             {
-                'object.customerContact': contact
+                'object.customerContact': params.contact
             }
         ).exec();
         if (doc === null) {
@@ -227,43 +225,40 @@ export class MongoRepository {
     }
     /**
      * 注文取引を確定する
-     * @param transactionId transaction id
-     * @param authorizeActions authorize actions
-     * @param result transaction result
      */
-    public async confirmPlaceOrder(
-        transactionId: string,
-        authorizeActions: factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>[],
-        result: factory.transaction.placeOrder.IResult,
-        potentialActions: factory.transaction.placeOrder.IPotentialActions
-    ): Promise<factory.transaction.placeOrder.ITransaction> {
+    public async confirmPlaceOrder(params: {
+        id: string;
+        authorizeActions: factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>[];
+        result: factory.transaction.placeOrder.IResult;
+        potentialActions: factory.transaction.placeOrder.IPotentialActions;
+    }): Promise<factory.transaction.placeOrder.ITransaction> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
-                _id: transactionId,
+                _id: params.id,
                 typeOf: factory.transactionType.PlaceOrder,
                 status: factory.transactionStatusType.InProgress
             },
             {
                 status: factory.transactionStatusType.Confirmed, // ステータス変更
                 endDate: new Date(),
-                'object.authorizeActions': authorizeActions, // 認可アクションリストを更新
-                result: result, // resultを更新
-                potentialActions: potentialActions // resultを更新
+                'object.authorizeActions': params.authorizeActions, // 認可アクションリストを更新
+                result: params.result, // resultを更新
+                potentialActions: params.potentialActions // resultを更新
             },
             { new: true }
         ).exec();
         // NotFoundであれば取引状態確認
         if (doc === null) {
-            const transaction = await this.findById(factory.transactionType.PlaceOrder, transactionId);
+            const transaction = await this.findById({ typeOf: factory.transactionType.PlaceOrder, id: params.id });
             if (transaction.status === factory.transactionStatusType.Confirmed) {
                 // すでに確定済の場合
                 return transaction;
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('transactionId', 'Transaction already expired');
+                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
             } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
+                throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
             } else {
-                throw new factory.errors.NotFound('Transaction');
+                throw new factory.errors.NotFound(this.transactionModel.modelName);
             }
         }
 
@@ -271,40 +266,38 @@ export class MongoRepository {
     }
     /**
      * 注文返品取引を確定する
-     * @param transactionId transaction id
-     * @param result transaction result
      */
-    public async confirmReturnOrder(
-        transactionId: string,
-        result: factory.transaction.returnOrder.IResult,
-        potentialActions: factory.transaction.returnOrder.IPotentialActions
-    ): Promise<factory.transaction.returnOrder.ITransaction> {
+    public async confirmReturnOrder(params: {
+        id: string;
+        result: factory.transaction.returnOrder.IResult;
+        potentialActions: factory.transaction.returnOrder.IPotentialActions;
+    }): Promise<factory.transaction.returnOrder.ITransaction> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
-                _id: transactionId,
+                _id: params.id,
                 typeOf: factory.transactionType.ReturnOrder,
                 status: factory.transactionStatusType.InProgress
             },
             {
                 status: factory.transactionStatusType.Confirmed, // ステータス変更
                 endDate: new Date(),
-                result: result,
-                potentialActions: potentialActions
+                result: params.result,
+                potentialActions: params.potentialActions
             },
             { new: true }
         ).exec();
         // NotFoundであれば取引状態確認
         if (doc === null) {
-            const transaction = await this.findById(factory.transactionType.ReturnOrder, transactionId);
+            const transaction = await this.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
             if (transaction.status === factory.transactionStatusType.Confirmed) {
                 // すでに確定済の場合
                 return transaction;
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('transactionId', 'Transaction already expired');
+                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
             } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
+                throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
             } else {
-                throw new factory.errors.NotFound('Transaction');
+                throw new factory.errors.NotFound(this.transactionModel.modelName);
             }
         }
 
@@ -312,17 +305,15 @@ export class MongoRepository {
     }
     /**
      * タスク未エクスポートの取引をひとつ取得してエクスポートを開始する
-     * @param typeOf 取引タイプ
-     * @param status 取引ステータス
      */
-    public async startExportTasks<T extends factory.transactionType>(
-        typeOf: T,
-        status: factory.transactionStatusType
-    ): Promise<factory.transaction.ITransaction<T> | null> {
+    public async startExportTasks<T extends factory.transactionType>(params: {
+        typeOf: T;
+        status: factory.transactionStatusType;
+    }): Promise<factory.transaction.ITransaction<T> | null> {
         return this.transactionModel.findOneAndUpdate(
             {
-                typeOf: typeOf,
-                status: status,
+                typeOf: params.typeOf,
+                status: params.status,
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
             },
             { tasksExportationStatus: factory.transactionTasksExportationStatus.Exporting },
@@ -333,11 +324,11 @@ export class MongoRepository {
      * タスクエクスポートリトライ
      * todo updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
      */
-    public async reexportTasks(intervalInMinutes: number): Promise<void> {
+    public async reexportTasks(params: { intervalInMinutes: number }): Promise<void> {
         await this.transactionModel.findOneAndUpdate(
             {
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Exporting,
-                updatedAt: { $lt: moment().add(-intervalInMinutes, 'minutes').toISOString() }
+                updatedAt: { $lt: moment().add(-params.intervalInMinutes, 'minutes').toISOString() }
             },
             {
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
@@ -347,11 +338,10 @@ export class MongoRepository {
     /**
      * set task status exported by transaction id
      * IDでタスクをエクスポート済に変更する
-     * @param transactionId transaction id
      */
-    public async setTasksExportedById(transactionId: string) {
+    public async setTasksExportedById(params: { id: string }) {
         await this.transactionModel.findByIdAndUpdate(
-            transactionId,
+            params.id,
             {
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Exported,
                 tasksExportedAt: moment().toDate()
@@ -380,17 +370,17 @@ export class MongoRepository {
     /**
      * 取引を中止する
      */
-    public async cancel<T extends factory.transactionType>(
-        typeOf: T,
-        transactionId: string
-    ): Promise<factory.transaction.ITransaction<T>> {
+    public async cancel<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<factory.transaction.ITransaction<T>> {
         const endDate = moment().toDate();
 
         // 進行中ステータスの取引を中止する
         const doc = await this.transactionModel.findOneAndUpdate(
             {
-                typeOf: typeOf,
-                _id: transactionId,
+                typeOf: params.typeOf,
+                _id: params.id,
                 status: factory.transactionStatusType.InProgress
             },
             {
@@ -401,16 +391,16 @@ export class MongoRepository {
         ).exec();
         // NotFoundであれば取引状態確認
         if (doc === null) {
-            const transaction = await this.findById<T>(typeOf, transactionId);
+            const transaction = await this.findById<T>(params);
             if (transaction.status === factory.transactionStatusType.Canceled) {
                 // すでに中止済の場合
                 return transaction;
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('transactionId', 'Transaction already expired');
+                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
             } else if (transaction.status === factory.transactionStatusType.Confirmed) {
-                throw new factory.errors.Argument('transactionId', 'Confirmed transaction unable to cancel');
+                throw new factory.errors.Argument('Transaction id', 'Confirmed transaction unable to cancel');
             } else {
-                throw new factory.errors.NotFound('Transaction');
+                throw new factory.errors.NotFound(this.transactionModel.modelName);
             }
         }
 

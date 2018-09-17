@@ -25,7 +25,10 @@ export function createFromTransaction(params: { transactionId: string }) {
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -45,8 +48,8 @@ export function createFromTransaction(params: { transactionId: string }) {
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(orderActionAttributes.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: orderActionAttributes.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -56,7 +59,7 @@ export function createFromTransaction(params: { transactionId: string }) {
 
         // アクション完了
         debug('ending action...');
-        await repos.action.complete(orderActionAttributes.typeOf, action.id, {});
+        await repos.action.complete({ typeOf: orderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
         await onCreate(params.transactionId, orderActionAttributes)({ task: repos.task });
@@ -212,7 +215,10 @@ export function cancelReservations(returnOrderTransactionId: string) {
         task: TaskRepo;
         cancelReservationService: chevre.service.transaction.CancelReservation;
     }) => {
-        const transaction = await repos.transaction.findById(factory.transactionType.ReturnOrder, returnOrderTransactionId);
+        const transaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.ReturnOrder,
+            id: returnOrderTransactionId
+        });
         const potentialActions = transaction.potentialActions;
         const placeOrderTransaction = transaction.object.transaction;
         const placeOrderTransactionResult = placeOrderTransaction.result;
@@ -244,8 +250,8 @@ export function cancelReservations(returnOrderTransactionId: string) {
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(returnOrderActionAttributes.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -255,7 +261,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
         // アクション完了
         debug('ending action...');
-        await repos.action.complete(returnOrderActionAttributes.typeOf, action.id, {});
+        await repos.action.complete({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
         await onReturn(returnOrderTransactionId, returnOrderActionAttributes)({ task: repos.task });

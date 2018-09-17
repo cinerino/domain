@@ -42,7 +42,10 @@ export function create(params: {
         organization: OrganizationRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
 
         // 他者口座による決済も可能にするためにコメントアウト
         // 基本的に、自分の口座のオーソリを他者に与えても得しないので、
@@ -120,8 +123,8 @@ export function create(params: {
             debug(error);
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -157,10 +160,9 @@ export function create(params: {
             execTranResult: execTranResult
         };
 
-        return repos.action.complete(action.typeOf, action.id, result);
+        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
-
 export function cancel(params: {
     agentId: string;
     transactionId: string;
@@ -170,13 +172,16 @@ export function cancel(params: {
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
 
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await repos.action.cancel(factory.actionType.AuthorizeAction, params.actionId);
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
         const actionResult = <factory.action.authorize.paymentMethod.creditCard.IResult>action.result;
 
         // オーソリ取消

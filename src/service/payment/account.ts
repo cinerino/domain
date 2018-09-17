@@ -50,8 +50,8 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
             // actionにエラー結果を追加
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -62,13 +62,11 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         // アクション完了
         debug('ending action...');
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
-        await repos.action.complete(action.typeOf, action.id, actionResult);
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
-
 /**
  * Pecorinoオーソリ取消
- * @param transactionId 取引ID
  */
 export function cancelAccountAuth(params: { transactionId: string }) {
     return async (repos: {
@@ -80,12 +78,12 @@ export function cancelAccountAuth(params: { transactionId: string }) {
         const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
             await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
                 .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             );
         await Promise.all(authorizeActions.map(async (action) => {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
+                // アクションステータスに関係なく取消処理実行
                 switch (action.result.pendingTransaction.typeOf) {
                     case pecorinoapi.factory.transactionType.Withdraw:
                         await repos.withdrawService.cancel({
@@ -106,11 +104,12 @@ export function cancelAccountAuth(params: { transactionId: string }) {
                             `transaction type '${(<any>action.result.pendingTransaction).typeOf}' not implemented.`
                         );
                 }
+
+                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
         }));
     };
 }
-
 /**
  * 口座返金処理を実行する
  */
@@ -172,8 +171,8 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -183,7 +182,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
         // アクション完了
         debug('ending action...');
-        await repos.action.complete(action.typeOf, action.id, {});
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
         await onRefund(params)({ task: repos.task });

@@ -168,8 +168,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(organizationRepo).expects('findById').once().resolves(seller);
         sandbox.mock(domain.GMO.services.credit).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(domain.GMO.services.credit).expects('execTran').never();
-        sandbox.mock(actionRepo).expects('giveUp').once()
-            .withArgs(action.typeOf, action.id, sinon.match({ message: entryTranResult.message })).resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
@@ -292,8 +291,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(organizationRepo).expects('findById').once().resolves(seller);
         sandbox.mock(domain.GMO.services.credit).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(domain.GMO.services.credit).expects('execTran').never();
-        sandbox.mock(actionRepo).expects('giveUp').once()
-            .withArgs(action.typeOf, action.id, sinon.match({ message: entryTranResult.message })).resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
@@ -357,8 +355,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(organizationRepo).expects('findById').once().resolves(seller);
         sandbox.mock(domain.GMO.services.credit).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(domain.GMO.services.credit).expects('execTran').never();
-        sandbox.mock(actionRepo).expects('giveUp').once()
-            .withArgs(action.typeOf, action.id, sinon.match({ message: entryTranResult.message })).resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
@@ -422,8 +419,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(organizationRepo).expects('findById').once().resolves(seller);
         sandbox.mock(domain.GMO.services.credit).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(domain.GMO.services.credit).expects('execTran').never();
-        sandbox.mock(actionRepo).expects('giveUp').once()
-            .withArgs(action.typeOf, action.id, sinon.match({ message: entryTranResult.message })).resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
@@ -482,8 +478,7 @@ describe('action.authorize.creditCard.cancel()', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').once()
-            .withExactArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.cancel({
@@ -576,8 +571,7 @@ describe('action.authorize.creditCard.cancel()', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').once()
-            .withExactArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.cancel({
@@ -588,7 +582,6 @@ describe('action.authorize.creditCard.cancel()', () => {
             action: actionRepo,
             transaction: transactionRepo
         });
-
         assert.equal(result, undefined);
         sandbox.verify();
     });

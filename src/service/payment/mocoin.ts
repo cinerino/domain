@@ -21,7 +21,6 @@ export function payMocoin(params: factory.task.IData<factory.taskName.PayMocoin>
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
-
         try {
             const mocoinTransaction = params.object.mocoinTransaction;
             // 転送取引の場合確定
@@ -34,8 +33,8 @@ export function payMocoin(params: factory.task.IData<factory.taskName.PayMocoin>
             // actionにエラー結果を追加
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -46,6 +45,6 @@ export function payMocoin(params: factory.task.IData<factory.taskName.PayMocoin>
         // アクション完了
         debug('ending action...');
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Mocoin> = {};
-        await repos.action.complete(action.typeOf, action.id, actionResult);
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }

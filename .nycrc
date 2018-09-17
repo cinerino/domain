@@ -1,9 +1,9 @@
 {
     "check-coverage": true,
-    "lines": 0,
-    "statements": 0,
-    "functions": 0,
-    "branches": 0,
+    "lines": 40,
+    "statements": 40,
+    "functions": 30,
+    "branches": 30,
     "extension": [
         ".ts"
     ],

@@ -70,7 +70,10 @@ export function create<T extends factory.accountType>(params: {
          */
         transferTransactionService?: pecorinoapi.service.transaction.Transfer;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
 
         // 他者口座による決済も可能にするためにコメントアウト
         // 基本的に、自分の口座のオーソリを他者に与えても得しないので、
@@ -190,8 +193,8 @@ export function create<T extends factory.accountType>(params: {
             // actionにエラー結果を追加
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ name: error.name, message: error.message } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, name: error.name, message: error.message };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -208,7 +211,7 @@ export function create<T extends factory.accountType>(params: {
             pendingTransaction: pendingTransaction
         };
 
-        return repos.action.complete(action.typeOf, action.id, actionResult);
+        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
 
@@ -236,7 +239,10 @@ export function cancel(params: {
         transferTransactionService?: pecorinoapi.service.transaction.Transfer;
     }) => {
         debug('canceling pecorino authorize action...');
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -245,7 +251,7 @@ export function cancel(params: {
         }
 
         // まずアクションをキャンセル
-        const action = await repos.action.cancel(factory.actionType.AuthorizeAction, params.actionId);
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
         const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>action.result;
 
         // Pecorinoで取消中止実行

@@ -60,7 +60,10 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         transaction: TransactionRepo;
         reserveService: chevre.service.transaction.Reserve;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
 
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -114,8 +117,8 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp(action.typeOf, action.id, actionError);
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -143,15 +146,12 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
             responseBody: response
         };
 
-        return repos.action.complete(action.typeOf, action.id, result);
+        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
 
 /**
  * 座席予約承認アクションをキャンセルする
- * @param agentId アクション主体ID
- * @param transactionId 取引ID
- * @param actionId アクションID
  */
 export function cancel(params: {
     agentId: string;
@@ -163,13 +163,16 @@ export function cancel(params: {
         transaction: TransactionRepo;
         reserveService: chevre.service.transaction.Reserve;
     }) => {
-        const transaction = await repos.transaction.findInProgressById(factory.transactionType.PlaceOrder, params.transactionId);
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
         // MongoDBでcompleteステータスであるにも関わらず、Chevreでは削除されている、というのが最悪の状況
         // それだけは回避するためにMongoDBを先に変更
-        const action = await repos.action.cancel(factory.actionType.AuthorizeAction, params.actionId);
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
         if (action.result !== undefined) {
             const actionResult = <factory.action.authorize.offer.seatReservation.IResult>action.result;
             // 座席予約キャンセル

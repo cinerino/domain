@@ -116,15 +116,15 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>
             await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
                 .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             );
-
         await Promise.all(authorizeActions.map(async (action) => {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
+                // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
                 debug('calling reserve transaction...');
                 await repos.reserveService.cancel({ transactionId: action.result.responseBody.id });
+                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
         }));
     };

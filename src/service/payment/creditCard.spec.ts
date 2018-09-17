@@ -70,13 +70,12 @@ describe('cancelCreditCardAuth()', () => {
             }
         ];
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-
         sandbox.mock(actionRepo).expects('findAuthorizeByTransactionId').once()
             .withExactArgs(existingTransaction.id).resolves(authorizeActions);
-        sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
+        sandbox.mock(domain.GMO.services.credit).expects('alterTran').exactly(authorizeActions.length).resolves();
+        sandbox.mock(actionRepo).expects('cancel').exactly(authorizeActions.length).resolves({});
 
         const result = await domain.service.payment.creditCard.cancelCreditCardAuth(existingTransaction.id)({ action: actionRepo });
-
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -94,10 +93,8 @@ describe('payCreditCard()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
-        sandbox.mock(actionRepo).expects('start').once()
-            .withExactArgs(existingTransaction.potentialActions.order.potentialActions.payCreditCard).resolves(action);
-        sandbox.mock(actionRepo).expects('complete').once()
-            .withArgs(existingTransaction.potentialActions.order.potentialActions.payCreditCard.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('start').once().resolves(action);
+        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
         sandbox.mock(transactionRepo).expects('findById').once().resolves(existingTransaction);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
@@ -182,10 +179,8 @@ describe('payCreditCard()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
-        sandbox.mock(actionRepo).expects('start').once()
-            .withExactArgs(existingTransaction.potentialActions.order.potentialActions.payCreditCard).resolves(action);
-        sandbox.mock(actionRepo).expects('complete').once()
-            .withArgs(existingTransaction.potentialActions.order.potentialActions.payCreditCard.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('start').once().resolves(action);
+        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
         sandbox.mock(transactionRepo).expects('findById').once().resolves(existingTransaction);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
@@ -208,10 +203,8 @@ describe('payCreditCard()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
-        sandbox.mock(actionRepo).expects('start').once()
-            .withExactArgs(existingTransaction.potentialActions.order.potentialActions.payCreditCard).resolves(action);
-        sandbox.mock(actionRepo).expects('giveUp')
-            .withArgs(existingTransaction.potentialActions.order.potentialActions.payCreditCard.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('start').once().resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
         sandbox.mock(transactionRepo).expects('findById').once().resolves(existingTransaction);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
@@ -282,10 +275,8 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(actionRepo).expects('start').once()
-            .withExactArgs(refundActionAttributes).resolves(action);
-        sandbox.mock(actionRepo).expects('complete').once()
-            .withArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('start').once().resolves(action);
+        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
@@ -431,10 +422,8 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(actionRepo).expects('start').once()
-            .withExactArgs(refundActionAttributes).resolves(action);
-        sandbox.mock(actionRepo).expects('complete').once()
-            .withArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('start').once().resolves(action);
+        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').never();
@@ -484,8 +473,7 @@ describe('refundCreditCard()', () => {
         sandbox.mock(actionRepo).expects('start').once()
             .withExactArgs(refundActionAttributes).resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
-        sandbox.mock(actionRepo).expects('giveUp').once()
-            .withArgs(action.typeOf, action.id).resolves(action);
+        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects(alterTranResult);
         sandbox.mock(taskRepo).expects('save').never();
