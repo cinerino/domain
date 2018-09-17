@@ -22,13 +22,11 @@ import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action
 import * as MocoinAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/mocoin';
 
 const debug = createDebug('cinerino-domain:service');
-
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
-export type IOrganizationAndTransactionAndTransactionCountOperation<T> = (repos: {
+export type IStartOperation<T> = (repos: {
     organization: OrganizationRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
-
 /**
  * 取引開始パラメーターインターフェース
  */
@@ -52,17 +50,27 @@ export interface IStartParams {
      * APIクライアント
      */
     clientUser: factory.clientUser.IClientUser;
-    /**
-     * WAITER許可証トークン
-     */
-    passportToken?: waiter.factory.passport.IEncodedPassport;
+    passport?: {
+        /**
+         * WAITER許可証発行者
+         */
+        issuer: string;
+        /**
+         * WAITER許可証トークン
+         */
+        token: waiter.factory.passport.IEncodedPassport;
+        /**
+         * WAITER許可証トークンシークレット
+         */
+        secret: string;
+    };
 }
 
 /**
  * 取引開始
  */
 export function start(params: IStartParams):
-    IOrganizationAndTransactionAndTransactionCountOperation<factory.transaction.placeOrder.ITransaction> {
+    IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
         organization: OrganizationRepo;
         transaction: TransactionRepo;
@@ -71,25 +79,22 @@ export function start(params: IStartParams):
         const seller = await repos.organization.findById({ typeOf: params.seller.typeOf, id: params.seller.id });
 
         let passport: waiter.factory.passport.IPassport | undefined;
-
         // WAITER許可証トークンがあれば検証する
-        if (params.passportToken !== undefined) {
+        if (params.passport !== undefined) {
             try {
-                passport = await waiter.service.passport.verify(params.passportToken, <string>process.env.WAITER_SECRET);
+                passport = await waiter.service.passport.verify(params.passport.token, params.passport.secret);
             } catch (error) {
-                throw new factory.errors.Argument('passportToken', `Invalid token. ${error.message}`);
+                throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
             }
 
             // スコープを判別
-            if (!validatePassport(passport, seller.id)) {
-                throw new factory.errors.Argument('passportToken', 'Invalid passport.');
+            if (!validatePassport({
+                passport: passport,
+                issuer: params.passport.issuer,
+                sellerId: seller.id
+            })) {
+                throw new factory.errors.Argument('Passport Token', 'Invalid passport');
             }
-        } else {
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO いったん許可証トークンなしでも通過するようにしているが、これでいいのかどうか。保留事項。
-            // throw new factory.errors.ArgumentNull('passportToken');
-            params.passportToken = moment().valueOf().toString(); // ユニークインデックスがDBにはられているため
-            passport = <any>{};
         }
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
@@ -107,7 +112,7 @@ export function start(params: IStartParams):
                 image: seller.image
             },
             object: {
-                passportToken: params.passportToken,
+                passportToken: (params.passport !== undefined) ? params.passport.token : undefined,
                 passport: <any>passport,
                 clientUser: params.clientUser,
                 authorizeActions: []
@@ -131,7 +136,7 @@ export function start(params: IStartParams):
                 /* istanbul ignore else */
                 // tslint:disable-next-line:no-magic-numbers
                 if (error.code === 11000) {
-                    throw new factory.errors.AlreadyInUse('transaction', ['passportToken'], 'Passport already used.');
+                    throw new factory.errors.AlreadyInUse('Transaction', ['passportToken'], 'Passport already used');
                 }
             }
 
@@ -144,19 +149,23 @@ export function start(params: IStartParams):
 
 /**
  * WAITER許可証の有効性チェック
- * @param passport WAITER許可証
- * @param sellerIdentifier 販売者識別子
  */
-function validatePassport(passport: waiter.factory.passport.IPassport, sellerIdentifier: string) {
-    // スコープのフォーマットは、placeOrderTransaction.{sellerId}
-    const explodedScopeStrings = passport.scope.split('.');
+function validatePassport(params: {
+    passport: waiter.factory.passport.IPassport;
+    issuer: string;
+    sellerId: string;
+}) {
+    // スコープのフォーマットは、Transaction:PlaceOrder:${sellerId}
+    const explodedScopeStrings = params.passport.scope.split(':');
 
     return (
-        passport.iss === <string>process.env.WAITER_PASSPORT_ISSUER && // 許可証発行者確認
+        params.passport.iss === params.issuer && // 許可証発行者確認
         // tslint:disable-next-line:no-magic-numbers
-        explodedScopeStrings.length === 2 &&
-        explodedScopeStrings[0] === 'placeOrderTransaction' && // スコープ接頭辞確認
-        explodedScopeStrings[1] === sellerIdentifier // 販売者識別子確認
+        explodedScopeStrings.length === 3 &&
+        explodedScopeStrings[0] === 'Transaction' && // スコープ接頭辞確認
+        explodedScopeStrings[1] === factory.transactionType.PlaceOrder && // スコープ接頭辞確認
+        // tslint:disable-next-line:no-magic-numbers
+        explodedScopeStrings[2] === params.sellerId // 販売者識別子確認
     );
 }
 
