@@ -28,49 +28,11 @@ export type IStartOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 /**
- * 取引開始パラメーターインターフェース
- */
-export interface IStartParams {
-    /**
-     * 取引期限
-     */
-    expires: Date;
-    /**
-     * 消費者
-     */
-    customer: factory.person.IPerson;
-    /**
-     * 販売者
-     */
-    seller: {
-        typeOf: factory.organizationType;
-        id: string;
-    };
-    /**
-     * APIクライアント
-     */
-    clientUser: factory.clientUser.IClientUser;
-    passport?: {
-        /**
-         * WAITER許可証発行者
-         */
-        issuer: string;
-        /**
-         * WAITER許可証トークン
-         */
-        token: waiter.factory.passport.IEncodedPassport;
-        /**
-         * WAITER許可証トークンシークレット
-         */
-        secret: string;
-    };
-}
-
-/**
  * 取引開始
  */
-export function start(params: IStartParams):
-    IStartOperation<factory.transaction.placeOrder.ITransaction> {
+export function start(
+    params: factory.transaction.placeOrder.IStartParamsWithoutDetail
+): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
         organization: OrganizationRepo;
         transaction: TransactionRepo;
@@ -80,9 +42,9 @@ export function start(params: IStartParams):
 
         let passport: waiter.factory.passport.IPassport | undefined;
         // WAITER許可証トークンがあれば検証する
-        if (params.passport !== undefined) {
+        if (params.object.passport !== undefined) {
             try {
-                passport = await waiter.service.passport.verify(params.passport.token, params.passport.secret);
+                passport = await waiter.service.passport.verify(params.object.passport.token, params.object.passport.secret);
             } catch (error) {
                 throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
             }
@@ -90,7 +52,7 @@ export function start(params: IStartParams):
             // スコープを判別
             if (!validatePassport({
                 passport: passport,
-                issuer: params.passport.issuer,
+                issuer: params.object.passport.issuer,
                 sellerId: seller.id
             })) {
                 throw new factory.errors.Argument('Passport Token', 'Invalid passport');
@@ -101,7 +63,7 @@ export function start(params: IStartParams):
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
             typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
-            agent: params.customer,
+            agent: params.agent,
             seller: {
                 id: seller.id,
                 typeOf: seller.typeOf,
@@ -112,9 +74,9 @@ export function start(params: IStartParams):
                 image: seller.image
             },
             object: {
-                passportToken: (params.passport !== undefined) ? params.passport.token : undefined,
-                passport: <any>passport,
-                clientUser: params.clientUser,
+                passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
+                passport: passport,
+                clientUser: params.object.clientUser,
                 authorizeActions: []
             },
             expires: params.expires,
