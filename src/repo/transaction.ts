@@ -70,9 +70,30 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.agent !== undefined) {
+            andConditions.push({
+                'agent.typeOf': {
+                    $exists: true,
+                    $eq: params.agent.typeOf
+                }
+            });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (Array.isArray(params.agent.ids)) {
                 andConditions.push({
-                    'agent.id': { $in: params.agent.ids }
+                    'agent.id': {
+                        $exists: true,
+                        $in: params.agent.ids
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.agent.identifiers)) {
+                andConditions.push({
+                    'agent.identifier': {
+                        $exists: true,
+                        $in: params.agent.identifiers
+                    }
                 });
             }
         }
@@ -81,6 +102,14 @@ export class MongoRepository {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (params.seller !== undefined) {
+                    andConditions.push({
+                        'seller.typeOf': {
+                            $exists: true,
+                            $eq: params.seller.typeOf
+                        }
+                    });
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
                     if (Array.isArray(params.seller.ids)) {
                         andConditions.push({
                             'seller.id': {
@@ -93,7 +122,11 @@ export class MongoRepository {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (params.object !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
                     if (params.object.customerContact !== undefined) {
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore else */
                         if (params.object.customerContact.familyName !== undefined) {
                             andConditions.push({
                                 'object.customerContact.familyName': {
@@ -102,6 +135,8 @@ export class MongoRepository {
                                 }
                             });
                         }
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore else */
                         if (params.object.customerContact.givenName !== undefined) {
                             andConditions.push({
                                 'object.customerContact.givenName': {
@@ -110,6 +145,8 @@ export class MongoRepository {
                                 }
                             });
                         }
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore else */
                         if (params.object.customerContact.email !== undefined) {
                             andConditions.push({
                                 'object.customerContact.email': {
@@ -118,6 +155,8 @@ export class MongoRepository {
                                 }
                             });
                         }
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore else */
                         if (params.object.customerContact.telephone !== undefined) {
                             andConditions.push({
                                 'object.customerContact.telephone': {
@@ -131,7 +170,11 @@ export class MongoRepository {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (params.result !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
                     if (params.result.order !== undefined) {
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore else */
                         if (Array.isArray(params.result.order.orderNumbers)) {
                             andConditions.push({
                                 'result.order.orderNumber': {
@@ -144,6 +187,24 @@ export class MongoRepository {
                 }
                 break;
             case factory.transactionType.ReturnOrder:
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (params.object !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (params.object.order !== undefined) {
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore else */
+                        if (Array.isArray(params.object.order.orderNumbers)) {
+                            andConditions.push({
+                                'object.order.orderNumber': {
+                                    $exists: true,
+                                    $in: params.object.order.orderNumbers
+                                }
+                            });
+                        }
+                    }
+                }
                 break;
             default:
 
@@ -155,11 +216,11 @@ export class MongoRepository {
      * 取引を開始する
      */
     public async start<T extends factory.transactionType>(
-        attributes: factory.transaction.IAttributes<T>
+        params: factory.transaction.IStartParams<T>
     ): Promise<factory.transaction.ITransaction<T>> {
         return this.transactionModel.create({
-            typeOf: attributes.typeOf,
-            ...<Object>attributes,
+            typeOf: params.typeOf,
+            ...<Object>params,
             status: factory.transactionStatusType.InProgress,
             startDate: new Date(),
             endDate: undefined,

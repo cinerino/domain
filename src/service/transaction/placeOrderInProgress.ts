@@ -638,7 +638,7 @@ export async function createEmailMessageFromTransaction(params: {
                                 sender: {
                                     typeOf: seller.typeOf,
                                     name: seller.name.ja,
-                                    email: 'noreply@ticket-cinemasunshine.com'
+                                    email: 'noreply@example.com'
                                 },
                                 toRecipient: {
                                     typeOf: params.transaction.agent.typeOf,

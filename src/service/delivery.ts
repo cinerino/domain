@@ -278,7 +278,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
     }) => {
         // アクション開始
-        const placeOrderTransaction = params.object.purpose;
+        const order = params.object.purpose;
         const pecorinoAwardAuthorizeActionResult = params.object.result;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -288,7 +288,6 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
 
         let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<factory.accountType.Point>;
         const action = await repos.action.start(params);
-
         try {
             // 入金した分を引き出し取引実行
             const withdrawService = new pecorinoapi.service.transaction.Withdraw({
@@ -301,17 +300,17 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,
-                    name: `PlaceOrderTransaction-${placeOrderTransaction.id} Customer`,
+                    name: order.customer.name,
                     url: params.agent.url
                 },
                 recipient: {
                     typeOf: params.recipient.typeOf,
                     id: params.recipient.id,
-                    name: `PlaceOrderTransaction-${placeOrderTransaction.id} Seller`,
+                    name: order.seller.name,
                     url: params.recipient.url
                 },
                 amount: pecorinoAwardAuthorizeActionResult.pointTransaction.object.amount,
-                notes: 'Cinerino 返品によるポイントインセンティブ取消',
+                notes: '注文返品によるポイントインセンティブ取消',
                 accountType: factory.accountType.Point,
                 fromAccountNumber: pecorinoAwardAuthorizeActionResult.pointTransaction.object.toAccountNumber
             });

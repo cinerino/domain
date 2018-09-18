@@ -137,27 +137,40 @@ export function cancelCreditCardAuth(params: { transactionId: string }) {
 /**
  * 注文返品取引からクレジットカード返金処理を実行する
  */
+// tslint:disable-next-line:max-func-body-length
 export function refundCreditCard(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.transactionId });
-        const potentialActions = transaction.potentialActions;
-        const placeOrderTransaction = transaction.object.transaction;
-        const placeOrderTransactionResult = placeOrderTransaction.result;
-        const authorizeActions = placeOrderTransaction.object.authorizeActions
-            .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((action) => action.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard);
-
+        const returnOrderTransaction = await repos.transaction.findById({
+            typeOf: factory.transactionType.ReturnOrder,
+            id: params.transactionId
+        });
+        const potentialActions = returnOrderTransaction.potentialActions;
         if (potentialActions === undefined) {
             throw new factory.errors.NotFound('transaction.potentialActions');
         }
 
+        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+            typeOf: factory.transactionType.PlaceOrder,
+            result: {
+                order: { orderNumbers: [returnOrderTransaction.object.order.orderNumber] }
+            }
+        });
+        const placeOrderTransaction = placeOrderTransactions.shift();
+        if (placeOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Place order transaction');
+        }
+        const placeOrderTransactionResult = placeOrderTransaction.result;
         if (placeOrderTransactionResult === undefined) {
             throw new factory.errors.NotFound('placeOrderTransaction.result');
         }
+        const authorizeActions = placeOrderTransaction.object.authorizeActions
+            .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((action) => action.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard);
+
         const returnOrderPotentialActions = potentialActions.returnOrder.potentialActions;
         if (returnOrderPotentialActions === undefined) {
             throw new factory.errors.NotFound('returnOrder.potentialActions');

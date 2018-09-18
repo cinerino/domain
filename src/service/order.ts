@@ -205,9 +205,8 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
 
 /**
  * 注文返品アクション
- * @param returnOrderTransactionId 注文返品取引ID
  */
-export function cancelReservations(returnOrderTransactionId: string) {
+export function cancelReservations(params: { orderNumber: string }) {
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
@@ -215,34 +214,34 @@ export function cancelReservations(returnOrderTransactionId: string) {
         task: TaskRepo;
         cancelReservationService: chevre.service.transaction.CancelReservation;
     }) => {
-        const transaction = await repos.transaction.findById({
+        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
             typeOf: factory.transactionType.ReturnOrder,
-            id: returnOrderTransactionId
+            object: {
+                order: { orderNumbers: [params.orderNumber] }
+            }
         });
-        const potentialActions = transaction.potentialActions;
-        const placeOrderTransaction = transaction.object.transaction;
-        const placeOrderTransactionResult = placeOrderTransaction.result;
-
-        if (potentialActions === undefined) {
-            throw new factory.errors.NotFound('transaction.potentialActions');
+        const returnOrderTransaction = returnOrderTransactions.shift();
+        if (returnOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Return order transaction');
         }
-        if (placeOrderTransactionResult === undefined) {
-            throw new factory.errors.NotFound('placeOrderTransaction.result');
+        const potentialActions = returnOrderTransaction.potentialActions;
+        if (potentialActions === undefined) {
+            throw new factory.errors.NotFound('PotentialActions of return order transaction');
         }
 
         // アクション開始
         const returnOrderActionAttributes = potentialActions.returnOrder;
         const action = await repos.action.start(returnOrderActionAttributes);
-
         try {
-            const order = placeOrderTransactionResult.order;
+            const order = returnOrderTransaction.object.order;
 
             // 予約キャンセル確定
-            const cancelReservationTransaction = transaction.object.pendingCancelReservationTransaction;
-            if (cancelReservationTransaction === undefined) {
-                throw new factory.errors.NotFound('transaction.object.pendingCancelReservationTransaction');
+            const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
+            if (cancelReservationTransactions !== undefined) {
+                await Promise.all(cancelReservationTransactions.map(async (cancelReservationTransaction) => {
+                    await repos.cancelReservationService.confirm({ transactionId: cancelReservationTransaction.id });
+                }));
             }
-            await repos.cancelReservationService.confirm({ transactionId: cancelReservationTransaction.id });
 
             // 注文ステータス変更
             debug('changing orderStatus...');
@@ -264,7 +263,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
         await repos.action.complete({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
-        await onReturn(returnOrderTransactionId, returnOrderActionAttributes)({ task: repos.task });
+        await onReturn(returnOrderTransaction.id, returnOrderActionAttributes)({ task: repos.task });
     };
 }
 

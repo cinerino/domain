@@ -29,7 +29,7 @@ export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IO
             endpoint: settings.chevreEndpoint,
             auth: settings.chevreAuthClient
         });
-        await OrderService.cancelReservations(data.transactionId)({
+        await OrderService.cancelReservations(data)({
             action: actionRepo,
             order: orderRepo,
             transaction: transactionRepo,

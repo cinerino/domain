@@ -258,7 +258,7 @@ describe('refundCreditCard()', () => {
         const returnOrderTransaction = {
             id: 'returnOrderTransactionId',
             typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { transaction: placeOrderTransaction },
+            object: { order: placeOrderTransaction.result.order },
             potentialActions: {
                 returnOrder: {
                     potentialActions: {
@@ -275,6 +275,7 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
+        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
@@ -287,7 +288,6 @@ describe('refundCreditCard()', () => {
             transaction: transactionRepo,
             task: taskRepo
         });
-
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -297,7 +297,7 @@ describe('refundCreditCard()', () => {
         const returnOrderTransaction = {
             id: 'returnOrderTransactionId',
             typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { transaction: placeOrderTransaction }
+            object: { order: placeOrderTransaction.result.order }
             // potentialActions: {
             //     returnOrder: {
             //         potentialActions: {
@@ -312,6 +312,7 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
+        sandbox.mock(transactionRepo).expects('search').once().never();
         sandbox.mock(actionRepo).expects('start').never();
 
         const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
@@ -319,7 +320,6 @@ describe('refundCreditCard()', () => {
             transaction: transactionRepo,
             task: taskRepo
         }).catch((err) => err);
-
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -337,7 +337,7 @@ describe('refundCreditCard()', () => {
         const returnOrderTransaction = {
             id: 'returnOrderTransactionId',
             typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { transaction: placeOrderTransaction },
+            object: { order: existingTransaction.result.order },
             potentialActions: {
                 returnOrder: {
                     potentialActions: {
@@ -352,6 +352,7 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
+        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').never();
 
         const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
@@ -359,7 +360,6 @@ describe('refundCreditCard()', () => {
             transaction: transactionRepo,
             task: taskRepo
         }).catch((err) => err);
-
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -369,7 +369,7 @@ describe('refundCreditCard()', () => {
         const returnOrderTransaction = {
             id: 'returnOrderTransactionId',
             typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { transaction: placeOrderTransaction },
+            object: { order: placeOrderTransaction.result.order },
             potentialActions: {
                 returnOrder: {}
             }
@@ -380,6 +380,7 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
+        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').never();
 
         const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
@@ -405,7 +406,7 @@ describe('refundCreditCard()', () => {
         const returnOrderTransaction = {
             id: 'returnOrderTransactionId',
             typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { transaction: placeOrderTransaction },
+            object: { order: placeOrderTransaction.result.order },
             potentialActions: {
                 returnOrder: {
                     potentialActions: {
@@ -422,6 +423,7 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
+        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
@@ -434,7 +436,6 @@ describe('refundCreditCard()', () => {
             transaction: transactionRepo,
             task: taskRepo
         });
-
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -452,7 +453,7 @@ describe('refundCreditCard()', () => {
         const returnOrderTransaction = {
             id: 'returnOrderTransactionId',
             typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { transaction: placeOrderTransaction },
+            object: { order: placeOrderTransaction.result.order },
             potentialActions: {
                 returnOrder: {
                     potentialActions: {
@@ -470,6 +471,7 @@ describe('refundCreditCard()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
+        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').once()
             .withExactArgs(refundActionAttributes).resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
@@ -483,7 +485,6 @@ describe('refundCreditCard()', () => {
             transaction: transactionRepo,
             task: taskRepo
         }).catch((err) => err);
-
         assert.deepEqual(result, alterTranResult);
         sandbox.verify();
     });

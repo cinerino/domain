@@ -2,6 +2,7 @@
  * 注文返品取引サービス
  */
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 import * as pug from 'pug';
 
 import * as chevre from '../../chevre';
@@ -27,40 +28,10 @@ export type ITaskAndTransactionOperation<T> = (repos: {
 }) => Promise<T>;
 /**
  * 注文返品取引開始
- * @param params 開始パラメーター
  */
-// tslint:disable-next-line:max-func-body-length
-export function start(params: {
-    /**
-     * 取引期限
-     */
-    expires: Date;
-    /**
-     * 主体者ID
-     */
-    agentId: string;
-    /**
-     * APIクライアント
-     */
-    clientUser: factory.clientUser.IClientUser;
-    /**
-     * 取引ID
-     */
-    transactionId: string;
-    /**
-     * キャンセル手数料
-     */
-    cancellationFee: number;
-    /**
-     * 強制的に返品するかどうか
-     * 管理者の判断で返品する場合、バリデーションをかけない
-     */
-    forcibly: boolean;
-    /**
-     * 返品理由
-     */
-    reason: factory.transaction.returnOrder.Reason;
-}): IStartOperation<factory.transaction.returnOrder.ITransaction> {
+export function start(
+    params: factory.transaction.returnOrder.IStartParamsWithoutDetail
+): IStartOperation<factory.transaction.returnOrder.ITransaction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -68,26 +39,32 @@ export function start(params: {
         transaction: TransactionRepo;
         cancelReservationService: chevre.service.transaction.CancelReservation;
     }) => {
-        const now = new Date();
-
         // 返品対象の取引取得
-        const placeOrderTransaction = await repos.transaction.findById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
-        });
-        if (placeOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
-            throw new factory.errors.Argument('transactionId', 'Status not Confirmed.');
-        }
+        const order = await repos.order.findByOrderNumber(params.object.order.orderNumber);
+        // if (placeOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
+        //     throw new factory.errors.Argument('transactionId', 'Status not Confirmed.');
+        // }
 
-        const placeOrderTransactionResult = placeOrderTransaction.result;
-        if (placeOrderTransactionResult === undefined) {
-            throw new factory.errors.NotFound('placeOrderTransaction.result');
-        }
+        // const placeOrderTransactionResult = placeOrderTransaction.result;
+        // if (placeOrderTransactionResult === undefined) {
+        //     throw new factory.errors.NotFound('placeOrderTransaction.result');
+        // }
 
         // 注文ステータスが配送済の場合のみ受け付け
-        const order = await repos.order.findByOrderNumber(placeOrderTransactionResult.order.orderNumber);
+        // const order = await repos.order.findByOrderNumber(placeOrderTransactionResult.order.orderNumber);
         if (order.orderStatus !== factory.orderStatus.OrderDelivered) {
-            throw new factory.errors.Argument('transaction', 'order status is not OrderDelivered');
+            throw new factory.errors.Argument('Order number', 'Order not delivered yet');
+        }
+
+        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+            typeOf: factory.transactionType.PlaceOrder,
+            result: {
+                order: { orderNumbers: [params.object.order.orderNumber] }
+            }
+        });
+        const placeOrderTransaction = placeOrderTransactions.shift();
+        if (placeOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Transaction');
         }
 
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
@@ -102,27 +79,20 @@ export function start(params: {
         // 検証
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (!params.forcibly) {
-            validateRequest();
-        }
+        // if (!params.forcibly) {
+        //     validateRequest();
+        // }
 
-        const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
+        const returnOrderAttributes: factory.transaction.IStartParams<factory.transactionType.ReturnOrder> = {
             typeOf: factory.transactionType.ReturnOrder,
-            status: factory.transactionStatusType.InProgress,
-            agent: {
-                typeOf: factory.personType.Person,
-                id: params.agentId,
-                url: ''
-            },
+            agent: params.agent,
             object: {
-                clientUser: params.clientUser,
-                transaction: placeOrderTransaction,
-                cancellationFee: params.cancellationFee,
-                reason: params.reason
+                clientUser: params.object.clientUser,
+                order: order,
+                cancellationFee: params.object.cancellationFee,
+                reason: params.object.reason
             },
-            expires: params.expires,
-            startDate: now,
-            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
+            expires: params.expires
         };
 
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;
@@ -139,7 +109,7 @@ export function start(params: {
                 /* istanbul ignore else */
                 // tslint:disable-next-line:no-magic-numbers
                 if (error.code === 11000) {
-                    throw new factory.errors.AlreadyInUse('transaction', ['object.transaction'], 'Already returned.');
+                    throw new factory.errors.Argument('Order number', 'Already returned.');
                 }
             }
 
@@ -147,29 +117,37 @@ export function start(params: {
         }
 
         // 予約キャンセル取引開始
-        const authorizeSeatReservationAction = <factory.action.authorize.offer.seatReservation.IAction>
+        const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction[]>
             placeOrderTransaction.object.authorizeActions
-                .find((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-        const reserveTransaction
-            = (<factory.action.authorize.offer.seatReservation.IResult>authorizeSeatReservationAction.result).responseBody;
-        const cancelReservationTransaction = await repos.cancelReservationService.start({
-            typeOf: factory.chevre.transactionType.CancelReservation,
-            agent: {
-                typeOf: returnOrderTransaction.agent.typeOf,
-                id: returnOrderTransaction.agent.id,
-                name: reserveTransaction.agent.name
-            },
-            object: {
-                transaction: {
-                    typeOf: reserveTransaction.typeOf,
-                    id: reserveTransaction.id
+                .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+        const cancelReservationTransactions = await Promise.all(
+            authorizeSeatReservationActions.map(async (authorizeSeatReservationAction) => {
+                if (authorizeSeatReservationAction.result === undefined) {
+                    throw new factory.errors.NotFound('Result of seat reservation authorize action');
                 }
-            },
-            expires: params.expires
-        });
+                const reserveTransaction = authorizeSeatReservationAction.result.responseBody;
+
+                return repos.cancelReservationService.start({
+                    typeOf: factory.chevre.transactionType.CancelReservation,
+                    agent: {
+                        typeOf: returnOrderTransaction.agent.typeOf,
+                        id: returnOrderTransaction.agent.id,
+                        name: reserveTransaction.agent.name
+                    },
+                    object: {
+                        transaction: {
+                            typeOf: reserveTransaction.typeOf,
+                            id: reserveTransaction.id
+                        }
+                    },
+                    expires: moment(params.expires).add(1, 'month').toDate() // 余裕を持って
+                });
+            })
+        );
         await repos.transaction.transactionModel.findByIdAndUpdate(
             returnOrderTransaction.id,
-            { 'object.pendingCancelReservationTransaction': cancelReservationTransaction }
+            { 'object.pendingCancelReservationTransactions': cancelReservationTransactions }
         ).exec();
 
         return returnOrderTransaction;
@@ -204,22 +182,21 @@ export function confirm(
         }
 
         // 結果作成
-        const placeOrderTransaction = transaction.object.transaction;
-        const placeOrderTransactionResult = placeOrderTransaction.result;
-        if (placeOrderTransactionResult === undefined) {
-            throw new factory.errors.NotFound('placeOrderTransaction.result');
-        }
-        const customerContact = placeOrderTransaction.object.customerContact;
-        if (customerContact === undefined) {
-            throw new factory.errors.NotFound('customerContact');
-        }
+        const order = transaction.object.order;
+        // const placeOrderTransactionResult = placeOrderTransaction.result;
+        // if (placeOrderTransactionResult === undefined) {
+        //     throw new factory.errors.NotFound('placeOrderTransaction.result');
+        // }
+        // const customerContact = placeOrderTransaction.object.customerContact;
+        // if (customerContact === undefined) {
+        //     throw new factory.errors.NotFound('customerContact');
+        // }
 
         const seller = await repos.organization.findById({
-            typeOf: <factory.organizationType.MovieTheater>placeOrderTransaction.seller.typeOf,
-            id: placeOrderTransaction.seller.id
+            typeOf: order.seller.typeOf,
+            id: order.seller.id
         });
-
-        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: placeOrderTransactionResult.order.orderNumber });
+        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
@@ -228,19 +205,19 @@ export function confirm(
             throw new factory.errors.NotFound('PayAction');
         }
 
-        const emailMessage = await createRefundEmail({
-            transaction: placeOrderTransaction,
-            customerContact: customerContact,
-            order: placeOrderTransactionResult.order,
-            seller: seller
-        });
+        const emailMessage = await createRefundEmail({ order });
         const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
             typeOf: factory.actionType.SendAction,
             object: emailMessage,
-            agent: placeOrderTransaction.seller,
-            recipient: placeOrderTransaction.agent,
+            agent: {
+                typeOf: seller.typeOf,
+                id: seller.id,
+                name: seller.name,
+                url: seller.url
+            },
+            recipient: order.customer,
             potentialActions: {},
-            purpose: placeOrderTransactionResult.order
+            purpose: order
         };
         // クレジットカード返金アクション
         const refundCreditCardActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
@@ -249,9 +226,14 @@ export function confirm(
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                     object: a,
-                    agent: placeOrderTransaction.seller,
-                    recipient: placeOrderTransaction.agent,
-                    purpose: placeOrderTransactionResult.order,
+                    agent: {
+                        typeOf: seller.typeOf,
+                        id: seller.id,
+                        name: seller.name,
+                        url: seller.url
+                    },
+                    recipient: order.customer,
+                    purpose: order,
                     potentialActions: {
                         sendEmailMessage: sendEmailMessageActionAttributes
                     }
@@ -264,33 +246,45 @@ export function confirm(
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                     object: a,
-                    agent: placeOrderTransaction.seller,
-                    recipient: placeOrderTransaction.agent,
-                    purpose: placeOrderTransactionResult.order,
+                    agent: {
+                        typeOf: seller.typeOf,
+                        id: seller.id,
+                        name: seller.name,
+                        url: seller.url
+                    },
+                    recipient: order.customer,
+                    purpose: order,
                     potentialActions: {
                         sendEmailMessage: sendEmailMessageActionAttributes
                     }
                 };
             });
-        // Pecorino賞金の承認アクションの数だけ、返却アクションを作成
-        const authorizeActions = placeOrderTransaction.object.authorizeActions;
-        const returnPointAwardActions = authorizeActions
+        // ポイントインセンティブの数だけ、返却アクションを作成
+        const givePointActions = <factory.action.transfer.give.pointAward.IAction[]>actionsOnOrder
+            .filter((a) => a.typeOf === factory.actionType.GiveAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
-            .map((a: factory.action.authorize.award.point.IAction): factory.action.transfer.returnAction.pointAward.IAttributes => {
+            .filter((a) => a.object.typeOf === factory.action.transfer.give.pointAward.ObjectType.PointAward);
+        const returnPointAwardActions = givePointActions.map(
+            (a): factory.action.transfer.returnAction.pointAward.IAttributes => {
                 return {
                     typeOf: factory.actionType.ReturnAction,
                     object: a,
-                    agent: placeOrderTransaction.seller,
-                    recipient: placeOrderTransaction.agent,
+                    agent: order.customer,
+                    recipient: {
+                        typeOf: seller.typeOf,
+                        id: seller.id,
+                        name: seller.name,
+                        url: seller.url
+                    },
                     potentialActions: {}
                 };
-            });
+            }
+        );
         const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
             typeOf: <factory.actionType.ReturnAction>factory.actionType.ReturnAction,
-            object: placeOrderTransactionResult.order,
-            agent: placeOrderTransaction.agent,
-            recipient: placeOrderTransaction.seller,
+            object: order,
+            agent: order.customer,
+            recipient: seller,
             potentialActions: {
                 refundCreditCard: refundCreditCardActions[0],
                 refundAccount: refundAccountActions,
@@ -326,23 +320,18 @@ export function validateRequest() {
  * 返金メールを作成する
  */
 export async function createRefundEmail(params: {
-    transaction: factory.transaction.placeOrder.ITransaction;
-    customerContact: factory.transaction.placeOrder.ICustomerContact;
     order: factory.order.IOrder;
-    seller: factory.organization.movieTheater.IOrganization;
 }): Promise<factory.creativeWork.message.email.ICreativeWork> {
     return new Promise<factory.creativeWork.message.email.ICreativeWork>((resolve, reject) => {
-        const seller = params.transaction.seller;
-
         pug.renderFile(
             `${__dirname}/../../../emails/refundOrder/text.pug`,
             {
-                familyName: params.customerContact.familyName,
-                givenName: params.customerContact.givenName,
+                familyName: params.order.customer.familyName,
+                givenName: params.order.customer.givenName,
                 confirmationNumber: params.order.confirmationNumber,
                 price: params.order.price,
                 sellerName: params.order.seller.name,
-                sellerTelephone: params.seller.telephone
+                sellerTelephone: params.order.seller.telephone
             },
             (renderMessageErr, message) => {
                 if (renderMessageErr instanceof Error) {
@@ -371,14 +360,14 @@ export async function createRefundEmail(params: {
                             identifier: `refundOrder-${params.order.orderNumber}`,
                             name: `refundOrder-${params.order.orderNumber}`,
                             sender: {
-                                typeOf: seller.typeOf,
-                                name: seller.name.ja,
-                                email: 'noreply@ticket-cinemasunshine.com'
+                                typeOf: params.order.seller.typeOf,
+                                name: params.order.seller.name,
+                                email: 'noreply@example.com'
                             },
                             toRecipient: {
-                                typeOf: params.transaction.agent.typeOf,
-                                name: `${params.customerContact.familyName} ${params.customerContact.givenName}`,
-                                email: params.customerContact.email
+                                typeOf: params.order.customer.typeOf,
+                                name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
+                                email: params.order.customer.email
                             },
                             about: subject,
                             text: message
@@ -432,16 +421,14 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        transactionId: transaction.id
+                        orderNumber: transaction.object.order.orderNumber
                     }
                 };
                 taskAttributes.push(returnOrderTask);
-
                 break;
 
             case factory.transactionStatusType.Expired:
                 // 特にタスクなし
-
                 break;
 
             default:
