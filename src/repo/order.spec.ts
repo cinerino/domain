@@ -121,8 +121,14 @@ describe('注文を検索する', () => {
             .chain('exec')
             .resolves([new orderRepo.orderModel()]);
         const result = await orderRepo.search({
-            sellerIds: ['sellerId'],
-            customerMembershipNumbers: ['customerMembershipNumber'],
+            seller: {
+                typeOf: domain.factory.organizationType.MovieTheater,
+                ids: ['sellerId']
+            },
+            customer: {
+                typeOf: domain.factory.personType.Person,
+                membershipNumbers: ['customerMembershipNumber']
+            },
             orderNumbers: ['orderNumber'],
             orderStatuses: [domain.factory.orderStatus.OrderCancelled],
             orderDateFrom: new Date(),
