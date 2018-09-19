@@ -279,19 +279,14 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
     }) => {
         // アクション開始
         const order = params.object.purpose;
-        const pecorinoAwardAuthorizeActionResult = params.object.result;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (pecorinoAwardAuthorizeActionResult === undefined) {
-            throw new factory.errors.NotFound('params.object.result');
-        }
+        const authorizePointAwardAction = params.object.object;
 
         let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<factory.accountType.Point>;
         const action = await repos.action.start(params);
         try {
             // 入金した分を引き出し取引実行
             const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                endpoint: pecorinoAwardAuthorizeActionResult.pointAPIEndpoint,
+                endpoint: authorizePointAwardAction.pointAPIEndpoint,
                 auth: repos.pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
@@ -309,10 +304,10 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     name: order.seller.name,
                     url: params.recipient.url
                 },
-                amount: pecorinoAwardAuthorizeActionResult.pointTransaction.object.amount,
+                amount: authorizePointAwardAction.pointTransaction.object.amount,
                 notes: '注文返品によるポイントインセンティブ取消',
                 accountType: factory.accountType.Point,
-                fromAccountNumber: pecorinoAwardAuthorizeActionResult.pointTransaction.object.toAccountNumber
+                fromAccountNumber: authorizePointAwardAction.pointTransaction.object.toAccountNumber
             });
             await withdrawService.confirm({ transactionId: withdrawTransaction.id });
         } catch (error) {

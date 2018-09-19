@@ -1,5 +1,5 @@
 /**
- * Pecorino賞金承認アクションサービス
+ * ポイントインセンティブ承認アクションサービス
  */
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
@@ -161,7 +161,7 @@ export function create(params: {
 }
 
 /**
- * Pecorino賞金承認を取り消す
+ * ポイントインセンティブ承認を取り消す
  */
 export function cancel(params: {
     /**
