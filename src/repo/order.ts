@@ -11,6 +11,7 @@ export class MongoRepository {
     constructor(connection: Connection) {
         this.orderModel = connection.model(OrderModel.modelName);
     }
+    // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.order.ISearchConditions) {
         const andConditions: any[] = [
             // 注文日時の範囲条件
@@ -24,23 +25,63 @@ export class MongoRepository {
         ];
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (Array.isArray(params.sellerIds)) {
+        if (params.seller !== undefined) {
             andConditions.push({
-                'seller.id': {
+                'seller.typeOf': {
                     $exists: true,
-                    $in: params.sellerIds
+                    $eq: params.seller.typeOf
                 }
             });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.seller.ids)) {
+                andConditions.push({
+                    'seller.id': {
+                        $exists: true,
+                        $in: params.seller.ids
+                    }
+                });
+            }
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (Array.isArray(params.customerMembershipNumbers)) {
+        if (params.customer !== undefined) {
             andConditions.push({
-                'customer.memberOf.membershipNumber': {
+                'customer.typeOf': {
                     $exists: true,
-                    $in: params.customerMembershipNumbers
+                    $eq: params.customer.typeOf
                 }
             });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.customer.ids)) {
+                andConditions.push({
+                    'customer.id': {
+                        $exists: true,
+                        $in: params.customer.ids
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.customer.identifiers)) {
+                andConditions.push({
+                    'customer.identifier': {
+                        $exists: true,
+                        $in: params.customer.identifiers
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.customer.membershipNumbers)) {
+                andConditions.push({
+                    'customer.memberOf.membershipNumber': {
+                        $exists: true,
+                        $in: params.customer.membershipNumbers
+                    }
+                });
+            }
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */

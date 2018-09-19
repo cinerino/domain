@@ -123,20 +123,6 @@ schema.index(
         }
     }
 );
-
-// 注文検索に使用
-schema.index(
-    {
-        'customer.memberOf.membershipNumber': 1
-    },
-    {
-        name: 'searchOrdersByCustomer',
-        partialFilterExpression: {
-            'customer.memberOf.membershipNumber': { $exists: true }
-        }
-    }
-);
-
 // 注文検索に使用
 schema.index(
     {
@@ -186,7 +172,48 @@ schema.index(
         }
     }
 );
-
+// CustomerIDで検索
+schema.index(
+    {
+        'customer.typeOf': 1,
+        'customer.id': 1
+    },
+    {
+        name: 'searchByCustomerId',
+        partialFilterExpression: {
+            'customer.typeOf': { $exists: true },
+            'customer.id': { $exists: true }
+        }
+    }
+);
+// Customer識別子で検索
+schema.index(
+    {
+        'customer.typeOf': 1,
+        'customer.identifier': 1
+    },
+    {
+        name: 'searchByCustomerIdentifier',
+        partialFilterExpression: {
+            'customer.typeOf': { $exists: true },
+            'customer.identifier': { $exists: true }
+        }
+    }
+);
+// CustomerMembershipNumberで検索
+schema.index(
+    {
+        'customer.typeOf': 1,
+        'customer.memberOf.membershipNumber': 1
+    },
+    {
+        name: 'searchByCustomerMemberhipNumber',
+        partialFilterExpression: {
+            'customer.typeOf': { $exists: true },
+            'customer.memberOf.membershipNumber': { $exists: true }
+        }
+    }
+);
 export default mongoose.model('Order', schema).on(
     'index',
     // tslint:disable-next-line:no-single-line-block-comment

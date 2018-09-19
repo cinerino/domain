@@ -445,13 +445,27 @@ export function createOrderFromTransaction(params: {
         telephone: params.transaction.seller.telephone,
         url: params.transaction.seller.url
     };
+
+    // 購入者を識別する情報をまとめる
+    const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
+    if (params.transaction.object.clientUser !== undefined) {
+        customerIdentifier.push(
+            {
+                name: 'tokenIssuer',
+                value: params.transaction.object.clientUser.iss
+            },
+            {
+                name: 'clientId',
+                value: params.transaction.object.clientUser.client_id
+            }
+        );
+    }
     const customer: factory.order.ICustomer = {
-        ...{
-            id: params.transaction.agent.id,
-            typeOf: params.transaction.agent.typeOf,
-            name: `${cutomerContact.familyName} ${cutomerContact.givenName}`,
-            url: ''
-        },
+        id: params.transaction.agent.id,
+        typeOf: params.transaction.agent.typeOf,
+        name: `${cutomerContact.familyName} ${cutomerContact.givenName}`,
+        url: '',
+        identifier: customerIdentifier,
         ...params.transaction.object.customerContact
     };
     if (params.transaction.agent.memberOf !== undefined) {
