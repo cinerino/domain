@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@chevre/api-nodejs-client": "^1.0.0-alpha.14",
-    "@cinerino/factory": "^1.0.0-alpha.27",
+    "@cinerino/factory": "^1.0.0-alpha.28",
     "@mocoin/api-nodejs-client": "0.0.0-alpha.6",
     "@motionpicture/gmo-service": "^4.2.1",
     "@pecorino/api-nodejs-client": "^1.1.0",
@@ -41,7 +41,7 @@
     "@types/debug": "0.0.30",
     "@types/google-libphonenumber": "^7.4.16",
     "@types/http-status": "^0.2.30",
-    "@types/json2csv": "^4.1.0",
+    "@types/json2csv": "^4.2.0",
     "@types/jsonwebtoken": "^7.2.8",
     "@types/lodash.difference": "^4.5.4",
     "@types/mocha": "^5.2.5",

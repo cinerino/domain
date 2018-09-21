@@ -1,5 +1,5 @@
 import * as moment from 'moment';
-import { Connection } from 'mongoose';
+import { Connection, Document, QueryCursor } from 'mongoose';
 
 import * as factory from '../factory';
 import TransactionModel from './mongoose/model/transaction';
@@ -482,14 +482,7 @@ export class MongoRepository {
         params: factory.transaction.ISearchConditions<T>
     ): Promise<factory.transaction.ITransaction<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-        const query = this.transactionModel.find(
-            { $and: conditions },
-            {
-                __v: 0,
-                createdAt: 0,
-                updatedAt: 0
-            }
-        );
+        const query = this.transactionModel.find({ $and: conditions }).select({ __v: 0, createdAt: 0, updatedAt: 0 });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
@@ -501,6 +494,25 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.setOptions({ maxTimeMS: 30000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+    }
+    public stream<T extends factory.transactionType>(
+        params: factory.transaction.ISearchConditions<T>
+    ): QueryCursor<Document> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+        const query = this.transactionModel.find({ $and: conditions }).select({ __v: 0, createdAt: 0, updatedAt: 0 });
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit).skip(params.limit * (params.page - 1));
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.sort !== undefined) {
+            query.sort(params.sort);
+        }
+
+        // return query.cursor();
+        return query.cursor();
     }
 }
