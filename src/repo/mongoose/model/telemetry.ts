@@ -3,27 +3,21 @@ import * as mongoose from 'mongoose';
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
 const purposeSchema = new mongoose.Schema(
-    {
-        typeOf: String
-    },
+    {},
     {
         id: false,
         _id: false,
         strict: false
     }
 );
-
 const objectSchema = new mongoose.Schema(
-    {
-        measuredAt: Date
-    },
+    {},
     {
         id: false,
         _id: false,
         strict: false
     }
 );
-
 const resultSchema = new mongoose.Schema(
     {},
     {
@@ -32,7 +26,6 @@ const resultSchema = new mongoose.Schema(
         strict: false
     }
 );
-
 const errorSchema = new mongoose.Schema(
     {},
     {
@@ -72,20 +65,13 @@ const schema = new mongoose.Schema(
 
 // 測定データ参照時に使用
 schema.index(
-    { 'object.measuredAt': 1 },
+    { 'purpose.typeOf': 1, 'object.scope': 1, 'object.measureDate': 1 },
     {
-        partialFilterExpression: {
-            'object.measuredAt': { $exists: true }
-        }
-    }
-);
-schema.index(
-    { 'purpose.typeOf': 1, 'object.scope': 1, 'object.measuredAt': 1 },
-    {
+        name: 'searchByMeasureDate',
         partialFilterExpression: {
             'purpose.typeOf': { $exists: true },
             'object.scope': { $exists: true },
-            'object.measuredAt': { $exists: true }
+            'object.measureDate': { $exists: true }
         }
     }
 );
