@@ -12,7 +12,7 @@ async function main() {
     for (i = 0; i < fromNow; i++) {
         const measureFrom = moment(now).add(i, 'minutes').toDate();
         const measureThrough = moment(measureFrom).add(1, 'minute').toDate();
-        await domain.service.report.telemetry.aggregateSales({ measureFrom, measureThrough })({
+        await domain.service.report.telemetry.aggregatePlaceOrder({ measureFrom, measureThrough })({
             telemetry: telemetryRepo,
             transaction: transactionRepo
         });

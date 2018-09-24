@@ -357,7 +357,11 @@ export enum TelemetryScope {
     Seller = 'Seller'
 }
 export enum TelemetryType {
-    SalesAmount = 'SalesAmount'
+    SalesAmount = 'SalesAmount',
+    NumPlaceOrderStarted = 'NumPlaceOrderStarted',
+    NumPlaceOrderCanceled = 'NumPlaceOrderCanceled',
+    NumPlaceOrderConfirmed = 'NumPlaceOrderConfirmed',
+    NumPlaceOrderExpired = 'NumPlaceOrderExpired'
 }
 export enum TelemetryPurposeType {
     Flow = 'Flow',
@@ -741,11 +745,11 @@ function createGlobalFlow(
 }
 
 /**
- * 売上集計
+ * 注文取引集計
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
-export function aggregateSales(params: {
+export function aggregatePlaceOrder(params: {
     measureFrom: Date;
     measureThrough: Date;
 }) {
@@ -753,24 +757,66 @@ export function aggregateSales(params: {
         telemetry: TelemetryRepo;
         transaction: TransactionRepo;
     }) => {
+        const numPlaceOrderStarted = await repos.transaction.count<factory.transactionType.PlaceOrder>({
+            typeOf: factory.transactionType.PlaceOrder,
+            startFrom: params.measureFrom,
+            startThrough: params.measureThrough
+        });
         const endedTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
             typeOf: factory.transactionType.PlaceOrder,
             endFrom: params.measureFrom,
             endThrough: params.measureThrough
         });
-        debug(endedTransactions.length, 'endedTransactions found.');
-
+        debug(endedTransactions.length, 'endedTransactions found');
         const confirmedTransactions = endedTransactions.filter((t) => t.status === factory.transactionStatusType.Confirmed);
+        const numPlaceOrderExpired = endedTransactions.filter((t) => t.status === factory.transactionStatusType.Expired).length;
+        const numPlaceOrderCanceled = endedTransactions.filter((t) => t.status === factory.transactionStatusType.Canceled).length;
+        const numPlaceOrderConfirmed = confirmedTransactions.length;
 
         // 金額集計
         const amounts = confirmedTransactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.price);
         const totalSales = amounts.reduce((a, b) => a + b, 0);
-        // const maxSales = amounts.reduce((a, b) => Math.max(a, b), 0);
-        // const minSales = amounts.reduce((a, b) => Math.min(a, b), (numberOfTransactionsConfirmed > 0) ? amounts[0] : 0);
-        // const averageSales = (numberOfTransactionsConfirmed > 0) ? totalAmount / numberOfTransactionsConfirmed : 0;
 
-        // 集計期間の日始め
-        const telemetryMeasuredFrom = moment(moment(params.measureFrom).format('YYYY-MM-DDT00:00:00Z')).toDate();
+        await saveTelemetry({
+            telemetryType: TelemetryType.SalesAmount,
+            measureFrom: params.measureFrom,
+            measureThrough: params.measureThrough,
+            value: totalSales
+        })(repos);
+        await saveTelemetry({
+            telemetryType: TelemetryType.NumPlaceOrderCanceled,
+            measureFrom: params.measureFrom,
+            measureThrough: params.measureThrough,
+            value: numPlaceOrderCanceled
+        })(repos);
+        await saveTelemetry({
+            telemetryType: TelemetryType.NumPlaceOrderConfirmed,
+            measureFrom: params.measureFrom,
+            measureThrough: params.measureThrough,
+            value: numPlaceOrderConfirmed
+        })(repos);
+        await saveTelemetry({
+            telemetryType: TelemetryType.NumPlaceOrderExpired,
+            measureFrom: params.measureFrom,
+            measureThrough: params.measureThrough,
+            value: numPlaceOrderExpired
+        })(repos);
+        await saveTelemetry({
+            telemetryType: TelemetryType.NumPlaceOrderStarted,
+            measureFrom: params.measureFrom,
+            measureThrough: params.measureThrough,
+            value: numPlaceOrderStarted
+        })(repos);
+    };
+}
+function saveTelemetry(params: {
+    telemetryType: TelemetryType;
+    measureFrom: Date;
+    measureThrough: Date;
+    value: number;
+}) {
+    return async (repos: { telemetry: TelemetryRepo }) => {
+        const telemetryMeasureDate = moment(moment(params.measureFrom).format('YYYY-MM-DDT00:00:00Z')).toDate();
         const hour = moment(params.measureFrom).format('H');
         const min = moment(params.measureFrom).format('m');
         const setOnInsert: any = {};
@@ -786,31 +832,28 @@ export function aggregateSales(params: {
         delete setOnInsert[`result.values.${hour}.values.${min}`];
         delete setOnInsert[`result.values.${hour}.numSamples`];
         delete setOnInsert[`result.values.${hour}.totalSamples`];
+
         await repos.telemetry.telemetryModel.findOneAndUpdate(
             {
-                'purpose.typeOf': TelemetryType.SalesAmount,
+                'purpose.typeOf': params.telemetryType,
                 'object.scope': TelemetryScope.Global,
-                'object.measureDate': telemetryMeasuredFrom
+                'object.measureDate': telemetryMeasureDate
             },
             {
                 $setOnInsert: setOnInsert,
                 $set: {
-                    [`result.values.${hour}.values.${min}`]: totalSales
+                    [`result.values.${hour}.values.${min}`]: params.value
                 },
                 $inc: {
                     [`result.values.${hour}.numSamples`]: 1,
-                    [`result.values.${hour}.totalSamples`]: totalSales,
+                    [`result.values.${hour}.totalSamples`]: params.value,
                     'result.numSamples': 1,
-                    'result.totalSamples': totalSales
+                    'result.totalSamples': params.value
                 }
             },
             { new: true, upsert: true, strict: false }
         ).exec();
         debug('telemetry saved');
-
-        return {
-            totalSales: totalSales
-        };
     };
 }
 export function search(params: {
