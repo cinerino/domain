@@ -358,6 +358,7 @@ export enum TelemetryScope {
 }
 export enum TelemetryType {
     SalesAmount = 'SalesAmount',
+    SalesAmountByClient = 'SalesAmountByClient',
     NumPlaceOrderStarted = 'NumPlaceOrderStarted',
     NumPlaceOrderCanceled = 'NumPlaceOrderCanceled',
     NumPlaceOrderConfirmed = 'NumPlaceOrderConfirmed',
@@ -774,14 +775,34 @@ export function aggregatePlaceOrder(params: {
         const numPlaceOrderConfirmed = confirmedTransactions.length;
 
         // 金額集計
-        const amounts = confirmedTransactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.price);
-        const totalSales = amounts.reduce((a, b) => a + b, 0);
+        const totalSalesAmount = confirmedTransactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.price)
+            .reduce((a, b) => a + b, 0);
+
+        // クライアントごとの売り上げ集計
+        const salesAmountByClient: ITelemetryValueAsObject = {};
+        confirmedTransactions.forEach((t) => {
+            const amount = (<factory.transaction.placeOrder.IResult>t.result).order.price;
+            const clientUser = t.object.clientUser;
+            if (clientUser !== undefined) {
+                if (salesAmountByClient[clientUser.client_id] === undefined) {
+                    salesAmountByClient[clientUser.client_id] = 0;
+                }
+                salesAmountByClient[clientUser.client_id] += amount;
+            }
+        });
+        debug('salesAmountByClient:', salesAmountByClient);
 
         await saveTelemetry({
             telemetryType: TelemetryType.SalesAmount,
             measureFrom: params.measureFrom,
             measureThrough: params.measureThrough,
-            value: totalSales
+            value: totalSalesAmount
+        })(repos);
+        await saveTelemetry({
+            telemetryType: TelemetryType.SalesAmountByClient,
+            measureFrom: params.measureFrom,
+            measureThrough: params.measureThrough,
+            value: salesAmountByClient
         })(repos);
         await saveTelemetry({
             telemetryType: TelemetryType.NumPlaceOrderCanceled,
@@ -809,29 +830,47 @@ export function aggregatePlaceOrder(params: {
         })(repos);
     };
 }
+export interface ITelemetryValueAsObject { [key: string]: number; }
+export type ITelemetryValue = number | ITelemetryValueAsObject;
 function saveTelemetry(params: {
     telemetryType: TelemetryType;
     measureFrom: Date;
     measureThrough: Date;
-    value: number;
+    value: ITelemetryValue;
 }) {
     return async (repos: { telemetry: TelemetryRepo }) => {
         const telemetryMeasureDate = moment(moment(params.measureFrom).format('YYYY-MM-DDT00:00:00Z')).toDate();
         const hour = moment(params.measureFrom).format('H');
         const min = moment(params.measureFrom).format('m');
         const setOnInsert: any = {};
+        const initialValue = (typeof params.value === 'number') ? 0 : {};
         // tslint:disable-next-line:no-magic-numbers
         for (let i = 0; i < 24; i += 1) {
             setOnInsert[`result.values.${i}.numSamples`] = 0;
-            setOnInsert[`result.values.${i}.totalSamples`] = 0;
+            setOnInsert[`result.values.${i}.totalSamples`] = initialValue;
             // tslint:disable-next-line:no-magic-numbers
             for (let j = 0; j < 60; j += 1) {
-                setOnInsert[`result.values.${i}.values.${j}`] = 0;
+                setOnInsert[`result.values.${i}.values.${j}`] = initialValue;
             }
         }
         delete setOnInsert[`result.values.${hour}.values.${min}`];
         delete setOnInsert[`result.values.${hour}.numSamples`];
         delete setOnInsert[`result.values.${hour}.totalSamples`];
+
+        const inc = {
+            [`result.values.${hour}.numSamples`]: 1,
+            'result.numSamples': 1
+        };
+        if (typeof params.value === 'number') {
+            inc[`result.values.${hour}.totalSamples`] = params.value;
+            inc['result.totalSamples'] = params.value;
+        } else {
+            const valueAsObject = params.value;
+            Object.keys(valueAsObject).forEach((key) => {
+                inc[`result.values.${hour}.totalSamples.${key}`] = valueAsObject[key];
+                inc[`result.totalSamples.${key}`] = valueAsObject[key];
+            });
+        }
 
         await repos.telemetry.telemetryModel.findOneAndUpdate(
             {
@@ -844,16 +883,11 @@ function saveTelemetry(params: {
                 $set: {
                     [`result.values.${hour}.values.${min}`]: params.value
                 },
-                $inc: {
-                    [`result.values.${hour}.numSamples`]: 1,
-                    [`result.values.${hour}.totalSamples`]: params.value,
-                    'result.numSamples': 1,
-                    'result.totalSamples': params.value
-                }
+                $inc: inc
             },
             { new: true, upsert: true, strict: false }
         ).exec();
-        debug('telemetry saved');
+        debug('telemetry saved', params.measureFrom);
     };
 }
 export function search(params: {

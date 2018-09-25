@@ -47,8 +47,18 @@ const schema = new mongoose.Schema(
             createdAt: 'createdAt',
             updatedAt: 'updatedAt'
         },
-        toJSON: { getters: true },
-        toObject: { getters: true }
+        toJSON: {
+            getters: false,
+            virtuals: false,
+            minimize: false,
+            versionKey: false
+        },
+        toObject: {
+            getters: false,
+            virtuals: false,
+            minimize: false,
+            versionKey: false
+        }
     }
 );
 

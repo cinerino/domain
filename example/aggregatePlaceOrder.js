@@ -6,7 +6,7 @@ async function main() {
 
     const telemetryRepo = new domain.repository.Telemetry(domain.mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-    const now = moment(moment().add(-1, 'month').format('YYYY-MM-DDTHH:mm:00Z')).toDate();
+    const now = moment(moment().add(-1, 'week').format('YYYY-MM-DDTHH:mm:00Z')).toDate();
     const fromNow = moment().diff(moment(now), 'minutes');
     console.log('fromNow:', fromNow);
     for (i = 0; i < fromNow; i++) {
