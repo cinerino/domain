@@ -840,10 +840,11 @@ function saveTelemetry(params: {
 }) {
     return async (repos: { telemetry: TelemetryRepo }) => {
         const telemetryMeasureDate = moment(moment(params.measureFrom).format('YYYY-MM-DDT00:00:00Z')).toDate();
-        const hour = moment(params.measureFrom).format('H');
-        const min = moment(params.measureFrom).format('m');
-        const setOnInsert: any = {};
         const initialValue = (typeof params.value === 'number') ? 0 : {};
+        const setOnInsert: any = {
+            'result.numSamples': 0,
+            'result.totalSamples': initialValue
+        };
         // tslint:disable-next-line:no-magic-numbers
         for (let i = 0; i < 24; i += 1) {
             setOnInsert[`result.values.${i}.numSamples`] = 0;
@@ -853,10 +854,9 @@ function saveTelemetry(params: {
                 setOnInsert[`result.values.${i}.values.${j}`] = initialValue;
             }
         }
-        delete setOnInsert[`result.values.${hour}.values.${min}`];
-        delete setOnInsert[`result.values.${hour}.numSamples`];
-        delete setOnInsert[`result.values.${hour}.totalSamples`];
 
+        const hour = moment(params.measureFrom).format('H');
+        const min = moment(params.measureFrom).format('m');
         const inc = {
             [`result.values.${hour}.numSamples`]: 1,
             'result.numSamples': 1
@@ -872,6 +872,17 @@ function saveTelemetry(params: {
             });
         }
 
+        // 日データを初期化
+        await repos.telemetry.telemetryModel.findOneAndUpdate(
+            {
+                'purpose.typeOf': params.telemetryType,
+                'object.scope': TelemetryScope.Global,
+                'object.measureDate': telemetryMeasureDate
+            },
+            { $setOnInsert: setOnInsert },
+            { upsert: true, strict: false }
+        ).exec();
+
         await repos.telemetry.telemetryModel.findOneAndUpdate(
             {
                 'purpose.typeOf': params.telemetryType,
@@ -879,13 +890,12 @@ function saveTelemetry(params: {
                 'object.measureDate': telemetryMeasureDate
             },
             {
-                $setOnInsert: setOnInsert,
                 $set: {
                     [`result.values.${hour}.values.${min}`]: params.value
                 },
                 $inc: inc
             },
-            { new: true, upsert: true, strict: false }
+            { new: true }
         ).exec();
         debug('telemetry saved', params.measureFrom);
     };
