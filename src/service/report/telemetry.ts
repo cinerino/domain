@@ -175,18 +175,6 @@ export interface IGlobalFlowResult {
          * 平均アクション数(期限切れ取引)
          */
         averageNumberOfActionsOnExpired: number;
-        /**
-         * 最大注文アイテム数
-         */
-        maxNumberOfOrderItems: number;
-        /**
-         * 最小注文アイテム数
-         */
-        minNumberOfOrderItems: number;
-        /**
-         * 平均注文アイテム数
-         */
-        averageNumberOfOrderItems: number;
     };
     measureFrom: Date;
     measureThrough: Date;
@@ -281,18 +269,6 @@ export interface ISellerFlowResult {
          * 平均アクション数(期限切れ取引)
          */
         averageNumberOfActionsOnExpired: number;
-        /**
-         * 最大注文アイテム数
-         */
-        maxNumberOfOrderItems: number;
-        /**
-         * 最小注文アイテム数
-         */
-        minNumberOfOrderItems: number;
-        /**
-         * 平均注文アイテム数
-         */
-        averageNumberOfOrderItems: number;
     };
     measureFrom: Date;
     measureThrough: Date;
@@ -693,7 +669,117 @@ function createGlobalFlow(
         };
     };
 }
+/**
+ * 注文取引データを分析する
+ */
+// tslint:disable-next-line:no-single-line-block-comment
+/* istanbul ignore next */
+export function analyzePlaceOrder(params: {
+    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+}) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        telemetry: TelemetryRepo;
+    }) => {
+        const endDate = params.transaction.endDate;
+        if (endDate === undefined) {
+            throw new factory.errors.Argument('transaction', 'Not ended yet');
+        }
+        const measureFrom = moment(moment(endDate).format('YYYY-MM-DDTHH:mm:00Z')).toDate();
+        const measureThrough = moment(measureFrom).add(1, 'minute').toDate();
 
+        const endedTransactions = [params.transaction];
+        debug(endedTransactions.length, 'endedTransactions found');
+        const confirmedTransactions = endedTransactions.filter((t) => t.status === factory.transactionStatusType.Confirmed);
+
+        // 金額集計
+        const totalSalesAmount = confirmedTransactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.price)
+            .reduce((a, b) => a + b, 0);
+        // 注文アイテム数
+        const numOrderItems = confirmedTransactions
+            .map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.acceptedOffers.length)
+            .reduce((a, b) => a + b, 0);
+
+        const salesAmountByClient: ITelemetryValueAsObject = {};
+        const salesAmountByPaymentMethod: ITelemetryValueAsObject = {};
+        const numOrderItemsByClient: ITelemetryValueAsObject = {};
+        const numOrderItemsByPaymentMethod: ITelemetryValueAsObject = {};
+        confirmedTransactions.forEach((t) => {
+            const order = (<factory.transaction.placeOrder.IResult>t.result).order;
+            const amount = order.price;
+            const numItems = order.acceptedOffers.length;
+
+            // クライアントごとの集計
+            const clientUser = t.object.clientUser;
+            if (clientUser !== undefined) {
+                const clientId = clientUser.client_id;
+                if (salesAmountByClient[clientId] === undefined) {
+                    salesAmountByClient[clientId] = 0;
+                }
+                salesAmountByClient[clientId] += amount;
+
+                if (numOrderItemsByClient[clientId] === undefined) {
+                    numOrderItemsByClient[clientId] = 0;
+                }
+                numOrderItemsByClient[clientId] += numItems;
+            }
+
+            // 決済方法ごとの集計
+            order.paymentMethods.forEach((paymentMethod) => {
+                const paymentMethodType = paymentMethod.typeOf;
+                if (salesAmountByPaymentMethod[paymentMethodType] === undefined) {
+                    salesAmountByPaymentMethod[paymentMethodType] = 0;
+                }
+                salesAmountByPaymentMethod[paymentMethodType] += amount;
+
+                if (numOrderItemsByPaymentMethod[paymentMethodType] === undefined) {
+                    numOrderItemsByPaymentMethod[paymentMethodType] = 0;
+                }
+                numOrderItemsByPaymentMethod[paymentMethodType] += numItems;
+            });
+        });
+        debug('salesAmountByClient:', salesAmountByClient);
+        debug('salesAmountByPaymentMethod:', salesAmountByPaymentMethod);
+        debug('numOrderItemsByClient:', numOrderItemsByClient);
+        debug('numOrderItemsByPaymentMethod:', numOrderItemsByPaymentMethod);
+
+        const savingTelemetries = [];
+        switch (params.transaction.status) {
+            case factory.transactionStatusType.Canceled:
+                savingTelemetries.push(
+                    { typeOf: TelemetryType.NumPlaceOrderCanceled, value: 1 }
+                );
+
+                break;
+            case factory.transactionStatusType.Confirmed:
+                savingTelemetries.push(
+                    { typeOf: TelemetryType.SalesAmount, value: totalSalesAmount },
+                    { typeOf: TelemetryType.SalesAmountByClient, value: salesAmountByClient },
+                    { typeOf: TelemetryType.SalesAmountByPaymentMethod, value: salesAmountByPaymentMethod },
+                    { typeOf: TelemetryType.NumOrderItems, value: numOrderItems },
+                    { typeOf: TelemetryType.NumOrderItemsByClient, value: numOrderItemsByClient },
+                    { typeOf: TelemetryType.NumOrderItemsByPaymentMethod, value: numOrderItemsByPaymentMethod },
+                    { typeOf: TelemetryType.NumPlaceOrderConfirmed, value: 1 }
+                );
+                break;
+            case factory.transactionStatusType.Expired:
+                savingTelemetries.push(
+                    { typeOf: TelemetryType.NumPlaceOrderExpired, value: 1 }
+                );
+                break;
+            default:
+        }
+        debug('saving telemetry...', savingTelemetries);
+        await Promise.all(savingTelemetries.map(async (telemetry) => {
+            await addTelemetry({
+                telemetryType: telemetry.typeOf,
+                measureFrom: measureFrom,
+                measureThrough: measureThrough,
+                value: telemetry.value
+            })(repos);
+        }));
+    };
+}
 /**
  * 注文取引集計
  */
@@ -799,6 +885,71 @@ export function aggregatePlaceOrder(params: {
 }
 export interface ITelemetryValueAsObject { [key: string]: number; }
 export type ITelemetryValue = number | ITelemetryValueAsObject;
+function addTelemetry(params: {
+    telemetryType: TelemetryType;
+    measureFrom: Date;
+    measureThrough: Date;
+    value: ITelemetryValue;
+}) {
+    return async (repos: { telemetry: TelemetryRepo }) => {
+        const telemetryMeasureDate = moment(moment(params.measureFrom).format('YYYY-MM-DDT00:00:00Z')).toDate();
+        const initialValue = (typeof params.value === 'number') ? 0 : {};
+        const setOnInsert: any = {
+            'result.numSamples': 0,
+            'result.totalSamples': initialValue
+        };
+        // tslint:disable-next-line:no-magic-numbers
+        for (let i = 0; i < 24; i += 1) {
+            setOnInsert[`result.values.${i}.numSamples`] = 0;
+            setOnInsert[`result.values.${i}.totalSamples`] = initialValue;
+            // tslint:disable-next-line:no-magic-numbers
+            for (let j = 0; j < 60; j += 1) {
+                setOnInsert[`result.values.${i}.values.${j}`] = initialValue;
+            }
+        }
+
+        const hour = moment(params.measureFrom).format('H');
+        const min = moment(params.measureFrom).format('m');
+        const inc = {
+            [`result.values.${hour}.numSamples`]: 1,
+            'result.numSamples': 1
+        };
+        if (typeof params.value === 'number') {
+            inc[`result.values.${hour}.values.${min}`] = params.value;
+            inc[`result.values.${hour}.totalSamples`] = params.value;
+            inc['result.totalSamples'] = params.value;
+        } else {
+            const valueAsObject = params.value;
+            Object.keys(valueAsObject).forEach((key) => {
+                inc[`result.values.${hour}.values.${min}.${key}`] = valueAsObject[key];
+                inc[`result.values.${hour}.totalSamples.${key}`] = valueAsObject[key];
+                inc[`result.totalSamples.${key}`] = valueAsObject[key];
+            });
+        }
+
+        // 日データを初期化
+        await repos.telemetry.telemetryModel.findOneAndUpdate(
+            {
+                'purpose.typeOf': params.telemetryType,
+                'object.scope': TelemetryScope.Global,
+                'object.measureDate': telemetryMeasureDate
+            },
+            { $setOnInsert: setOnInsert },
+            { upsert: true, strict: false }
+        ).exec();
+
+        await repos.telemetry.telemetryModel.findOneAndUpdate(
+            {
+                'purpose.typeOf': params.telemetryType,
+                'object.scope': TelemetryScope.Global,
+                'object.measureDate': telemetryMeasureDate
+            },
+            { $inc: inc },
+            { new: true }
+        ).exec();
+        debug('telemetry saved', params.telemetryType, params.measureFrom);
+    };
+}
 function saveTelemetry(params: {
     telemetryType: TelemetryType;
     measureFrom: Date;

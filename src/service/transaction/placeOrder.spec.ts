@@ -69,8 +69,8 @@ describe('exportTasksById()', () => {
         sandbox.restore();
     });
 
-    it('確定取引であれば1つのタスクがエクスポートされるはず', async () => {
-        const numberOfTasks = 1;
+    it('確定取引であれば2つのタスクがエクスポートされるはず', async () => {
+        const numberOfTasks = 2;
         const transaction = {
             id: 'transactionId',
             status: domain.factory.transactionStatusType.Confirmed
