@@ -50,11 +50,11 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
         // 注文取引分析タスクを追加
-        const analyzePlaceOrderTaskAttributes: factory.task.IAttributes<any> = {
-            name: <any>'analyzePlaceOrder',
+        const analyzePlaceOrderTaskAttributes: factory.task.IAttributes<factory.taskName.AnalyzePlaceOrder> = {
+            name: factory.taskName.AnalyzePlaceOrder,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
-            remainingNumberOfTries: 10,
+            remainingNumberOfTries: 3,
             lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
