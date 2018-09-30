@@ -454,10 +454,6 @@ function createSellerFlow(
                 numberOfStartedAndExpired: numberOfStartedAndExpired,
                 numberOfConfirmed: numberOfTransactionsConfirmed,
                 numberOfExpired: numberOfTransactionsExpired,
-                // tslint:disable-next-line:no-suspicious-comment
-                numberOfPaymentCreditCard: 0, // TODO 実装
-                // tslint:disable-next-line:no-suspicious-comment
-                numberOfDiscountMvtk: 0, // TODO 実装
                 totalRequiredTimeInMilliseconds: totalRequiredTimeInMilliseconds,
                 maxRequiredTimeInMilliseconds: maxRequiredTimeInMilliseconds,
                 minRequiredTimeInMilliseconds: minRequiredTimeInMilliseconds,
@@ -477,15 +473,7 @@ function createSellerFlow(
                 totalNumberOfActionsOnExpired: totalNumberOfActionsOnExpired,
                 maxNumberOfActionsOnExpired: maxNumberOfActionsOnExpired,
                 minNumberOfActionsOnExpired: minNumberOfActionsOnExpired,
-                averageNumberOfActionsOnExpired: parseFloat(averageNumberOfActionsOnExpired.toFixed(1)),
-                // tslint:disable-next-line:no-suspicious-comment
-                totalNumberOfOrderItems: 0, // TODO 実装
-                // tslint:disable-next-line:no-suspicious-comment
-                maxNumberOfOrderItems: 0, // TODO 実装
-                // tslint:disable-next-line:no-suspicious-comment
-                minNumberOfOrderItems: 0, // TODO 実装
-                // tslint:disable-next-line:no-suspicious-comment
-                averageNumberOfOrderItems: 0 // TODO 実装
+                averageNumberOfActionsOnExpired: parseFloat(averageNumberOfActionsOnExpired.toFixed(1))
             },
             measureFrom: measureFrom,
             measureThrough: measureThrough

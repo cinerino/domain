@@ -381,9 +381,10 @@ export class MongoRepository {
             { new: true }
         ).exec().then((doc) => (doc === null) ? null : doc.toObject());
     }
+    // tslint:disable-next-line:no-suspicious-comment
     /**
      * タスクエクスポートリトライ
-     * todo updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
+     * TODO updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
      */
     public async reexportTasks(params: { intervalInMinutes: number }): Promise<void> {
         await this.transactionModel.findOneAndUpdate(

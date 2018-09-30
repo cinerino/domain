@@ -786,9 +786,6 @@ export async function createPotentialActionsFromTransaction(params: {
     });
 
     // メール送信ONであれば送信アクション属性を生成
-    // tslint:disable-next-line:no-suspicious-comment
-    // TODO メール送信アクションをセットする
-    // 現時点では、フロントエンドからメール送信タスクを作成しているので不要
     let sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes | null = null;
     if (params.sendEmailMessage === true) {
         const emailMessage = await createEmailMessageFromTransaction({
