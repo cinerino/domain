@@ -4,7 +4,7 @@
 // tslint:disable-next-line:no-require-imports
 import sgMail = require('@sendgrid/mail');
 import * as createDebug from 'debug';
-import * as httpStatus from 'http-status';
+import { ACCEPTED, CREATED, NO_CONTENT, OK } from 'http-status';
 import * as request from 'request';
 import * as util from 'util';
 import * as validator from 'validator';
@@ -15,8 +15,6 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 export type Operation<T> = () => Promise<T>;
 
 const debug = createDebug('cinerino-domain:service');
-
-export const LINE_NOTIFY_URL = 'https://notify-api.line.me/api/notify';
 
 /**
  * Eメールメッセージを送信する
@@ -60,7 +58,7 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
             debug('email sent. status code:', response[0].statusCode);
 
             // check the response.
-            if (response[0].statusCode !== httpStatus.ACCEPTED) {
+            if (response[0].statusCode !== ACCEPTED) {
                 throw new Error(`sendgrid request not accepted. response is ${util.inspect(response)}`);
             }
 
@@ -90,8 +88,13 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
  */
 export function report2developers(subject: string, content: string, imageThumbnail?: string, imageFullsize?: string): Operation<void> {
     return async () => {
-        if (process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN === undefined) {
-            throw new Error('access token for LINE Notify undefined');
+        const LINE_NOTIFY_URL = process.env.LINE_NOTIFY_URL;
+        const LINE_NOTIFY_ACCESS_TOKEN = process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
+        if (LINE_NOTIFY_URL === undefined) {
+            throw new Error('Environment variable LINE_NOTIFY_URL not set');
+        }
+        if (LINE_NOTIFY_ACCESS_TOKEN === undefined) {
+            throw new Error('Environment variable DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN not set');
         }
 
         const message = `
@@ -123,7 +126,7 @@ ${content}`
             request.post(
                 {
                     url: LINE_NOTIFY_URL,
-                    auth: { bearer: process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN },
+                    auth: { bearer: LINE_NOTIFY_ACCESS_TOKEN },
                     form: formData,
                     json: true
                 },
@@ -132,10 +135,47 @@ ${content}`
                     if (error !== null) {
                         reject(error);
                     } else {
-                        if (response.statusCode !== httpStatus.OK) {
-                            reject(new Error(body.message));
-                        } else {
-                            resolve();
+                        switch (response.statusCode) {
+                            case OK:
+                                resolve();
+                                break;
+                            default:
+                                reject(new Error(body.message));
+                        }
+                    }
+                }
+            );
+        });
+    };
+}
+
+export function triggerWebhook(params: {
+    url: string;
+    data: any;
+}) {
+    return async () => {
+        return new Promise<void>((resolve, reject) => {
+            request.post(
+                {
+                    url: params.url,
+                    body: {
+                        data: params.data
+                    },
+                    json: true
+                },
+                (error, response, body) => {
+                    if (error instanceof Error) {
+                        reject(error);
+                    } else {
+                        switch (response.statusCode) {
+                            case OK:
+                            case CREATED:
+                            case ACCEPTED:
+                            case NO_CONTENT:
+                                resolve();
+                                break;
+                            default:
+                                reject(body);
                         }
                     }
                 }

@@ -10,6 +10,8 @@ import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../index';
 
+const LINE_NOTIFY_URL_BASE_PATH = 'https://notify-api.line.me';
+const LINE_NOTIFY_URI = '/api/notify';
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -18,19 +20,21 @@ before(() => {
 
 describe('report2developers()', () => {
     beforeEach(() => {
-        process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN = 'accessToken';
-    });
-
-    afterEach(() => {
+        process.env.LINE_NOTIFY_URL = `${LINE_NOTIFY_URL_BASE_PATH}${LINE_NOTIFY_URI}`;
         process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN = 'accessToken';
         nock.cleanAll();
         sandbox.restore();
     });
 
+    afterEach(() => {
+        delete process.env.LINE_NOTIFY_URL;
+        delete process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
+    });
+
     it('LINE Notifyのアクセストークンを環境変数に未設定であれば、エラーになるはず', async () => {
         delete process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
 
-        const scope = nock('https://notify-api.line.me').post('/api/notify').reply(OK, {});
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK, {});
         const imageThumbnail = 'https://example.com';
         const imageFullsize = 'https://example.com';
 
@@ -42,7 +46,7 @@ describe('report2developers()', () => {
     });
 
     it('LINE Notifyが200を返せば、エラーにならないはず', async () => {
-        const scope = nock('https://notify-api.line.me').post('/api/notify').reply(OK, {});
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK, {});
         const imageThumbnail = 'https://example.com';
         const imageFullsize = 'https://example.com';
 
@@ -53,7 +57,7 @@ describe('report2developers()', () => {
     });
 
     it('LINE Notifyの200を返さなければ、エラーになるはず', async () => {
-        const scope = nock('https://notify-api.line.me').post('/api/notify').reply(BAD_REQUEST, { message: 'message' });
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(BAD_REQUEST, { message: 'message' });
 
         const result = await domain.service.notification.report2developers('', '')()
             .catch((err) => err);
@@ -63,7 +67,7 @@ describe('report2developers()', () => {
     });
 
     it('LINE Notifyの状態が正常でなければ、エラーになるはず', async () => {
-        const scope = nock('https://notify-api.line.me').post('/api/notify').replyWithError(new Error('lineError'));
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).replyWithError(new Error('lineError'));
 
         const result = await domain.service.notification.report2developers('', '')()
             .catch((err) => err);
@@ -72,7 +76,7 @@ describe('report2developers()', () => {
     });
 
     it('imageThumbnailがURLでなければ、エラーになるはず', async () => {
-        const scope = nock('https://notify-api.line.me').post('/api/notify').reply(OK);
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK);
         const imageThumbnail = 'invalidUrl';
 
         const result = await domain.service.notification.report2developers('', '', imageThumbnail)()
@@ -83,7 +87,7 @@ describe('report2developers()', () => {
     });
 
     it('imageFullsizeがURLでなければ、エラーになるはず', async () => {
-        const scope = nock('https://notify-api.line.me').post('/api/notify').reply(OK);
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK);
         const imageThumbnail = 'https://example.com';
         const imageFullsize = 'invalidUrl';
 

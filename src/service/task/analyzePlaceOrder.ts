@@ -1,18 +1,17 @@
 import { IConnectionSettings, IOperation } from '../task';
 
 import * as factory from '../../factory';
-import { MongoRepository as TelemetryRepo } from '../../repo/telemetry';
 
-import * as TelemetryService from '../report/telemetry';
+import * as NotificationService from '../notification';
 
 /**
  * タスク実行関数
  */
 export function call(data: factory.task.IData<factory.taskName.AnalyzePlaceOrder>): IOperation<void> {
-    return async (settings: IConnectionSettings) => {
-        const telemetryRepo = new TelemetryRepo(settings.connection);
-        await TelemetryService.analyzePlaceOrder(data)({
-            telemetry: telemetryRepo
-        });
+    return async (_: IConnectionSettings) => {
+        await NotificationService.triggerWebhook({
+            url: `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/analyzePlaceOrder`,
+            data: data
+        })();
     };
 }
