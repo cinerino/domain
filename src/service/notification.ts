@@ -151,7 +151,7 @@ ${content}`
 
 export function triggerWebhook(params: {
     url: string;
-    data: any;
+    payload: any;
 }) {
     return async () => {
         return new Promise<void>((resolve, reject) => {
@@ -159,7 +159,7 @@ export function triggerWebhook(params: {
                 {
                     url: params.url,
                     body: {
-                        data: params.data
+                        data: params.payload
                     },
                     json: true
                 },

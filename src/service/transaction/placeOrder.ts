@@ -49,9 +49,12 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
-        // 注文取引分析タスクを追加
-        const analyzePlaceOrderTaskAttributes: factory.task.IAttributes<factory.taskName.AnalyzePlaceOrder> = {
-            name: factory.taskName.AnalyzePlaceOrder,
+        // ウェブフックタスクを追加
+        const webhookUrl =
+            // tslint:disable-next-line:max-line-length
+            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/${factory.taskName.AnalyzePlaceOrder}`;
+        const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
+            name: factory.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 3,
@@ -59,11 +62,12 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
             numberOfTried: 0,
             executionResults: [],
             data: {
-                transaction: transaction
+                url: webhookUrl,
+                payload: { transaction: transaction }
             }
         };
         taskAttributes.push(
-            analyzePlaceOrderTaskAttributes
+            triggerWebhookTaskAttributes
         );
 
         switch (transaction.status) {
