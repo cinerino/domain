@@ -107,7 +107,7 @@
     "clean": "rimraf ./lib \"npm-debug.log*\" ./doc ./coverage ./.nyc_output",
     "doc": "jsdoc -c jsdoc.json",
     "mocha": "mocha",
-    "coverage": "nyc mocha \"src/**/*.spec.ts\" | coveralls",
+    "coverage": "nyc mocha \"src/**/*.spec.ts\" && nyc report --reporter=text-lcov | coveralls",
     "snyk": "snyk wizard",
     "test": "npm run check && npm run coverage",
     "tslint": "tslint --project tsconfig.json -c tslint.json --exclude \"**/*.spec.ts\" \"src/**/*.ts\"",
