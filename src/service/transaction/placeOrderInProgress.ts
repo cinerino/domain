@@ -599,6 +599,8 @@ export async function createEmailMessageFromTransaction(params: {
                 {
                     familyName: params.customerContact.familyName,
                     givenName: params.customerContact.givenName,
+                    orderDate: moment(params.order.orderDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm:ss'),
+                    orderNumber: params.order.orderNumber,
                     confirmationNumber: params.order.confirmationNumber,
                     eventStartDate: util.format(
                         '%s - %s',
@@ -608,14 +610,19 @@ export async function createEmailMessageFromTransaction(params: {
                     workPerformedName: event.workPerformed.name,
                     screenName: event.location.name.ja,
                     reservedSeats: params.order.acceptedOffers.map((o) => {
+                        const reservation = o.itemOffered;
+                        let option = '';
+                        if (Array.isArray(reservation.reservationFor.superEvent.videoFormat)) {
+                            option += reservation.reservationFor.superEvent.videoFormat.map((format) => format.typeOf).join(',');
+                        }
+
                         return util.format(
-                            '%s %s ￥%s',
-                            (<factory.chevre.reservation.event.IReservation<any>>o.itemOffered)
-                                .reservedTicket.ticketedSeat.seatNumber,
-                            (<factory.chevre.reservation.event.IReservation<any>>o.itemOffered)
-                                .reservedTicket.ticketType.name.ja,
-                            (<factory.chevre.reservation.event.IReservation<any>>o.itemOffered)
-                                .reservedTicket.ticketType.charge
+                            '%s %s %s %s (%s)',
+                            reservation.reservedTicket.ticketedSeat.seatNumber,
+                            reservation.reservedTicket.ticketType.name.ja,
+                            reservation.price,
+                            reservation.priceCurrency,
+                            option
                         );
                     }).join('\n'),
                     price: params.order.price,

@@ -14,6 +14,7 @@ export type ICreateOperation<T> = (repos: {
     event: EventRepo;
     action: ActionRepo;
     transaction: TransactionRepo;
+    eventService: chevre.service.Event;
     reserveService: chevre.service.transaction.Reserve;
 }) => Promise<T>;
 
@@ -45,36 +46,39 @@ export type ICreateOperation<T> = (repos: {
 /**
  * 座席を仮予約する
  * 承認アクションオブジェクトが返却されます。
- * @param agentId 取引主体ID
- * @param transactionId 取引ID
- * @param eventIdentifier イベント識別子
- * @param offers 供給情報
  */
 export function create(params: factory.chevre.transaction.reserve.IObjectWithoutDetail & {
     agentId: string;
     transactionId: string;
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         action: ActionRepo;
         transaction: TransactionRepo;
+        eventService: chevre.service.Event;
         reserveService: chevre.service.transaction.Reserve;
     }) => {
+        debug('creating authorize action...', params);
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transactionId
         });
-
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // 上映イベントを取得
-        // const screeningEvent = await repos.event.findScreeningEventById(params.event.id);
-
         // 供給情報の有効性を確認
-        // const offersWithDetails =
-        //     await validateOffers((transaction.agent.memberOf !== undefined), screeningEvent, params.offers);
+        const availableTicketOffers = await repos.eventService.searchScreeningEventTicketOffers({ eventId: params.event.id });
+        const acceptedOffers: factory.chevre.event.screeningEvent.IAcceptedTicketOffer[] =
+            params.acceptedOffer.map((offerWithoutDetail) => {
+                const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
+                if (offer === undefined) {
+                    throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
+                }
+
+                return { ...offerWithoutDetail, ...offer };
+            });
 
         // 承認アクションを開始
         const seller = transaction.seller;
@@ -83,7 +87,7 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
                 event: params.event,
-                tickets: params.tickets,
+                acceptedOffer: acceptedOffers,
                 notes: params.notes
             },
             agent: {
@@ -101,10 +105,10 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         const action = await repos.action.start(actionAttributes);
 
         // 座席仮予約
-        let response: chevre.factory.transaction.reserve.ITransaction;
+        let reserveTransaction: chevre.factory.transaction.reserve.ITransaction;
         try {
             debug('starting reserve transaction...');
-            response = await repos.reserveService.start({
+            reserveTransaction = await repos.reserveService.start({
                 typeOf: chevre.factory.transactionType.Reserve,
                 agent: {
                     typeOf: transaction.agent.typeOf,
@@ -113,7 +117,7 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
                 object: params,
                 expires: moment(transaction.expires).add(1, 'month').toDate() // 余裕を持って
             });
-            debug('reserve transaction started', response.id);
+            debug('reserve transaction started', reserveTransaction.id);
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -136,14 +140,16 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
             throw new factory.errors.ServiceUnavailable('Unexepected error occurred.');
         }
 
+        // 金額計算
+        const amount = reserveTransaction.object.reservations.reduce((a, b) => a + b.price, 0);
+
         // アクションを完了
         debug('ending authorize action...');
-        // const { price, point } = offers2resultPrice(offersWithDetails);
         const result: factory.action.authorize.offer.seatReservation.IResult = {
-            price: response.object.reservations.reduce((a, b) => a + b.reservedTicket.ticketType.charge, 0),
-            priceCurrency: factory.priceCurrency.JPY,
+            price: amount,
+            priceCurrency: reserveTransaction.object.reservations[0].priceCurrency,
             point: 0,
-            responseBody: response
+            responseBody: reserveTransaction
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
