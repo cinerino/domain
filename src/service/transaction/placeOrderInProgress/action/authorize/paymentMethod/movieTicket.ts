@@ -3,9 +3,11 @@
  */
 import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as createDebug from 'debug';
+import * as moment from 'moment-timezone';
 
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
+import { MongoRepository as EventRepo } from '../../../../../../repo/event';
 import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
@@ -13,6 +15,7 @@ const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
+    event: EventRepo;
     organization: OrganizationRepo;
     transaction: TransactionRepo;
     movieTicketAuthService: mvtkapi.service.Auth;
@@ -27,6 +30,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        event: EventRepo;
         organization: OrganizationRepo;
         transaction: TransactionRepo;
         movieTicketAuthService: mvtkapi.service.Auth;
@@ -43,17 +47,21 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         //     throw new factory.errors.Forbidden('A specified transaction is not yours.');
         // }
 
+        // イベント情報取得
+        const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: params.event.id });
+
         // ショップ情報取得
-        // const movieTheater = await repos.organization.findById({
-        //     typeOf: factory.organizationType.MovieTheater,
-        //     id: transaction.seller.id
-        // });
+        const movieTheater = await repos.organization.findById({
+            typeOf: factory.organizationType.MovieTheater,
+            id: transaction.seller.id
+        });
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.paymentMethod.movieTicket.ObjectType.MovieTicket,
+                event: params.event,
                 knyknrNoInfoIn: params.knyknrNoInfoIn
             },
             agent: transaction.agent,
@@ -62,28 +70,26 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         };
         const action = await repos.action.start(actionAttributes);
 
+        let purchaseNumberAuthIn: factory.action.authorize.paymentMethod.movieTicket.IPurchaseNumberAuthIn;
         let purchaseNumberAuthResult: factory.action.authorize.paymentMethod.movieTicket.IPurchaseNumberAuthResult;
         try {
-            // if (movieTheater.paymentAccepted === undefined) {
-            //     throw new factory.errors.Argument('transactionId', 'Credit card payment not accepted.');
-            // }
-            // const creditCardPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
-            //     movieTheater.paymentAccepted.find(
-            //         (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
-            //     );
-            // if (creditCardPaymentAccepted === undefined) {
-            //     throw new factory.errors.Argument('transactionId', 'Credit card payment not accepted.');
-            // }
-            // const purchaseNumberAuthIn = {
-            //     kgygishCd: 'SSK000',
-            //     jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
-            //     knyknrNoInfoIn: params.knyknrNoInfoIn,
-            //     skhnCd: '1622100',
-            //     stCd: '18',
-            //     jeiYmd: '2017/02/16'
-            // };
-            // purchaseNumberAuthResult = await repos.movieTicketAuthService.purchaseNumberAuth(purchaseNumberAuthIn);
-            purchaseNumberAuthResult = <any>{};
+            if (movieTheater.paymentAccepted === undefined) {
+                throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
+            }
+            const movieTicketPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
+            if (movieTicketPaymentAccepted === undefined) {
+                throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
+            }
+            purchaseNumberAuthIn = {
+                kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
+                jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
+                knyknrNoInfoIn: params.knyknrNoInfoIn,
+                skhnCd: screeningEvent.superEvent.workPerformed.identifier,
+                stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
+                jeiYmd: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD')
+            };
+            purchaseNumberAuthResult = await repos.movieTicketAuthService.purchaseNumberAuth(purchaseNumberAuthIn);
             debug('purchaseNumberAuthResult:', purchaseNumberAuthResult);
         } catch (error) {
             debug(error);
@@ -100,9 +106,9 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
 
         // アクションを完了
         debug('ending authorize action...');
-
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
             price: 0,
+            purchaseNumberAuthIn: purchaseNumberAuthIn,
             purchaseNumberAuthResult: purchaseNumberAuthResult
         };
 
@@ -128,7 +134,7 @@ export function cancel(params: {
         }
 
         const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
-        const actionResult = <factory.action.authorize.paymentMethod.creditCard.IResult>action.result;
+        const actionResult = <factory.action.authorize.paymentMethod.movieTicket.IResult>action.result;
         debug('actionResult:', actionResult);
 
         // 承認取消

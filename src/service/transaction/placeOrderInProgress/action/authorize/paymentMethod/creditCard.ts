@@ -55,7 +55,6 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
                 orderId: params.orderId,
                 amount: params.amount,
                 method: params.method,
-                payType: GMO.utils.util.PayType.Credit,
                 creditCard: params.creditCard
             },
             agent: transaction.agent,
