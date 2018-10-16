@@ -4,6 +4,7 @@
  */
 import * as mocoinapi from '@mocoin/api-nodejs-client';
 import * as GMO from '@motionpicture/gmo-service';
+import * as mvtkreserveapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
 import * as mongoose from 'mongoose';
@@ -22,7 +23,6 @@ import * as service from './service';
  * });
  */
 export import mongoose = mongoose;
-
 /**
  * Redis Cacheクライアント
  * @example
@@ -34,7 +34,6 @@ export import mongoose = mongoose;
  * });
  */
 export import redis = redis;
-
 /**
  * GMOのAPIクライアント
  * @example
@@ -47,7 +46,6 @@ export import redis = redis;
  * });
  */
 export import GMO = GMO;
-
 /**
  * Pecorino APIクライアント
  * Pecorinoサービスとの連携は全てこのクライアントを通じて行います。
@@ -55,7 +53,7 @@ export import GMO = GMO;
 export import pecorinoapi = pecorinoapi;
 export import mocoin = mocoinapi;
 export import chevre = chevre;
-
+export import mvtkreserveapi = mvtkreserveapi;
 /**
  * AWS SDK
  */

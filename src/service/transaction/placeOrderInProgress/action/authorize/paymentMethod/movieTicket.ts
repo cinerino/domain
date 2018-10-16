@@ -1,0 +1,141 @@
+/**
+ * ムビチケ決済承認アクションサービス
+ */
+import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
+import * as createDebug from 'debug';
+
+import * as factory from '../../../../../../factory';
+import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
+import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
+import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+
+const debug = createDebug('cinerino-domain:service');
+
+export type ICreateOperation<T> = (repos: {
+    action: ActionRepo;
+    organization: OrganizationRepo;
+    transaction: TransactionRepo;
+    movieTicketAuthService: mvtkapi.service.Auth;
+}) => Promise<T>;
+/**
+ * 承認アクション
+ */
+export function create(params: factory.action.authorize.paymentMethod.movieTicket.IObject & {
+    agentId: string;
+    transactionId: string;
+}): ICreateOperation<factory.action.authorize.paymentMethod.movieTicket.IAction> {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: ActionRepo;
+        organization: OrganizationRepo;
+        transaction: TransactionRepo;
+        movieTicketAuthService: mvtkapi.service.Auth;
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
+
+        // 他者口座による決済も可能にするためにコメントアウト
+        // 基本的に、自分の口座のオーソリを他者に与えても得しないので、
+        // これが問題になるとすれば、本当にただサービスを荒らしたい悪質な攻撃のみ、ではある
+        // if (transaction.agent.id !== agentId) {
+        //     throw new factory.errors.Forbidden('A specified transaction is not yours.');
+        // }
+
+        // ショップ情報取得
+        // const movieTheater = await repos.organization.findById({
+        //     typeOf: factory.organizationType.MovieTheater,
+        //     id: transaction.seller.id
+        // });
+
+        // 承認アクションを開始する
+        const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
+            typeOf: factory.actionType.AuthorizeAction,
+            object: {
+                typeOf: factory.action.authorize.paymentMethod.movieTicket.ObjectType.MovieTicket,
+                knyknrNoInfoIn: params.knyknrNoInfoIn
+            },
+            agent: transaction.agent,
+            recipient: transaction.seller,
+            purpose: transaction // purposeは取引
+        };
+        const action = await repos.action.start(actionAttributes);
+
+        let purchaseNumberAuthResult: factory.action.authorize.paymentMethod.movieTicket.IPurchaseNumberAuthResult;
+        try {
+            // if (movieTheater.paymentAccepted === undefined) {
+            //     throw new factory.errors.Argument('transactionId', 'Credit card payment not accepted.');
+            // }
+            // const creditCardPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
+            //     movieTheater.paymentAccepted.find(
+            //         (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
+            //     );
+            // if (creditCardPaymentAccepted === undefined) {
+            //     throw new factory.errors.Argument('transactionId', 'Credit card payment not accepted.');
+            // }
+            // const purchaseNumberAuthIn = {
+            //     kgygishCd: 'SSK000',
+            //     jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
+            //     knyknrNoInfoIn: params.knyknrNoInfoIn,
+            //     skhnCd: '1622100',
+            //     stCd: '18',
+            //     jeiYmd: '2017/02/16'
+            // };
+            // purchaseNumberAuthResult = await repos.movieTicketAuthService.purchaseNumberAuth(purchaseNumberAuthIn);
+            purchaseNumberAuthResult = <any>{};
+            debug('purchaseNumberAuthResult:', purchaseNumberAuthResult);
+        } catch (error) {
+            debug(error);
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        // アクションを完了
+        debug('ending authorize action...');
+
+        const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
+            price: 0,
+            purchaseNumberAuthResult: purchaseNumberAuthResult
+        };
+
+        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+    };
+}
+export function cancel(params: {
+    agentId: string;
+    transactionId: string;
+    actionId: string;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        transaction: TransactionRepo;
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transactionId
+        });
+
+        if (transaction.agent.id !== params.agentId) {
+            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+        }
+
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        const actionResult = <factory.action.authorize.paymentMethod.creditCard.IResult>action.result;
+        debug('actionResult:', actionResult);
+
+        // 承認取消
+        try {
+            // some op
+        } catch (error) {
+            // no op
+        }
+    };
+}

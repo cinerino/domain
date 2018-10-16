@@ -16,10 +16,11 @@ import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
-import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
+import * as AuthorizeSeatReservationActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
 import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/account';
-import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
-import * as MocoinAuthorizeActionService from './placeOrderInProgress/action/authorize/paymentMethod/mocoin';
+import * as AuthorizeCreditCardActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
+import * as AuthorizeMocoinActionService from './placeOrderInProgress/action/authorize/paymentMethod/mocoin';
+import * as AuthorizeMovieTicketActionService from './placeOrderInProgress/action/authorize/paymentMethod/movieTicket';
 
 const debug = createDebug('cinerino-domain:service');
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
@@ -148,7 +149,7 @@ export namespace action {
             /**
              * 座席予約承認アクションサービス
              */
-            export import seatReservation = SeatReservationAuthorizeActionService;
+            export import seatReservation = AuthorizeSeatReservationActionService;
         }
         export namespace paymentMethod {
             /**
@@ -158,11 +159,15 @@ export namespace action {
             /**
              * クレジットカード承認アクションサービス
              */
-            export import creditCard = CreditCardAuthorizeActionService;
+            export import creditCard = AuthorizeCreditCardActionService;
             /**
              * Mocoin承認アクションサービス
              */
-            export import mocoin = MocoinAuthorizeActionService;
+            export import mocoin = AuthorizeMocoinActionService;
+            /**
+             * ムビチケ承認アクションサービス
+             */
+            export import movieTicket = AuthorizeMovieTicketActionService;
         }
     }
 }
@@ -556,6 +561,19 @@ export function createOrderFromTransaction(params: {
                 name: 'Mocoin',
                 typeOf: factory.paymentMethodType.Mocoin,
                 paymentMethodId: actionResult.mocoinTransaction.token
+            });
+        });
+
+    // ムビチケ決済があれば決済方法に追加
+    params.transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.movieTicket.ObjectType.MovieTicket)
+        .forEach((authorizeMovieTicketAction: factory.action.authorize.paymentMethod.movieTicket.IAction) => {
+            // const actionResult = <factory.action.authorize.paymentMethod.movieTicket.IResult>action.result;
+            paymentMethods.push({
+                name: 'ムビチケ',
+                typeOf: factory.paymentMethodType.MovieTicket,
+                paymentMethodId: authorizeMovieTicketAction.object.knyknrNoInfoIn.map((info) => info.knyknrNo).join(',')
             });
         });
 

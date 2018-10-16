@@ -16,25 +16,12 @@ export type ICreateOperation<T> = (repos: {
     organization: OrganizationRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
-
-/**
- * オーソリを取得するクレジットカード情報インターフェース
- */
-export type ICreditCard4authorizeAction =
-    factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw |
-    factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized |
-    factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember;
-
 /**
  * クレジットカードオーソリ取得
  */
-export function create(params: {
+export function create(params: factory.action.authorize.paymentMethod.creditCard.IObject & {
     agentId: string;
     transactionId: string;
-    orderId: string;
-    amount: number;
-    method: GMO.utils.util.Method;
-    creditCard: ICreditCard4authorizeAction;
 }): ICreateOperation<factory.action.authorize.paymentMethod.creditCard.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -68,7 +55,8 @@ export function create(params: {
                 orderId: params.orderId,
                 amount: params.amount,
                 method: params.method,
-                payType: GMO.utils.util.PayType.Credit
+                payType: GMO.utils.util.PayType.Credit,
+                creditCard: params.creditCard
             },
             agent: transaction.agent,
             recipient: transaction.seller,
