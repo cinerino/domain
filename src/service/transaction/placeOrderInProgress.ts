@@ -573,7 +573,7 @@ export function createOrderFromTransaction(params: {
             paymentMethods.push({
                 name: 'ムビチケ',
                 typeOf: factory.paymentMethodType.MovieTicket,
-                paymentMethodId: authorizeMovieTicketAction.object.knyknrNoInfoIn.map((info) => info.knyknrNo).join(',')
+                paymentMethodId: authorizeMovieTicketAction.object.knyknrNoInfo.map((info) => info.knyknrNo).join(',')
             });
         });
 

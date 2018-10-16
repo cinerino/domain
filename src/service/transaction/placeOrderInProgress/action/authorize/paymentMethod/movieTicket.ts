@@ -62,7 +62,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             object: {
                 typeOf: factory.action.authorize.paymentMethod.movieTicket.ObjectType.MovieTicket,
                 event: params.event,
-                knyknrNoInfoIn: params.knyknrNoInfoIn
+                knyknrNoInfo: params.knyknrNoInfo
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -84,7 +84,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             purchaseNumberAuthIn = {
                 kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
                 jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
-                knyknrNoInfoIn: params.knyknrNoInfoIn,
+                knyknrNoInfoIn: params.knyknrNoInfo,
                 skhnCd: screeningEvent.superEvent.workPerformed.identifier,
                 stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
                 jeiYmd: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD')
