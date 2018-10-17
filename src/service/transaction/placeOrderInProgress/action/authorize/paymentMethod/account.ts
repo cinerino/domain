@@ -101,7 +101,7 @@ export function create<T extends factory.accountType>(params: {
         const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
-                typeOf: factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment,
+                typeOf: factory.paymentMethodType.Account,
                 amount: params.amount,
                 accountType: params.fromAccount.accountType,
                 fromAccountNumber: params.fromAccount.accountNumber

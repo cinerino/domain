@@ -23,7 +23,7 @@ before(() => {
                     actionStatus: domain.factory.actionStatusType.CompletedActionStatus,
                     purpose: {},
                     object: {
-                        typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+                        typeOf: domain.factory.paymentMethodType.CreditCard,
                         amount: 123,
                         orderId: 'orderId'
                     },
@@ -61,7 +61,7 @@ describe('cancelCreditCardAuth()', () => {
             {
                 id: 'actionId',
                 actionStatus: domain.factory.actionStatusType.CompletedActionStatus,
-                object: { typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard },
+                object: { typeOf: domain.factory.paymentMethodType.CreditCard },
                 purpose: {},
                 result: {
                     entryTranArgs: {},

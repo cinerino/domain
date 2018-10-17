@@ -62,7 +62,7 @@ describe('action.authorize.creditCard.create()', () => {
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
             agentId: agent.id,
             transactionId: transaction.id,
-            typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+            typeOf: domain.factory.paymentMethodType.CreditCard,
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
@@ -175,7 +175,7 @@ describe('action.authorize.creditCard.create()', () => {
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
             agentId: agent.id,
             transactionId: transaction.id,
-            typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+            typeOf: domain.factory.paymentMethodType.CreditCard,
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
@@ -236,7 +236,7 @@ describe('action.authorize.creditCard.create()', () => {
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
             agentId: agent.id,
             transactionId: transaction.id,
-            typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+            typeOf: domain.factory.paymentMethodType.CreditCard,
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
@@ -300,7 +300,7 @@ describe('action.authorize.creditCard.create()', () => {
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
             agentId: agent.id,
             transactionId: transaction.id,
-            typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+            typeOf: domain.factory.paymentMethodType.CreditCard,
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
@@ -365,7 +365,7 @@ describe('action.authorize.creditCard.create()', () => {
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
             agentId: agent.id,
             transactionId: transaction.id,
-            typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+            typeOf: domain.factory.paymentMethodType.CreditCard,
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
@@ -430,7 +430,7 @@ describe('action.authorize.creditCard.create()', () => {
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
             agentId: agent.id,
             transactionId: transaction.id,
-            typeOf: domain.factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+            typeOf: domain.factory.paymentMethodType.CreditCard,
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,

@@ -38,7 +38,7 @@ export function payCreditCard(params: { transactionId: string }) {
             // クレジットカード承認アクションがあるはず
             const authorizeAction = <factory.action.authorize.paymentMethod.creditCard.IAction>transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .find((a) => a.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard);
+                .find((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
             // アクション開始
             const action = await repos.action.start(payActionAttributes);
@@ -111,7 +111,7 @@ export function cancelCreditCardAuth(params: { transactionId: string }) {
         const authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
             await repos.action.findAuthorizeByTransactionId(params)
                 .then((actions) => actions
-                    .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard)
+                    .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 );
         await Promise.all(authorizeActions.map(async (action) => {
@@ -169,7 +169,7 @@ export function refundCreditCard(params: { transactionId: string }) {
         }
         const authorizeActions = placeOrderTransaction.object.authorizeActions
             .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((action) => action.object.typeOf === factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard);
+            .filter((action) => action.object.typeOf === factory.paymentMethodType.CreditCard);
 
         const returnOrderPotentialActions = potentialActions.returnOrder.potentialActions;
         if (returnOrderPotentialActions === undefined) {

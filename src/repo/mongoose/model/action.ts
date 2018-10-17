@@ -209,7 +209,7 @@ schema.index(
     {
         name: 'searchCreditCardAuthorizeActionByOrderId',
         partialFilterExpression: {
-            'object.typeOf': factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard
+            'object.typeOf': factory.paymentMethodType.CreditCard
         }
     }
 );

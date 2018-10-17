@@ -77,7 +77,7 @@ export function cancelAccountAuth(params: { transactionId: string }) {
         // 口座承認アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
             await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
-                .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.account.ObjectType.AccountPayment)
+                .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
             );
         await Promise.all(authorizeActions.map(async (action) => {
             // tslint:disable-next-line:no-single-line-block-comment

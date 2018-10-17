@@ -71,7 +71,7 @@ export function create(params: {
         const actionAttributes: factory.action.authorize.paymentMethod.mocoin.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
-                typeOf: factory.action.authorize.paymentMethod.mocoin.ObjectType.MocoinPayment,
+                typeOf: factory.paymentMethodType.Mocoin,
                 transactionId: params.transactionId,
                 amount: params.amount
             },

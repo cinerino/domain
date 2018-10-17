@@ -51,7 +51,7 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
         const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
-                typeOf: factory.action.authorize.paymentMethod.creditCard.ObjectType.CreditCard,
+                typeOf: factory.paymentMethodType.CreditCard,
                 orderId: params.orderId,
                 amount: params.amount,
                 method: params.method,
