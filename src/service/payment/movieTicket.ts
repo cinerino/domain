@@ -18,11 +18,12 @@ export type ICheckMovieTicketOperation<T> = (repos: {
     movieTicketAuthService: mvtkapi.service.Auth;
 }) => Promise<T>;
 /**
- * ムビチケ
+ * ムビチケ認証
  */
 export function checkMovieTicket(
     params: factory.action.check.paymentMethod.movieTicket.IAttributes
 ): ICheckMovieTicketOperation<factory.action.check.paymentMethod.movieTicket.IAction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         event: EventRepo;
@@ -38,6 +39,7 @@ export function checkMovieTicket(
 
         let purchaseNumberAuthIn: factory.action.check.paymentMethod.movieTicket.IPurchaseNumberAuthIn;
         let purchaseNumberAuthResult: factory.action.check.paymentMethod.movieTicket.IPurchaseNumberAuthResult;
+        const movieTicketResults: factory.action.check.paymentMethod.movieTicket.IMovieTicketResult[] = [];
         try {
             const eventIds = Array.from(new Set(params.object.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)));
             if (eventIds.length !== 1) {
@@ -83,6 +85,70 @@ export function checkMovieTicket(
             };
             purchaseNumberAuthResult = await repos.movieTicketAuthService.purchaseNumberAuth(purchaseNumberAuthIn);
             debug('purchaseNumberAuthResult:', purchaseNumberAuthResult);
+
+            // ムビチケ配列に成形
+            if (Array.isArray(purchaseNumberAuthResult.knyknrNoInfoOut)) {
+                purchaseNumberAuthResult.knyknrNoInfoOut.forEach((knyknrNoInfoOut) => {
+                    const knyknrNoInfo = knyknrNoInfoIn.find((info) => info.knyknrNo === knyknrNoInfoOut.knyknrNo);
+                    if (knyknrNoInfo !== undefined) {
+                        if (Array.isArray(knyknrNoInfoOut.ykknInfo)) {
+                            knyknrNoInfoOut.ykknInfo.forEach((ykknInfo) => {
+                                [...Array(Number(ykknInfo.ykknKnshbtsmiNum))].forEach(() => {
+                                    movieTicketResults.push({
+                                        typeOf: factory.paymentMethodType.MovieTicket,
+                                        identifier: knyknrNoInfo.knyknrNo,
+                                        accessCode: knyknrNoInfo.pinCd,
+                                        serviceType: ykknInfo.ykknshTyp,
+                                        serviceOutput: {
+                                            reservationFor: {
+                                                typeOf: screeningEvent.typeOf,
+                                                id: screeningEvent.id
+                                            },
+                                            reservedTicket: {
+                                                ticketedSeat: {
+                                                    typeOf: factory.chevre.placeType.Seat,
+                                                    seatingType: '', // 情報空でよし
+                                                    seatNumber: '', // 情報空でよし
+                                                    seatRow: '', // 情報空でよし
+                                                    seatSection: '' // 情報空でよし
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                        if (Array.isArray(knyknrNoInfoOut.mkknInfo)) {
+                            knyknrNoInfoOut.mkknInfo.forEach((mkknInfo) => {
+                                [...Array(Number(mkknInfo.mkknKnshbtsmiNum))].forEach(() => {
+                                    movieTicketResults.push({
+                                        typeOf: factory.paymentMethodType.MovieTicket,
+                                        identifier: knyknrNoInfo.knyknrNo,
+                                        accessCode: knyknrNoInfo.pinCd,
+                                        serviceType: mkknInfo.mkknshTyp,
+                                        serviceOutput: {
+                                            reservationFor: {
+                                                typeOf: screeningEvent.typeOf,
+                                                id: screeningEvent.id
+                                            },
+                                            reservedTicket: {
+                                                ticketedSeat: {
+                                                    typeOf: factory.chevre.placeType.Seat,
+                                                    seatingType: '', // 情報空でよし
+                                                    seatNumber: '', // 情報空でよし
+                                                    seatRow: '', // 情報空でよし
+                                                    seatSection: '' // 情報空でよし
+                                                }
+                                            }
+                                        },
+                                        validThrough: moment(`${mkknInfo.yykDt}+09:00`, 'YYYY/MM/DD HH:mm:ssZ').toDate()
+                                    });
+                                });
+                            });
+                        }
+                    }
+                });
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -97,7 +163,8 @@ export function checkMovieTicket(
 
         const result: factory.action.check.paymentMethod.movieTicket.IResult = {
             purchaseNumberAuthIn: purchaseNumberAuthIn,
-            purchaseNumberAuthResult: purchaseNumberAuthResult
+            purchaseNumberAuthResult: purchaseNumberAuthResult,
+            movieTickets: movieTicketResults
         };
 
         return repos.action.complete({ typeOf: actionAttributes.typeOf, id: action.id, result: result });
