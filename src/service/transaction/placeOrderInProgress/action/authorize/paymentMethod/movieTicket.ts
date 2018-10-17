@@ -47,8 +47,14 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         //     throw new factory.errors.Forbidden('A specified transaction is not yours.');
         // }
 
+        const eventIds = Array.from(new Set(params.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)));
+        if (eventIds.length !== 1) {
+            throw new factory.errors.Argument('movieTickets', 'Number of events must be 1');
+        }
+        const eventId = eventIds[0];
+
         // イベント情報取得
-        const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: params.event.id });
+        const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventId });
 
         // ショップ情報取得
         const movieTheater = await repos.organization.findById({
@@ -61,8 +67,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.paymentMethod.movieTicket.ObjectType.MovieTicket,
-                event: params.event,
-                knyknrNoInfo: params.knyknrNoInfo
+                movieTickets: params.movieTickets
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -81,10 +86,22 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
+
+            const movieTicketIdentifiers: string[] = [];
+            const knyknrNoInfoIn: mvtkapi.mvtk.services.auth.purchaseNumberAuth.IKnyknrNoInfoIn[] = [];
+            params.movieTickets.forEach((movieTicket) => {
+                if (movieTicketIdentifiers.indexOf(movieTicket.identifier) < 0) {
+                    movieTicketIdentifiers.push(movieTicket.identifier);
+                    knyknrNoInfoIn.push({
+                        knyknrNo: movieTicket.identifier,
+                        pinCd: movieTicket.accessCode
+                    });
+                }
+            });
             purchaseNumberAuthIn = {
                 kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
                 jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
-                knyknrNoInfoIn: params.knyknrNoInfo,
+                knyknrNoInfoIn: knyknrNoInfoIn,
                 skhnCd: screeningEvent.superEvent.workPerformed.identifier,
                 stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
                 jeiYmd: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD')
