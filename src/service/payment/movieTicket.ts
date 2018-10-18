@@ -244,7 +244,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 kgygishUsrZskyykNo: order.confirmationNumber.toString(), // 興行会社ユーザー座席予約番号
                 jeiDt: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD HH:mm:ss'), // 上映日時
                 kijYmd: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'), // 計上年月日
-                stCd: seller.location.branchCode, // サイトコード
+                stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
                 screnCd: screeningEvent.location.branchCode, // スクリーンコード
                 knyknrNoInfo: knyknrNoInfo,
                 zskInfo: seatNumbers.map((seatNumber) => {
