@@ -157,24 +157,24 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
                     }));
             }
 
-            // ムビチケ使用
+            // ムビチケ決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            // if (orderPotentialActions.useMvtk !== undefined) {
-            //     const useMvtkTask: factory.task.useMvtk.IAttributes = {
-            //         name: factory.taskName.UseMvtk,
-            //         status: factory.taskStatus.Ready,
-            //         runsAt: now, // なるはやで実行
-            //         remainingNumberOfTries: 10,
-            //         lastTriedAt: null,
-            //         numberOfTried: 0,
-            //         executionResults: [],
-            //         data: {
-            //             transactionId: transactionId
-            //         }
-            //     };
-            //     taskAttributes.push(useMvtkTask);
-            // }
+            if (Array.isArray(orderPotentialActions.payMovieTicket)) {
+                taskAttributes.push(...orderPotentialActions.payMovieTicket.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayMovieTicket> => {
+                        return {
+                            name: factory.taskName.PayMovieTicket,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
+            }
 
             // Pecorinoポイント付与
             // tslint:disable-next-line:no-single-line-block-comment

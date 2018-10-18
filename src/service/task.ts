@@ -2,6 +2,7 @@
  * タスクサービス
  */
 import * as mocoinapi from '@mocoin/api-nodejs-client';
+import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
 import * as createDebug from 'debug';
@@ -49,6 +50,14 @@ export interface IConnectionSettings {
      * Chevre認証クライアント
      */
     chevreAuthClient?: chevre.auth.ClientCredentials;
+    /**
+     * ムビチケ着券APIエンドポイント
+     */
+    mvtkReserveEndpoint?: string;
+    /**
+     * ムビチケ着券API認証クライアント
+     */
+    mvtkReserveAuthClient?: mvtkapi.auth.ClientCredentials;
 }
 export interface ISettings extends IConnectionSettings {
     /**

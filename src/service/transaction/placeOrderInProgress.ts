@@ -877,22 +877,28 @@ export async function createPotentialActionsFromTransaction(params: {
             };
         });
 
-    // ムビチケ使用アクション
-    // let useMvtkAction: factory.action.consume.use.mvtk.IAttributes | null = null;
-    // const mvtkAuthorizeAction = <factory.action.authorize.discount.mvtk.IAction>params.transaction.object.authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .find((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk);
-    // if (mvtkAuthorizeAction !== undefined) {
-    //     useMvtkAction = {
-    //         typeOf: factory.actionType.UseAction,
-    //         object: {
-    //             typeOf: factory.action.consume.use.mvtk.ObjectType.Mvtk,
-    //             seatInfoSyncIn: mvtkAuthorizeAction.object.seatInfoSyncIn
-    //         },
-    //         agent: params.transaction.agent,
-    //         purpose: params.order
-    //     };
-    // }
+    // ムビチケ決済アクション
+    const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
+    const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] =
+        authorizeMovieTicketActions.map((a) => {
+            return {
+                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+                object: {
+                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    paymentMethod: {
+                        name: 'ムビチケ',
+                        typeOf: <factory.paymentMethodType.MovieTicket>factory.paymentMethodType.MovieTicket,
+                        paymentMethodId: a.id
+                    },
+                    movieTickets: a.object.movieTickets
+                },
+                agent: params.transaction.agent,
+                purpose: params.order
+            };
+        });
 
     // Pecorinoインセンティブに対する承認アクションの分だけ、Pecorinoインセンティブ付与アクションを作成する
     let givePointAwardActions: factory.action.transfer.give.pointAward.IAttributes[] = [];
@@ -953,10 +959,9 @@ export async function createPotentialActionsFromTransaction(params: {
             potentialActions: {
                 // クレジットカード決済があれば支払アクション追加
                 payCreditCard: (payCreditCardAction !== null) ? payCreditCardAction : undefined,
-                // Pecorino決済があれば支払アクション追加
                 payAccount: payAccountActions,
                 payMocoin: payMocoinActions,
-                // useMvtk: (useMvtkAction !== null) ? useMvtkAction : undefined,
+                payMovieTicket: payMovieTicketActions,
                 sendOrder: sendOrderActionAttributes,
                 givePointAward: givePointAwardActions
             }
