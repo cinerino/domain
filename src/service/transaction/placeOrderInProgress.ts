@@ -422,16 +422,72 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
     }
 }
 
-export function validateMovieTicket(_: factory.transaction.placeOrder.ITransaction) {
-    // const authorizeActions = transaction.object.authorizeActions;
+/**
+ * 座席予約オファー承認に対してムビチケ承認条件が整っているかどうか検証する
+ */
+export function validateMovieTicket(transaction: factory.transaction.placeOrder.ITransaction) {
+    const authorizeActions = transaction.object.authorizeActions;
 
-    // const authorizeMovieTicketActions = authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((a) => a.object.typeOf === factory.action.authorize.paymentMethod.movieTicket.ObjectType.MovieTicket);
+    const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
 
-    // const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+
+    // ムビチケオファーを受け付けた座席予約を検索する
+    const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
+    seatReservationAuthorizeActions.forEach((a) => {
+        a.object.acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
+            offer.priceSpecification.priceComponent.forEach((component) => {
+                // ムビチケ券種区分チャージ仕様があれば検証リストに追加
+                if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
+                    requiredMovieTickets.push({
+                        typeOf: factory.paymentMethodType.MovieTicket,
+                        identifier: '',
+                        accessCode: '',
+                        serviceType: component.appliesToMovieTicketType,
+                        serviceOutput: {
+                            reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: a.object.event.id },
+                            reservedTicket: { ticketedSeat: offer.ticketedSeat }
+                        }
+                    });
+                }
+            });
+        });
+    });
+    debug(requiredMovieTickets.length, 'movie tickets required');
+
+    const authorizedMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
+    authorizeMovieTicketActions.forEach((a) => {
+        authorizedMovieTickets.push(...a.object.movieTickets);
+    });
+    debug(authorizedMovieTickets.length, 'movie tickets authorized');
+
+    // 合計枚数OK?
+    if (requiredMovieTickets.length !== authorizedMovieTickets.length) {
+        throw new factory.errors.Argument('transactionId', 'Required number of movie tickets not satisfied');
+    }
+
+    // イベントとムビチケ券種区分ごとに枚数OK?
+    const eventIds = [...new Set(requiredMovieTickets.map((t) => t.serviceOutput.reservationFor.id))];
+    debug('movie ticket event ids:', eventIds);
+    eventIds.forEach((eventId) => {
+        const requiredMovieTicketsByEvent = requiredMovieTickets.filter((t) => t.serviceOutput.reservationFor.id === eventId);
+        const serviceTypes = [...new Set(requiredMovieTicketsByEvent.map((t) => t.serviceType))];
+        debug('movie ticket serviceTypes:', serviceTypes);
+        serviceTypes.forEach((serviceType) => {
+            const requiredMovieTicketsByServiceType = requiredMovieTicketsByEvent.filter((t) => t.serviceType === serviceType);
+            debug(requiredMovieTicketsByServiceType.length, 'movie tickets required', eventId, serviceType);
+            const authorizedMovieTicketsByEventAndServiceType = authorizedMovieTickets.filter((t) => {
+                return t.serviceOutput.reservationFor.id === eventId && t.serviceType === serviceType;
+            });
+            if (requiredMovieTicketsByServiceType.length !== authorizedMovieTicketsByEventAndServiceType.length) {
+                throw new factory.errors.Argument('transactionId', 'Required number of movie tickets not satisfied');
+            }
+        });
+    });
 }
 
 /**
@@ -600,17 +656,19 @@ export function createOrderFromTransaction(params: {
             });
         });
 
-    // ムビチケ決済があれば決済方法に追加
+    // ムビチケ決済があれば決済方法に追加(ムビチケ購入管理番号でユニークになるように)
     params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket)
         .forEach((authorizeMovieTicketAction: factory.action.authorize.paymentMethod.movieTicket.IAction) => {
-            // const actionResult = <factory.action.authorize.paymentMethod.movieTicket.IResult>action.result;
-            paymentMethods.push({
-                name: 'ムビチケ',
-                typeOf: factory.paymentMethodType.MovieTicket,
-                paymentMethodId: authorizeMovieTicketAction.object.movieTickets.map((movieTicket) => movieTicket.identifier).join(',')
-            });
+            const movieTicketIdentifiers = [...new Set(authorizeMovieTicketAction.object.movieTickets.map((t) => t.identifier))];
+            paymentMethods.push(...movieTicketIdentifiers.map((movieTicketIdentifier) => {
+                return {
+                    name: 'ムビチケ',
+                    typeOf: factory.paymentMethodType.MovieTicket,
+                    paymentMethodId: movieTicketIdentifier
+                };
+            }));
         });
 
     // 現金決済があれば決済方法に追加

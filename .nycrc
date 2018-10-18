@@ -3,7 +3,7 @@
     "lines": 40,
     "statements": 40,
     "functions": 30,
-    "branches": 30,
+    "branches": 20,
     "extension": [
         ".ts"
     ],
@@ -12,8 +12,7 @@
     ],
     "exclude": [
         "**/*.spec.ts",
-        "src/service/util.ts",
-        "src/service/report/telemetry.ts"
+        "src/service/util.ts"
     ],
     "reporter": [
         "lcov",
