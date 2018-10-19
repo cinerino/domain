@@ -1,14 +1,14 @@
 /**
  * ムビチケ決済承認アクションサービス
  */
-import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as createDebug from 'debug';
-import * as moment from 'moment-timezone';
 
+import { handleMvtkReserveError } from '../../../../../../errorHandler';
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
 import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
+import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../../../../../repo/paymentMethod/movieTicket';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
@@ -18,8 +18,9 @@ export type ICreateOperation<T> = (repos: {
     event: EventRepo;
     organization: OrganizationRepo;
     transaction: TransactionRepo;
-    movieTicketAuthService: mvtkapi.service.Auth;
+    movieTicket: MovieTicketRepo;
 }) => Promise<T>;
+
 /**
  * 承認アクション
  */
@@ -33,7 +34,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         event: EventRepo;
         organization: OrganizationRepo;
         transaction: TransactionRepo;
-        movieTicketAuthService: mvtkapi.service.Auth;
+        movieTicket: MovieTicketRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -47,14 +48,13 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         //     throw new factory.errors.Forbidden('A specified transaction is not yours.');
         // }
 
-        const eventIds = Array.from(new Set(params.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)));
+        const eventIds = [...new Set(params.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id))];
         if (eventIds.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of events must be 1');
         }
-        const eventId = eventIds[0];
 
         // イベント情報取得
-        const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventId });
+        const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventIds[0] });
 
         // ショップ情報取得
         const movieTheater = await repos.organization.findById({
@@ -77,8 +77,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         };
         const action = await repos.action.start(actionAttributes);
 
-        let purchaseNumberAuthIn: factory.action.authorize.paymentMethod.movieTicket.IPurchaseNumberAuthIn;
-        let purchaseNumberAuthResult: factory.action.authorize.paymentMethod.movieTicket.IPurchaseNumberAuthResult;
+        let checkResult: ICheckResult | undefined;
         try {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
@@ -89,37 +88,47 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
 
-            const movieTicketIdentifiers: string[] = [];
-            const knyknrNoInfoIn: mvtkapi.mvtk.services.auth.purchaseNumberAuth.IKnyknrNoInfoIn[] = [];
-            params.movieTickets.forEach((movieTicket) => {
-                if (movieTicketIdentifiers.indexOf(movieTicket.identifier) < 0) {
-                    movieTicketIdentifiers.push(movieTicket.identifier);
-                    knyknrNoInfoIn.push({
-                        knyknrNo: movieTicket.identifier,
-                        pinCd: movieTicket.accessCode
-                    });
+            checkResult = await repos.movieTicket.checkByIdentifier({
+                movieTickets: params.movieTickets,
+                movieTicketPaymentAccepted: movieTicketPaymentAccepted,
+                screeningEvent: screeningEvent
+            });
+
+            // 要求に対して十分かどうか検証する
+            const availableMovieTickets = checkResult.movieTickets.filter((t) => t.validThrough === undefined);
+
+            // 総数が足りているか
+            if (availableMovieTickets.length < params.movieTickets.length) {
+                throw new factory.errors.Argument(
+                    'movieTickets',
+                    `${params.movieTickets.length - availableMovieTickets.length} movie tickets short`
+                );
+            }
+
+            // 券種ごとに枚数が足りているか
+            const serviceTypes = [...new Set(params.movieTickets.map((t) => t.serviceType))];
+            serviceTypes.forEach((serviceType) => {
+                const availableMovieTicketsByServiceType = availableMovieTickets.filter((t) => t.serviceType === serviceType);
+                const requiredMovieTicketsByServiceType = params.movieTickets.filter((t) => t.serviceType === serviceType);
+                if (availableMovieTicketsByServiceType.length < requiredMovieTicketsByServiceType.length) {
+                    const shortNumber = requiredMovieTicketsByServiceType.length - availableMovieTicketsByServiceType.length;
+                    throw new factory.errors.Argument(
+                        'movieTickets',
+                        `${shortNumber} movie tickets by service type ${serviceType} short`
+                    );
                 }
             });
-            purchaseNumberAuthIn = {
-                kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
-                jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
-                knyknrNoInfoIn: knyknrNoInfoIn,
-                skhnCd: screeningEvent.superEvent.workPerformed.identifier,
-                stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
-                jeiYmd: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD')
-            };
-            purchaseNumberAuthResult = await repos.movieTicketAuthService.purchaseNumberAuth(purchaseNumberAuthIn);
-            debug('purchaseNumberAuthResult:', purchaseNumberAuthResult);
         } catch (error) {
             debug(error);
             // actionにエラー結果を追加
             try {
-                const actionError = { ...error, message: error.message, name: error.name };
+                const actionError = { ...error, message: error.message, name: error.name, ...checkResult };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
 
+            error = handleMvtkReserveError(error);
             throw error;
         }
 
@@ -128,13 +137,13 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
             amount: 0,
             additionalProperty: params.additionalProperty,
-            purchaseNumberAuthIn: purchaseNumberAuthIn,
-            purchaseNumberAuthResult: purchaseNumberAuthResult
+            ...checkResult
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
+
 export function cancel(params: {
     agentId: string;
     transactionId: string;

@@ -2,7 +2,7 @@
     "check-coverage": true,
     "lines": 40,
     "statements": 40,
-    "functions": 30,
+    "functions": 20,
     "branches": 20,
     "extension": [
         ".ts"

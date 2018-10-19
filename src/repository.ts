@@ -11,6 +11,7 @@ import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
+import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTicket';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
 import { MongoRepository as TaskRepo } from './repo/task';
@@ -27,6 +28,9 @@ export class Order extends OrderRepo { }
 export class OrderNumber extends OrderNumberRepo { }
 export class Organization extends OrganizationRepo { }
 export class OwnershipInfo extends OwnershipInfoRepo { }
+export namespace paymentMethod {
+    export class MovieTicket extends MovieTicketRepo { }
+}
 export class Person extends PersonRepo { }
 export class ProgramMembership extends ProgramMembershipRepo { }
 export class Task extends TaskRepo { }

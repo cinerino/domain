@@ -72,3 +72,37 @@ export function handlePecorinoError(error: any) {
 
     return handledError;
 }
+
+/**
+ * ムビチケ着券サービスエラーをハンドリングする
+ */
+export function handleMvtkReserveError(error: any) {
+    let handledError: Error = error;
+
+    if (error.name === 'MovieticketReserveRequestError') {
+        // ムビチケAPIのステータスコード4xxをハンドリング
+        // ムビチケAPIのレスポンスステータスコードが4xxであればクライアントエラー
+        const message = `${error.name}:${error.message}`;
+        switch (error.code) {
+            case BAD_REQUEST: // 400
+                handledError = new errors.Argument('MovieticketReserveArgument', message);
+                break;
+            case UNAUTHORIZED: // 401
+                handledError = new errors.Unauthorized(message);
+                break;
+            case FORBIDDEN: // 403
+                handledError = new errors.Forbidden(message);
+                break;
+            case NOT_FOUND: // 404
+                handledError = new errors.NotFound(message);
+                break;
+            case TOO_MANY_REQUESTS: // 429
+                handledError = new errors.RateLimitExceeded(message);
+                break;
+            default:
+                handledError = new errors.ServiceUnavailable(message);
+        }
+    }
+
+    return handledError;
+}
