@@ -224,6 +224,28 @@ schema.index(
         }
     }
 );
+schema.index(
+    {
+        'paymentMethods.typeOf': 1
+    },
+    {
+        name: 'searchByPaymentMethodType',
+        partialFilterExpression: {
+            'paymentMethods.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'paymentMethods.paymentMethodId': 1
+    },
+    {
+        name: 'searchByPaymentMethodId',
+        partialFilterExpression: {
+            'paymentMethods.paymentMethodId': { $exists: true }
+        }
+    }
+);
 export default mongoose.model('Order', schema).on(
     'index',
     // tslint:disable-next-line:no-single-line-block-comment

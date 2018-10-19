@@ -64,7 +64,7 @@ const schema = new mongoose.Schema(
         id: true,
         read: 'primaryPreferred',
         safe: safe,
-        strict: true,
+        strict: false, // Chevreの型に柔軟に対応
         useNestedStrict: true,
         timestamps: {
             createdAt: 'createdAt',

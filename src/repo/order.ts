@@ -117,6 +117,30 @@ export class MongoRepository {
                 }
             });
         }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.paymentMethods !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.paymentMethods.typeOfs)) {
+                andConditions.push({
+                    'paymentMethods.typeOf': {
+                        $exists: true,
+                        $in: params.paymentMethods.typeOfs
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.paymentMethods.paymentMethodIds)) {
+                andConditions.push({
+                    'paymentMethods.paymentMethodId': {
+                        $exists: true,
+                        $in: params.paymentMethods.paymentMethodIds
+                    }
+                });
+            }
+        }
 
         return andConditions;
     }
