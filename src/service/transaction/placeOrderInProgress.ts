@@ -347,14 +347,15 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
     priceByAgent += creditCardAuthorizeActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.creditCard.IResult>b.result).price, 0
+        (a, b) => a + (<factory.action.authorize.paymentMethod.creditCard.IResult>b.result).amount, 0
     );
 
     // コイン承認を確認
-    const authorizeCoinActions = authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-        .filter((a) => a.object.accountType === factory.accountType.Coin);
+    const authorizeCoinActions =
+        (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Coin>[]>authorizeActions)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+            .filter((a) => a.result !== undefined && a.result.fromAccount.accountType === factory.accountType.Coin);
     priceByAgent += authorizeCoinActions.reduce(
         (a, b) => a + (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType.Coin>>b.result).amount, 0
     );
@@ -364,7 +365,7 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
     priceByAgent += authorizeMovieTicketActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.movieTicket.IResult>b.result).price, 0
+        (a, b) => a + (<factory.action.authorize.paymentMethod.movieTicket.IResult>b.result).amount, 0
     );
 
     // 現金承認を確認
@@ -372,7 +373,7 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.Cash);
     priceByAgent += authorizeCashActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.any.IResult>b.result).price, 0
+        (a, b) => a + (<factory.action.authorize.paymentMethod.any.IResult>b.result).amount, 0
     );
 
     // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
@@ -405,7 +406,11 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
                 (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Point>[]>authorizeActions)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                     .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-                    .filter((a) => a.object.accountType === factory.accountType.Point)
+                    .filter((a) => {
+                        const result = (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType.Point>>a.result);
+
+                        return result.fromAccount.accountType === factory.accountType.Point;
+                    })
                     .reduce((a, b) => a + b.object.amount, 0);
             if (requiredPoint !== authorizedPointAmount) {
                 throw new factory.errors.Argument('transactionId', 'Required point amount not satisfied');
@@ -635,11 +640,11 @@ export function createOrderFromTransaction(params: {
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
         .forEach((a: factory.action.authorize.paymentMethod.account.IAction<factory.accountType>) => {
-            const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
+            const result = (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result);
             paymentMethods.push({
-                name: a.object.accountType,
+                name: result.fromAccount.accountType,
                 typeOf: factory.paymentMethodType.Account,
-                paymentMethodId: actionResult.pendingTransaction.id
+                paymentMethodId: result.fromAccount.accountNumber
             });
         });
 
@@ -837,14 +842,16 @@ export async function createPotentialActionsFromTransaction(params: {
             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
     const payAccountActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[] =
         authorizeAccountActions.map((a) => {
+            const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
+
             return {
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: {
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
-                        name: factory.paymentMethodType.Account,
+                        name: result.fromAccount.accountType,
                         typeOf: <factory.paymentMethodType.Account>factory.paymentMethodType.Account,
-                        paymentMethodId: a.id
+                        paymentMethodId: result.fromAccount.accountNumber
                     },
                     pendingTransaction:
                         (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction

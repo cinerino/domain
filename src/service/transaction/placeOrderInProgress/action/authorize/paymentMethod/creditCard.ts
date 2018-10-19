@@ -50,13 +50,7 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                typeOf: factory.paymentMethodType.CreditCard,
-                orderId: params.orderId,
-                amount: params.amount,
-                method: params.method,
-                creditCard: params.creditCard
-            },
+            object: params,
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: transaction // purposeは取引
@@ -141,7 +135,8 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
         debug('ending authorize action...');
 
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
-            price: params.amount,
+            amount: params.amount,
+            additionalProperty: params.additionalProperty,
             entryTranArgs: entryTranArgs,
             execTranArgs: execTranArgs,
             execTranResult: execTranResult

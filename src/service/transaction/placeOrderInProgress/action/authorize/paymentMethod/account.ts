@@ -28,32 +28,10 @@ export type ICreateOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます。
  */
-export function create<T extends factory.accountType>(params: {
-    /**
-     * 取引ID
-     */
+export function create<T extends factory.accountType>(params: factory.action.authorize.paymentMethod.account.IObject<T> & {
+    agentId: string;
     transactionId: string;
-    /**
-     * 金額
-     */
-    amount: number;
-    /**
-     * 確保口座
-     */
-    fromAccount: {
-        /**
-         * 口座タイプ
-         */
-        accountType: T;
-        /**
-         * 口座番号
-         */
-        accountNumber: string;
-    };
-    /**
-     * 取引メモ
-     */
-    notes?: string;
+    fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
 }): ICreateOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -100,12 +78,7 @@ export function create<T extends factory.accountType>(params: {
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
             typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                typeOf: factory.paymentMethodType.Account,
-                amount: params.amount,
-                accountType: params.fromAccount.accountType,
-                fromAccountNumber: params.fromAccount.accountNumber
-            },
+            object: params,
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: transaction
@@ -208,6 +181,8 @@ export function create<T extends factory.accountType>(params: {
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
             amount: params.amount,
+            fromAccount: params.fromAccount,
+            additionalProperty: params.additionalProperty,
             pendingTransaction: pendingTransaction
         };
 

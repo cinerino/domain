@@ -25,23 +25,9 @@ export type ICreateOperation<T> = (repos: {
  * Pecorino残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます。
  */
-export function create(params: {
-    /**
-     * 取引ID
-     */
+export function create(params: factory.action.authorize.paymentMethod.mocoin.IObject & {
+    agentId: string;
     transactionId: string;
-    /**
-     * 金額
-     */
-    amount: number;
-    /**
-     * Pecorino口座ID
-     */
-    fromAccountNumber: string;
-    /**
-     * 出金取引メモ
-     */
-    notes?: string;
 }): ICreateOperation<factory.action.authorize.paymentMethod.mocoin.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -70,11 +56,7 @@ export function create(params: {
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.mocoin.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                typeOf: factory.paymentMethodType.Mocoin,
-                transactionId: params.transactionId,
-                amount: params.amount
-            },
+            object: params,
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: transaction
@@ -160,8 +142,8 @@ export function create(params: {
         // アクションを完了
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.mocoin.IResult = {
-            price: params.amount,
-            amount: 0,
+            amount: params.amount,
+            additionalProperty: params.additionalProperty,
             mocoinTransaction: mocoinTransaction,
             mocoinEndpoint: mocoinEndpoint
         };

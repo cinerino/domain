@@ -67,7 +67,9 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.paymentMethodType.MovieTicket,
-                movieTickets: params.movieTickets
+                amount: 0,
+                movieTickets: params.movieTickets,
+                additionalProperty: params.additionalProperty
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -124,7 +126,8 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         // アクションを完了
         debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
-            price: 0,
+            amount: 0,
+            additionalProperty: params.additionalProperty,
             purchaseNumberAuthIn: purchaseNumberAuthIn,
             purchaseNumberAuthResult: purchaseNumberAuthResult
         };

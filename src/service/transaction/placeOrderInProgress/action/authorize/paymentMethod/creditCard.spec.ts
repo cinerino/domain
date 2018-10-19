@@ -66,7 +66,8 @@ describe('action.authorize.creditCard.create()', () => {
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard
+            creditCard: creditCard,
+            additionalProperty: []
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -179,7 +180,8 @@ describe('action.authorize.creditCard.create()', () => {
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard
+            creditCard: creditCard,
+            additionalProperty: []
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -240,7 +242,8 @@ describe('action.authorize.creditCard.create()', () => {
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard
+            creditCard: creditCard,
+            additionalProperty: []
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -304,7 +307,8 @@ describe('action.authorize.creditCard.create()', () => {
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard
+            creditCard: creditCard,
+            additionalProperty: []
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -369,7 +373,8 @@ describe('action.authorize.creditCard.create()', () => {
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard
+            creditCard: creditCard,
+            additionalProperty: []
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -434,7 +439,8 @@ describe('action.authorize.creditCard.create()', () => {
             orderId: orderId,
             amount: amount,
             method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard
+            creditCard: creditCard,
+            additionalProperty: []
         })({
             action: actionRepo,
             transaction: transactionRepo,
