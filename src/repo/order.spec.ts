@@ -133,8 +133,7 @@ describe('注文を検索する', () => {
             orderStatuses: [domain.factory.orderStatus.OrderCancelled],
             orderDateFrom: new Date(),
             orderDateThrough: new Date(),
-            confirmationNumbers: ['confirmationNumber'],
-            reservedEventIds: ['id']
+            confirmationNumbers: ['confirmationNumber']
         });
         assert(Array.isArray(result));
         sandbox.verify();
