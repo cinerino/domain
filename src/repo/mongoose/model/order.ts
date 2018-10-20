@@ -226,6 +226,17 @@ schema.index(
 );
 schema.index(
     {
+        'customer.telephone': 1
+    },
+    {
+        name: 'searchByCustomerTelephone',
+        partialFilterExpression: {
+            'customer.telephone': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
         'paymentMethods.typeOf': 1
     },
     {
@@ -243,6 +254,105 @@ schema.index(
         name: 'searchByPaymentMethodId',
         partialFilterExpression: {
             'paymentMethods.paymentMethodId': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.id': 1
+    },
+    {
+        name: 'searchByItemOfferedId',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.id': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForId',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.name': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForName',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.name': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.endDate': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForEndDate',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.endDate': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.startDate': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForStartDate',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.startDate': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.location.branchCode': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForLocationBranchCode',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.location.branchCode': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.superEvent.id': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForLocationSuperEventId',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.superEvent.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForLocationSuperEventLocationBranchCode',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': 1
+    },
+    {
+        name: 'searchByItemOfferedReservationForLocationSuperEventWorkPerformedIdentifier',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': { $exists: true }
         }
     }
 );
