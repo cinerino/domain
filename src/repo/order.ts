@@ -344,13 +344,29 @@ export class MongoRepository {
     }
     /**
      * 注文ステータスを変更する
-     * @param orderNumber 注文番号
-     * @param orderStatus 注文ステータス
      */
-    public async changeStatus(orderNumber: string, orderStatus: factory.orderStatus) {
+    public async changeStatus(params: {
+        orderNumber: string;
+        orderStatus: factory.orderStatus;
+    }) {
         const doc = await this.orderModel.findOneAndUpdate(
-            { orderNumber: orderNumber },
-            { orderStatus: orderStatus }
+            { orderNumber: params.orderNumber },
+            { orderStatus: params.orderStatus }
+        ).exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound('Order');
+        }
+    }
+    /**
+     * 注文を返品する
+     */
+    public async returnOrder(params: { orderNumber: string; dateReturned: Date }) {
+        const doc = await this.orderModel.findOneAndUpdate(
+            { orderNumber: params.orderNumber },
+            {
+                orderStatus: factory.orderStatus.OrderReturned,
+                dateReturned: params.dateReturned
+            }
         ).exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
@@ -358,11 +374,10 @@ export class MongoRepository {
     }
     /**
      * 注文番号から注文を取得する
-     * @param orderNumber 注文番号
      */
-    public async findByOrderNumber(orderNumber: string): Promise<factory.order.IOrder> {
+    public async findByOrderNumber(params: { orderNumber: string }): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOne(
-            { orderNumber: orderNumber },
+            { orderNumber: params.orderNumber },
             {
                 __v: 0,
                 createdAt: 0,

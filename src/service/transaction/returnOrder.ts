@@ -40,7 +40,7 @@ export function start(
         cancelReservationService: chevre.service.transaction.CancelReservation;
     }) => {
         // 返品対象の取引取得
-        const order = await repos.order.findByOrderNumber(params.object.order.orderNumber);
+        const order = await repos.order.findByOrderNumber({ orderNumber: params.object.order.orderNumber });
         // if (placeOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
         //     throw new factory.errors.Argument('transactionId', 'Status not Confirmed.');
         // }

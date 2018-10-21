@@ -106,7 +106,10 @@ export function sendOrder(params: { transactionId: string }) {
             }));
 
             // 注文ステータス変更
-            await repos.order.changeStatus(transactionResult.order.orderNumber, factory.orderStatus.OrderDelivered);
+            await repos.order.changeStatus({
+                orderNumber: transactionResult.order.orderNumber,
+                orderStatus: factory.orderStatus.OrderDelivered
+            });
         } catch (error) {
             // actionにエラー結果を追加
             try {
