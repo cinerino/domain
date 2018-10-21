@@ -52,7 +52,6 @@ const schema = new mongoose.Schema(
         workPerformed: workPerformedSchema,
         superEvent: superEventSchema,
         videoFormat: String,
-        subtitleLanguage: String,
         kanaName: String,
         alternativeHeadline: String,
         ticketTypeGroup: String,

@@ -23,10 +23,64 @@ export class MongoRepository {
         if (params.name !== undefined) {
             andConditions.push({
                 $or: [
-                    { 'name.ja': new RegExp(params.name, 'i') },
-                    { 'name.en': new RegExp(params.name, 'i') }
+                    {
+                        'name.ja': {
+                            $exists: true,
+                            $regex: new RegExp(params.name, 'i')
+                        }
+                    },
+                    {
+                        'name.en': {
+                            $exists: true,
+                            $regex: new RegExp(params.name, 'i')
+                        }
+                    }
                 ]
             });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.location !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.location.typeOfs !== undefined) {
+                andConditions.push({
+                    'location.typeOf': {
+                        $exists: true,
+                        $in: params.location.typeOfs
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.location.branchCodes !== undefined) {
+                andConditions.push({
+                    'location.branchCode': {
+                        $exists: true,
+                        $in: params.location.branchCodes
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.location.name !== undefined) {
+                andConditions.push({
+                    $or: [
+                        {
+                            'location.name.ja': {
+                                $exists: true,
+                                $regex: new RegExp(params.location.name, 'i')
+                            }
+                        },
+                        {
+                            'location.name.en': {
+                                $exists: true,
+                                $regex: new RegExp(params.location.name, 'i')
+                            }
+                        }
+                    ]
+                });
+            }
         }
 
         return andConditions;

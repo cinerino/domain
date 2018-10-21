@@ -81,11 +81,46 @@ const schema = new mongoose.Schema(
 schema.index(
     { typeOf: 1, _id: 1 }
 );
-
 schema.index(
+    { typeOf: 1 },
     {
-        'location.branchCode': 1,
-        typeOf: 1
+        name: 'searchByType'
+    }
+);
+schema.index(
+    { name: 1 },
+    {
+        name: 'searchByName',
+        partialFilterExpression: {
+            name: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'location.typeOf': 1 },
+    {
+        name: 'searchByLocationType',
+        partialFilterExpression: {
+            'location.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'location.branchCode': 1 },
+    {
+        name: 'searchByLocationBranchCode',
+        partialFilterExpression: {
+            'location.branchCode': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'location.name': 1 },
+    {
+        name: 'searchByLocationName',
+        partialFilterExpression: {
+            'location.name': { $exists: true }
+        }
     }
 );
 
