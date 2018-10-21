@@ -68,7 +68,8 @@ const schema = new mongoose.Schema(
         url: String,
         orderStatus: String,
         orderDate: Date,
-        isGift: Boolean
+        isGift: Boolean,
+        orderReturned: Date
     },
     {
         collection: 'orders',
