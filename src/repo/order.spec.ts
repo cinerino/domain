@@ -49,7 +49,7 @@ describe('changeStatus()', () => {
         sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.orderModel());
 
-        const result = await repository.changeStatus(orderNumber, orderStatus);
+        const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus });
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -64,7 +64,7 @@ describe('changeStatus()', () => {
         sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
 
-        const result = await repository.changeStatus(orderNumber, orderStatus)
+        const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus })
             .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.NotFound);
@@ -87,7 +87,7 @@ describe('findByOrderNumber()', () => {
         sandbox.mock(repository.orderModel).expects('findOne').once()
             .chain('exec').resolves(new repository.orderModel(order));
 
-        const result = await repository.findByOrderNumber(order.orderNumber);
+        const result = await repository.findByOrderNumber({ orderNumber: order.orderNumber });
 
         assert.equal(result.orderNumber, order.orderNumber);
         sandbox.verify();
@@ -101,7 +101,7 @@ describe('findByOrderNumber()', () => {
         sandbox.mock(repository.orderModel).expects('findOne').once()
             .chain('exec').resolves(null);
 
-        const result = await repository.findByOrderNumber(orderNumber)
+        const result = await repository.findByOrderNumber({ orderNumber: orderNumber })
             .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.NotFound);
