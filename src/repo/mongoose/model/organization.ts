@@ -31,6 +31,15 @@ const paymentAcceptedSchema = new mongoose.Schema(
     }
 );
 
+const hasPOSSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 /**
  * 組織スキーマ
  */
@@ -49,7 +58,8 @@ const schema = new mongoose.Schema(
         telephone: String,
         location: locationSchema,
         branchCode: String,
-        paymentAccepted: [paymentAcceptedSchema]
+        paymentAccepted: [paymentAcceptedSchema],
+        hasPOS: [hasPOSSchema]
     },
     {
         collection: 'organizations',
