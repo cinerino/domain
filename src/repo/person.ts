@@ -3,6 +3,9 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
 import * as factory from '../factory';
 
+export type AttributeListType = AWS.CognitoIdentityServiceProvider.AttributeListType;
+export type IPerson = factory.person.IProfile & factory.person.IPerson;
+
 /**
  * 会員リポジトリー
  * 会員情報の保管先は基本的にAmazon Cognitoです。
@@ -46,6 +49,38 @@ export class CognitoRepository {
 
         return profile;
     }
+
+    public static ATTRIBUTE2PERSON(params: {
+        username?: string;
+        attributes: AttributeListType;
+    }) {
+        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params.attributes);
+        const person: IPerson = {
+            typeOf: factory.personType.Person,
+            id: '',
+            memberOf: {
+                typeOf: 'ProgramMembership',
+                membershipNumber: params.username,
+                programName: 'Amazon Cognito',
+                award: []
+            },
+            ...profile
+        };
+        params.attributes.forEach((a) => {
+            switch (a.Name) {
+                case 'sub':
+                    // tslint:no-single-line-block-comment
+                    person.id = (a.Value !== undefined) ? a.Value : /* istanbul ignore next: please write tests */ '';
+                    break;
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+                default:
+            }
+        });
+
+        return person;
+    }
+
     /**
      * 管理者権限でユーザー属性を取得する
      */
@@ -74,6 +109,7 @@ export class CognitoRepository {
                 });
         });
     }
+
     /**
      * 管理者権限でsubでユーザーを検索する
      */
@@ -81,7 +117,7 @@ export class CognitoRepository {
         userPooId: string;
         userId: string;
     }) {
-        return new Promise<factory.person.IProfile>((resolve, reject) => {
+        return new Promise<IPerson>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.listUsers(
                 {
                     UserPoolId: params.userPooId,
@@ -98,14 +134,19 @@ export class CognitoRepository {
                         } else {
                             const user = data.Users.shift();
                             if (user === undefined || user.Attributes === undefined) {
-                                throw new factory.errors.NotFound('User');
+                                reject(new factory.errors.NotFound('User'));
+                            } else {
+                                resolve(CognitoRepository.ATTRIBUTE2PERSON({
+                                    username: user.Username,
+                                    attributes: user.Attributes
+                                }));
                             }
-                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(user.Attributes));
                         }
                     }
                 });
         });
     }
+
     /**
      * アクセストークンでユーザー属性を取得する
      */
@@ -124,6 +165,7 @@ export class CognitoRepository {
                 });
         });
     }
+
     /**
      * 会員プロフィール更新
      */
@@ -173,6 +215,62 @@ export class CognitoRepository {
                         reject(new factory.errors.Argument('profile', err.message));
                     } else {
                         resolve();
+                    }
+                });
+        });
+    }
+
+    /**
+     * 検索
+     */
+    public async search(params: {
+        userPooId: string;
+        id?: string;
+        username?: string;
+        email?: string;
+        telephone?: string;
+        givenName?: string;
+        familyName?: string;
+    }) {
+        return new Promise<IPerson[]>((resolve, reject) => {
+            const request: AWS.CognitoIdentityServiceProvider.Types.ListUsersRequest = {
+                // Limit: 60,
+                UserPoolId: params.userPooId
+            };
+            if (params.id !== undefined) {
+                request.Filter = `sub^="${params.id}"`;
+            }
+            if (params.username !== undefined) {
+                request.Filter = `username^="${params.username}"`;
+            }
+            if (params.email !== undefined) {
+                request.Filter = `email^="${params.email}"`;
+            }
+            if (params.telephone !== undefined) {
+                request.Filter = `phone_number^="${params.telephone}"`;
+            }
+            if (params.givenName !== undefined) {
+                request.Filter = `given_name^="${params.givenName}"`;
+            }
+            if (params.familyName !== undefined) {
+                request.Filter = `family_name^="${params.familyName}"`;
+            }
+            this.cognitoIdentityServiceProvider.listUsers(
+                request,
+                (err, data) => {
+                    if (err instanceof Error) {
+                        reject(err);
+                    } else {
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore if: please write tests */
+                        if (data.Users === undefined) {
+                            reject(new factory.errors.NotFound('User'));
+                        } else {
+                            resolve(data.Users.map((u) => CognitoRepository.ATTRIBUTE2PERSON({
+                                username: u.Username,
+                                attributes: <AttributeListType>u.Attributes
+                            })));
+                        }
                     }
                 });
         });
