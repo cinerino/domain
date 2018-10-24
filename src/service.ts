@@ -6,6 +6,7 @@ import * as AccountService from './service/account';
 import * as CodeService from './service/code';
 import * as DeliveryService from './service/delivery';
 import * as NotificationService from './service/notification';
+import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PaymentService from './service/payment';
 import * as PersonCreditCardService from './service/person/creditCard';
@@ -22,6 +23,7 @@ export import account = AccountService;
 export import code = CodeService;
 export import delivery = DeliveryService;
 export import notification = NotificationService;
+export import offer = OfferService;
 export import order = OrderService;
 export namespace person {
     export import creditCard = PersonCreditCardService;

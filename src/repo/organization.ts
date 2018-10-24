@@ -92,10 +92,17 @@ export class MongoRepository {
         typeOf: T;
         id: string;
     }): Promise<factory.organization.IOrganization<T>> {
-        const doc = await this.organizationModel.findOne({
-            typeOf: params.typeOf,
-            _id: params.id
-        }).exec();
+        const doc = await this.organizationModel.findOne(
+            {
+                typeOf: params.typeOf,
+                _id: params.id
+            },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        ).exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Organization');
         }

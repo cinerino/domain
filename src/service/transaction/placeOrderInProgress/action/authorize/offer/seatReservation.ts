@@ -19,37 +19,16 @@ export type ICreateOperation<T> = (repos: {
 }) => Promise<T>;
 
 /**
- * 座席予約に対する承認アクションを開始する前の処理
- * 供給情報の有効性の確認などを行う。
- * この処理次第で、どのような供給情報を受け入れられるかが決定するので、とても大事な処理です。
- * バグ、不足等あれば、随時更新することが望ましい。
- */
-// tslint:disable-next-line:max-func-body-length
-// async function validateOffers(
-//     isMember: boolean,
-//     screeningEvent: factory.chevre.event.screeningEvent.IEvent,
-//     offers: factory.offer.seatReservation.IOffer[]
-// ): Promise<factory.offer.seatReservation.IOfferWithDetails[]> {
-// }
-
-/**
- * 供給情報から承認アクションの価格を導き出す
- * @param offers 供給情報
- */
-// function offers2resultPrice(offers: factory.offer.seatReservation.IOfferWithDetails[]) {
-//     const price = offers.reduce((a, b) => a + b.price, 0);
-//     const point = offers.reduce((a, b) => a + b.ticketInfo.usePoint, 0);
-
-//     return { price, point };
-// }
-
-/**
  * 座席を仮予約する
  * 承認アクションオブジェクトが返却されます。
  */
 export function create(params: factory.chevre.transaction.reserve.IObjectWithoutDetail & {
-    agentId: string;
-    transactionId: string;
+    transaction: {
+        id: string;
+    };
+    agent: {
+        id: string;
+    };
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -62,9 +41,9 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         debug('creating authorize action...', params);
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
@@ -155,6 +134,40 @@ export function create(params: factory.chevre.transaction.reserve.IObjectWithout
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
+
+/**
+ * 受け入れらたオファーの内容を検証する
+ */
+// function validateAcceptedOffers(params: factory.chevre.transaction.reserve.IObjectWithoutDetail) {
+//     return async (repos: {
+//         event: EventRepo;
+//         action: ActionRepo;
+//         transaction: TransactionRepo;
+//         eventService: chevre.service.Event;
+//         reserveService: chevre.service.transaction.Reserve;
+//     }) => {
+//         // 供給情報の有効性を確認
+//         const availableTicketOffers = await repos.eventService.searchScreeningEventTicketOffers({ eventId: params.event.id });
+//         const acceptedOffers: factory.chevre.event.screeningEvent.IAcceptedTicketOffer[] =
+//             params.acceptedOffer.map((offerWithoutDetail) => {
+//                 const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
+//                 if (offer === undefined) {
+//                     throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
+//                 }
+
+//                 return { ...offerWithoutDetail, ...offer };
+//             });
+
+//         // 承認要求者とオファーの条件を検証
+//         acceptedOffers.forEach((offer) => {
+//             if (offer.availability === factory.chevre.itemAvailability.InStoreOnly) {
+
+//             }
+//         });
+
+//         return acceptedOffers;
+//     };
+// }
 
 /**
  * 座席予約承認アクションをキャンセルする

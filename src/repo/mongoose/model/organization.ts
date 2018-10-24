@@ -40,6 +40,15 @@ const hasPOSSchema = new mongoose.Schema(
     }
 );
 
+const areaServedSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 /**
  * 組織スキーマ
  */
@@ -59,7 +68,8 @@ const schema = new mongoose.Schema(
         location: locationSchema,
         branchCode: String,
         paymentAccepted: [paymentAcceptedSchema],
-        hasPOS: [hasPOSSchema]
+        hasPOS: [hasPOSSchema],
+        areaServed: [areaServedSchema]
     },
     {
         collection: 'organizations',
