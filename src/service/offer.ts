@@ -1,7 +1,11 @@
+import * as createDebug from 'debug';
+
 import { MongoRepository as OrganizationRepo } from '../repo/organization';
 
 import * as chevre from '../chevre';
 import * as factory from '../factory';
+
+const debug = createDebug('cinerino-domain:service');
 
 type ISearchScreeningEventTicketOffersOperation<T> = (repos: {
     organization: OrganizationRepo;
@@ -20,6 +24,7 @@ export function searchScreeningEventTicketOffers(params: {
         organization: OrganizationRepo;
         eventService: chevre.service.Event;
     }) => {
+        debug('searching screeninf event offers...', params);
         // Chevreで券種オファーを検索
         let offers = await repos.eventService.searchScreeningEventTicketOffers({ eventId: params.event.id });
 
@@ -28,8 +33,10 @@ export function searchScreeningEventTicketOffers(params: {
             throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
         }
         const seller = await repos.organization.findById({ typeOf: params.seller.typeOf, id: params.seller.id });
+        debug('seller.areaServed is', seller.areaServed);
         if (Array.isArray(seller.areaServed)) {
             const store = seller.areaServed.find((area) => area.id === params.store.id);
+            debug('store is', store);
             // 販売者の店舗に登録されていなければNotFound
             if (store === undefined) {
                 throw new factory.errors.NotFound('Seller');

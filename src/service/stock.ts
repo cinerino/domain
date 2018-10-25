@@ -29,14 +29,26 @@ export function importScreeningEvents(params: {
         eventService: chevre.service.Event;
     }) => {
         // 上映スケジュール取得
-        const searchScreeningEventsResult = await repos.eventService.searchScreeningEvents({
-            inSessionFrom: params.importFrom,
-            inSessionThrough: params.importThrough,
-            superEvent: {
-                locationBranchCodes: [params.locationBranchCode]
-            }
-        });
-        const screeningEvents = searchScreeningEventsResult.data;
+        const limit = 100;
+        let page = 0;
+        let numData: number = limit;
+        const screeningEvents: factory.chevre.event.screeningEvent.IEvent[] = [];
+        while (numData === limit) {
+            page += 1;
+            const searchScreeningEventsResult = await repos.eventService.searchScreeningEvents({
+                limit: limit,
+                page: page,
+                inSessionFrom: params.importFrom,
+                inSessionThrough: params.importThrough,
+                superEvent: {
+                    locationBranchCodes: [params.locationBranchCode]
+                }
+            });
+            numData = searchScreeningEventsResult.data.length;
+            debug('numData:', numData);
+            screeningEvents.push(...searchScreeningEventsResult.data);
+        }
+
         // 各作品画像を検索
         const movies = screeningEvents
             .map((e) => e.superEvent.workPerformed)
