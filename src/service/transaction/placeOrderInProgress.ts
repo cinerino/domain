@@ -454,6 +454,8 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
     debug('movie ticket event ids:', eventIds);
     eventIds.forEach((eventId) => {
         const requiredMovieTicketsByEvent = requiredMovieTickets.filter((t) => t.serviceOutput.reservationFor.id === eventId);
+
+        // 券種ごとに枚数が適切か確認
         const serviceTypes = [...new Set(requiredMovieTicketsByEvent.map((t) => t.serviceType))];
         debug('movie ticket serviceTypes:', serviceTypes);
         serviceTypes.forEach((serviceType) => {
@@ -464,6 +466,18 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
             });
             if (requiredMovieTicketsByServiceType.length !== authorizedMovieTicketsByEventAndServiceType.length) {
                 throw new factory.errors.Argument('transactionId', 'Required number of movie tickets not satisfied');
+            }
+        });
+
+        // 座席番号リストが一致しているか確認
+        const seatNumbers = requiredMovieTicketsByEvent.map((t) => t.serviceOutput.reservedTicket.ticketedSeat.seatNumber);
+        seatNumbers.forEach((seatNumber) => {
+            const authorizedMovieTicketsByEventAndSeatNumber = authorizedMovieTickets.find((t) => {
+                return t.serviceOutput.reservationFor.id === eventId
+                    && t.serviceOutput.reservedTicket.ticketedSeat.seatNumber === seatNumber;
+            });
+            if (authorizedMovieTicketsByEventAndSeatNumber === undefined) {
+                throw new factory.errors.Argument('transactionId', `Movie Ticket for ${seatNumber} required`);
             }
         });
     });
@@ -568,29 +582,9 @@ export function createOrderFromTransaction(params: {
     const discounts: factory.order.IDiscount[] = [];
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
 
-    // ムビチケ決済があれば決済方法に追加(ムビチケ購入管理番号でユニークになるように)
-    params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.result !== undefined)
-        .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket)
-        .forEach((a: factory.action.authorize.paymentMethod.movieTicket.IAction) => {
-            const movieTicketIdentifiers = [...new Set(a.object.movieTickets.map((t) => t.identifier))];
-            paymentMethods.push(...movieTicketIdentifiers.map((movieTicketIdentifier) => {
-                return {
-                    name: 'ムビチケ',
-                    typeOf: factory.paymentMethodType.MovieTicket,
-                    paymentMethodId: movieTicketIdentifier
-                };
-            }));
-        });
-
-    // その他決済方法
-    [
-        factory.paymentMethodType.Account,
-        factory.paymentMethodType.Cash,
-        factory.paymentMethodType.CreditCard,
-        factory.paymentMethodType.EMoney
-    ].forEach((paymentMethodType) => {
+    // 決済方法をセット
+    Object.keys(factory.paymentMethodType).forEach((key) => {
+        const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
@@ -741,11 +735,11 @@ export async function createPotentialActionsFromTransaction(params: {
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.CreditCard);
-    const creditCardPayments: factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>[] = [];
+    const payCreditCardActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>[] = [];
     authorizeCreditCardActions.forEach((a) => {
         const result = <factory.action.authorize.paymentMethod.creditCard.IResult>a.result;
         if (result.paymentStatus === factory.paymentStatusType.PaymentDue) {
-            creditCardPayments.push({
+            payCreditCardActions.push({
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: {
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
@@ -769,7 +763,8 @@ export async function createPotentialActionsFromTransaction(params: {
     const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
+            .filter((a) => a.result !== undefined)
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
     const payAccountActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[] =
         authorizeAccountActions.map((a) => {
             const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
@@ -795,17 +790,20 @@ export async function createPotentialActionsFromTransaction(params: {
     const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
+            .filter((a) => a.result !== undefined)
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket);
     const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] =
         authorizeMovieTicketActions.map((a) => {
+            const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+
             return {
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: {
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
-                        name: 'ムビチケ',
-                        typeOf: <factory.paymentMethodType.MovieTicket>factory.paymentMethodType.MovieTicket,
-                        paymentMethodId: a.id
+                        name: result.name,
+                        typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod,
+                        paymentMethodId: result.paymentMethodId
                     },
                     movieTickets: a.object.movieTickets
                 },
@@ -814,7 +812,7 @@ export async function createPotentialActionsFromTransaction(params: {
             };
         });
 
-    // Pecorinoインセンティブに対する承認アクションの分だけ、Pecorinoインセンティブ付与アクションを作成する
+    // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
     let givePointAwardActions: factory.action.transfer.give.pointAward.IAttributes[] = [];
     const pointAwardAuthorizeActions =
         (<factory.action.authorize.award.point.IAction[]>params.transaction.object.authorizeActions)
@@ -871,8 +869,7 @@ export async function createPotentialActionsFromTransaction(params: {
             object: params.order,
             agent: params.transaction.agent,
             potentialActions: {
-                // クレジットカード決済があれば支払アクション追加
-                payCreditCard: creditCardPayments,
+                payCreditCard: payCreditCardActions,
                 payAccount: payAccountActions,
                 payMovieTicket: payMovieTicketActions,
                 sendOrder: sendOrderActionAttributes,
