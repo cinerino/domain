@@ -145,6 +145,9 @@ export function retry(intervalInMinutes: number): TaskOperation<void> {
 export function abort(intervalInMinutes: number): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
         const abortedTask = await repos.task.abortOne(intervalInMinutes);
+        if (abortedTask === null) {
+            return;
+        }
         debug('abortedTask found', abortedTask);
 
         // 開発者へ報告

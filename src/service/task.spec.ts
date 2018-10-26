@@ -47,8 +47,7 @@ describe('executeByName()', () => {
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
-        sandbox.mock(taskRepo).expects('executeOneByName').once()
-            .withArgs(taskName).rejects(new domain.factory.errors.NotFound('task'));
+        sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(taskName).resolves(null);
         sandbox.mock(domain.service.task).expects('execute').never();
 
         const result = await domain.service.task.executeByName(taskName)({

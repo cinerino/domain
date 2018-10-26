@@ -79,7 +79,7 @@ export class MongoRepository {
             (doc) => doc.toObject()
         );
     }
-    public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T>> {
+    public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T> | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Ready,
@@ -97,7 +97,7 @@ export class MongoRepository {
             { new: true }
         ).sort(sortOrder4executionOfTasks).exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Task');
+            return null;
         }
 
         return doc.toObject();
@@ -119,7 +119,7 @@ export class MongoRepository {
             { multi: true }
         ).exec();
     }
-    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<factory.taskName>> {
+    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<factory.taskName> | null> {
         const lastTriedAtShoudBeLessThan = moment().add(-intervalInMinutes, 'minutes').toDate();
         const doc = await this.taskModel.findOneAndUpdate(
             {
@@ -136,7 +136,7 @@ export class MongoRepository {
             { new: true }
         ).exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Task');
+            return null;
         }
 
         return doc.toObject();

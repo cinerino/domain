@@ -24,12 +24,10 @@ describe('save()', () => {
         const ownershipInfo = {};
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
-
         sandbox.mock(repository.taskModel).expects('create').once()
             .resolves(new repository.taskModel());
 
         const result = await repository.save(<any>ownershipInfo);
-
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -44,26 +42,22 @@ describe('executeOneByName()', () => {
         const taskName = domain.factory.taskName.PlaceOrder;
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
-
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
 
         const result = await repository.executeOneByName(taskName);
-
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
 
-    it('存在しなければ、NotFoundエラーとなるはず', async () => {
+    it('存在しなければ、nullが返却されるはず', async () => {
         const taskName = domain.factory.taskName.PlaceOrder;
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
+        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
 
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.executeOneByName(taskName).catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
+        const result = await repository.executeOneByName(taskName);
+        assert(result === null);
         sandbox.verify();
     });
 });
@@ -77,12 +71,10 @@ describe('retry()', () => {
         const intervalInMinutes = 10;
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
-
         sandbox.mock(repository.taskModel).expects('update').once()
             .chain('exec').resolves();
 
         const result = await repository.retry(intervalInMinutes);
-
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -97,26 +89,22 @@ describe('abortOne()', () => {
         const intervalInMinutes = 10;
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
-
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
 
         const result = await repository.abortOne(intervalInMinutes);
-
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
 
-    it('存在しなければ、NotFoundエラーとなるはず', async () => {
+    it('存在しなければ、nullが返却されるはず', async () => {
         const intervalInMinutes = 10;
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
+        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
 
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.abortOne(intervalInMinutes).catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
+        const result = await repository.abortOne(intervalInMinutes);
+        assert(result === null);
         sandbox.verify();
     });
 });
@@ -132,12 +120,10 @@ describe('pushExecutionResultById()', () => {
         const executionResult = {};
 
         const repository = new domain.repository.Task(domain.mongoose.connection);
-
         sandbox.mock(repository.taskModel).expects('findByIdAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
 
         const result = await repository.pushExecutionResultById(taskId, status, <any>executionResult);
-
         assert.equal(result, undefined);
         sandbox.verify();
     });
