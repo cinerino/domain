@@ -181,6 +181,10 @@ export function create<T extends factory.accountType>(params: factory.action.aut
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
             amount: params.amount,
+            paymentMethod: factory.paymentMethodType.Account,
+            paymentStatus: factory.paymentStatusType.PaymentDue,
+            paymentMethodId: params.fromAccount.accountNumber,
+            name: params.fromAccount.accountType,
             fromAccount: params.fromAccount,
             additionalProperty: params.additionalProperty,
             pendingTransaction: pendingTransaction

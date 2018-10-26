@@ -103,30 +103,11 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
             // クレジットカード決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (orderPotentialActions.payCreditCard !== undefined) {
-                const payCreditCardTask: factory.task.IAttributes<factory.taskName.PayCreditCard> = {
-                    name: factory.taskName.PayCreditCard,
-                    status: factory.taskStatus.Ready,
-                    runsAt: now, // なるはやで実行
-                    remainingNumberOfTries: 10,
-                    lastTriedAt: null,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        transactionId: transactionId
-                    }
-                };
-                taskAttributes.push(payCreditCardTask);
-            }
-
-            // Pecorino決済
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.payAccount)) {
-                taskAttributes.push(...orderPotentialActions.payAccount.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayAccount> => {
+            if (Array.isArray(orderPotentialActions.payCreditCard)) {
+                taskAttributes.push(...orderPotentialActions.payCreditCard.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayCreditCard> => {
                         return {
-                            name: factory.taskName.PayAccount,
+                            name: factory.taskName.PayCreditCard,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -138,14 +119,14 @@ function onCreate(transactionId: string, orderActionAttributes: factory.action.t
                     }));
             }
 
-            // Mocoin決済
+            // Pecorino決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.payMocoin)) {
-                taskAttributes.push(...orderPotentialActions.payMocoin.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayMocoin> => {
+            if (Array.isArray(orderPotentialActions.payAccount)) {
+                taskAttributes.push(...orderPotentialActions.payAccount.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayAccount> => {
                         return {
-                            name: factory.taskName.PayMocoin,
+                            name: factory.taskName.PayAccount,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,

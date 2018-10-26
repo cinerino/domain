@@ -89,106 +89,69 @@ describe('payCreditCard()', () => {
     it('仮売上状態であれば、実売上に成功するはず', async () => {
         const searchTradeResult = { jobCd: domain.GMO.utils.util.JobCd.Auth };
         const action = { id: 'actionId' };
+        const params = {
+            typeOf: <domain.factory.actionType.PayAction>domain.factory.actionType.PayAction,
+            agent: <any>{},
+            object: {
+                typeOf: <'PaymentMethod'>'PaymentMethod',
+                paymentMethod: {
+                    typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
+                    name: '',
+                    paymentMethodId: ''
+                },
+                entryTranArgs: <any>{},
+                execTranArgs: <any>{},
+                price: 100,
+                priceCurrency: domain.factory.priceCurrency.JPY
+            },
+            purpose: existingTransaction
+        };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(existingTransaction);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
 
-        const result = await domain.service.payment.creditCard.payCreditCard(existingTransaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
+        const result = await domain.service.payment.creditCard.payCreditCard(params)({
+            action: actionRepo
         });
 
         assert.equal(result, undefined);
         sandbox.verify();
     });
 
-    it('注文取引結果が未定義であればNotFoundエラーとなるはず', async () => {
-        const transaction = { ...existingTransaction, result: undefined };
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.payCreditCard(transaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
-        }).catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
-
-    it('注文取引の潜在アクションが未定義であればNotFoundエラーとなるはず', async () => {
-        const transaction = { ...existingTransaction, potentialActions: undefined };
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.payCreditCard(transaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
-        }).catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
-
-    it('注文アクションの潜在アクションが未定義であれば、NotFoundエラーとなるはず', async () => {
-        const transaction = {
-            ...existingTransaction,
-            potentialActions: {
-                order: {
-                    typeOf: 'actionType'
-                    // potentialActions: {}
-                }
-            }
-        };
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.payCreditCard(transaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
-        })
-            .catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
-
     it('すでに実売上済であれば、実売上リクエストは実行されないはず', async () => {
         const searchTradeResult = { jobCd: domain.GMO.utils.util.JobCd.Sales };
         const action = { id: 'actionId' };
+        const params = {
+            typeOf: <domain.factory.actionType.PayAction>domain.factory.actionType.PayAction,
+            agent: <any>{},
+            object: {
+                typeOf: <'PaymentMethod'>'PaymentMethod',
+                paymentMethod: {
+                    typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
+                    name: '',
+                    paymentMethodId: ''
+                },
+                entryTranArgs: <any>{},
+                execTranArgs: <any>{},
+                price: 100,
+                priceCurrency: domain.factory.priceCurrency.JPY
+            },
+            purpose: existingTransaction
+        };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(existingTransaction);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').never();
 
-        const result = await domain.service.payment.creditCard.payCreditCard(existingTransaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
+        const result = await domain.service.payment.creditCard.payCreditCard(params)({
+            action: actionRepo
         });
 
         assert.equal(result, undefined);
@@ -199,45 +162,38 @@ describe('payCreditCard()', () => {
         const searchTradeResult = { jobCd: domain.GMO.utils.util.JobCd.Auth };
         const action = { id: 'actionId' };
         const alterTranResult = new Error('alterTranError');
+        const params = {
+            typeOf: <domain.factory.actionType.PayAction>domain.factory.actionType.PayAction,
+            agent: <any>{},
+            object: {
+                typeOf: <'PaymentMethod'>'PaymentMethod',
+                paymentMethod: {
+                    typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
+                    name: '',
+                    paymentMethodId: ''
+                },
+                entryTranArgs: <any>{},
+                execTranArgs: <any>{},
+                price: 100,
+                priceCurrency: domain.factory.priceCurrency.JPY
+            },
+            purpose: existingTransaction
+        };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(existingTransaction);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects(alterTranResult);
 
-        const result = await domain.service.payment.creditCard.payCreditCard(existingTransaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
+        const result = await domain.service.payment.creditCard.payCreditCard(params)({
+            action: actionRepo
         }).catch((err) => err);
 
         assert.deepEqual(result, alterTranResult);
         sandbox.verify();
     });
-
-    it('注文アクションの潜在アクションにクレジットカード決済アクションがなければ何もしない', async () => {
-        const placeOrderTransaction = { ...existingTransaction };
-        placeOrderTransaction.potentialActions.order.potentialActions.payCreditCard = undefined;
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(placeOrderTransaction);
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.payCreditCard(placeOrderTransaction.id)({
-            action: actionRepo,
-            transaction: transactionRepo
-        });
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-
 });
 
 describe('refundCreditCard()', () => {

@@ -20,7 +20,6 @@ import * as AuthorizeSeatReservationActionService from './placeOrderInProgress/a
 import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/account';
 import * as AuthorizeAnyPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/any';
 import * as AuthorizeCreditCardActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
-import * as AuthorizeMocoinActionService from './placeOrderInProgress/action/authorize/paymentMethod/mocoin';
 import * as AuthorizeMovieTicketActionService from './placeOrderInProgress/action/authorize/paymentMethod/movieTicket';
 
 const debug = createDebug('cinerino-domain:service');
@@ -165,10 +164,6 @@ export namespace action {
              * クレジットカード承認アクションサービス
              */
             export import creditCard = AuthorizeCreditCardActionService;
-            /**
-             * Mocoin承認アクションサービス
-             */
-            export import mocoin = AuthorizeMocoinActionService;
             /**
              * ムビチケ承認アクションサービス
              */
@@ -337,44 +332,23 @@ export function confirm(params: {
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
+// tslint:disable-next-line:max-func-body-length
 export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
     let priceByAgent = 0;
     let priceBySeller = 0;
 
-    // クレジットカード承認を確認
-    const creditCardAuthorizeActions = authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
-    priceByAgent += creditCardAuthorizeActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.creditCard.IResult>b.result).amount, 0
-    );
-
-    // コイン承認を確認
-    const authorizeCoinActions =
-        (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Coin>[]>authorizeActions)
+    // 決済承認を確認
+    Object.keys(factory.paymentMethodType).forEach((key) => {
+        type IAuthorizeAnyPaymentResult =
+            // tslint:disable-next-line:max-line-length
+            factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
+        const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+        priceByAgent += authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-            .filter((a) => a.result !== undefined && a.result.fromAccount.accountType === factory.accountType.Coin);
-    priceByAgent += authorizeCoinActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType.Coin>>b.result).amount, 0
-    );
-
-    // ムビチケ承認を確認
-    const authorizeMovieTicketActions = authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
-    priceByAgent += authorizeMovieTicketActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.movieTicket.IResult>b.result).amount, 0
-    );
-
-    // 現金承認を確認
-    const authorizeCashActions = authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Cash);
-    priceByAgent += authorizeCashActions.reduce(
-        (a, b) => a + (<factory.action.authorize.paymentMethod.any.IResult>b.result).amount, 0
-    );
+            .filter((a) => a.object.typeOf === paymentMethodType)
+            .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+    });
 
     // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
     const pointAwardAuthorizeActions = <factory.action.authorize.award.point.IAction[]>authorizeActions
@@ -592,69 +566,15 @@ export function createOrderFromTransaction(params: {
 
     // 結果作成
     const discounts: factory.order.IDiscount[] = [];
-    // params.transaction.object.authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk)
-    //     .forEach((mvtkAuthorizeAction: factory.action.authorize.discount.mvtk.IAction) => {
-    //         const discountCode = mvtkAuthorizeAction.object.seatInfoSyncIn.knyknrNoInfo.map(
-    //             (knshInfo) => knshInfo.knyknrNo
-    //         ).join(',');
-
-    //         discounts.push({
-    //             name: 'ムビチケカード',
-    //             discount: (<factory.action.authorize.discount.mvtk.IResult>mvtkAuthorizeAction.result).price,
-    //             discountCode: discountCode,
-    //             discountCurrency: factory.priceCurrency.JPY
-    //         });
-    //     });
-
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
-
-    // クレジットカード決済があれば決済方法に追加
-    params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard)
-        .forEach((creditCardAuthorizeAction: factory.action.authorize.paymentMethod.creditCard.IAction) => {
-            const actionResult = <factory.action.authorize.paymentMethod.creditCard.IResult>creditCardAuthorizeAction.result;
-            paymentMethods.push({
-                name: 'クレジットカード',
-                typeOf: factory.paymentMethodType.CreditCard,
-                paymentMethodId: actionResult.execTranResult.orderId
-            });
-        });
-
-    // 口座決済があれば決済方法に追加
-    params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-        .forEach((a: factory.action.authorize.paymentMethod.account.IAction<factory.accountType>) => {
-            const result = (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result);
-            paymentMethods.push({
-                name: result.fromAccount.accountType,
-                typeOf: factory.paymentMethodType.Account,
-                paymentMethodId: result.fromAccount.accountNumber
-            });
-        });
-
-    // mocoin決済があれば決済方法に追加
-    params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Mocoin)
-        .forEach((a: factory.action.authorize.paymentMethod.mocoin.IAction) => {
-            const actionResult = <factory.action.authorize.paymentMethod.mocoin.IResult>a.result;
-            paymentMethods.push({
-                name: 'Mocoin',
-                typeOf: factory.paymentMethodType.Mocoin,
-                paymentMethodId: actionResult.mocoinTransaction.token
-            });
-        });
 
     // ムビチケ決済があれば決済方法に追加(ムビチケ購入管理番号でユニークになるように)
     params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket)
-        .forEach((authorizeMovieTicketAction: factory.action.authorize.paymentMethod.movieTicket.IAction) => {
-            const movieTicketIdentifiers = [...new Set(authorizeMovieTicketAction.object.movieTickets.map((t) => t.identifier))];
+        .filter((a) => a.result !== undefined)
+        .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket)
+        .forEach((a: factory.action.authorize.paymentMethod.movieTicket.IAction) => {
+            const movieTicketIdentifiers = [...new Set(a.object.movieTickets.map((t) => t.identifier))];
             paymentMethods.push(...movieTicketIdentifiers.map((movieTicketIdentifier) => {
                 return {
                     name: 'ムビチケ',
@@ -664,17 +584,26 @@ export function createOrderFromTransaction(params: {
             }));
         });
 
-    // 現金決済があれば決済方法に追加
-    params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Cash)
-        .forEach((_: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType.Cash>) => {
-            paymentMethods.push({
-                name: '現金',
-                typeOf: factory.paymentMethodType.Cash,
-                paymentMethodId: ''
+    // その他決済方法
+    [
+        factory.paymentMethodType.Account,
+        factory.paymentMethodType.Cash,
+        factory.paymentMethodType.CreditCard,
+        factory.paymentMethodType.EMoney
+    ].forEach((paymentMethodType) => {
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.result !== undefined)
+            .filter((a) => a.result.paymentMethod === paymentMethodType)
+            .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
+                const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                paymentMethods.push({
+                    name: result.name,
+                    typeOf: paymentMethodType,
+                    paymentMethodId: result.paymentMethodId
+                });
             });
-        });
+    });
 
     const url = util.format(
         '%s/inquiry/login?confirmationNumber=%s',
@@ -807,21 +736,34 @@ export async function createPotentialActionsFromTransaction(params: {
     sendEmailMessage?: boolean;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // クレジットカード支払いアクション
-    let payCreditCardAction: factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard> | null = null;
-    const creditCardPayment = params.order.paymentMethods.find((m) => m.typeOf === factory.paymentMethodType.CreditCard);
-    if (creditCardPayment !== undefined) {
-        payCreditCardAction = {
-            typeOf: factory.actionType.PayAction,
-            object: {
-                typeOf: 'PaymentMethod',
-                paymentMethod: <factory.order.IPaymentMethod<factory.paymentMethodType.CreditCard>>creditCardPayment,
-                price: params.order.price,
-                priceCurrency: params.order.priceCurrency
-            },
-            agent: params.transaction.agent,
-            purpose: params.order
-        };
-    }
+    const authorizeCreditCardActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.result !== undefined)
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.CreditCard);
+    const creditCardPayments: factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>[] = [];
+    authorizeCreditCardActions.forEach((a) => {
+        const result = <factory.action.authorize.paymentMethod.creditCard.IResult>a.result;
+        if (result.paymentStatus === factory.paymentStatusType.PaymentDue) {
+            creditCardPayments.push({
+                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+                object: {
+                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    paymentMethod: {
+                        name: result.name,
+                        typeOf: <factory.paymentMethodType.CreditCard>result.paymentMethod,
+                        paymentMethodId: result.paymentMethodId
+                    },
+                    price: result.amount,
+                    priceCurrency: factory.priceCurrency.JPY,
+                    entryTranArgs: result.entryTranArgs,
+                    execTranArgs: result.execTranArgs
+                },
+                agent: params.transaction.agent,
+                purpose: params.order
+            });
+        }
+    });
 
     // 口座支払いアクション
     const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
@@ -837,35 +779,12 @@ export async function createPotentialActionsFromTransaction(params: {
                 object: {
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
-                        name: result.fromAccount.accountType,
-                        typeOf: <factory.paymentMethodType.Account>factory.paymentMethodType.Account,
-                        paymentMethodId: result.fromAccount.accountNumber
+                        name: result.name,
+                        typeOf: <factory.paymentMethodType.Account>result.paymentMethod,
+                        paymentMethodId: result.paymentMethodId
                     },
                     pendingTransaction:
                         (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
-                },
-                agent: params.transaction.agent,
-                purpose: params.order
-            };
-        });
-
-    // mocoin支払いアクション
-    const mocoinAuthorizeActions = <factory.action.authorize.paymentMethod.mocoin.IAction[]>params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Mocoin);
-    const payMocoinActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Mocoin>[] =
-        mocoinAuthorizeActions.map((a) => {
-            return {
-                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-                object: {
-                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
-                    paymentMethod: {
-                        name: 'Mocoin',
-                        typeOf: <factory.paymentMethodType.Mocoin>factory.paymentMethodType.Mocoin,
-                        paymentMethodId: a.id
-                    },
-                    mocoinTransaction: (<factory.action.authorize.paymentMethod.mocoin.IResult>a.result).mocoinTransaction,
-                    mocoinEndpoint: (<factory.action.authorize.paymentMethod.mocoin.IResult>a.result).mocoinEndpoint
                 },
                 agent: params.transaction.agent,
                 purpose: params.order
@@ -953,9 +872,8 @@ export async function createPotentialActionsFromTransaction(params: {
             agent: params.transaction.agent,
             potentialActions: {
                 // クレジットカード決済があれば支払アクション追加
-                payCreditCard: (payCreditCardAction !== null) ? payCreditCardAction : undefined,
+                payCreditCard: creditCardPayments,
                 payAccount: payAccountActions,
-                payMocoin: payMocoinActions,
                 payMovieTicket: payMovieTicketActions,
                 sendOrder: sendOrderActionAttributes,
                 givePointAward: givePointAwardActions

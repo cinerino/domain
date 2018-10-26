@@ -136,6 +136,10 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
 
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
             amount: params.amount,
+            paymentMethod: factory.paymentMethodType.CreditCard,
+            paymentStatus: factory.paymentStatusType.PaymentDue,
+            paymentMethodId: params.orderId,
+            name: 'クレジットカード',
             additionalProperty: params.additionalProperty,
             entryTranArgs: entryTranArgs,
             execTranArgs: execTranArgs,

@@ -52,7 +52,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
         // ウェブフックタスクを追加
         const webhookUrl =
             // tslint:disable-next-line:max-line-length
-            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/${factory.taskName.AnalyzePlaceOrder}`;
+            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/analyzePlaceOrder`;
         const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
             name: factory.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,

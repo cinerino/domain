@@ -84,8 +84,12 @@ export function create<T extends factory.paymentMethodType>(params: factory.acti
 
         // アクションを完了
         debug('ending authorize action...');
-        const result: factory.action.authorize.paymentMethod.any.IResult = {
+        const result: factory.action.authorize.paymentMethod.any.IResult<T> = {
             amount: params.amount,
+            paymentMethod: params.typeOf,
+            paymentStatus: factory.paymentStatusType.PaymentComplete,
+            paymentMethodId: '',
+            name: params.typeOf,
             additionalProperty: params.additionalProperty
         };
 
@@ -111,7 +115,7 @@ export function cancel(params: {
         }
 
         const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
-        const actionResult = <factory.action.authorize.paymentMethod.any.IResult>action.result;
+        const actionResult = <factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>action.result;
         debug('actionResult:', actionResult);
 
         // 承認取消
