@@ -81,7 +81,7 @@ export function create<T extends factory.accountType>(params: factory.action.aut
             object: params,
             agent: transaction.agent,
             recipient: transaction.seller,
-            purpose: transaction
+            purpose: { typeOf: transaction.typeOf, id: transaction.id }
         };
         const action = await repos.action.start(actionAttributes);
 

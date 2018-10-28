@@ -80,7 +80,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             },
             agent: transaction.agent,
             recipient: transaction.seller,
-            purpose: transaction // purposeは取引
+            purpose: { typeOf: transaction.typeOf, id: transaction.id }
         };
         const action = await repos.action.start(actionAttributes);
 
