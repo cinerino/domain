@@ -79,19 +79,21 @@ export function importScreeningEvents(params: {
                     endDate: (e.superEvent.endDate !== undefined) ? moment(e.superEvent.endDate).toDate() : undefined
                 };
 
+                // Defaultオファーをセット
                 let offers: chevre.factory.event.screeningEvent.IOffer = {
                     typeOf: 'Offer',
                     priceCurrency: chevre.factory.priceCurrency.JPY,
-                    availabilityEnds: moment(e.offers.availabilityEnds).toDate(),
-                    availabilityStarts: moment(e.offers.availabilityEnds).toDate(),
-                    validFrom: moment(e.offers.availabilityEnds).toDate(),
-                    validThrough: moment(e.offers.availabilityEnds).toDate(),
+                    availabilityEnds: moment(e.endDate).toDate(),
+                    availabilityStarts: moment(e.endDate).toDate(),
+                    validFrom: moment(e.endDate).toDate(),
+                    validThrough: moment(e.endDate).toDate(),
                     eligibleQuantity: {
                         value: 4,
                         unitCode: chevre.factory.unitCode.C62,
                         typeOf: 'QuantitativeValue'
                     }
                 };
+                // オファー設定があれば上書きする
                 if (e.offers !== undefined && e.offers !== null) {
                     offers = {
                         ...e.offers,
