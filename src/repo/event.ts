@@ -11,6 +11,7 @@ export class MongoRepository {
     constructor(connection: Connection) {
         this.eventModel = connection.model(eventModel.modelName);
     }
+    // tslint:disable-next-line:max-func-body-length
     public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params: factory.chevre.event.screeningEvent.ISearchConditions) {
         const andConditions: any[] = [
             {
@@ -99,6 +100,50 @@ export class MongoRepository {
             andConditions.push({
                 endDate: { $lt: params.endThrough }
             });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.offers !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.offers.availableFrom instanceof Date) {
+                andConditions.push({
+                    'offers.availabilityEnds': {
+                        $exists: true,
+                        $gt: params.offers.availableFrom
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.offers.availableThrough instanceof Date) {
+                andConditions.push({
+                    'offers.availabilityStarts': {
+                        $exists: true,
+                        $lt: params.offers.availableThrough
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.offers.validFrom instanceof Date) {
+                andConditions.push({
+                    'offers.validThrough': {
+                        $exists: true,
+                        $gt: params.offers.validFrom
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.offers.validThrough instanceof Date) {
+                andConditions.push({
+                    'offers.validFrom': {
+                        $exists: true,
+                        $lt: params.offers.validThrough
+                    }
+                });
+            }
         }
 
         return andConditions;

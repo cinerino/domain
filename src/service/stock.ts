@@ -4,6 +4,7 @@
  */
 import * as createDebug from 'debug';
 import { google } from 'googleapis';
+import * as moment from 'moment';
 
 import * as chevre from '../chevre';
 import * as factory from '../factory';
@@ -11,10 +12,10 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
 
 const debug = createDebug('cinerino-domain:service');
+const customsearch = google.customsearch('v1');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 
-const customsearch = google.customsearch('v1');
 /**
  * 上映イベントをインポートする
  */
@@ -59,6 +60,7 @@ export function importScreeningEvents(params: {
                 thumbnail: await findMovieImage({ query: movie.name })
             };
         }));
+
         // 上映イベントごとに永続化トライ
         await Promise.all(screeningEvents.map(async (e) => {
             try {
@@ -70,7 +72,44 @@ export function importScreeningEvents(params: {
                     e.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
                     e.superEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
                 }
-                await repos.event.save<factory.chevre.eventType.ScreeningEvent>(e);
+
+                const superEvent: chevre.factory.event.screeningEventSeries.IEvent = {
+                    ...e.superEvent,
+                    startDate: (e.superEvent.startDate !== undefined) ? moment(e.superEvent.startDate).toDate() : undefined,
+                    endDate: (e.superEvent.endDate !== undefined) ? moment(e.superEvent.endDate).toDate() : undefined
+                };
+
+                let offers: chevre.factory.event.screeningEvent.IOffer = {
+                    typeOf: 'Offer',
+                    priceCurrency: chevre.factory.priceCurrency.JPY,
+                    availabilityEnds: moment(e.offers.availabilityEnds).toDate(),
+                    availabilityStarts: moment(e.offers.availabilityEnds).toDate(),
+                    validFrom: moment(e.offers.availabilityEnds).toDate(),
+                    validThrough: moment(e.offers.availabilityEnds).toDate(),
+                    eligibleQuantity: {
+                        value: 4,
+                        unitCode: chevre.factory.unitCode.C62,
+                        typeOf: 'QuantitativeValue'
+                    }
+                };
+                if (e.offers !== undefined && e.offers !== null) {
+                    offers = {
+                        ...e.offers,
+                        availabilityEnds: moment(e.offers.availabilityEnds).toDate(),
+                        availabilityStarts: moment(e.offers.availabilityEnds).toDate(),
+                        validFrom: moment(e.offers.availabilityEnds).toDate(),
+                        validThrough: moment(e.offers.availabilityEnds).toDate()
+                    };
+                }
+
+                await repos.event.save<factory.chevre.eventType.ScreeningEvent>({
+                    ...e,
+                    superEvent: superEvent,
+                    doorTime: (e.doorTime !== undefined) ? moment(e.doorTime).toDate() : undefined,
+                    endDate: moment(e.endDate).toDate(),
+                    startDate: moment(e.startDate).toDate(),
+                    offers: offers
+                });
             } catch (error) {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
@@ -80,6 +119,10 @@ export function importScreeningEvents(params: {
         debug(`${screeningEvents.length} screeningEvents stored.`);
     };
 }
+
+/**
+ * Googleで作品画像を検索する
+ */
 export async function findMovieImage(params: {
     query: string;
 }) {
@@ -116,6 +159,7 @@ export async function findMovieImage(params: {
         );
     });
 }
+
 /**
  * 座席仮予約キャンセル
  */

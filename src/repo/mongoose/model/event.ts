@@ -98,6 +98,50 @@ schema.index(
 );
 schema.index({ typeOf: 1, startDate: 1 });
 schema.index({ typeOf: 1, endDate: 1 });
+schema.index(
+    {
+        'offers.availabilityEnds': 1
+    },
+    {
+        partialFilterExpression: {
+            'offers.availabilityEnds': { $exists: true }
+        },
+        name: 'searchByOffersAvailabilityEnds'
+    }
+);
+schema.index(
+    {
+        'offers.availabilityStarts': 1
+    },
+    {
+        partialFilterExpression: {
+            'offers.availabilityStarts': { $exists: true }
+        },
+        name: 'searchByOffersAvailabilityStarts'
+    }
+);
+schema.index(
+    {
+        'offers.validThrough': 1
+    },
+    {
+        partialFilterExpression: {
+            'offers.validThrough': { $exists: true }
+        },
+        name: 'searchByOffersValidThrough'
+    }
+);
+schema.index(
+    {
+        'offers.validFrom': 1
+    },
+    {
+        partialFilterExpression: {
+            'offers.validFrom': { $exists: true }
+        },
+        name: 'searchByOffersValidFrom'
+    }
+);
 
 // 上映イベント取得に使用
 schema.index(
