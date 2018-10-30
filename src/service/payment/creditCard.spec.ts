@@ -92,7 +92,7 @@ describe('payCreditCard()', () => {
         const params = {
             typeOf: <domain.factory.actionType.PayAction>domain.factory.actionType.PayAction,
             agent: <any>{},
-            object: {
+            object: [{
                 typeOf: <'PaymentMethod'>'PaymentMethod',
                 paymentMethod: {
                     typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
@@ -103,7 +103,7 @@ describe('payCreditCard()', () => {
                 execTranArgs: <any>{},
                 price: 100,
                 priceCurrency: domain.factory.priceCurrency.JPY
-            },
+            }],
             purpose: existingTransaction
         };
 
@@ -128,7 +128,7 @@ describe('payCreditCard()', () => {
         const params = {
             typeOf: <domain.factory.actionType.PayAction>domain.factory.actionType.PayAction,
             agent: <any>{},
-            object: {
+            object: [{
                 typeOf: <'PaymentMethod'>'PaymentMethod',
                 paymentMethod: {
                     typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
@@ -139,7 +139,7 @@ describe('payCreditCard()', () => {
                 execTranArgs: <any>{},
                 price: 100,
                 priceCurrency: domain.factory.priceCurrency.JPY
-            },
+            }],
             purpose: existingTransaction
         };
 
@@ -165,7 +165,7 @@ describe('payCreditCard()', () => {
         const params = {
             typeOf: <domain.factory.actionType.PayAction>domain.factory.actionType.PayAction,
             agent: <any>{},
-            object: {
+            object: [{
                 typeOf: <'PaymentMethod'>'PaymentMethod',
                 paymentMethod: {
                     typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
@@ -176,7 +176,7 @@ describe('payCreditCard()', () => {
                 execTranArgs: <any>{},
                 price: 100,
                 priceCurrency: domain.factory.priceCurrency.JPY
-            },
+            }],
             purpose: existingTransaction
         };
 

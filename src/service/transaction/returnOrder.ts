@@ -221,7 +221,7 @@ export function confirm(
         };
         // クレジットカード返金アクション
         const refundCreditCardActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
-            .filter((a) => a.object.paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
+            .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
             .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard> => {
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
@@ -241,7 +241,7 @@ export function confirm(
             });
         // 口座返金アクション
         const refundAccountActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
-            .filter((a) => a.object.paymentMethod.typeOf === factory.paymentMethodType.Account)
+            .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.Account)
             .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account> => {
                 return {
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,

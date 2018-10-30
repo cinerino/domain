@@ -741,7 +741,7 @@ export async function createPotentialActionsFromTransaction(params: {
         if (result.paymentStatus === factory.paymentStatusType.PaymentDue) {
             payCreditCardActions.push({
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-                object: {
+                object: [{
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
                         name: result.name,
@@ -752,7 +752,7 @@ export async function createPotentialActionsFromTransaction(params: {
                     priceCurrency: factory.priceCurrency.JPY,
                     entryTranArgs: result.entryTranArgs,
                     execTranArgs: result.execTranArgs
-                },
+                }],
                 agent: params.transaction.agent,
                 purpose: params.order
             });
@@ -771,7 +771,7 @@ export async function createPotentialActionsFromTransaction(params: {
 
             return {
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-                object: {
+                object: [{
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
                         name: result.name,
@@ -780,25 +780,27 @@ export async function createPotentialActionsFromTransaction(params: {
                     },
                     pendingTransaction:
                         (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
-                },
+                }],
                 agent: params.transaction.agent,
                 purpose: params.order
             };
         });
 
     // ムビチケ決済アクション
+    // ムビチケ着券は、注文単位でまとめて実行しないと失敗するので注意
     const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket);
-    const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] =
-        authorizeMovieTicketActions.map((a) => {
-            const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+    const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
+    if (authorizeMovieTicketActions.length > 0) {
+        payMovieTicketActions.push({
+            typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+            object: authorizeMovieTicketActions.map((a) => {
+                const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
 
-            return {
-                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-                object: {
+                return {
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
                         name: result.name,
@@ -806,11 +808,12 @@ export async function createPotentialActionsFromTransaction(params: {
                         paymentMethodId: result.paymentMethodId
                     },
                     movieTickets: a.object.movieTickets
-                },
-                agent: params.transaction.agent,
-                purpose: params.order
-            };
+                };
+            }),
+            agent: params.transaction.agent,
+            purpose: params.order
         });
+    }
 
     // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
     let givePointAwardActions: factory.action.transfer.give.pointAward.IAttributes[] = [];

@@ -20,44 +20,47 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
-        let alterTranResult: GMO.services.credit.IAlterTranResult;
+        const alterTranResults: GMO.services.credit.IAlterTranResult[] = [];
+
         try {
-            const entryTranArgs = params.object.entryTranArgs;
-            const execTranArgs = params.object.execTranArgs;
+            await Promise.all(params.object.map(async (paymentMethod) => {
+                const entryTranArgs = paymentMethod.entryTranArgs;
+                const execTranArgs = paymentMethod.execTranArgs;
 
-            // 取引状態参照
-            const searchTradeResult = await GMO.services.credit.searchTrade({
-                shopId: entryTranArgs.shopId,
-                shopPass: entryTranArgs.shopPass,
-                orderId: entryTranArgs.orderId
-            });
-
-            if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
-                debug('already in SALES');
-                // すでに実売上済み
-                alterTranResult = {
-                    accessId: searchTradeResult.accessId,
-                    accessPass: searchTradeResult.accessPass,
-                    forward: searchTradeResult.forward,
-                    approve: searchTradeResult.approve,
-                    tranId: searchTradeResult.tranId,
-                    tranDate: ''
-                };
-            } else {
-                debug('calling alterTran...');
-                alterTranResult = await GMO.services.credit.alterTran({
+                // 取引状態参照
+                const searchTradeResult = await GMO.services.credit.searchTrade({
                     shopId: entryTranArgs.shopId,
                     shopPass: entryTranArgs.shopPass,
-                    accessId: execTranArgs.accessId,
-                    accessPass: execTranArgs.accessPass,
-                    jobCd: GMO.utils.util.JobCd.Sales,
-                    amount: entryTranArgs.amount
+                    orderId: entryTranArgs.orderId
                 });
 
-                // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
-                // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
-                // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
-            }
+                if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
+                    debug('already in SALES');
+                    // すでに実売上済み
+                    alterTranResults.push({
+                        accessId: searchTradeResult.accessId,
+                        accessPass: searchTradeResult.accessPass,
+                        forward: searchTradeResult.forward,
+                        approve: searchTradeResult.approve,
+                        tranId: searchTradeResult.tranId,
+                        tranDate: ''
+                    });
+                } else {
+                    debug('calling alterTran...');
+                    alterTranResults.push(await GMO.services.credit.alterTran({
+                        shopId: entryTranArgs.shopId,
+                        shopPass: entryTranArgs.shopPass,
+                        accessId: execTranArgs.accessId,
+                        accessPass: execTranArgs.accessPass,
+                        jobCd: GMO.utils.util.JobCd.Sales,
+                        amount: entryTranArgs.amount
+                    }));
+
+                    // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
+                    // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
+                    // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
+                }
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -73,11 +76,12 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         // アクション完了
         debug('ending action...');
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.CreditCard> = {
-            creditCardSales: alterTranResult
+            creditCardSales: alterTranResults
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
+
 /**
  * クレジットカードオーソリ取消
  */
@@ -110,6 +114,7 @@ export function cancelCreditCardAuth(params: { transactionId: string }) {
         // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
     };
 }
+
 /**
  * 注文返品取引からクレジットカード返金処理を実行する
  */

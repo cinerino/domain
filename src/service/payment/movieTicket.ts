@@ -91,8 +91,8 @@ export function checkMovieTicket(
 /**
  * ムビチケ着券
  */
-// tslint:disable-next-line:max-func-body-length
 export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMovieTicket>) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         event: EventRepo;
@@ -104,7 +104,11 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
         let seatInfoSyncResult: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncResult;
         try {
-            const eventIds = Array.from(new Set(params.object.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)));
+            // イベントがひとつに特定されているかどうか確認
+            const eventIds = Array.from(new Set(params.object.reduce<string[]>(
+                (a, b) => [...a, ...b.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)],
+                []
+            )));
             if (eventIds.length !== 1) {
                 throw new factory.errors.Argument('movieTickets', 'Number of events must be 1');
             }
@@ -129,8 +133,13 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
 
+            // 全購入管理番号のムビチケをマージ
+            const movieTickets = params.object.reduce<factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
+                (a, b) => [...a, ...b.movieTickets], []
+            );
+
             const knyknrNoInfo: mvtkapi.mvtk.services.seat.seatInfoSync.IKnyknrNoInfo[] = [];
-            params.object.movieTickets.forEach((movieTicket) => {
+            movieTickets.forEach((movieTicket) => {
                 let knyknrNoInfoByKnyknrNoIndex = knyknrNoInfo.findIndex((i) => i.knyknrNo === movieTicket.identifier);
                 if (knyknrNoInfoByKnyknrNoIndex < 0) {
                     knyknrNoInfoByKnyknrNoIndex = knyknrNoInfo.push({
@@ -152,7 +161,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 knyknrNoInfo[knyknrNoInfoByKnyknrNoIndex].knshInfo[knshInfoIndex].miNum += 1;
             });
 
-            const seatNumbers = params.object.movieTickets.map((t) => t.serviceOutput.reservedTicket.ticketedSeat.seatNumber);
+            const seatNumbers = movieTickets.map((t) => t.serviceOutput.reservedTicket.ticketedSeat.seatNumber);
             seatInfoSyncIn = {
                 kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
                 yykDvcTyp: mvtkapi.mvtk.services.seat.seatInfoSync.ReserveDeviceType.EntertainerSitePC, // 予約デバイス区分

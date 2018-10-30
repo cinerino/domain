@@ -23,29 +23,32 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         // アクション開始
         const action = await repos.action.start(params);
         try {
-            const pendingTransaction = params.object.pendingTransaction;
-            switch (pendingTransaction.typeOf) {
-                case pecorinoapi.factory.transactionType.Withdraw:
-                    // 支払取引の場合、確定
-                    await repos.withdrawService.confirm({
-                        transactionId: pendingTransaction.id
-                    });
-                    break;
+            await Promise.all(params.object.map(async (paymentMethod) => {
+                const pendingTransaction = paymentMethod.pendingTransaction;
 
-                case pecorinoapi.factory.transactionType.Transfer:
-                    // 転送取引の場合確定
-                    await repos.transferService.confirm({
-                        transactionId: pendingTransaction.id
-                    });
-                    break;
+                switch (pendingTransaction.typeOf) {
+                    case pecorinoapi.factory.transactionType.Withdraw:
+                        // 支払取引の場合、確定
+                        await repos.withdrawService.confirm({
+                            transactionId: pendingTransaction.id
+                        });
+                        break;
 
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-                    throw new factory.errors.NotImplemented(
-                        `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                    );
-            }
+                    case pecorinoapi.factory.transactionType.Transfer:
+                        // 転送取引の場合確定
+                        await repos.transferService.confirm({
+                            transactionId: pendingTransaction.id
+                        });
+                        break;
+
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore next */
+                    default:
+                        throw new factory.errors.NotImplemented(
+                            `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
+                        );
+                }
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -65,8 +68,9 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
+
 /**
- * Pecorinoオーソリ取消
+ * 口座オーソリ取消
  */
 export function cancelAccountAuth(params: { transactionId: string }) {
     return async (repos: {
@@ -110,6 +114,7 @@ export function cancelAccountAuth(params: { transactionId: string }) {
         }));
     };
 }
+
 /**
  * 口座返金処理を実行する
  */
@@ -125,49 +130,51 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         try {
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
-            const pendingTransaction = payActionAttributes.object.pendingTransaction;
-            const notes = 'Cinerino 返金';
 
-            switch (pendingTransaction.typeOf) {
-                case factory.pecorino.transactionType.Withdraw:
-                    const depositTransaction = await repos.depositService.start({
-                        accountType: pendingTransaction.object.accountType,
-                        toAccountNumber: pendingTransaction.object.fromAccountNumber,
-                        // tslint:disable-next-line:no-magic-numbers
-                        expires: moment().add(5, 'minutes').toDate(),
-                        agent: pendingTransaction.recipient,
-                        recipient: pendingTransaction.agent,
-                        amount: pendingTransaction.object.amount,
-                        notes: notes
-                    });
-                    await repos.depositService.confirm({ transactionId: depositTransaction.id });
+            await Promise.all(payActionAttributes.object.map(async (paymentMethod) => {
+                const pendingTransaction = paymentMethod.pendingTransaction;
+                const notes = 'Cinerino 返金';
 
-                    break;
+                switch (pendingTransaction.typeOf) {
+                    case factory.pecorino.transactionType.Withdraw:
+                        const depositTransaction = await repos.depositService.start({
+                            accountType: pendingTransaction.object.accountType,
+                            toAccountNumber: pendingTransaction.object.fromAccountNumber,
+                            // tslint:disable-next-line:no-magic-numbers
+                            expires: moment().add(5, 'minutes').toDate(),
+                            agent: pendingTransaction.recipient,
+                            recipient: pendingTransaction.agent,
+                            amount: pendingTransaction.object.amount,
+                            notes: notes
+                        });
+                        await repos.depositService.confirm({ transactionId: depositTransaction.id });
 
-                case factory.pecorino.transactionType.Transfer:
-                    const transferTransaction = await repos.transferService.start({
-                        accountType: pendingTransaction.object.accountType,
-                        toAccountNumber: pendingTransaction.object.fromAccountNumber,
-                        fromAccountNumber: pendingTransaction.object.toAccountNumber,
-                        // tslint:disable-next-line:no-magic-numbers
-                        expires: moment().add(5, 'minutes').toDate(),
-                        agent: pendingTransaction.recipient,
-                        recipient: pendingTransaction.agent,
-                        amount: pendingTransaction.object.amount,
-                        notes: notes
-                    });
-                    await repos.transferService.confirm({ transactionId: transferTransaction.id });
+                        break;
 
-                    break;
+                    case factory.pecorino.transactionType.Transfer:
+                        const transferTransaction = await repos.transferService.start({
+                            accountType: pendingTransaction.object.accountType,
+                            toAccountNumber: pendingTransaction.object.fromAccountNumber,
+                            fromAccountNumber: pendingTransaction.object.toAccountNumber,
+                            // tslint:disable-next-line:no-magic-numbers
+                            expires: moment().add(5, 'minutes').toDate(),
+                            agent: pendingTransaction.recipient,
+                            recipient: pendingTransaction.agent,
+                            amount: pendingTransaction.object.amount,
+                            notes: notes
+                        });
+                        await repos.transferService.confirm({ transactionId: transferTransaction.id });
 
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-                    throw new factory.errors.NotImplemented(
-                        `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                    );
+                        break;
 
-            }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore next */
+                    default:
+                        throw new factory.errors.NotImplemented(
+                            `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
+                        );
+                }
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
