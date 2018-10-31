@@ -9,17 +9,17 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "^1.0.0-alpha.21",
-    "@cinerino/factory": "^1.0.0-alpha.52",
+    "@chevre/api-nodejs-client": "^1.0.0-alpha.22",
+    "@cinerino/factory": "^1.0.0-alpha.53",
     "@mocoin/api-nodejs-client": "0.0.0-alpha.6",
     "@motionpicture/gmo-service": "^4.2.1",
     "@movieticket/reserve-api-nodejs-client": "^1.0.0",
     "@pecorino/api-nodejs-client": "^1.2.0",
     "@sendgrid/mail": "^6.3.1",
-    "@types/mongoose": "^5.2.20",
+    "@types/mongoose": "^5.2.22",
     "@types/redis": "^2.8.7",
     "@waiter/domain": "^2.0.4",
-    "aws-sdk": "^2.344.0",
+    "aws-sdk": "^2.345.0",
     "azure-storage": "^2.10.2",
     "debug": "^3.2.6",
     "google-libphonenumber": "^3.1.15",
@@ -29,8 +29,8 @@
     "jsonwebtoken": "^8.3.0",
     "lodash.difference": "^4.5.0",
     "moment": "^2.22.2",
-    "moment-timezone": "^0.5.21",
-    "mongoose": "^5.3.7",
+    "moment-timezone": "^0.5.23",
+    "mongoose": "^5.3.8",
     "pug": "^2.0.3",
     "redis": "^2.8.0",
     "request": "^2.88.0",
@@ -73,7 +73,7 @@
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-microsoft-contrib": "^5.2.1",
-    "typescript": "^3.1.3"
+    "typescript": "^3.1.4"
   },
   "engines": {
     "node": ">=6.9.1",
