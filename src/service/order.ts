@@ -6,6 +6,7 @@ import * as createDebug from 'debug';
 import * as chevre from '../chevre';
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
+import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
@@ -15,20 +16,16 @@ const debug = createDebug('cinerino-domain:service');
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 
 /**
- * 注文取引結果から注文を作成する
- * @param transactionId 注文取引ID
+ * 注文取引から注文を作成する
  */
-export function createFromTransaction(params: { transactionId: string }) {
+export function placeOrder(params: factory.transaction.placeOrder.ITransaction) {
     return async (repos: {
         action: ActionRepo;
+        invoice: InvoiceRepo;
         order: OrderRepo;
-        transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        const transaction = await repos.transaction.findById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
-        });
+        const transaction = params;
         const transactionResult = transaction.result;
         if (transactionResult === undefined) {
             throw new factory.errors.NotFound('transaction.result');
@@ -37,6 +34,7 @@ export function createFromTransaction(params: { transactionId: string }) {
         if (potentialActions === undefined) {
             throw new factory.errors.NotFound('transaction.potentialActions');
         }
+        const order = transactionResult.order;
 
         // アクション開始
         const orderActionAttributes = potentialActions.order;
@@ -44,7 +42,34 @@ export function createFromTransaction(params: { transactionId: string }) {
 
         try {
             // 注文保管
-            await repos.order.createIfNotExist(transactionResult.order);
+            await repos.order.createIfNotExist(order);
+
+            // 請求書作成
+            const invoices: factory.invoice.IInvoice[] = [];
+            Object.keys(factory.paymentMethodType).forEach((key) => {
+                const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+                transaction.object.authorizeActions
+                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                    .filter((a) => a.result !== undefined)
+                    .filter((a) => a.result.paymentMethod === paymentMethodType)
+                    .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
+                        const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                        invoices.push({
+                            typeOf: 'Invoice',
+                            accountId: '',
+                            confirmationNumber: order.confirmationNumber.toString(),
+                            customer: order.customer,
+                            paymentMethod: paymentMethodType,
+                            paymentMethodId: result.paymentMethodId,
+                            paymentStatus: result.paymentStatus,
+                            referencesOrder: order
+                        });
+                    });
+            });
+
+            await Promise.all(invoices.map(async (invoice) => {
+                await repos.invoice.createIfNotExist(invoice);
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -62,7 +87,7 @@ export function createFromTransaction(params: { transactionId: string }) {
         await repos.action.complete({ typeOf: orderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
-        await onCreate(params.transactionId, orderActionAttributes)({ task: repos.task });
+        await onPlaceOrder(transaction.id, orderActionAttributes)(repos);
     };
 }
 
@@ -71,12 +96,15 @@ export function createFromTransaction(params: { transactionId: string }) {
  * @param transactionId 注文取引ID
  * @param orderActionAttributes 注文アクション属性
  */
-function onCreate(transactionId: string, orderActionAttributes: factory.action.trade.order.IAttributes) {
+function onPlaceOrder(transactionId: string, orderActionAttributes: factory.action.trade.order.IAttributes) {
     // tslint:disable-next-line:max-func-body-length
-    return async (repos: { task: TaskRepo }) => {
-        // potentialActionsのためのタスクを生成
+    return async (repos: {
+        task: TaskRepo;
+    }) => {
         const orderPotentialActions = orderActionAttributes.potentialActions;
         const now = new Date();
+
+        // potentialActionsのためのタスクを生成
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment

@@ -6,6 +6,7 @@ import * as createDebug from 'debug';
 
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -17,6 +18,7 @@ const debug = createDebug('cinerino-domain:service');
 export function payCreditCard(params: factory.task.IData<factory.taskName.PayCreditCard>) {
     return async (repos: {
         action: ActionRepo;
+        invoice: InvoiceRepo;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
@@ -60,6 +62,13 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
                     // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
                     // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
                 }
+
+                await repos.invoice.changePaymentStatus({
+                    referencesOrder: { orderNumber: params.purpose.orderNumber },
+                    paymentMethod: paymentMethod.paymentMethod.typeOf,
+                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                    paymentStatus: factory.paymentStatusType.PaymentComplete
+                });
             }));
         } catch (error) {
             // actionにエラー結果を追加

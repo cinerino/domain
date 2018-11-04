@@ -8,6 +8,7 @@ import * as pug from 'pug';
 import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -17,6 +18,7 @@ const debug = createDebug('cinerino-domain:service');
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
+    invoice: InvoiceRepo;
     order: OrderRepo;
     transaction: TransactionRepo;
     cancelReservationService: chevre.service.transaction.CancelReservation;
@@ -35,6 +37,7 @@ export function start(
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        invoice: InvoiceRepo;
         order: OrderRepo;
         transaction: TransactionRepo;
         cancelReservationService: chevre.service.transaction.CancelReservation;
@@ -67,13 +70,14 @@ export function start(
             throw new factory.errors.NotFound('Transaction');
         }
 
-        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
-        const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
-            .filter((a) => a.typeOf === factory.actionType.PayAction)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-        // もし支払アクションがなければエラー
-        if (payActions.length === 0) {
-            throw new factory.errors.NotFound('PayAction');
+        // 請求書の状態を検証
+        const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: [order.orderNumber] } });
+        if (invoices.length === 0) {
+            throw new factory.errors.NotFound('Invoice');
+        }
+        const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
+        if (!allPaymentCompleted) {
+            throw new factory.errors.Argument('order.orderNumber', 'Payment not completed');
         }
 
         // 検証
@@ -181,29 +185,16 @@ export function confirm(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // 結果作成
         const order = transaction.object.order;
-        // const placeOrderTransactionResult = placeOrderTransaction.result;
-        // if (placeOrderTransactionResult === undefined) {
-        //     throw new factory.errors.NotFound('placeOrderTransaction.result');
-        // }
-        // const customerContact = placeOrderTransaction.object.customerContact;
-        // if (customerContact === undefined) {
-        //     throw new factory.errors.NotFound('customerContact');
-        // }
-
         const seller = await repos.organization.findById({
             typeOf: order.seller.typeOf,
             id: order.seller.id
         });
+
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-        // もし支払アクションがなければエラー
-        if (payActions.length === 0) {
-            throw new factory.errors.NotFound('PayAction');
-        }
 
         const emailMessage = await createRefundEmail({ order });
         const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {

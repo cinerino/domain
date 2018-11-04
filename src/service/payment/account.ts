@@ -7,6 +7,7 @@ import * as moment from 'moment';
 
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
@@ -17,6 +18,7 @@ const debug = createDebug('cinerino-domain:service');
 export function payAccount(params: factory.task.IData<factory.taskName.PayAccount>) {
     return async (repos: {
         action: ActionRepo;
+        invoice: InvoiceRepo;
         withdrawService: pecorinoapi.service.transaction.Withdraw;
         transferService: pecorinoapi.service.transaction.Transfer;
     }) => {
@@ -48,6 +50,13 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
                             `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
                         );
                 }
+
+                await repos.invoice.changePaymentStatus({
+                    referencesOrder: { orderNumber: params.purpose.orderNumber },
+                    paymentMethod: paymentMethod.paymentMethod.typeOf,
+                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                    paymentStatus: factory.paymentStatusType.PaymentComplete
+                });
             }));
         } catch (error) {
             // actionにエラー結果を追加

@@ -108,14 +108,17 @@ describe('payCreditCard()', () => {
         };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
+        const invoiceRepo = new domain.repository.Invoice(domain.mongoose.connection);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
+        sandbox.mock(invoiceRepo).expects('changePaymentStatus').once().resolves();
 
         const result = await domain.service.payment.creditCard.payCreditCard(params)({
-            action: actionRepo
+            action: actionRepo,
+            invoice: invoiceRepo
         });
 
         assert.equal(result, undefined);
@@ -144,14 +147,17 @@ describe('payCreditCard()', () => {
         };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
+        const invoiceRepo = new domain.repository.Invoice(domain.mongoose.connection);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').never();
+        sandbox.mock(invoiceRepo).expects('changePaymentStatus').once().resolves();
 
         const result = await domain.service.payment.creditCard.payCreditCard(params)({
-            action: actionRepo
+            action: actionRepo,
+            invoice: invoiceRepo
         });
 
         assert.equal(result, undefined);
@@ -181,14 +187,17 @@ describe('payCreditCard()', () => {
         };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
+        const invoiceRepo = new domain.repository.Invoice(domain.mongoose.connection);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects(alterTranResult);
+        sandbox.mock(invoiceRepo).expects('changePaymentStatus').never();
 
         const result = await domain.service.payment.creditCard.payCreditCard(params)({
-            action: actionRepo
+            action: actionRepo,
+            invoice: invoiceRepo
         }).catch((err) => err);
 
         assert.deepEqual(result, alterTranResult);

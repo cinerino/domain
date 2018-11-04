@@ -9,6 +9,7 @@ import { handleMvtkReserveError } from '../../errorHandler';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
+import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
 
@@ -96,6 +97,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
     return async (repos: {
         action: ActionRepo;
         event: EventRepo;
+        invoice: InvoiceRepo;
         organization: OrganizationRepo;
         movieTicketSeatService: mvtkapi.service.Seat;
     }) => {
@@ -180,6 +182,15 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             };
 
             seatInfoSyncResult = await repos.movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
+
+            await Promise.all(params.object.map(async (paymentMethod) => {
+                await repos.invoice.changePaymentStatus({
+                    referencesOrder: { orderNumber: params.purpose.orderNumber },
+                    paymentMethod: paymentMethod.paymentMethod.typeOf,
+                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                    paymentStatus: factory.paymentStatusType.PaymentComplete
+                });
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {

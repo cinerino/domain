@@ -7,6 +7,7 @@ import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as EventRepo } from './repo/event';
+import { MongoRepository as InvoiceRepo } from './repo/invoice';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
@@ -24,6 +25,7 @@ export namespace action {
 export class Code extends CodeRepo { }
 export class ConfirmationNumber extends ConfirmationNumberRepo { }
 export class Event extends EventRepo { }
+export class Invoice extends InvoiceRepo { }
 export class Order extends OrderRepo { }
 export class OrderNumber extends OrderNumberRepo { }
 export class Organization extends OrganizationRepo { }

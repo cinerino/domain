@@ -80,9 +80,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
                     lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
-                    data: {
-                        transactionId: transaction.id
-                    }
+                    data: transaction
                 };
                 taskAttributes.push(
                     placeOrderTaskAttributes

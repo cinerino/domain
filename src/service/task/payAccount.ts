@@ -3,6 +3,7 @@ import { IConnectionSettings, IOperation } from '../task';
 
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 
 import * as PaymentService from '../payment';
 
@@ -23,6 +24,7 @@ export function call(data: factory.task.IData<factory.taskName.PayAccount>): IOp
         }
 
         const actionRepo = new ActionRepo(settings.connection);
+        const invoiceRepo = new InvoiceRepo(settings.connection);
         const withdrawService = new pecorino.service.transaction.Withdraw({
             endpoint: settings.pecorinoEndpoint,
             auth: settings.pecorinoAuthClient
@@ -33,6 +35,7 @@ export function call(data: factory.task.IData<factory.taskName.PayAccount>): IOp
         });
         await PaymentService.account.payAccount(data)({
             action: actionRepo,
+            invoice: invoiceRepo,
             withdrawService: withdrawService,
             transferService: transferService
         });
