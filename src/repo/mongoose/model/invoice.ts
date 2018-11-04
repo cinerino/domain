@@ -1,7 +1,5 @@
 import * as mongoose from 'mongoose';
 
-import OrderModel from './order';
-
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
 const brokerSchema = new mongoose.Schema(
@@ -28,7 +26,16 @@ const providerSchema = new mongoose.Schema(
         strict: false
     }
 );
-const orderSchema = OrderModel.schema;
+const orderSchema = new mongoose.Schema(
+    {
+        orderNumber: String
+    },
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
 
 /**
  * 請求書スキーマ
@@ -114,15 +121,6 @@ schema.index(
         name: 'searchByPaymentStatus',
         partialFilterExpression: {
             paymentStatus: { $exists: true }
-        }
-    }
-);
-schema.index(
-    { 'customer.id': 1 },
-    {
-        name: 'searchByCustomerId',
-        partialFilterExpression: {
-            'customer.id': { $exists: true }
         }
     }
 );
