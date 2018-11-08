@@ -4,10 +4,9 @@
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
-import * as moment from 'moment-timezone';
-import * as pug from 'pug';
 import * as util from 'util';
 
+import * as emailMessageBuilder from '../../emailMessageBuilder';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
@@ -624,101 +623,6 @@ export function createOrderFromTransaction(params: {
     };
 }
 
-export async function createEmailMessageFromTransaction(params: {
-    transaction: factory.transaction.placeOrder.ITransaction;
-    customerContact: factory.transaction.placeOrder.ICustomerContact;
-    order: factory.order.IOrder;
-    seller: factory.organization.movieTheater.IOrganization;
-}): Promise<factory.creativeWork.message.email.ICreativeWork> {
-    return new Promise<factory.creativeWork.message.email.ICreativeWork>((resolve, reject) => {
-        const seller = params.transaction.seller;
-        if (params.order.acceptedOffers[0].itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-            const event = params.order.acceptedOffers[0].itemOffered.reservationFor;
-
-            pug.renderFile(
-                `${__dirname}/../../../emails/sendOrder/text.pug`,
-                {
-                    familyName: params.customerContact.familyName,
-                    givenName: params.customerContact.givenName,
-                    orderDate: moment(params.order.orderDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm:ss'),
-                    orderNumber: params.order.orderNumber,
-                    confirmationNumber: params.order.confirmationNumber,
-                    eventStartDate: util.format(
-                        '%s - %s',
-                        moment(event.startDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm'),
-                        moment(event.endDate).tz('Asia/Tokyo').format('HH:mm')
-                    ),
-                    workPerformedName: event.workPerformed.name,
-                    screenName: event.location.name.ja,
-                    reservedSeats: params.order.acceptedOffers.map((o) => {
-                        const reservation = o.itemOffered;
-                        let option = '';
-                        if (Array.isArray(reservation.reservationFor.superEvent.videoFormat)) {
-                            option += reservation.reservationFor.superEvent.videoFormat.map((format) => format.typeOf).join(',');
-                        }
-
-                        return util.format(
-                            '%s %s %s %s (%s)',
-                            reservation.reservedTicket.ticketedSeat.seatNumber,
-                            reservation.reservedTicket.ticketType.name.ja,
-                            reservation.price,
-                            reservation.priceCurrency,
-                            option
-                        );
-                    }).join('\n'),
-                    price: params.order.price,
-                    inquiryUrl: params.order.url,
-                    sellerName: params.order.seller.name,
-                    sellerTelephone: params.seller.telephone
-                },
-                (renderMessageErr, message) => {
-                    if (renderMessageErr instanceof Error) {
-                        reject(renderMessageErr);
-
-                        return;
-                    }
-
-                    debug('message:', message);
-                    pug.renderFile(
-                        `${__dirname}/../../../emails/sendOrder/subject.pug`,
-                        {
-                            sellerName: params.order.seller.name
-                        },
-                        (renderSubjectErr, subject) => {
-                            if (renderSubjectErr instanceof Error) {
-                                reject(renderSubjectErr);
-
-                                return;
-                            }
-
-                            debug('subject:', subject);
-
-                            const email: factory.creativeWork.message.email.ICreativeWork = {
-                                typeOf: factory.creativeWorkType.EmailMessage,
-                                identifier: `placeOrderTransaction-${params.transaction.id}`,
-                                name: `placeOrderTransaction-${params.transaction.id}`,
-                                sender: {
-                                    typeOf: seller.typeOf,
-                                    name: seller.name.ja,
-                                    email: 'noreply@example.com'
-                                },
-                                toRecipient: {
-                                    typeOf: params.transaction.agent.typeOf,
-                                    name: `${params.customerContact.familyName} ${params.customerContact.givenName}`,
-                                    email: params.customerContact.email
-                                },
-                                about: subject,
-                                text: message
-                            };
-                            resolve(email);
-                        }
-                    );
-                }
-            );
-        }
-    });
-}
-
 /**
  * 取引のポストアクションを作成する
  */
@@ -844,7 +748,7 @@ export async function createPotentialActionsFromTransaction(params: {
     // メール送信ONであれば送信アクション属性を生成
     let sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes | null = null;
     if (params.sendEmailMessage === true) {
-        const emailMessage = await createEmailMessageFromTransaction({
+        const emailMessage = await emailMessageBuilder.createSendOrderMessage({
             transaction: params.transaction,
             customerContact: params.customerContact,
             order: params.order,

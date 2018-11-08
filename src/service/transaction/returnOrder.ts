@@ -3,9 +3,9 @@
  */
 import * as createDebug from 'debug';
 import * as moment from 'moment';
-import * as pug from 'pug';
 
 import * as chevre from '../../chevre';
+import * as emailMessageBuilder from '../../emailMessageBuilder';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
@@ -196,7 +196,7 @@ export function confirm(
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
-        const emailMessage = await createRefundEmail({ order });
+        const emailMessage = await emailMessageBuilder.createRefundMessage({ order });
         const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
             typeOf: factory.actionType.SendAction,
             object: emailMessage,
@@ -307,69 +307,6 @@ export function validateRequest() {
     // 現時点で特にバリデーション内容なし
 }
 
-/**
- * 返金メールを作成する
- */
-export async function createRefundEmail(params: {
-    order: factory.order.IOrder;
-}): Promise<factory.creativeWork.message.email.ICreativeWork> {
-    return new Promise<factory.creativeWork.message.email.ICreativeWork>((resolve, reject) => {
-        pug.renderFile(
-            `${__dirname}/../../../emails/refundOrder/text.pug`,
-            {
-                familyName: params.order.customer.familyName,
-                givenName: params.order.customer.givenName,
-                confirmationNumber: params.order.confirmationNumber,
-                price: params.order.price,
-                sellerName: params.order.seller.name,
-                sellerTelephone: params.order.seller.telephone
-            },
-            (renderMessageErr, message) => {
-                if (renderMessageErr instanceof Error) {
-                    reject(renderMessageErr);
-
-                    return;
-                }
-
-                debug('message:', message);
-                pug.renderFile(
-                    `${__dirname}/../../../emails/refundOrder/subject.pug`,
-                    {
-                        sellerName: params.order.seller.name
-                    },
-                    (renderSubjectErr, subject) => {
-                        if (renderSubjectErr instanceof Error) {
-                            reject(renderSubjectErr);
-
-                            return;
-                        }
-
-                        debug('subject:', subject);
-
-                        const email: factory.creativeWork.message.email.ICreativeWork = {
-                            typeOf: factory.creativeWorkType.EmailMessage,
-                            identifier: `refundOrder-${params.order.orderNumber}`,
-                            name: `refundOrder-${params.order.orderNumber}`,
-                            sender: {
-                                typeOf: params.order.seller.typeOf,
-                                name: params.order.seller.name,
-                                email: 'noreply@example.com'
-                            },
-                            toRecipient: {
-                                typeOf: params.order.customer.typeOf,
-                                name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-                                email: params.order.customer.email
-                            },
-                            about: subject,
-                            text: message
-                        };
-                        resolve(email);
-                    }
-                );
-            }
-        );
-    });
-}
 /**
  * 返品取引のタスクをエクスポートする
  */
