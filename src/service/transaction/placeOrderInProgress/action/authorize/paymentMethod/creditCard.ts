@@ -19,9 +19,10 @@ export type ICreateOperation<T> = (repos: {
 /**
  * クレジットカードオーソリ取得
  */
-export function create(params: factory.action.authorize.paymentMethod.creditCard.IObject & {
-    agentId: string;
-    transactionId: string;
+export function create(params: {
+    object: factory.action.authorize.paymentMethod.creditCard.IObject;
+    agent: { id: string };
+    transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.paymentMethod.creditCard.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -31,7 +32,7 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // 他者口座による決済も可能にするためにコメントアウト
@@ -50,7 +51,7 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
             typeOf: factory.actionType.AuthorizeAction,
-            object: params,
+            object: params.object,
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -64,21 +65,21 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
         let execTranResult: GMO.services.credit.IExecTranResult;
         try {
             if (movieTheater.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', 'Credit card payment not accepted.');
+                throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
             }
             const creditCardPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
                 movieTheater.paymentAccepted.find(
                     (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
                 );
             if (creditCardPaymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', 'Credit card payment not accepted.');
+                throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
             }
             entryTranArgs = {
                 shopId: creditCardPaymentAccepted.gmoInfo.shopId,
                 shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
-                orderId: params.orderId,
+                orderId: params.object.orderId,
                 jobCd: GMO.utils.util.JobCd.Auth,
-                amount: params.amount
+                amount: params.object.amount
             };
             entryTranResult = await GMO.services.credit.entryTran(entryTranArgs);
             debug('entryTranResult:', entryTranResult);
@@ -86,16 +87,16 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
             execTranArgs = {
                 accessId: entryTranResult.accessId,
                 accessPass: entryTranResult.accessPass,
-                orderId: params.orderId,
-                method: params.method,
+                orderId: params.object.orderId,
+                method: params.object.method,
                 siteId: <string>process.env.GMO_SITE_ID,
                 sitePass: <string>process.env.GMO_SITE_PASS,
-                cardNo: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.creditCard).cardNo,
-                cardPass: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.creditCard).cardPass,
-                expire: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.creditCard).expire,
-                token: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized>params.creditCard).token,
-                memberId: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>params.creditCard).memberId,
-                cardSeq: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>params.creditCard).cardSeq,
+                cardNo: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.object.creditCard).cardNo,
+                cardPass: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.object.creditCard).cardPass,
+                expire: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.object.creditCard).expire,
+                token: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized>params.object.creditCard).token,
+                memberId: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>params.object.creditCard).memberId,
+                cardSeq: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>params.object.creditCard).cardSeq,
                 seqMode: GMO.utils.util.SeqMode.Physics
             };
             execTranResult = await GMO.services.credit.execTran(execTranArgs);
@@ -136,12 +137,12 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
 
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
             accountId: '',
-            amount: params.amount,
+            amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: params.orderId,
+            paymentMethodId: params.object.orderId,
             name: 'クレジットカード',
-            additionalProperty: params.additionalProperty,
+            additionalProperty: params.object.additionalProperty,
             entryTranArgs: entryTranArgs,
             entryTranResult: entryTranResult,
             execTranArgs: execTranArgs,
@@ -152,9 +153,18 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
     };
 }
 export function cancel(params: {
-    agentId: string;
-    transactionId: string;
-    actionId: string;
+    /**
+     * 承認アクションID
+     */
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    transaction: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -162,14 +172,14 @@ export function cancel(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.creditCard.IResult>action.result;
 
         // オーソリ取消

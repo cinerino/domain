@@ -60,14 +60,16 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.CreditCard,
-            orderId: orderId,
-            amount: amount,
-            method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard,
-            additionalProperty: []
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.CreditCard,
+                orderId: orderId,
+                amount: amount,
+                method: domain.GMO.utils.util.Method.Lump,
+                creditCard: creditCard,
+                additionalProperty: []
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -174,14 +176,16 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.CreditCard,
-            orderId: orderId,
-            amount: amount,
-            method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard,
-            additionalProperty: []
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.CreditCard,
+                orderId: orderId,
+                amount: amount,
+                method: domain.GMO.utils.util.Method.Lump,
+                creditCard: creditCard,
+                additionalProperty: []
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -236,14 +240,16 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.CreditCard,
-            orderId: orderId,
-            amount: amount,
-            method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard,
-            additionalProperty: []
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.CreditCard,
+                orderId: orderId,
+                amount: amount,
+                method: domain.GMO.utils.util.Method.Lump,
+                creditCard: creditCard,
+                additionalProperty: []
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -301,14 +307,16 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.CreditCard,
-            orderId: orderId,
-            amount: amount,
-            method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard,
-            additionalProperty: []
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.CreditCard,
+                orderId: orderId,
+                amount: amount,
+                method: domain.GMO.utils.util.Method.Lump,
+                creditCard: creditCard,
+                additionalProperty: []
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -367,14 +375,16 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.CreditCard,
-            orderId: orderId,
-            amount: amount,
-            method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard,
-            additionalProperty: []
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.CreditCard,
+                orderId: orderId,
+                amount: amount,
+                method: domain.GMO.utils.util.Method.Lump,
+                creditCard: creditCard,
+                additionalProperty: []
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -433,14 +443,16 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(actionRepo).expects('complete').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.CreditCard,
-            orderId: orderId,
-            amount: amount,
-            method: domain.GMO.utils.util.Method.Lump,
-            creditCard: creditCard,
-            additionalProperty: []
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.CreditCard,
+                orderId: orderId,
+                amount: amount,
+                method: domain.GMO.utils.util.Method.Lump,
+                creditCard: creditCard,
+                additionalProperty: []
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -494,9 +506,9 @@ describe('action.authorize.creditCard.cancel()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.cancel({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            actionId: action.id
+            agent: agent,
+            transaction: transaction,
+            id: action.id
         })({
             action: actionRepo,
             transaction: transactionRepo
@@ -538,9 +550,9 @@ describe('action.authorize.creditCard.cancel()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.cancel({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            actionId: actionId
+            agent: agent,
+            transaction: transaction,
+            id: actionId
         })({
             action: actionRepo,
             transaction: transactionRepo
@@ -587,9 +599,9 @@ describe('action.authorize.creditCard.cancel()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.cancel({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            actionId: action.id
+            agent: agent,
+            transaction: transaction,
+            id: action.id
         })({
             action: actionRepo,
             transaction: transactionRepo

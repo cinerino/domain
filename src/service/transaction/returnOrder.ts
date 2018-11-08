@@ -44,19 +44,10 @@ export function start(
     }) => {
         // 返品対象の取引取得
         const order = await repos.order.findByOrderNumber({ orderNumber: params.object.order.orderNumber });
-        // if (placeOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
-        //     throw new factory.errors.Argument('transactionId', 'Status not Confirmed.');
-        // }
-
-        // const placeOrderTransactionResult = placeOrderTransaction.result;
-        // if (placeOrderTransactionResult === undefined) {
-        //     throw new factory.errors.NotFound('placeOrderTransaction.result');
-        // }
 
         // 注文ステータスが配送済の場合のみ受け付け
-        // const order = await repos.order.findByOrderNumber(placeOrderTransactionResult.order.orderNumber);
         if (order.orderStatus !== factory.orderStatus.OrderDelivered) {
-            throw new factory.errors.Argument('Order number', 'Order not delivered yet');
+            throw new factory.errors.Argument('Order Number', `Invalid Order Status: ${order.orderStatus}`);
         }
 
         const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
@@ -161,27 +152,27 @@ export function start(
 /**
  * 取引確定
  */
-export function confirm(
-    agentId: string,
-    transactionId: string
-) {
+export function confirm(params: {
+    id: string;
+    agent: { id: string };
+}) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
         organization: OrganizationRepo;
     }) => {
-        let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
+        let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
         if (transaction.status === factory.transactionStatusType.Confirmed) {
             // すでに確定済の場合
             return transaction.result;
         } else if (transaction.status === factory.transactionStatusType.Expired) {
-            throw new factory.errors.Argument('transactionId', 'Transaction already expired');
+            throw new factory.errors.Argument('transaction', 'Transaction already expired');
         } else if (transaction.status === factory.transactionStatusType.Canceled) {
-            throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
+            throw new factory.errors.Argument('transaction', 'Transaction already canceled');
         }
 
-        if (transaction.agent.id !== agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
@@ -250,6 +241,26 @@ export function confirm(
                     }
                 };
             });
+        // ムビチケ着券返金アクション
+        const refundMovieTicketActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.MovieTicket>[]>payActions)
+            .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.MovieTicket)
+            .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket> => {
+                return {
+                    typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+                    object: a,
+                    agent: {
+                        typeOf: seller.typeOf,
+                        id: seller.id,
+                        name: seller.name,
+                        url: seller.url
+                    },
+                    recipient: order.customer,
+                    purpose: order,
+                    potentialActions: {
+                        sendEmailMessage: sendEmailMessageActionAttributes
+                    }
+                };
+            });
         // ポイントインセンティブの数だけ、返却アクションを作成
         const givePointActions = <factory.action.transfer.give.pointAward.IAction[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.GiveAction)
@@ -277,8 +288,9 @@ export function confirm(
             agent: order.customer,
             recipient: seller,
             potentialActions: {
-                refundCreditCard: refundCreditCardActions[0],
+                refundCreditCard: refundCreditCardActions,
                 refundAccount: refundAccountActions,
+                refundMovieTicket: refundMovieTicketActions,
                 returnPointAward: returnPointAwardActions
             }
         };
@@ -291,7 +303,7 @@ export function confirm(
         // ステータス変更
         debug('updating transaction...');
         transaction = await repos.transaction.confirmReturnOrder({
-            id: transactionId,
+            id: params.id,
             result: result,
             potentialActions: potentialActions
         });
@@ -321,8 +333,7 @@ export function exportTasks(status: factory.transactionStatusType) {
         }
 
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        await exportTasksById({ transactionId: transaction.id })(repos);
-
+        await exportTasksById(transaction)(repos);
         await repos.transaction.setTasksExportedById({ id: transaction.id });
     };
 }
@@ -330,12 +341,12 @@ export function exportTasks(status: factory.transactionStatusType) {
 /**
  * ID指定で取引のタスク出力
  */
-export function exportTasksById(params: { transactionId: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
+export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.transactionId });
+        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:

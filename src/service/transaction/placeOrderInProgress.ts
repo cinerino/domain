@@ -220,21 +220,27 @@ export function setCustomerContact(params: {
  */
 export function confirm(params: {
     /**
-     * 取引進行者ID
-     */
-    agentId: string;
-    /**
      * 取引ID
      */
-    transactionId: string;
+    id: string;
     /**
-     * 注文メールを送信するかどうか
+     * 取引進行者
      */
-    sendEmailMessage?: boolean;
-    /**
-     * 注文日時
-     */
-    orderDate: Date;
+    agent: { id: string };
+    result: {
+        order: {
+            /**
+             * 注文日時
+             */
+            orderDate: Date;
+        };
+    };
+    options: {
+        /**
+         * 注文メールを送信するかどうか
+         */
+        sendEmailMessage?: boolean;
+    };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -245,7 +251,7 @@ export function confirm(params: {
     }) => {
         let transaction = await repos.transaction.findById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.id
         });
         if (transaction.status === factory.transactionStatusType.Confirmed) {
             // すでに確定済の場合
@@ -256,7 +262,7 @@ export function confirm(params: {
             throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
         }
 
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
@@ -272,9 +278,9 @@ export function confirm(params: {
         }
 
         // 取引に対する全ての承認アクションをマージ
-        let authorizeActions = await repos.action.findAuthorizeByTransactionId({ transactionId: params.transactionId });
+        let authorizeActions = await repos.action.findAuthorizeByTransactionId({ transactionId: params.id });
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < params.orderDate));
+        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < params.result.order.orderDate));
         transaction.object.authorizeActions = authorizeActions;
 
         // 取引の確定条件が全て整っているかどうか確認
@@ -285,19 +291,19 @@ export function confirm(params: {
 
         // 注文番号を発行
         const orderNumber = await repos.orderNumber.publish({
-            orderDate: params.orderDate,
+            orderDate: params.result.order.orderDate,
             sellerType: seller.typeOf,
             sellerBranchCode: seller.location.branchCode
         });
         const confirmationNumber = await repos.confirmationNumber.publish({
-            orderDate: params.orderDate
+            orderDate: params.result.order.orderDate
         });
         // 結果作成
         const order = createOrderFromTransaction({
             transaction: transaction,
             orderNumber: orderNumber,
             confirmationNumber: confirmationNumber,
-            orderDate: params.orderDate,
+            orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
             isGift: false,
             seller: seller
@@ -312,13 +318,13 @@ export function confirm(params: {
             customerContact: customerContact,
             order: order,
             seller: seller,
-            sendEmailMessage: params.sendEmailMessage
+            sendEmailMessage: params.options.sendEmailMessage
         });
 
         // ステータス変更
         debug('updating transaction...');
         transaction = await repos.transaction.confirmPlaceOrder({
-            id: params.transactionId,
+            id: params.id,
             authorizeActions: authorizeActions,
             result: result,
             potentialActions: potentialActions

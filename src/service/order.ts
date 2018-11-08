@@ -275,7 +275,7 @@ export function cancelReservations(params: { orderNumber: string }) {
         await repos.action.complete({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
-        await onReturn(returnOrderTransaction.id, returnOrderActionAttributes)({ task: repos.task });
+        await onReturn(returnOrderActionAttributes)({ task: repos.task });
     };
 }
 
@@ -285,7 +285,7 @@ export function cancelReservations(params: { orderNumber: string }) {
  * @param transactionId 注文返品取引ID
  * @param returnActionAttributes 返品アクション属性
  */
-function onReturn(transactionId: string, returnActionAttributes: factory.action.transfer.returnAction.order.IAttributes) {
+function onReturn(returnActionAttributes: factory.action.transfer.returnAction.order.IAttributes) {
     return async (repos: {
         task: TaskRepo;
     }) => {
@@ -297,21 +297,21 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
         if (returnActionAttributes.potentialActions !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (returnActionAttributes.potentialActions.refundCreditCard !== undefined) {
-                // 返金タスク作成
-                const task: factory.task.IAttributes<factory.taskName.RefundCreditCard> = {
-                    name: factory.taskName.RefundCreditCard,
-                    status: factory.taskStatus.Ready,
-                    runsAt: now, // なるはやで実行
-                    remainingNumberOfTries: 10,
-                    lastTriedAt: null,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        transactionId: transactionId
+            if (Array.isArray(returnActionAttributes.potentialActions.refundCreditCard)) {
+                taskAttributes.push(...returnActionAttributes.potentialActions.refundCreditCard.map(
+                    (a): factory.task.IAttributes<factory.taskName.RefundCreditCard> => {
+                        return {
+                            name: factory.taskName.RefundCreditCard,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
                     }
-                };
-                taskAttributes.push(task);
+                ));
             }
 
             // 口座返金タスク
@@ -322,6 +322,26 @@ function onReturn(transactionId: string, returnActionAttributes: factory.action.
                     (a): factory.task.IAttributes<factory.taskName.RefundAccount> => {
                         return {
                             name: factory.taskName.RefundAccount,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }
+                ));
+            }
+
+            // 口座返金タスク
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(returnActionAttributes.potentialActions.refundMovieTicket)) {
+                taskAttributes.push(...returnActionAttributes.potentialActions.refundMovieTicket.map(
+                    (a): factory.task.IAttributes<factory.taskName.RefundMovieTicket> => {
+                        return {
+                            name: factory.taskName.RefundMovieTicket,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,

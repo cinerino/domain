@@ -54,11 +54,13 @@ describe('action.authorize.any.create()', () => {
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.create({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            typeOf: domain.factory.paymentMethodType.Cash,
-            amount: amount,
-            additionalProperty: additionalProperty
+            agent: agent,
+            transaction: transaction,
+            object: {
+                typeOf: domain.factory.paymentMethodType.Cash,
+                amount: amount,
+                additionalProperty: additionalProperty
+            }
         })({
             action: actionRepo,
             transaction: transactionRepo,
@@ -111,9 +113,9 @@ describe('action.authorize.any.cancel()', () => {
         sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.cancel({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            actionId: action.id
+            agent: agent,
+            transaction: transaction,
+            id: action.id
         })({
             action: actionRepo,
             transaction: transactionRepo
@@ -154,9 +156,9 @@ describe('action.authorize.any.cancel()', () => {
         sandbox.mock(actionRepo).expects('cancel').never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.cancel({
-            agentId: agent.id,
-            transactionId: transaction.id,
-            actionId: actionId
+            agent: agent,
+            transaction: transaction,
+            id: actionId
         })({
             action: actionRepo,
             transaction: transactionRepo

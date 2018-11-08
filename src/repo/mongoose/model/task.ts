@@ -69,15 +69,6 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
-// 取引のタスク検索に使用
-schema.index(
-    { 'data.transactionId': 1 },
-    {
-        partialFilterExpression: {
-            'data.transactionId': { $exists: true }
-        }
-    }
-);
 // 基本的にグループごとに、ステータスと実行日時を見て、タスクは実行される
 schema.index(
     { name: 1, status: 1, numberOfTried: 1, runsAt: 1 }

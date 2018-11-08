@@ -18,9 +18,10 @@ export type ICreateOperation<T> = (repos: {
 /**
  * 承認アクション
  */
-export function create<T extends factory.paymentMethodType>(params: factory.action.authorize.paymentMethod.any.IObject<T> & {
-    agentId: string;
-    transactionId: string;
+export function create<T extends factory.paymentMethodType>(params: {
+    object: factory.action.authorize.paymentMethod.any.IObject<T>;
+    agent: { id: string };
+    transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.paymentMethod.any.IAction<T>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -30,7 +31,7 @@ export function create<T extends factory.paymentMethodType>(params: factory.acti
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // 他者口座による決済も可能にするためにコメントアウト
@@ -50,9 +51,9 @@ export function create<T extends factory.paymentMethodType>(params: factory.acti
         const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
-                typeOf: params.typeOf,
-                amount: params.amount,
-                additionalProperty: params.additionalProperty
+                typeOf: params.object.typeOf,
+                amount: params.object.amount,
+                additionalProperty: params.object.additionalProperty
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -62,12 +63,12 @@ export function create<T extends factory.paymentMethodType>(params: factory.acti
 
         try {
             if (movieTheater.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', `${params.typeOf} payment not accepted`);
+                throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
             }
             const paymentAccepted = <factory.organization.IPaymentAccepted<T>>
-                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === params.typeOf);
+                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === params.object.typeOf);
             if (paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', `${params.typeOf} payment not accepted`);
+                throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
             }
         } catch (error) {
             debug(error);
@@ -86,21 +87,30 @@ export function create<T extends factory.paymentMethodType>(params: factory.acti
         debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.any.IResult<T> = {
             accountId: '',
-            amount: params.amount,
-            paymentMethod: params.typeOf,
+            amount: params.object.amount,
+            paymentMethod: params.object.typeOf,
             paymentStatus: factory.paymentStatusType.PaymentComplete,
             paymentMethodId: '',
-            name: params.typeOf,
-            additionalProperty: params.additionalProperty
+            name: params.object.typeOf,
+            additionalProperty: params.object.additionalProperty
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
 export function cancel(params: {
-    agentId: string;
-    transactionId: string;
-    actionId: string;
+    /**
+     * 承認アクションID
+     */
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    transaction: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -108,14 +118,14 @@ export function cancel(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>action.result;
         debug('actionResult:', actionResult);
 

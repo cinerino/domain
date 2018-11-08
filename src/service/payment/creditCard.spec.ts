@@ -214,36 +214,29 @@ describe('refundCreditCard()', () => {
     });
 
     it('実売上状態であれば売上取消するはず', async () => {
-        const placeOrderTransaction = { ...existingTransaction };
         const refundActionAttributes = {
-            typeOf: domain.factory.actionType.RefundAction,
+            typeOf: <domain.factory.actionType.RefundAction>domain.factory.actionType.RefundAction,
             potentialActions: {
-                sendEmailMessage: {
+                sendEmailMessage: <any>{
                     typeOf: domain.factory.actionType.SendAction
                 }
+            },
+            agent: <any>{},
+            recipient: <any>{},
+            purpose: <any>{},
+            object: <any>{
+                typeOf: domain.factory.actionType.PayAction,
+                object: [
+                    { entryTranArgs: {} }
+                ]
             }
         };
-        const returnOrderTransaction = {
-            id: 'returnOrderTransactionId',
-            typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { order: placeOrderTransaction.result.order },
-            potentialActions: {
-                returnOrder: {
-                    potentialActions: {
-                        refundCreditCard: refundActionAttributes
-                    }
-                }
-            }
-        };
-        const action = { typeOf: refundActionAttributes.typeOf, id: 'actionId' };
+        const action = refundActionAttributes;
         const searchTradeResult = { status: domain.GMO.utils.util.Status.Sales };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
@@ -251,147 +244,38 @@ describe('refundCreditCard()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().resolves();
         sandbox.mock(taskRepo).expects('save').once();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
+        const result = await domain.service.payment.creditCard.refundCreditCard(refundActionAttributes)({
             action: actionRepo,
-            transaction: transactionRepo,
             task: taskRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
     });
 
-    it('返品取引の潜在アクションが未定義であればNotFoundエラーとなるはず', async () => {
-        const placeOrderTransaction = { ...existingTransaction };
-        const returnOrderTransaction = {
-            id: 'returnOrderTransactionId',
-            typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { order: placeOrderTransaction.result.order }
-            // potentialActions: {
-            //     returnOrder: {
-            //         potentialActions: {
-            //             refund: refundActionAttributes
-            //         }
-            //     }
-            // }
-        };
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(transactionRepo).expects('search').once().never();
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
-            action: actionRepo,
-            transaction: transactionRepo,
-            task: taskRepo
-        }).catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
-
-    it('注文取引結果が未定義であればNotFoundエラーとなるはず', async () => {
-        const placeOrderTransaction = { ...existingTransaction, result: undefined };
-        const refundActionAttributes = {
-            typeOf: domain.factory.actionType.RefundAction,
-            potentialActions: {
-                sendEmailMessage: {
-                    typeOf: domain.factory.actionType.SendAction
-                }
-            }
-        };
-        const returnOrderTransaction = {
-            id: 'returnOrderTransactionId',
-            typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { order: existingTransaction.result.order },
-            potentialActions: {
-                returnOrder: {
-                    potentialActions: {
-                        refund: refundActionAttributes
-                    }
-                }
-            }
-        };
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
-            action: actionRepo,
-            transaction: transactionRepo,
-            task: taskRepo
-        }).catch((err) => err);
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
-
-    it('注文返品アクションの潜在アクションが未定義であればNotFoundエラーとなるはず', async () => {
-        const placeOrderTransaction = { ...existingTransaction };
-        const returnOrderTransaction = {
-            id: 'returnOrderTransactionId',
-            typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { order: placeOrderTransaction.result.order },
-            potentialActions: {
-                returnOrder: {}
-            }
-        };
-
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
-        sandbox.mock(actionRepo).expects('start').never();
-
-        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
-            action: actionRepo,
-            transaction: transactionRepo,
-            task: taskRepo
-        }).catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.NotFound);
-        sandbox.verify();
-    });
-
     it('売上取消状態であれば状態変更しないはず', async () => {
-        const placeOrderTransaction = { ...existingTransaction };
         const refundActionAttributes = {
-            typeOf: domain.factory.actionType.RefundAction,
+            typeOf: <domain.factory.actionType.RefundAction>domain.factory.actionType.RefundAction,
             potentialActions: {
-                sendEmailMessage: {
+                sendEmailMessage: <any>{
                     typeOf: domain.factory.actionType.SendAction
                 }
+            },
+            agent: <any>{},
+            recipient: <any>{},
+            purpose: <any>{},
+            object: <any>{
+                typeOf: domain.factory.actionType.PayAction,
+                object: [
+                    { entryTranArgs: {} }
+                ]
             }
         };
-        const returnOrderTransaction = {
-            id: 'returnOrderTransactionId',
-            typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { order: placeOrderTransaction.result.order },
-            potentialActions: {
-                returnOrder: {
-                    potentialActions: {
-                        refundCreditCard: refundActionAttributes
-                    }
-                }
-            }
-        };
-        const action = { typeOf: refundActionAttributes.typeOf, id: 'actionId' };
+        const action = refundActionAttributes;
         const searchTradeResult = { status: domain.GMO.utils.util.Status.Void };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
@@ -399,9 +283,8 @@ describe('refundCreditCard()', () => {
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').never();
         sandbox.mock(taskRepo).expects('save').once();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
+        const result = await domain.service.payment.creditCard.refundCreditCard(refundActionAttributes)({
             action: actionRepo,
-            transaction: transactionRepo,
             task: taskRepo
         });
         assert.equal(result, undefined);
@@ -409,48 +292,39 @@ describe('refundCreditCard()', () => {
     });
 
     it('クレジットカード取引状態変更に失敗すればアクションにエラー結果が追加されるはず', async () => {
-        const placeOrderTransaction = { ...existingTransaction };
         const refundActionAttributes = {
-            typeOf: domain.factory.actionType.RefundAction,
+            typeOf: <domain.factory.actionType.RefundAction>domain.factory.actionType.RefundAction,
             potentialActions: {
-                sendEmailMessage: {
+                sendEmailMessage: <any>{
                     typeOf: domain.factory.actionType.SendAction
                 }
+            },
+            agent: <any>{},
+            recipient: <any>{},
+            purpose: <any>{},
+            object: <any>{
+                typeOf: domain.factory.actionType.PayAction,
+                object: [
+                    { entryTranArgs: {} }
+                ]
             }
         };
-        const returnOrderTransaction = {
-            id: 'returnOrderTransactionId',
-            typeOf: domain.factory.transactionType.ReturnOrder,
-            object: { order: placeOrderTransaction.result.order },
-            potentialActions: {
-                returnOrder: {
-                    potentialActions: {
-                        refundCreditCard: refundActionAttributes
-                    }
-                }
-            }
-        };
-        const action = { typeOf: refundActionAttributes.typeOf, id: 'actionId' };
+        const action = refundActionAttributes;
         const searchTradeResult = { status: domain.GMO.utils.util.Status.Sales };
         const alterTranResult = new Error('alterTranError');
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(returnOrderTransaction);
-        sandbox.mock(transactionRepo).expects('search').once().resolves([placeOrderTransaction]);
-        sandbox.mock(actionRepo).expects('start').once()
-            .withExactArgs(refundActionAttributes).resolves(action);
+        sandbox.mock(actionRepo).expects('start').once().withExactArgs(refundActionAttributes).resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
         sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(domain.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').once().rejects(alterTranResult);
         sandbox.mock(taskRepo).expects('save').never();
 
-        const result = await domain.service.payment.creditCard.refundCreditCard({ transactionId: returnOrderTransaction.id })({
+        const result = await domain.service.payment.creditCard.refundCreditCard(refundActionAttributes)({
             action: actionRepo,
-            transaction: transactionRepo,
             task: taskRepo
         }).catch((err) => err);
         assert.deepEqual(result, alterTranResult);

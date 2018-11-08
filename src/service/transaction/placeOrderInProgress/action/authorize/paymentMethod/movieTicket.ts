@@ -24,9 +24,10 @@ export type ICreateOperation<T> = (repos: {
 /**
  * 承認アクション
  */
-export function create(params: factory.action.authorize.paymentMethod.movieTicket.IObject & {
-    agentId: string;
-    transactionId: string;
+export function create(params: {
+    object: factory.action.authorize.paymentMethod.movieTicket.IObject;
+    agent: { id: string };
+    transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.paymentMethod.movieTicket.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -38,7 +39,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // 他者口座による決済も可能にするためにコメントアウト
@@ -49,13 +50,13 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         // }
 
         // イベント1つのみ許可
-        const eventIds = [...new Set(params.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
+        const eventIds = [...new Set(params.object.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
         if (eventIds.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of events must be 1');
         }
 
         // ムビチケ購入管理番号は1つのみ許可
-        const movieTicketIdentifiers = [...new Set(params.movieTickets.map((t) => t.identifier))];
+        const movieTicketIdentifiers = [...new Set(params.object.movieTickets.map((t) => t.identifier))];
         if (movieTicketIdentifiers.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of movie ticket identifiers must be 1');
         }
@@ -75,8 +76,8 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             object: {
                 typeOf: factory.paymentMethodType.MovieTicket,
                 amount: 0,
-                movieTickets: params.movieTickets,
-                additionalProperty: params.additionalProperty
+                movieTickets: params.object.movieTickets,
+                additionalProperty: params.object.additionalProperty
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -87,16 +88,16 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         let checkResult: ICheckResult | undefined;
         try {
             if (movieTheater.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
+                throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
             const movieTicketPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
             if (movieTicketPaymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
+                throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
 
             checkResult = await repos.movieTicket.checkByIdentifier({
-                movieTickets: params.movieTickets,
+                movieTickets: params.object.movieTickets,
                 movieTicketPaymentAccepted: movieTicketPaymentAccepted,
                 screeningEvent: screeningEvent
             });
@@ -105,18 +106,18 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
             const availableMovieTickets = checkResult.movieTickets.filter((t) => t.validThrough === undefined);
 
             // 総数が足りているか
-            if (availableMovieTickets.length < params.movieTickets.length) {
+            if (availableMovieTickets.length < params.object.movieTickets.length) {
                 throw new factory.errors.Argument(
                     'movieTickets',
-                    `${params.movieTickets.length - availableMovieTickets.length} movie tickets short`
+                    `${params.object.movieTickets.length - availableMovieTickets.length} movie tickets short`
                 );
             }
 
             // 券種ごとに枚数が足りているか
-            const serviceTypes = [...new Set(params.movieTickets.map((t) => t.serviceType))];
+            const serviceTypes = [...new Set(params.object.movieTickets.map((t) => t.serviceType))];
             serviceTypes.forEach((serviceType) => {
                 const availableMovieTicketsByServiceType = availableMovieTickets.filter((t) => t.serviceType === serviceType);
-                const requiredMovieTicketsByServiceType = params.movieTickets.filter((t) => t.serviceType === serviceType);
+                const requiredMovieTicketsByServiceType = params.object.movieTickets.filter((t) => t.serviceType === serviceType);
                 if (availableMovieTicketsByServiceType.length < requiredMovieTicketsByServiceType.length) {
                     const shortNumber = requiredMovieTicketsByServiceType.length - availableMovieTicketsByServiceType.length;
                     throw new factory.errors.Argument(
@@ -142,13 +143,13 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         // アクションを完了
         debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
-            accountId: params.movieTickets[0].identifier,
+            accountId: params.object.movieTickets[0].identifier,
             amount: 0,
             paymentMethod: factory.paymentMethodType.MovieTicket,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: params.movieTickets[0].identifier,
+            paymentMethodId: params.object.movieTickets[0].identifier,
             name: 'ムビチケ',
-            additionalProperty: params.additionalProperty,
+            additionalProperty: params.object.additionalProperty,
             ...checkResult
         };
 
@@ -157,9 +158,18 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
 }
 
 export function cancel(params: {
-    agentId: string;
-    transactionId: string;
-    actionId: string;
+    /**
+     * 承認アクションID
+     */
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    transaction: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -167,14 +177,14 @@ export function cancel(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.movieTicket.IResult>action.result;
         debug('actionResult:', actionResult);
 

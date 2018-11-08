@@ -28,10 +28,12 @@ export type ICreateOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます。
  */
-export function create<T extends factory.accountType>(params: factory.action.authorize.paymentMethod.account.IObject<T> & {
-    agentId: string;
-    transactionId: string;
-    fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
+export function create<T extends factory.accountType>(params: {
+    object: factory.action.authorize.paymentMethod.account.IObject<T> & {
+        fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
+    };
+    agent: { id: string };
+    transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -50,7 +52,7 @@ export function create<T extends factory.accountType>(params: factory.action.aut
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // 他者口座による決済も可能にするためにコメントアウト
@@ -78,7 +80,7 @@ export function create<T extends factory.accountType>(params: factory.action.aut
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
             typeOf: factory.actionType.AuthorizeAction,
-            object: params,
+            object: params.object,
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -91,7 +93,7 @@ export function create<T extends factory.accountType>(params: factory.action.aut
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else *//* istanbul ignore next */
             if (repos.withdrawTransactionService !== undefined) {
-                debug('starting pecorino pay transaction...', params.amount);
+                debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.withdrawTransactionService.start({
                     // 最大1ヵ月のオーソリ
                     expires: moment().add(1, 'month').toDate(),
@@ -107,10 +109,10 @@ export function create<T extends factory.accountType>(params: factory.action.aut
                         name: transaction.seller.name.ja,
                         url: transaction.seller.url
                     },
-                    amount: params.amount,
-                    notes: (params.notes !== undefined) ? params.notes : 'Cinerino PlaceOrderTransaction',
-                    accountType: params.fromAccount.accountType,
-                    fromAccountNumber: params.fromAccount.accountNumber
+                    amount: params.object.amount,
+                    notes: (params.object.notes !== undefined) ? params.object.notes : 'Cinerino PlaceOrderTransaction',
+                    accountType: params.object.fromAccount.accountType,
+                    fromAccountNumber: params.object.fromAccount.accountNumber
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
             } else if (repos.transferTransactionService !== undefined) {
@@ -122,18 +124,18 @@ export function create<T extends factory.accountType>(params: factory.action.aut
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore if */
                 if (seller.paymentAccepted === undefined) {
-                    throw new factory.errors.Argument('transactionId', 'Pecorino payment not accepted.');
+                    throw new factory.errors.Argument('transaction', 'Pecorino payment not accepted.');
                 }
                 const accountPaymentsAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.Account>[]>
                     seller.paymentAccepted.filter((a) => a.paymentMethodType === factory.paymentMethodType.Account);
-                const paymentAccepted = accountPaymentsAccepted.find((a) => a.accountType === params.fromAccount.accountType);
+                const paymentAccepted = accountPaymentsAccepted.find((a) => a.accountType === params.object.fromAccount.accountType);
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore if */
                 if (paymentAccepted === undefined) {
-                    throw new factory.errors.Argument('transactionId', `${params.fromAccount.accountType} payment not accepted`);
+                    throw new factory.errors.Argument('transaction', `${params.object.fromAccount.accountType} payment not accepted`);
                 }
 
-                debug('starting pecorino pay transaction...', params.amount);
+                debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.transferTransactionService.start({
                     // 最大1ヵ月のオーソリ
                     expires: moment().add(1, 'month').toDate(),
@@ -149,11 +151,13 @@ export function create<T extends factory.accountType>(params: factory.action.aut
                         name: transaction.seller.name.ja,
                         url: transaction.seller.url
                     },
-                    amount: params.amount,
+                    amount: params.object.amount,
                     // tslint:disable-next-line:no-single-line-block-comment
-                    notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'Cinerino PlaceOrderTransaction',
-                    accountType: params.fromAccount.accountType,
-                    fromAccountNumber: params.fromAccount.accountNumber,
+                    notes: (params.object.notes !== undefined)
+                        ? /* istanbul ignore next */ params.object.notes
+                        : 'Cinerino PlaceOrderTransaction',
+                    accountType: params.object.fromAccount.accountType,
+                    fromAccountNumber: params.object.fromAccount.accountNumber,
                     toAccountNumber: paymentAccepted.accountNumber
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
@@ -180,14 +184,14 @@ export function create<T extends factory.accountType>(params: factory.action.aut
         // アクションを完了
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
-            accountId: params.fromAccount.accountNumber,
-            amount: params.amount,
+            accountId: params.object.fromAccount.accountNumber,
+            amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.Account,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: params.fromAccount.accountNumber,
-            name: params.fromAccount.accountType,
-            fromAccount: params.fromAccount,
-            additionalProperty: params.additionalProperty,
+            paymentMethodId: params.object.fromAccount.accountNumber,
+            name: params.object.fromAccount.accountType,
+            fromAccount: params.object.fromAccount,
+            additionalProperty: params.object.additionalProperty,
             pendingTransaction: pendingTransaction
         };
 
@@ -200,17 +204,17 @@ export function create<T extends factory.accountType>(params: factory.action.aut
  */
 export function cancel(params: {
     /**
-     * 取引進行者ID
-     */
-    agentId: string;
-    /**
-     * 取引ID
-     */
-    transactionId: string;
-    /**
      * 承認アクションID
      */
-    actionId: string;
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    transaction: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -221,17 +225,17 @@ export function cancel(params: {
         debug('canceling pecorino authorize action...');
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
         // まずアクションをキャンセル
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>action.result;
 
         // Pecorinoで取消中止実行

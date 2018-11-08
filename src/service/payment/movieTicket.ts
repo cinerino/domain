@@ -12,6 +12,7 @@ import { MongoRepository as EventRepo } from '../../repo/event';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
+import { MongoRepository as TaskRepo } from '../../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
 export type ICheckMovieTicketOperation<T> = (repos: {
@@ -212,5 +213,98 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             seatInfoSyncResult: seatInfoSyncResult
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+    };
+}
+
+/**
+ * ムビチケ着券取消
+ */
+export function refundMovieTicket(params: factory.task.IData<factory.taskName.RefundMovieTicket>) {
+    return async (repos: {
+        action: ActionRepo;
+        event: EventRepo;
+        invoice: InvoiceRepo;
+        organization: OrganizationRepo;
+        movieTicketSeatService: mvtkapi.service.Seat;
+        task: TaskRepo;
+    }) => {
+        // アクション開始
+        const action = await repos.action.start(params);
+        let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
+        let seatInfoSyncResult: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncResult;
+        try {
+            const payAction = params.object;
+            const payActionResult = payAction.result;
+            if (payActionResult === undefined) {
+                throw new factory.errors.NotFound('Pay Action Result');
+            }
+
+            seatInfoSyncIn = {
+                ...payActionResult.seatInfoSyncIn,
+                trkshFlg: mvtkapi.mvtk.services.seat.seatInfoSync.DeleteFlag.True // 取消フラグ
+            };
+            seatInfoSyncResult = await repos.movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            error = handleMvtkReserveError(error);
+            throw error;
+        }
+
+        // アクション完了
+        debug('ending action...');
+        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
+            seatInfoSyncIn: seatInfoSyncIn,
+            seatInfoSyncResult: seatInfoSyncResult
+        };
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+
+        // 潜在アクション
+        await onRefund(params)({ task: repos.task });
+    };
+}
+
+/**
+ * 返金後のアクション
+ * @param refundActionAttributes 返金アクション属性
+ */
+function onRefund(refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>) {
+    return async (repos: { task: TaskRepo }) => {
+        const potentialActions = refundActionAttributes.potentialActions;
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (potentialActions !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (potentialActions.sendEmailMessage !== undefined) {
+                const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                    name: factory.taskName.SendEmailMessage,
+                    status: factory.taskStatus.Ready,
+                    runsAt: now, // なるはやで実行
+                    remainingNumberOfTries: 3,
+                    lastTriedAt: null,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        actionAttributes: potentialActions.sendEmailMessage
+                    }
+                };
+                taskAttributes.push(sendEmailMessageTask);
+            }
+        }
+
+        // タスク保管
+        await Promise.all(taskAttributes.map(async (taskAttribute) => {
+            return repos.task.save(taskAttribute);
+        }));
     };
 }
