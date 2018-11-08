@@ -24,22 +24,29 @@ export async function createSendOrderMessage(params: {
         const seller = params.transaction.seller;
         if (params.order.acceptedOffers[0].itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
             const event = params.order.acceptedOffers[0].itemOffered.reservationFor;
+            const screenName = util.format(
+                '%s%s',
+                event.location.name.ja,
+                (event.location.address !== undefined) ? `(${event.location.address.ja})` : ''
+            );
+            const orderDate = moment(params.order.orderDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm:ss');
+            const eventStartDate = util.format(
+                '%s - %s',
+                moment(event.startDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm'),
+                moment(event.endDate).tz('Asia/Tokyo').format('HH:mm')
+            );
 
             pug.renderFile(
                 `${templateDirectory}/sendOrder/text.pug`,
                 {
                     familyName: params.customerContact.familyName,
                     givenName: params.customerContact.givenName,
-                    orderDate: moment(params.order.orderDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm:ss'),
+                    orderDate: orderDate,
                     orderNumber: params.order.orderNumber,
                     confirmationNumber: params.order.confirmationNumber,
-                    eventStartDate: util.format(
-                        '%s - %s',
-                        moment(event.startDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm'),
-                        moment(event.endDate).tz('Asia/Tokyo').format('HH:mm')
-                    ),
+                    eventStartDate: eventStartDate,
                     workPerformedName: event.workPerformed.name,
-                    screenName: event.location.name.ja,
+                    screenName: screenName,
                     reservedSeats: params.order.acceptedOffers.map((o) => {
                         const reservation = o.itemOffered;
                         let option = '';
