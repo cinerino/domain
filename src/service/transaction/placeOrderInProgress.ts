@@ -594,7 +594,8 @@ export function createOrderFromTransaction(params: {
                 paymentMethods.push({
                     name: result.name,
                     typeOf: paymentMethodType,
-                    paymentMethodId: result.paymentMethodId
+                    paymentMethodId: result.paymentMethodId,
+                    additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                 });
             });
     });
@@ -746,7 +747,8 @@ export async function createPotentialActionsFromTransaction(params: {
                     paymentMethod: {
                         name: result.name,
                         typeOf: <factory.paymentMethodType.CreditCard>result.paymentMethod,
-                        paymentMethodId: result.paymentMethodId
+                        paymentMethodId: result.paymentMethodId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                     },
                     price: result.amount,
                     priceCurrency: factory.priceCurrency.JPY,
@@ -776,7 +778,8 @@ export async function createPotentialActionsFromTransaction(params: {
                     paymentMethod: {
                         name: result.name,
                         typeOf: <factory.paymentMethodType.Account>result.paymentMethod,
-                        paymentMethodId: result.paymentMethodId
+                        paymentMethodId: result.paymentMethodId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                     },
                     pendingTransaction:
                         (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
@@ -805,7 +808,8 @@ export async function createPotentialActionsFromTransaction(params: {
                     paymentMethod: {
                         name: result.name,
                         typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod,
-                        paymentMethodId: result.paymentMethodId
+                        paymentMethodId: result.paymentMethodId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                     },
                     movieTickets: a.object.movieTickets
                 };

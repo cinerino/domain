@@ -56,7 +56,7 @@ export function placeOrder(params: factory.transaction.placeOrder.ITransaction) 
                         const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
                         invoices.push({
                             typeOf: 'Invoice',
-                            accountId: '',
+                            accountId: result.accountId,
                             confirmationNumber: order.confirmationNumber.toString(),
                             customer: order.customer,
                             paymentMethod: paymentMethodType,

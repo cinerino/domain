@@ -85,6 +85,7 @@ export function create<T extends factory.paymentMethodType>(params: factory.acti
         // アクションを完了
         debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.any.IResult<T> = {
+            accountId: '',
             amount: params.amount,
             paymentMethod: params.typeOf,
             paymentStatus: factory.paymentStatusType.PaymentComplete,

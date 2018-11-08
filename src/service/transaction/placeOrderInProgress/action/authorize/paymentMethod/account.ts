@@ -180,6 +180,7 @@ export function create<T extends factory.accountType>(params: factory.action.aut
         // アクションを完了
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
+            accountId: params.fromAccount.accountNumber,
             amount: params.amount,
             paymentMethod: factory.paymentMethodType.Account,
             paymentStatus: factory.paymentStatusType.PaymentDue,

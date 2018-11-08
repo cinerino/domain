@@ -59,8 +59,8 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
 
         // GMOオーソリ取得
         let entryTranArgs: GMO.services.credit.IEntryTranArgs;
-        let execTranArgs: GMO.services.credit.IExecTranArgs;
         let entryTranResult: GMO.services.credit.IEntryTranResult;
+        let execTranArgs: GMO.services.credit.IExecTranArgs;
         let execTranResult: GMO.services.credit.IExecTranResult;
         try {
             if (movieTheater.paymentAccepted === undefined) {
@@ -135,6 +135,7 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
         debug('ending authorize action...');
 
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
+            accountId: '',
             amount: params.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
@@ -142,6 +143,7 @@ export function create(params: factory.action.authorize.paymentMethod.creditCard
             name: 'クレジットカード',
             additionalProperty: params.additionalProperty,
             entryTranArgs: entryTranArgs,
+            entryTranResult: entryTranResult,
             execTranArgs: execTranArgs,
             execTranResult: execTranResult
         };

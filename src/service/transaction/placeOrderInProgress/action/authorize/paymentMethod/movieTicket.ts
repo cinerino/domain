@@ -142,6 +142,7 @@ export function create(params: factory.action.authorize.paymentMethod.movieTicke
         // アクションを完了
         debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
+            accountId: params.movieTickets[0].identifier,
             amount: 0,
             paymentMethod: factory.paymentMethodType.MovieTicket,
             paymentStatus: factory.paymentStatusType.PaymentDue,
