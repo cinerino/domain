@@ -97,7 +97,8 @@ describe('payCreditCard()', () => {
                 paymentMethod: {
                     typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
                     name: '',
-                    paymentMethodId: ''
+                    paymentMethodId: '',
+                    additionalProperty: []
                 },
                 entryTranArgs: <any>{},
                 execTranArgs: <any>{},
@@ -136,7 +137,8 @@ describe('payCreditCard()', () => {
                 paymentMethod: {
                     typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
                     name: '',
-                    paymentMethodId: ''
+                    paymentMethodId: '',
+                    additionalProperty: []
                 },
                 entryTranArgs: <any>{},
                 execTranArgs: <any>{},
@@ -176,7 +178,8 @@ describe('payCreditCard()', () => {
                 paymentMethod: {
                     typeOf: <domain.factory.paymentMethodType.CreditCard>domain.factory.paymentMethodType.CreditCard,
                     name: '',
-                    paymentMethodId: ''
+                    paymentMethodId: '',
+                    additionalProperty: []
                 },
                 entryTranArgs: <any>{},
                 execTranArgs: <any>{},
