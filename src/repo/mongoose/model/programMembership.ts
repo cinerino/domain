@@ -63,6 +63,15 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
+
 export default mongoose.model('ProgramMembership', schema).on(
     'index',
     // tslint:disable-next-line:no-single-line-block-comment

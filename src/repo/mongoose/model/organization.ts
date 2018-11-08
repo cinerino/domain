@@ -97,6 +97,14 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
 // 組織取得に使用
 schema.index(
     { typeOf: 1, _id: 1 }

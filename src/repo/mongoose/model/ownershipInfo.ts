@@ -71,6 +71,14 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
 // 所有権検索時に使用
 schema.index(
     {

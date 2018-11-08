@@ -103,6 +103,14 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
 // タスクエクスポート時の検索で使用
 schema.index(
     { tasksExportationStatus: 1, status: 1, typeOf: 1 }

@@ -89,6 +89,14 @@ const schema = new mongoose.Schema(
 );
 
 schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
+schema.index(
     { 'referencesOrder.orderNumber': 1 },
     {
         name: 'searchByReferenceOrderNumber',
