@@ -85,14 +85,30 @@ export function sendOrder(params: { transactionId: string }) {
                 }
 
                 await repos.reserveService.confirm({
-                    transactionId: seatReservationAuthorizeActionResult.responseBody.id,
-                    issuedBy: {
-                        typeOf: order.seller.typeOf,
-                        name: order.seller.name
-                    },
-                    underName: {
-                        typeOf: order.customer.typeOf,
-                        name: order.customer.name
+                    id: seatReservationAuthorizeActionResult.responseBody.id,
+                    object: {
+                        reservations: seatReservationAuthorizeActionResult.responseBody.object.reservations.map((r) => {
+                            return {
+                                id: r.id,
+                                reservedTicket: {
+                                    issuedBy: {
+                                        typeOf: order.seller.typeOf,
+                                        name: order.seller.name
+                                    }
+                                },
+                                underName: {
+                                    typeOf: order.customer.typeOf,
+                                    name: order.customer.name,
+                                    familyName: order.customer.familyName,
+                                    givenName: order.customer.givenName,
+                                    email: order.customer.email,
+                                    telephone: order.customer.telephone,
+                                    identifier: [
+                                        { name: 'orderNumber', value: order.orderNumber }
+                                    ]
+                                }
+                            };
+                        })
                     }
                 });
             }

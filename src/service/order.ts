@@ -248,7 +248,7 @@ export function cancelReservations(params: { orderNumber: string }) {
             const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
             if (cancelReservationTransactions !== undefined) {
                 await Promise.all(cancelReservationTransactions.map(async (cancelReservationTransaction) => {
-                    await repos.cancelReservationService.confirm({ transactionId: cancelReservationTransaction.id });
+                    await repos.cancelReservationService.confirm({ id: cancelReservationTransaction.id });
                 }));
             }
 

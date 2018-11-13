@@ -195,7 +195,7 @@ export function cancel(params: {
         if (action.result !== undefined) {
             const actionResult = <factory.action.authorize.offer.seatReservation.IResult>action.result;
             // 座席予約キャンセル
-            await repos.reserveService.cancel({ transactionId: actionResult.responseBody.id });
+            await repos.reserveService.cancel({ id: actionResult.responseBody.id });
         }
     };
 }

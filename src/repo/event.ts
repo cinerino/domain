@@ -168,6 +168,7 @@ export class MongoRepository {
 
         return andConditions;
     }
+
     /**
      * イベントを保管する
      */
@@ -181,6 +182,7 @@ export class MongoRepository {
             { new: true, upsert: true }
         ).exec();
     }
+
     public async countScreeningEvents(params: factory.chevre.event.screeningEvent.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
 
@@ -189,6 +191,7 @@ export class MongoRepository {
         ).setOptions({ maxTimeMS: 10000 })
             .exec();
     }
+
     /**
      * 上映イベントを検索する
      */
@@ -213,6 +216,7 @@ export class MongoRepository {
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
+
     /**
      * IDでイベントを取得する
      */
@@ -220,7 +224,7 @@ export class MongoRepository {
         typeOf: T;
         id: string;
     }): Promise<factory.chevre.event.IEvent<T>> {
-        const event = await this.eventModel.findOne(
+        const doc = await this.eventModel.findOne(
             {
                 typeOf: params.typeOf,
                 _id: params.id
@@ -231,10 +235,10 @@ export class MongoRepository {
                 updatedAt: 0
             }
         ).exec();
-        if (event === null) {
+        if (doc === null) {
             throw new factory.errors.NotFound('Event');
         }
 
-        return event.toObject();
+        return doc.toObject();
     }
 }

@@ -181,7 +181,7 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
             if (action.result !== undefined) {
                 // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
                 debug('calling reserve transaction...');
-                await repos.reserveService.cancel({ transactionId: action.result.responseBody.id });
+                await repos.reserveService.cancel({ id: action.result.responseBody.id });
                 await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
         }));
