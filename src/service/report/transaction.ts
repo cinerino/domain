@@ -44,7 +44,6 @@ export interface ITransactionReport {
     };
     items: {
         typeOf: string;
-        totalPrice: number;
         name: string;
         numItems: number;
         event: {
@@ -112,7 +111,7 @@ export function download(params: {
                     { label: '注文番号', default: '', value: 'orderNumber' },
                     { label: '確認番号', default: '', value: 'confirmationNumber' },
                     { label: '注文アイテムタイプ', default: '', value: 'items.typeOf' },
-                    { label: '注文アイテムチケット金額', default: '', value: 'items.totalPrice' },
+                    // { label: '注文アイテムチケット金額', default: '', value: 'items.totalPrice' },
                     { label: '注文アイテム名', default: '', value: 'items.name' },
                     { label: '注文アイテム数', default: '', value: 'items.numItems' },
                     { label: '注文アイテムイベントタイプ', default: '', value: 'items.event.typeOf' },
@@ -190,7 +189,6 @@ export function transaction2report(params: {
                 const offer = orderItem.itemOffered;
                 let item = {
                     typeOf: '',
-                    totalPrice: 0,
                     name: '',
                     numItems: 0,
                     event: {
@@ -226,7 +224,6 @@ export function transaction2report(params: {
 
                         item = {
                             typeOf: offer.typeOf,
-                            totalPrice: ticket.totalPrice,
                             name: name,
                             numItems: numItems,
                             event: {

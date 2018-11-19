@@ -27,6 +27,8 @@ export type IStartOperation<T> = (repos: {
     organization: OrganizationRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
+
 /**
  * 取引開始
  */
@@ -345,9 +347,6 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
 
     // 決済承認を確認
     Object.keys(factory.paymentMethodType).forEach((key) => {
-        type IAuthorizeAnyPaymentResult =
-            // tslint:disable-next-line:max-line-length
-            factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
         const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
         priceByAgent += authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -568,7 +567,8 @@ export function createOrderFromTransaction(params: {
             return {
                 typeOf: <factory.offer.OfferType>'Offer',
                 itemOffered: tmpReserve,
-                price: tmpReserve.price,
+                priceSpecification: tmpReserve.price,
+                // price: tmpReserve.price,
                 priceCurrency: factory.priceCurrency.JPY,
                 seller: {
                     typeOf: params.seller.typeOf,
@@ -611,11 +611,21 @@ export function createOrderFromTransaction(params: {
         params.confirmationNumber
     );
 
+    // 決済方法から注文金額の計算
+    let price = 0;
+    Object.keys(factory.paymentMethodType).forEach((key) => {
+        const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+        price += params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === paymentMethodType)
+            .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+    });
+
     return {
         typeOf: 'Order',
         seller: seller,
         customer: customer,
-        price: acceptedOffers.reduce((a, b) => a + b.price, 0) - discounts.reduce((a, b) => a + b.discount, 0),
+        price: price,
         priceCurrency: factory.priceCurrency.JPY,
         paymentMethods: paymentMethods,
         discounts: discounts,
