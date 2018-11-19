@@ -239,9 +239,15 @@ export function confirm(params: {
     };
     options: {
         /**
-         * 注文メールを送信するかどうか
+         * 注文配送メールを送信するかどうか
          */
         sendEmailMessage?: boolean;
+        /**
+         * 注文配送メールテンプレート
+         * メールをカスタマイズしたい場合、PUGテンプレートを指定
+         * @see https://pugjs.org/api/getting-started.html
+         */
+        emailTemplate?: string;
     };
 }) {
     return async (repos: {
@@ -320,7 +326,8 @@ export function confirm(params: {
             customerContact: customerContact,
             order: order,
             seller: seller,
-            sendEmailMessage: params.options.sendEmailMessage
+            sendEmailMessage: params.options.sendEmailMessage,
+            emailTemplate: params.options.emailTemplate
         });
 
         // ステータス変更
@@ -649,6 +656,7 @@ export async function createPotentialActionsFromTransaction(params: {
     order: factory.order.IOrder;
     seller: factory.organization.movieTheater.IOrganization;
     sendEmailMessage?: boolean;
+    emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // クレジットカード支払いアクション
     const authorizeCreditCardActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
@@ -765,10 +773,8 @@ export async function createPotentialActionsFromTransaction(params: {
     let sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes | null = null;
     if (params.sendEmailMessage === true) {
         const emailMessage = await emailMessageBuilder.createSendOrderMessage({
-            transaction: params.transaction,
-            customerContact: params.customerContact,
             order: params.order,
-            seller: params.seller
+            emailTemplate: params.emailTemplate
         });
         sendEmailMessageActionAttributes = {
             typeOf: factory.actionType.SendAction,

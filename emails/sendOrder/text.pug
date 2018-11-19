@@ -1,14 +1,14 @@
-| #{familyName} #{givenName} 様
-| この度は、#{sellerName}のオンラインチケットサービスにてご購入頂き、誠にありがとうございます。お客様がご購入されましたチケットの情報は下記の通りです。
+| #{order.customer.familyName} #{order.customer.givenName} 様
+| この度は、#{order.seller.name}のオンラインチケットサービスにてご購入頂き、誠にありがとうございます。お客様がご購入されましたチケットの情報は下記の通りです。
 | 
 | [注文番号]
-| #{orderNumber}
+| #{order.orderNumber}
 | 
 | [注文日時]
-| #{orderDate}
+| #{order.orderDate}
 | 
 | [確認番号]
-| #{confirmationNumber}
+| #{order.confirmationNumber}
 | 
 | [イベント日時]
 | #{eventStartDate}
@@ -23,13 +23,13 @@
 | #{reservedSeats}
 | 
 | [合計]
-| ￥#{price}
+| ￥#{order.price}
 | 
-| なお、このメールは、#{sellerName}の予約システムでチケットをご購入頂いた方にお送りしておりますが、
+| なお、このメールは、#{order.seller.name}の予約システムでチケットをご購入頂いた方にお送りしておりますが、
 | チケット購入に覚えのない方に届いております場合は、下記お問い合わせ先までご連絡ください。
 | ※なお、このメールアドレスは送信専用となっておりますので、ご返信頂けません。
 | ご不明な点がございましたら、下記番号までお問合わせください。
 | 
 | お問い合わせはこちら
-| #{sellerName}
-| TEL：#{sellerTelephone}
+| #{order.seller.name}
+| TEL：#{order.seller.telephone}
