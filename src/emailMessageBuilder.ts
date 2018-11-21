@@ -38,7 +38,7 @@ export async function createSendOrderMessage(params: {
             const emailTemplate = params.emailTemplate;
             let emailMessageText: string;
             if (emailTemplate !== undefined) {
-                emailMessageText = await new Promise<string>((resolveRender, rejectRender) => {
+                emailMessageText = await new Promise<string>((resolveRender) => {
                     pug.render(
                         emailTemplate,
                         {
@@ -46,7 +46,7 @@ export async function createSendOrderMessage(params: {
                         },
                         (renderMessageErr, message) => {
                             if (renderMessageErr instanceof Error) {
-                                rejectRender(new factory.errors.Argument('emailTemplate', renderMessageErr.message));
+                                reject(new factory.errors.Argument('emailTemplate', renderMessageErr.message));
 
                                 return;
                             }
@@ -56,7 +56,7 @@ export async function createSendOrderMessage(params: {
                     );
                 });
             } else {
-                emailMessageText = await new Promise<string>((resolveRender, rejectRender) => {
+                emailMessageText = await new Promise<string>((resolveRender) => {
                     pug.renderFile(
                         `${templateDirectory}/sendOrder/text.pug`,
                         {
@@ -92,7 +92,7 @@ export async function createSendOrderMessage(params: {
                         },
                         (renderMessageErr, message) => {
                             if (renderMessageErr instanceof Error) {
-                                rejectRender(renderMessageErr);
+                                reject(renderMessageErr);
 
                                 return;
                             }
