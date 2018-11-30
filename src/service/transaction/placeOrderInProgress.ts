@@ -42,11 +42,14 @@ export function start(
         // 売り手を取得
         const seller = await repos.organization.findById({ typeOf: params.seller.typeOf, id: params.seller.id });
 
-        let passport: waiter.factory.passport.IPassport | undefined;
+        let passport: factory.waiter.passport.IPassport | undefined;
         // WAITER許可証トークンがあれば検証する
         if (params.object.passport !== undefined) {
             try {
-                passport = await waiter.service.passport.verify(params.object.passport.token, params.object.passport.secret);
+                passport = await waiter.service.passport.verify({
+                    token: params.object.passport.token,
+                    secret: params.object.passport.secret
+                });
             } catch (error) {
                 throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
             }
@@ -55,7 +58,8 @@ export function start(
             if (!validatePassport({
                 passport: passport,
                 issuer: params.object.passport.issuer,
-                sellerId: seller.id
+                sellerId: seller.id,
+                clientId: (params.object.clientUser !== undefined) ? params.object.clientUser.client_id : undefined
             })) {
                 throw new factory.errors.Argument('Passport Token', 'Invalid passport');
             }
@@ -115,22 +119,32 @@ export function start(
  * WAITER許可証の有効性チェック
  */
 function validatePassport(params: {
-    passport: waiter.factory.passport.IPassport;
+    passport: factory.waiter.passport.IPassport;
     issuer: string;
     sellerId: string;
+    clientId?: string;
 }) {
+
+    const validIssuer = params.passport.iss === params.issuer; // 許可証発行者確認
+
     // スコープのフォーマットは、Transaction:PlaceOrder:${sellerId}
     const explodedScopeStrings = params.passport.scope.split(':');
-
-    return (
-        params.passport.iss === params.issuer && // 許可証発行者確認
-        // tslint:disable-next-line:no-magic-numbers
-        explodedScopeStrings.length === 3 &&
+    const validScope = (
         explodedScopeStrings[0] === 'Transaction' && // スコープ接頭辞確認
         explodedScopeStrings[1] === factory.transactionType.PlaceOrder && // スコープ接頭辞確認
         // tslint:disable-next-line:no-magic-numbers
         explodedScopeStrings[2] === params.sellerId // 販売者識別子確認
     );
+
+    // クライアントの有効性
+    let validClient = true;
+    if (params.clientId !== undefined) {
+        if (Array.isArray(params.passport.aud) && params.passport.aud.indexOf(params.clientId) < 0) {
+            validClient = false;
+        }
+    }
+
+    return validIssuer && validScope && validClient;
 }
 
 /**
