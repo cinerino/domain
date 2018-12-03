@@ -18,26 +18,26 @@ export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction
 /**
  * 注文取引から注文を作成する
  */
-export function placeOrder(params: factory.transaction.placeOrder.ITransaction) {
+export function placeOrder(params: factory.action.trade.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
         order: OrderRepo;
         task: TaskRepo;
+        transaction: TransactionRepo;
     }) => {
-        const transaction = params;
-        const transactionResult = transaction.result;
-        if (transactionResult === undefined) {
-            throw new factory.errors.NotFound('transaction.result');
+        const order = params.object;
+        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+            typeOf: factory.transactionType.PlaceOrder,
+            result: { order: { orderNumbers: [order.orderNumber] } }
+        });
+        const placeOrderTransaction = placeOrderTransactions.shift();
+        if (placeOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Transaction');
         }
-        const potentialActions = transaction.potentialActions;
-        if (potentialActions === undefined) {
-            throw new factory.errors.NotFound('transaction.potentialActions');
-        }
-        const order = transactionResult.order;
 
         // アクション開始
-        const orderActionAttributes = potentialActions.order;
+        const orderActionAttributes = params;
         const action = await repos.action.start(orderActionAttributes);
 
         try {
@@ -48,7 +48,7 @@ export function placeOrder(params: factory.transaction.placeOrder.ITransaction) 
             const invoices: factory.invoice.IInvoice[] = [];
             Object.keys(factory.paymentMethodType).forEach((key) => {
                 const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-                transaction.object.authorizeActions
+                placeOrderTransaction.object.authorizeActions
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                     .filter((a) => a.result !== undefined)
                     .filter((a) => a.result.paymentMethod === paymentMethodType)

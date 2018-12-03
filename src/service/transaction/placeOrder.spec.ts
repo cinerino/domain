@@ -26,7 +26,9 @@ describe('exportTasks()', () => {
         const task = {};
         const transaction = {
             id: 'transactionId',
-            status: status
+            status: status,
+            result: {},
+            potentialActions: {}
         };
         sandbox.mock(transactionRepo).expects('startExportTasks').once().resolves(transaction);
         sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
@@ -73,7 +75,9 @@ describe('exportTasksById()', () => {
         const numberOfTasks = 2;
         const transaction = {
             id: 'transactionId',
-            status: domain.factory.transactionStatusType.Confirmed
+            status: domain.factory.transactionStatusType.Confirmed,
+            result: {},
+            potentialActions: {}
         };
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);

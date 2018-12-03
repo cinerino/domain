@@ -72,6 +72,15 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
+                const transactionResult = transaction.result;
+                if (transactionResult === undefined) {
+                    throw new factory.errors.NotFound('Transaction Result');
+                }
+                const potentialActions = transaction.potentialActions;
+                if (potentialActions === undefined) {
+                    throw new factory.errors.NotFound('Transaction PotentialActions');
+                }
+                const orderActionAttributes = potentialActions.order;
                 const placeOrderTaskAttributes: factory.task.IAttributes<factory.taskName.PlaceOrder> = {
                     name: factory.taskName.PlaceOrder,
                     status: factory.taskStatus.Ready,
@@ -80,7 +89,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
                     lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
-                    data: transaction
+                    data: orderActionAttributes
                 };
                 taskAttributes.push(
                     placeOrderTaskAttributes
