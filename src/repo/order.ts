@@ -20,12 +20,26 @@ export class MongoRepository {
             // 注文日時の範囲条件
             {
                 orderDate: {
-                    $exists: true,
-                    $gte: params.orderDateFrom.toISOString(),
-                    $lte: params.orderDateThrough.toISOString()
+                    $exists: true
                 }
             }
         ];
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.orderDateFrom instanceof Date) {
+            andConditions.push({
+                orderDate: { $gte: params.orderDateFrom }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.orderDateThrough instanceof Date) {
+            andConditions.push({
+                orderDate: { $lte: params.orderDateThrough }
+            });
+        }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.seller !== undefined) {

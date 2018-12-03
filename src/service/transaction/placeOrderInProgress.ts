@@ -672,6 +672,52 @@ export async function createPotentialActionsFromTransaction(params: {
     sendEmailMessage?: boolean;
     emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
+    // 予約確定アクション
+    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+    const confirmReservationActions: factory.action.interact.confirm.reservation.IAttributes[] = [];
+    seatReservationAuthorizeActions.forEach((a) => {
+        const seatReservationAuthorizeActionResult = a.result;
+        if (seatReservationAuthorizeActionResult !== undefined) {
+            confirmReservationActions.push({
+                typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
+                object: {
+                    typeOf: factory.chevre.transactionType.Reserve,
+                    id: seatReservationAuthorizeActionResult.responseBody.id,
+                    object: {
+                        reservations: seatReservationAuthorizeActionResult.responseBody.object.reservations.map((r) => {
+                            // 購入者や販売者の情報を連携する
+                            return {
+                                id: r.id,
+                                reservedTicket: {
+                                    issuedBy: {
+                                        typeOf: params.order.seller.typeOf,
+                                        name: params.order.seller.name
+                                    }
+                                },
+                                underName: {
+                                    typeOf: params.order.customer.typeOf,
+                                    name: params.order.customer.name,
+                                    familyName: params.order.customer.familyName,
+                                    givenName: params.order.customer.givenName,
+                                    email: params.order.customer.email,
+                                    telephone: params.order.customer.telephone,
+                                    identifier: [
+                                        { name: 'orderNumber', value: params.order.orderNumber }
+                                    ]
+                                }
+                            };
+                        })
+                    }
+                },
+                agent: params.transaction.agent,
+                purpose: params.order
+            });
+        }
+    });
+
     // クレジットカード支払いアクション
     const authorizeCreditCardActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
         params.transaction.object.authorizeActions
@@ -820,6 +866,7 @@ export async function createPotentialActionsFromTransaction(params: {
                 payAccount: payAccountActions,
                 payMovieTicket: payMovieTicketActions,
                 sendOrder: sendOrderActionAttributes,
+                confirmReservation: confirmReservationActions,
                 givePointAward: givePointAwardActions
             }
         }

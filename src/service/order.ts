@@ -87,16 +87,14 @@ export function placeOrder(params: factory.transaction.placeOrder.ITransaction) 
         await repos.action.complete({ typeOf: orderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
-        await onPlaceOrder(transaction.id, orderActionAttributes)(repos);
+        await onPlaceOrder(orderActionAttributes)(repos);
     };
 }
 
 /**
  * 注文作成後のアクション
- * @param transactionId 注文取引ID
- * @param orderActionAttributes 注文アクション属性
  */
-function onPlaceOrder(transactionId: string, orderActionAttributes: factory.action.trade.order.IAttributes) {
+function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttributes) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
@@ -121,11 +119,28 @@ function onPlaceOrder(transactionId: string, orderActionAttributes: factory.acti
                     lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
-                    data: {
-                        transactionId: transactionId
-                    }
+                    data: orderPotentialActions.sendOrder
                 };
                 taskAttributes.push(sendOrderTask);
+            }
+
+            // 予約確定
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(orderPotentialActions.confirmReservation)) {
+                taskAttributes.push(...orderPotentialActions.confirmReservation.map(
+                    (a): factory.task.IAttributes<factory.taskName.ConfirmReservation> => {
+                        return {
+                            name: factory.taskName.ConfirmReservation,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            lastTriedAt: null,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
             }
 
             // クレジットカード決済

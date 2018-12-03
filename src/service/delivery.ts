@@ -11,13 +11,11 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as uuid from 'uuid';
 
-import * as chevre from '../chevre';
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
-import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -25,105 +23,31 @@ export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction
 
 /**
  * 注文を配送する
- * 座席本予約連携を行い、内部的には所有権を作成する
- * @param transactionId 注文取引ID
  */
-export function sendOrder(params: { transactionId: string }) {
+export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
-        transaction: TransactionRepo;
         task: TaskRepo;
-        reserveService: chevre.service.transaction.Reserve;
     }) => {
-        const transaction = await repos.transaction.findById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
-        });
-        const transactionResult = transaction.result;
-        if (transactionResult === undefined) {
-            throw new factory.errors.NotFound('transaction.result');
-        }
-        const potentialActions = transaction.potentialActions;
-        if (potentialActions === undefined) {
-            throw new factory.errors.NotFound('transaction.potentialActions');
-        }
-
-        const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>
-            transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-        // if (authorizeActions.length !== 1) {
-        //     throw new factory.errors.NotImplemented('Number of seat reservation authorizeAction must be 1.');
-        // }
-
-        const customerContact = transaction.object.customerContact;
-        if (customerContact === undefined) {
-            throw new factory.errors.NotFound('transaction.object.customerContact');
-        }
-        const orderPotentialActions = potentialActions.order.potentialActions;
-        if (orderPotentialActions === undefined) {
-            throw new factory.errors.NotFound('order.potentialActions');
-        }
+        const order = params.object;
 
         // アクション開始
-        const sendOrderActionAttributes = orderPotentialActions.sendOrder;
-        const order = sendOrderActionAttributes.object;
+        const sendOrderActionAttributes = params;
         const action = await repos.action.start(sendOrderActionAttributes);
         let ownershipInfos: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[];
         try {
-            // 座席予約確定
-            const seatReservationAuthorizeAction = seatReservationAuthorizeActions.shift();
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (seatReservationAuthorizeAction !== undefined) {
-                const seatReservationAuthorizeActionResult = seatReservationAuthorizeAction.result;
-                if (seatReservationAuthorizeActionResult === undefined) {
-                    throw new factory.errors.NotFound('authorizeAction.result');
-                }
-
-                await repos.reserveService.confirm({
-                    id: seatReservationAuthorizeActionResult.responseBody.id,
-                    object: {
-                        reservations: seatReservationAuthorizeActionResult.responseBody.object.reservations.map((r) => {
-                            return {
-                                id: r.id,
-                                reservedTicket: {
-                                    issuedBy: {
-                                        typeOf: order.seller.typeOf,
-                                        name: order.seller.name
-                                    }
-                                },
-                                underName: {
-                                    typeOf: order.customer.typeOf,
-                                    name: order.customer.name,
-                                    familyName: order.customer.familyName,
-                                    givenName: order.customer.givenName,
-                                    email: order.customer.email,
-                                    telephone: order.customer.telephone,
-                                    identifier: [
-                                        { name: 'orderNumber', value: order.orderNumber }
-                                    ]
-                                }
-                            };
-                        })
-                    }
-                });
-            }
             // 所有権作成
-            ownershipInfos = createOwnershipInfosFromTransaction({
-                transaction: transaction,
-                order: transactionResult.order
-            });
+            ownershipInfos = createOwnershipInfosFromOrder({ order });
             await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
                 await repos.ownershipInfo.save(ownershipInfo);
             }));
 
             // 注文ステータス変更
             await repos.order.changeStatus({
-                orderNumber: transactionResult.order.orderNumber,
+                orderNumber: order.orderNumber,
                 orderStatus: factory.orderStatus.OrderDelivered
             });
         } catch (error) {
@@ -148,18 +72,18 @@ export function sendOrder(params: { transactionId: string }) {
         await onSend(sendOrderActionAttributes)({ task: repos.task });
     };
 }
+
 /**
- * 取引から所有権を作成する
+ * 注文から所有権を作成する
  */
-export function createOwnershipInfosFromTransaction(params: {
-    transaction: factory.transaction.placeOrder.ITransaction;
+export function createOwnershipInfosFromOrder(params: {
     order: factory.order.IOrder;
 }): factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[] {
     return params.order.acceptedOffers.map((acceptedOffer) => {
         const itemOffered = acceptedOffer.itemOffered;
         let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
         const ownedFrom = params.order.orderDate;
-        const seller = params.transaction.seller;
+        const seller = params.order.seller;
         let ownedThrough: Date;
 
         switch (itemOffered.typeOf) {
@@ -171,15 +95,16 @@ export function createOwnershipInfosFromTransaction(params: {
                 ownershipInfo = {
                     typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
                     id: uuid.v4(),
-                    ownedBy: params.transaction.agent,
+                    ownedBy: params.order.customer,
                     acquiredFrom: {
                         id: seller.id,
                         typeOf: seller.typeOf,
-                        name: seller.name,
-                        location: seller.location,
+                        name: {
+                            ja: seller.name,
+                            en: ''
+                        },
                         telephone: seller.telephone,
-                        url: seller.url,
-                        image: seller.image
+                        url: seller.url
                     },
                     ownedFrom: ownedFrom,
                     ownedThrough: ownedThrough,
@@ -199,10 +124,9 @@ export function createOwnershipInfosFromTransaction(params: {
         return ownershipInfo;
     });
 }
+
 /**
  * 注文配送後のアクション
- * @param transactionId 注文取引ID
- * @param sendOrderActionAttributes 注文配送悪損属性
  */
 function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes) {
     return async (repos: { task: TaskRepo }) => {
@@ -250,6 +174,7 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
         }));
     };
 }
+
 /**
  * ポイントインセンティブ入金実行
  * 取引中に入金取引の承認アクションを完了しているはずなので、その取引を確定するだけの処理です。
@@ -288,6 +213,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
         await repos.action.complete({ typeOf: params.typeOf, id: action.id, result: actionResult });
     };
 }
+
 /**
  * ポイントインセンティブ返却実行
  */
@@ -349,6 +275,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
+
 /**
  * ポイントインセンティブ承認取消
  */
