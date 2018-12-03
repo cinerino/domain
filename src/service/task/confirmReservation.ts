@@ -4,7 +4,7 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 
-import * as ReserveService from '../reserve';
+import * as ReservationService from '../reservation';
 
 /**
  * タスク実行関数
@@ -22,7 +22,7 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmReservatio
             endpoint: settings.chevreEndpoint,
             auth: settings.chevreAuthClient
         });
-        await ReserveService.confirmReservation(data)({
+        await ReservationService.confirmReservation(data)({
             action: actionRepo,
             reserveService: reserveService
         });
