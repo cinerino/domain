@@ -128,3 +128,81 @@ describe('pushExecutionResultById()', () => {
         sandbox.verify();
     });
 });
+
+describe('IDでタスク検索', () => {
+    beforeEach(() => {
+        sandbox.restore();
+    });
+
+    it('MongoDBの状態が正常であれば、オブジェクトが返るはず', async () => {
+        const repository = new domain.repository.Task(domain.mongoose.connection);
+        sandbox.mock(repository.taskModel).expects('findOne').once()
+            .chain('exec')
+            .resolves(new repository.taskModel());
+
+        const result = await repository.findById({
+            name: domain.factory.taskName.PlaceOrder,
+            id: 'id'
+        });
+        assert(typeof result === 'object');
+        sandbox.verify();
+    });
+});
+
+describe('タスク検索', () => {
+    beforeEach(() => {
+        sandbox.restore();
+    });
+
+    it('MongoDBの状態が正常であれば、配列が返るはず', async () => {
+        const searchConditions = {
+            limit: 1,
+            page: 1,
+            sort: { runsAt: domain.factory.sortType.Ascending },
+            name: domain.factory.taskName.PlaceOrder,
+            statuses: [],
+            runsFrom: new Date(),
+            runsThrough: new Date(),
+            lastTriedFrom: new Date(),
+            lastTriedThrough: new Date()
+        };
+
+        const repository = new domain.repository.Task(domain.mongoose.connection);
+        sandbox.mock(repository.taskModel).expects('find').once()
+            .chain('exec')
+            .resolves([new repository.taskModel()]);
+
+        const result = await repository.search(searchConditions);
+        assert(Array.isArray(result));
+        sandbox.verify();
+    });
+});
+
+describe('タスクカウント', () => {
+    beforeEach(() => {
+        sandbox.restore();
+    });
+
+    it('MongoDBの状態が正常であれば、数字が返るはず', async () => {
+        const searchConditions = {
+            limit: 1,
+            page: 1,
+            sort: { runsAt: domain.factory.sortType.Ascending },
+            name: domain.factory.taskName.PlaceOrder,
+            statuses: [],
+            runsFrom: new Date(),
+            runsThrough: new Date(),
+            lastTriedFrom: new Date(),
+            lastTriedThrough: new Date()
+        };
+
+        const repository = new domain.repository.Task(domain.mongoose.connection);
+        sandbox.mock(repository.taskModel).expects('countDocuments').once()
+            .chain('exec')
+            .resolves(1);
+
+        const result = await repository.count(searchConditions);
+        assert(typeof result === 'number');
+        sandbox.verify();
+    });
+});

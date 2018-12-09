@@ -111,6 +111,27 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+schema.index(
+    { typeOf: 1 },
+    { name: 'searchByTypeOf' }
+);
+schema.index(
+    { status: 1 },
+    { name: 'searchByStatus' }
+);
+schema.index(
+    { startDate: 1 },
+    { name: 'searchByStartDate' }
+);
+schema.index(
+    { endDate: 1 },
+    {
+        name: 'searchByEndDate',
+        partialFilterExpression: {
+            endDate: { $exists: true }
+        }
+    }
+);
 // タスクエクスポート時の検索で使用
 schema.index(
     { tasksExportationStatus: 1, status: 1, typeOf: 1 }

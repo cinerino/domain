@@ -69,6 +69,27 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+schema.index(
+    { name: 1 },
+    { name: 'searchByName' }
+);
+schema.index(
+    { status: 1 },
+    { name: 'searchByStatus' }
+);
+schema.index(
+    { runsAt: 1 },
+    { name: 'searchByRunsAt' }
+);
+schema.index(
+    { lastTriedAt: 1 },
+    {
+        name: 'searchByLastTriedAt',
+        partialFilterExpression: {
+            lastTriedAt: { $type: 'date' }
+        }
+    }
+);
 // 基本的にグループごとに、ステータスと実行日時を見て、タスクは実行される
 schema.index(
     { name: 1, status: 1, numberOfTried: 1, runsAt: 1 }

@@ -112,8 +112,30 @@ schema.index(
     { name: 'searchByTypeOf' }
 );
 schema.index(
+    { actionStatus: 1 },
+    { name: 'searchByActionStatus' }
+);
+schema.index(
     { startDate: 1 },
     { name: 'searchByStartDate' }
+);
+schema.index(
+    { endDate: 1 },
+    {
+        name: 'searchByEndDate',
+        partialFilterExpression: {
+            endDate: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'purpose.typeOf': 1 },
+    {
+        name: 'searchByPurposeTypeOf',
+        partialFilterExpression: {
+            'purpose.typeOf': { $exists: true }
+        }
+    }
 );
 schema.index(
     { 'purpose.id': 1 },
