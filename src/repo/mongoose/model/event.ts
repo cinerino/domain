@@ -92,68 +92,133 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
-// 上映イベント検索に使用
 schema.index(
+    { typeOf: 1 },
+    { name: 'searchByTypeOf' }
+);
+schema.index(
+    { identifier: 1 },
     {
-        typeOf: 1,
-        'superEvent.location.branchCode': 1
-    },
+        name: 'searchByIdentifier',
+        partialFilterExpression: {
+            identifier: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { name: 1 },
+    { name: 'searchByName' }
+);
+schema.index(
+    { doorTime: 1 },
     {
+        name: 'searchByDoorTime',
+        partialFilterExpression: {
+            doorTime: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { startDate: 1 },
+    { name: 'searchByStartDate' }
+);
+schema.index(
+    { endDate: 1 },
+    { name: 'searchByEndDate' }
+);
+schema.index(
+    { eventStatus: 1 },
+    { name: 'searchByEventStatus' }
+);
+schema.index(
+    { 'superEvent.id': 1 },
+    {
+        name: 'searchBySuperEventId',
+        partialFilterExpression: {
+            'superEvent.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'superEvent.location.branchCode': 1 },
+    {
+        name: 'searchBySuperEventLocationBranchCode',
         partialFilterExpression: {
             'superEvent.location.branchCode': { $exists: true }
         }
     }
 );
-schema.index({ typeOf: 1, startDate: 1 });
-schema.index({ typeOf: 1, endDate: 1 });
 schema.index(
+    { 'superEvent.location.identifier': 1 },
     {
-        'offers.availabilityEnds': 1
-    },
+        name: 'searchBySuperEventLocationIdentifier',
+        partialFilterExpression: {
+            'superEvent.location.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'superEvent.workPerformed.identifier': 1 },
     {
+        name: 'searchBySuperEventWorkPerformedIdentifier',
+        partialFilterExpression: {
+            'superEvent.workPerformed.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'workPerformed.identifier': 1 },
+    {
+        name: 'searchByWorkPerformedIdentifier',
+        partialFilterExpression: {
+            'workPerformed.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'offers.availabilityEnds': 1 },
+    {
+        name: 'searchByOffersAvailabilityEnds',
         partialFilterExpression: {
             'offers.availabilityEnds': { $exists: true }
-        },
-        name: 'searchByOffersAvailabilityEnds'
+        }
     }
 );
 schema.index(
+    { 'offers.availabilityStarts': 1 },
     {
-        'offers.availabilityStarts': 1
-    },
-    {
+        name: 'searchByOffersAvailabilityStarts',
         partialFilterExpression: {
             'offers.availabilityStarts': { $exists: true }
-        },
-        name: 'searchByOffersAvailabilityStarts'
+        }
     }
 );
 schema.index(
+    { 'offers.validThrough': 1 },
     {
-        'offers.validThrough': 1
-    },
-    {
+        name: 'searchByOffersValidThrough',
         partialFilterExpression: {
             'offers.validThrough': { $exists: true }
-        },
-        name: 'searchByOffersValidThrough'
+        }
     }
 );
 schema.index(
+    { 'offers.validFrom': 1 },
     {
-        'offers.validFrom': 1
-    },
-    {
+        name: 'searchByOffersValidFrom',
         partialFilterExpression: {
             'offers.validFrom': { $exists: true }
-        },
-        name: 'searchByOffersValidFrom'
+        }
     }
 );
-
-// 上映イベント取得に使用
 schema.index(
-    { _id: 1, typeOf: 1 }
+    { 'offers.id': 1 },
+    {
+        name: 'searchByOffersId',
+        partialFilterExpression: {
+            'offers.id': { $exists: true }
+        }
+    }
 );
 
 export default mongoose.model('Event', schema).on(

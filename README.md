@@ -7,7 +7,7 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/cinerino/domain/badge.svg)](https://snyk.io/test/github/cinerino/domain)
 [![npm](https://img.shields.io/npm/dm/@cinerino/domain.svg)](https://nodei.co/npm/@cinerino/domain/)
 
-CinerinoのバックエンドサービスをNode.jsで簡単に使用するためのパッケージを提供します。
+Cinerinoのバックエンド処理をNode.jsで実装するための、サーバーサイド向けパッケージです。
 
 ## Table of contents
 
@@ -23,19 +23,24 @@ npm install @cinerino/domain
 
 ### Environment variables
 
-| Name                                 | Required | Value             | Purpose                |
-|--------------------------------------|----------|-------------------|------------------------|
-| `DEBUG`                              | false    | cinerino-domain:* | Debug                  |
-| `NODE_ENV`                           | true     |                   | environment name       |
-| `MONGOLAB_URI`                       | true     |                   | MongoDB connection URI |
-| `SENDGRID_API_KEY`                   | true     |                   | SendGrid API Key       |
-| `GMO_ENDPOINT`                       | true     |                   | GMO API endpoint       |
-| `GMO_SITE_ID`                        | true     |                   | GMO SiteID             |
-| `GMO_SITE_PASS`                      | true     |                   | GMO SitePass           |
-| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN` | true     |                   | 開発者通知用LINEアクセストークン     |
-| `WAITER_SECRET`                      | true     |                   | WAITER許可証トークン秘密鍵       |
+| Name                                 | Required | Value             | Purpose                      |
+| ------------------------------------ | -------- | ----------------- | ---------------------------- |
+| `DEBUG`                              | false    | cinerino-domain:* | Debug                        |
+| `PROJECT_ID`                         | true     |                   | CinerinoプロジェクトID       |
+| `NODE_ENV`                           | true     |                   | 環境名                       |
+| `MONGOLAB_URI`                       | true     |                   | MongoDB connection URI       |
+| `SENDGRID_API_KEY`                   | true     |                   | SendGrid API Key             |
+| `LINE_NOTIFY_URL`                    | true     |                   | LINE Notify URL              |
+| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN` | true     |                   | LINE Notify アクセストークン |
+| `GMO_ENDPOINT`                       | true     |                   | GMO API エンドポイント       |
+| `GMO_SITE_ID`                        | true     |                   | GMO サイトID                 |
+| `GMO_SITE_PASS`                      | true     |                   | GMO サイトパス               |
+| `WAITER_SECRET`                      | true     |                   | WAITER許可証トークン秘密鍵   |
 | `WAITER_PASSPORT_ISSUER`             | true     |                   | WAITER許可証発行者           |
-| `ORDER_INQUIRY_ENDPOINT`             | true     |                   | 注文照会エンドポイント            |
+| `ORDER_INQUIRY_ENDPOINT`             | true     |                   | 注文照会エンドポイント       |
+| `TELEMETRY_API_ENDPOINT`             | true     |                   | Telemetry API エンドポイント |
+| `CUSTOM_SEARCH_ENGINE_ID`            | true     |                   | Googleカスタム検索エンジンID |
+| `GOOGLE_API_KEY`                     | true     |                   | Google API Key               |
 
 ## Code Samples
 
