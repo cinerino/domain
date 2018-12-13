@@ -61,14 +61,13 @@ export function start(
             throw new factory.errors.NotFound('Transaction');
         }
 
-        // 請求書の状態を検証
-        const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: [order.orderNumber] } });
-        if (invoices.length === 0) {
-            throw new factory.errors.NotFound('Invoice');
-        }
-        const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
-        if (!allPaymentCompleted) {
-            throw new factory.errors.Argument('order.orderNumber', 'Payment not completed');
+        // 決済がある場合、請求書の状態を検証
+        if (order.paymentMethods.length > 0) {
+            const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: [order.orderNumber] } });
+            const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
+            if (!allPaymentCompleted) {
+                throw new factory.errors.Argument('order.orderNumber', 'Payment not completed');
+            }
         }
 
         // 検証

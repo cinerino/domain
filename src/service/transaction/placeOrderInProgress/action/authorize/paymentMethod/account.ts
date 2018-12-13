@@ -192,7 +192,12 @@ export function create<T extends factory.accountType>(params: {
             name: params.object.fromAccount.accountType,
             fromAccount: params.object.fromAccount,
             additionalProperty: params.object.additionalProperty,
-            pendingTransaction: pendingTransaction
+            pendingTransaction: pendingTransaction,
+            totalPaymentDue: {
+                typeOf: 'MonetaryAmount',
+                currency: factory.priceCurrency.JPY,
+                value: params.object.amount
+            }
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });

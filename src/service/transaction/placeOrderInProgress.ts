@@ -621,6 +621,7 @@ export function createOrderFromTransaction(params: {
                     name: result.name,
                     typeOf: paymentMethodType,
                     paymentMethodId: result.paymentMethodId,
+                    totalPaymentDue: result.totalPaymentDue,
                     additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                 });
             });
@@ -736,6 +737,7 @@ export async function createPotentialActionsFromTransaction(params: {
                         name: result.name,
                         typeOf: <factory.paymentMethodType.CreditCard>result.paymentMethod,
                         paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
                         additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                     },
                     price: result.amount,
@@ -767,6 +769,7 @@ export async function createPotentialActionsFromTransaction(params: {
                         name: result.name,
                         typeOf: <factory.paymentMethodType.Account>result.paymentMethod,
                         paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
                         additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                     },
                     pendingTransaction:
@@ -797,6 +800,7 @@ export async function createPotentialActionsFromTransaction(params: {
                         name: result.name,
                         typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod,
                         paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
                         additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
                     },
                     movieTickets: a.object.movieTickets

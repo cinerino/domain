@@ -92,6 +92,11 @@ export function create<T extends factory.paymentMethodType>(params: {
             paymentStatus: factory.paymentStatusType.PaymentComplete,
             paymentMethodId: '',
             name: params.object.typeOf,
+            totalPaymentDue: {
+                typeOf: 'MonetaryAmount',
+                currency: factory.priceCurrency.JPY,
+                value: params.object.amount
+            },
             additionalProperty: params.object.additionalProperty
         };
 

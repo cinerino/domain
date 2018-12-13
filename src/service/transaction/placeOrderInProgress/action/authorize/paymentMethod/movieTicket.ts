@@ -149,6 +149,11 @@ export function create(params: {
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: params.object.movieTickets[0].identifier,
             name: 'ムビチケ',
+            totalPaymentDue: {
+                typeOf: 'MonetaryAmount',
+                currency: factory.unitCode.C62,
+                value: params.object.movieTickets.length
+            },
             additionalProperty: params.object.additionalProperty,
             ...checkResult
         };

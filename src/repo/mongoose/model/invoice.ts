@@ -36,6 +36,14 @@ const orderSchema = new mongoose.Schema(
         strict: false
     }
 );
+const totalPaymentDueSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
 
 /**
  * 請求書スキーマ
@@ -52,15 +60,15 @@ const schema = new mongoose.Schema(
         category: String,
         confirmationNumber: String,
         customer: customerSchema,
-        // minimumPaymentDue: String,
+        // minimumPaymentDue: minimumPaymentDueSchema,
         paymentDueDate: Date,
         paymentMethod: String,
         paymentMethodId: String,
         paymentStatus: String,
         provider: providerSchema,
         referencesOrder: orderSchema,
-        scheduledPaymentDate: Date
-        // totalPaymentDue: String
+        scheduledPaymentDate: Date,
+        totalPaymentDue: totalPaymentDueSchema
     },
     {
         collection: 'invoices',

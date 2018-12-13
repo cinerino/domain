@@ -142,6 +142,11 @@ export function create(params: {
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: params.object.orderId,
             name: factory.paymentMethodType.CreditCard,
+            totalPaymentDue: {
+                typeOf: 'MonetaryAmount',
+                currency: factory.priceCurrency.JPY,
+                value: params.object.amount
+            },
             additionalProperty: params.object.additionalProperty,
             entryTranArgs: entryTranArgs,
             entryTranResult: entryTranResult,
