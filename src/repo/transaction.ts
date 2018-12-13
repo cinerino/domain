@@ -97,6 +97,14 @@ export class MongoRepository {
                 });
             }
         }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray(params.tasksExportationStatuses)) {
+            andConditions.push({
+                tasksExportationStatus: { $in: params.tasksExportationStatuses }
+            });
+        }
+
         switch (params.typeOf) {
             case factory.transactionType.PlaceOrder:
                 // tslint:disable-next-line:no-single-line-block-comment

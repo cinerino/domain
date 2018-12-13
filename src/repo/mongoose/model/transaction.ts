@@ -120,6 +120,19 @@ schema.index(
     { name: 'searchByStatus' }
 );
 schema.index(
+    { agent: 1 },
+    { name: 'searchByAgent' }
+);
+schema.index(
+    { seller: 1 },
+    {
+        name: 'searchBySeller',
+        partialFilterExpression: {
+            seller: { $exists: true }
+        }
+    }
+);
+schema.index(
     { startDate: 1 },
     { name: 'searchByStartDate' }
 );
@@ -132,6 +145,24 @@ schema.index(
         }
     }
 );
+schema.index(
+    { expires: 1 },
+    { name: 'searchByExpires' }
+);
+schema.index(
+    { tasksExportationStatus: 1 },
+    { name: 'searchByTasksExportationStatus' }
+);
+schema.index(
+    { tasksExportedAt: 1 },
+    {
+        name: 'searchByTasksExportedAt',
+        partialFilterExpression: {
+            tasksExportedAt: { $exists: true }
+        }
+    }
+);
+
 // タスクエクスポート時の検索で使用
 schema.index(
     { tasksExportationStatus: 1, status: 1, typeOf: 1 }
