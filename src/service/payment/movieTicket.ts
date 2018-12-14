@@ -11,6 +11,7 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as PaymentMethodRepo } from '../../repo/paymentMethod';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
@@ -20,6 +21,7 @@ export type ICheckMovieTicketOperation<T> = (repos: {
     event: EventRepo;
     organization: OrganizationRepo;
     movieTicket: MovieTicketRepo;
+    paymentMethod: PaymentMethodRepo;
 }) => Promise<T>;
 
 /**
@@ -34,6 +36,7 @@ export function checkMovieTicket(
         event: EventRepo;
         organization: OrganizationRepo;
         movieTicket: MovieTicketRepo;
+        paymentMethod: PaymentMethodRepo;
     }) => {
         const actionAttributes: factory.action.check.paymentMethod.movieTicket.IAttributes = {
             typeOf: factory.actionType.CheckAction,
@@ -71,6 +74,33 @@ export function checkMovieTicket(
                 movieTicketPaymentAccepted: movieTicketPaymentAccepted,
                 screeningEvent: screeningEvent
             });
+
+            // 一度認証されたムビチケをDBに記録する(後で検索しやすいように)
+            await Promise.all(checkResult.movieTickets.map(async (movieTicketResult) => {
+                const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
+                    ...movieTicketResult,
+                    serviceOutput: {
+                        reservationFor: { typeOf: movieTicketResult.serviceOutput.reservationFor.typeOf, id: '' },
+                        reservedTicket: {
+                            ticketedSeat: {
+                                typeOf: factory.chevre.placeType.ScreeningRoom,
+                                seatingType: { typeOf: '' },
+                                seatNumber: '',
+                                seatRow: '',
+                                seatSection: ''
+                            }
+                        }
+                    }
+                };
+                await repos.paymentMethod.paymentMethodModel.findOneAndUpdate(
+                    {
+                        typeOf: factory.paymentMethodType.MovieTicket,
+                        identifier: movieTicket.identifier
+                    },
+                    movieTicket,
+                    { upsert: true }
+                ).exec();
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
