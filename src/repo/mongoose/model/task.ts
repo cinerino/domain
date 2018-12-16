@@ -90,6 +90,15 @@ schema.index(
         }
     }
 );
+schema.index(
+    { remainingNumberOfTries: 1 },
+    { name: 'searchByRemainingNumberOfTries' }
+);
+schema.index(
+    { numberOfTried: 1 },
+    { name: 'searchByNumberOfTried' }
+);
+
 // 基本的にグループごとに、ステータスと実行日時を見て、タスクは実行される
 schema.index(
     { name: 1, status: 1, numberOfTried: 1, runsAt: 1 }
