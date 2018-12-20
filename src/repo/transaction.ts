@@ -70,12 +70,16 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.agent !== undefined) {
-            andConditions.push({
-                'agent.typeOf': {
-                    $exists: true,
-                    $eq: params.agent.typeOf
-                }
-            });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.typeOf !== undefined) {
+                andConditions.push({
+                    'agent.typeOf': {
+                        $exists: true,
+                        $eq: params.agent.typeOf
+                    }
+                });
+            }
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(params.agent.ids)) {
@@ -110,12 +114,16 @@ export class MongoRepository {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (params.seller !== undefined) {
-                    andConditions.push({
-                        'seller.typeOf': {
-                            $exists: true,
-                            $eq: params.seller.typeOf
-                        }
-                    });
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (params.seller.typeOf !== undefined) {
+                        andConditions.push({
+                            'seller.typeOf': {
+                                $exists: true,
+                                $eq: params.seller.typeOf
+                            }
+                        });
+                    }
                     // tslint:disable-next-line:no-single-line-block-comment
                     /* istanbul ignore else */
                     if (Array.isArray(params.seller.ids)) {
