@@ -4,22 +4,30 @@ import organizationModel from './mongoose/model/organization';
 import * as factory from '../factory';
 
 /**
- * 組織リポジトリー
+ * 販売者リポジトリ
  */
 export class MongoRepository {
     public readonly organizationModel: typeof organizationModel;
+
     constructor(connection: Connection) {
         this.organizationModel = connection.model(organizationModel.modelName);
     }
-    public static CREATE_MOVIE_THEATER_MONGO_CONDITIONS(
-        params: factory.organization.ISearchConditions<factory.organizationType.MovieTheater>
-    ) {
+
+    public static CREATE_MONGO_CONDITIONS(params: factory.organization.ISearchConditions<factory.organizationType>) {
         // MongoDB検索条件
         const andConditions: any[] = [
             {
-                typeOf: factory.organizationType.MovieTheater
+                paymentAccepted: { $exists: true }
             }
         ];
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray(params.typeOfs)) {
+            andConditions.push({
+                typeOf: { $in: params.typeOfs }
+            });
+        }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.name !== undefined) {
@@ -87,16 +95,16 @@ export class MongoRepository {
 
         return andConditions;
     }
+
     /**
-     * IDで組織を取得する
+     * IDで検索
      */
     public async findById<T extends factory.organizationType>(params: {
-        typeOf: T;
         id: string;
     }): Promise<factory.organization.IOrganization<T>> {
         const doc = await this.organizationModel.findOne(
             {
-                typeOf: params.typeOf,
+                paymentAccepted: { $exists: true },
                 _id: params.id
             },
             {
@@ -111,6 +119,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     /**
      * 組織を保管する
      */
@@ -125,6 +134,7 @@ export class MongoRepository {
         } else {
             const doc = await this.organizationModel.findOneAndUpdate(
                 {
+                    paymentAccepted: { $exists: true },
                     _id: params.id
                 },
                 params.attributes,
@@ -138,23 +148,23 @@ export class MongoRepository {
 
         return organization;
     }
-    public async countMovieTheaters(
-        params: factory.organization.ISearchConditions<factory.organizationType.MovieTheater>
-    ): Promise<number> {
-        const conditions = MongoRepository.CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params);
+
+    public async count(params: factory.organization.ISearchConditions<factory.organizationType>): Promise<number> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.organizationModel.countDocuments(
             { $and: conditions }
         ).setOptions({ maxTimeMS: 10000 })
             .exec();
     }
+
     /**
-     * 劇場検索
+     * 販売者検索
      */
-    public async searchMovieTheaters(
-        params: factory.organization.ISearchConditions<factory.organizationType.MovieTheater>
-    ): Promise<factory.organization.IOrganization<factory.organizationType.MovieTheater>[]> {
-        const conditions = MongoRepository.CREATE_MOVIE_THEATER_MONGO_CONDITIONS(params);
+    public async search(
+        params: factory.organization.ISearchConditions<factory.organizationType>
+    ): Promise<factory.organization.IOrganization<factory.organizationType>[]> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.organizationModel.find(
             { $and: conditions },
             {
@@ -178,17 +188,17 @@ export class MongoRepository {
 
         return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
     }
+
     /**
      * 組織を削除する
      */
     public async deleteById(params: {
         id: string;
-        typeOf: factory.organizationType;
     }): Promise<void> {
         await this.organizationModel.findOneAndRemove(
             {
-                _id: params.id,
-                typeOf: params.typeOf
+                paymentAccepted: { $exists: true },
+                _id: params.id
             }
         ).exec();
     }

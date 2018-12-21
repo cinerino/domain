@@ -153,7 +153,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const order = params.purpose;
 
             // ショップ情報取得
-            const seller = <factory.organization.movieTheater.IOrganization>await repos.organization.findById({
+            const seller = <factory.organization.IOrganization<factory.organizationType.MovieTheater>>await repos.organization.findById({
                 typeOf: order.seller.typeOf,
                 id: order.seller.id
             });

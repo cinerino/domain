@@ -519,7 +519,7 @@ export function createOrderFromTransaction(params: {
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
-    seller: factory.organization.movieTheater.IOrganization;
+    seller: factory.organization.IOrganization<factory.organizationType.MovieTheater>;
 }): factory.order.IOrder {
     // 座席予約に対する承認アクション取り出す
     const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction[]>
@@ -669,7 +669,7 @@ export async function createPotentialActionsFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
     order: factory.order.IOrder;
-    seller: factory.organization.movieTheater.IOrganization;
+    seller: factory.organization.IOrganization<factory.organizationType.MovieTheater>;
     sendEmailMessage?: boolean;
     emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {

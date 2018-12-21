@@ -16,6 +16,7 @@ import { MongoRepository as PaymentMethodRepo } from './repo/paymentMethod';
 import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTicket';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
+import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
@@ -37,6 +38,7 @@ export namespace paymentMethod {
 }
 export class Person extends PersonRepo { }
 export class ProgramMembership extends ProgramMembershipRepo { }
+export class Seller extends SellerRepo { }
 export class Task extends TaskRepo { }
 export class Transaction extends TransactionRepo { }
 export namespace itemAvailability {
