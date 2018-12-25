@@ -277,10 +277,12 @@ export function cancel(params: {
         }
         // MongoDBでcompleteステータスであるにも関わらず、Chevreでは削除されている、というのが最悪の状況
         // それだけは回避するためにMongoDBを先に変更
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        const action = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>>
+            await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         if (action.result !== undefined) {
             const actionResult = <factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier>>action.result;
             let responseBody = actionResult.responseBody;
+            const event = action.object.event;
 
             if (action.instrument === undefined) {
                 action.instrument = {
@@ -294,8 +296,17 @@ export function cancel(params: {
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
 
-                    // tslint:disable-next-line:no-suspicious-comment
-                    // TODO COAで仮予約取消
+                    let coaInfo: any;
+                    if (Array.isArray(event.additionalProperty)) {
+                        const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
+                        coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                    }
+
+                    await COA.services.reserve.delTmpReserve({
+                        ...coaInfo,
+                        tmpReserveNum: responseBody.tmpReserveNum
+                    });
+
                     break;
 
                 default:
