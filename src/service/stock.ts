@@ -419,7 +419,8 @@ export function createScreeningRoomFromCOA(
             ja: screenFromCOA.screenName,
             en: screenFromCOA.screenNameEng
         },
-        typeOf: factory.chevre.placeType.ScreeningRoom
+        typeOf: factory.chevre.placeType.ScreeningRoom,
+        maximumAttendeeCapacity: sections[0].containsPlace.length
     };
 }
 
@@ -483,7 +484,7 @@ export function createScreeningEventFromCOA(params: {
             validFrom: validFrom,
             validThrough: validThrough,
             eligibleQuantity: {
-                maxValue: 4,
+                maxValue: params.performanceFromCOA.availableNum,
                 unitCode: factory.chevre.unitCode.C62,
                 typeOf: 'QuantitativeValue'
             },
@@ -497,6 +498,8 @@ export function createScreeningEventFromCOA(params: {
         },
         checkInCount: 0,
         attendeeCount: 0,
+        maximumAttendeeCapacity: params.screenRoom.maximumAttendeeCapacity,
+        remainingAttendeeCapacity: params.screenRoom.maximumAttendeeCapacity,
         additionalProperty: [
             {
                 name: 'COA_ENDPOINT',
