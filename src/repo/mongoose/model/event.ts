@@ -53,7 +53,7 @@ const schema = new mongoose.Schema(
         superEvent: superEventSchema,
         videoFormat: String,
         kanaName: String,
-        alternativeHeadline: String,
+        alternativeHeadline: MultilingualStringSchemaType,
         ticketTypeGroup: String,
         maximumAttendeeCapacity: Number,
         remainingAttendeeCapacity: Number

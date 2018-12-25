@@ -26,5 +26,8 @@ export function call(data: factory.task.IData<factory.taskName.ImportScreeningEv
             event: eventRepo,
             eventService: eventService
         });
+        await StockService.importScreeningEventsFromCOA(data)({
+            event: eventRepo
+        });
     };
 }

@@ -3,35 +3,42 @@ import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
 import * as chevre from '../../../../../../chevre';
+import * as COA from '../../../../../../coa';
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
+import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+
+import * as OfferService from '../../../../../offer';
 
 const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     event: EventRepo;
     action: ActionRepo;
+    organization: OrganizationRepo;
     transaction: TransactionRepo;
     eventService: chevre.service.Event;
     reserveService: chevre.service.transaction.Reserve;
 }) => Promise<T>;
 export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
+export type WebAPIIdentifier = factory.action.authorize.offer.seatReservation.WebAPIIdentifier;
 
 /**
  * 座席予約承認
  */
-export function create(params: {
+export function create<T extends WebAPIIdentifier>(params: {
     object: factory.chevre.transaction.reserve.IObjectWithoutDetail;
     agent: { id: string };
     transaction: { id: string };
-}): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction> {
+}): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<T>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         action: ActionRepo;
+        organization: OrganizationRepo;
         transaction: TransactionRepo;
         eventService: chevre.service.Event;
         reserveService: chevre.service.transaction.Reserve;
@@ -45,25 +52,40 @@ export function create(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // 供給情報の有効性を確認
-        const availableTicketOffers = await repos.eventService.searchScreeningEventTicketOffers({ eventId: params.object.event.id });
-        const acceptedOffers: factory.chevre.event.screeningEvent.IAcceptedTicketOffer[] =
-            params.object.acceptedOffer.map((offerWithoutDetail) => {
-                const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
-                if (offer === undefined) {
-                    throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
-                }
+        const seller = transaction.seller;
 
-                return { ...offerWithoutDetail, ...offer };
-            });
+        const event = await repos.event.findById({
+            typeOf: factory.chevre.eventType.ScreeningEvent,
+            id: params.object.event.id
+        });
+
+        let coaInfo: any;
+        if (Array.isArray(event.additionalProperty)) {
+            // const coaEndpointProperty = event.additionalProperty.find((p) => p.name === 'COA_ENDPOINT');
+            const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
+            coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+        }
+
+        let acceptedOffers: factory.chevre.event.screeningEvent.IAcceptedTicketOffer[] = [];
+        const availableTicketOffers = await OfferService.searchScreeningEventTicketOffers({
+            event: params.object.event,
+            seller: seller
+        })(repos);
+        acceptedOffers = params.object.acceptedOffer.map((offerWithoutDetail) => {
+            const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
+            if (offer === undefined) {
+                throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
+            }
+
+            return { ...offerWithoutDetail, ...offer };
+        });
 
         // 承認アクションを開始
-        const seller = transaction.seller;
-        const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes = {
+        const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes<T> = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
-                event: params.object.event,
+                event: event,
                 acceptedOffer: acceptedOffers,
                 notes: params.object.notes
             },
@@ -77,24 +99,54 @@ export function create(params: {
                 image: seller.image
             },
             recipient: transaction.agent,
-            purpose: { typeOf: transaction.typeOf, id: transaction.id }
+            purpose: { typeOf: transaction.typeOf, id: transaction.id },
+            instrument: {
+                typeOf: 'WebAPI',
+                identifier: (coaInfo !== undefined)
+                    ? <T>factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA
+                    : <T>factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+            }
         };
         const action = await repos.action.start(actionAttributes);
 
         // 座席仮予約
-        let reserveTransaction: chevre.factory.transaction.reserve.ITransaction;
+        let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<T>;
         try {
-            debug('starting reserve transaction...');
-            reserveTransaction = await repos.reserveService.start({
-                typeOf: chevre.factory.transactionType.Reserve,
-                agent: {
-                    typeOf: transaction.agent.typeOf,
-                    name: transaction.agent.id
-                },
-                object: params.object,
-                expires: moment(transaction.expires).add(1, 'month').toDate() // 余裕を持って
-            });
-            debug('reserve transaction started', reserveTransaction.id);
+            if (coaInfo !== undefined) {
+                // COAにて仮予約
+                const updTmpReserveSeatArgs = {
+                    theaterCode: coaInfo.theaterCode,
+                    dateJouei: coaInfo.dateJouei,
+                    titleCode: coaInfo.titleCode,
+                    titleBranchNum: coaInfo.titleBranchNum,
+                    timeBegin: coaInfo.timeBegin,
+                    screenCode: coaInfo.screenCode,
+                    listSeat: params.object.acceptedOffer.map((offer) => {
+                        return {
+                            seatSection: offer.ticketedSeat.seatSection,
+                            seatNum: offer.ticketedSeat.seatNumber
+                        };
+                    })
+                };
+                debug('updTmpReserveSeat processing...', updTmpReserveSeatArgs);
+                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<T>>
+                    await COA.services.reserve.updTmpReserveSeat(updTmpReserveSeatArgs);
+                debug('updTmpReserveSeat processed', responseBody);
+            } else {
+                // 基本的にCHEVREにて予約取引開始
+                debug('starting reserve transaction...');
+                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<T>>
+                    await repos.reserveService.start({
+                        typeOf: chevre.factory.transactionType.Reserve,
+                        agent: {
+                            typeOf: transaction.agent.typeOf,
+                            name: transaction.agent.id
+                        },
+                        object: params.object,
+                        expires: moment(transaction.expires).add(1, 'month').toDate() // 余裕を持って
+                    });
+                debug('reserve transaction started', responseBody);
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -119,9 +171,9 @@ export function create(params: {
 
         // 金額計算
         const offerIds = [...new Set(params.object.acceptedOffer.map((o) => o.id))];
-        let amount = reserveTransaction.object.reservations.reduce(
+        let amount = acceptedOffers.reduce(
             (a, b) => {
-                return a + b.price.priceComponent.reduce((a2, b2) => a2 + b2.price, 0);
+                return a + b.priceSpecification.priceComponent.reduce((a2, b2) => a2 + b2.price, 0);
             },
             0
         );
@@ -149,11 +201,11 @@ export function create(params: {
 
         // アクションを完了
         debug('ending authorize action...');
-        const result: factory.action.authorize.offer.seatReservation.IResult = {
+        const result: factory.action.authorize.offer.seatReservation.IResult<T> = {
             price: amount,
-            priceCurrency: reserveTransaction.object.reservations[0].priceCurrency,
+            priceCurrency: acceptedOffers[0].priceCurrency,
             point: 0,
-            responseBody: reserveTransaction
+            responseBody: responseBody
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
@@ -227,9 +279,32 @@ export function cancel(params: {
         // それだけは回避するためにMongoDBを先に変更
         const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         if (action.result !== undefined) {
-            const actionResult = <factory.action.authorize.offer.seatReservation.IResult>action.result;
-            // 座席予約キャンセル
-            await repos.reserveService.cancel({ id: actionResult.responseBody.id });
+            const actionResult = <factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier>>action.result;
+            let responseBody = actionResult.responseBody;
+
+            if (action.instrument === undefined) {
+                action.instrument = {
+                    typeOf: 'WebAPI',
+                    identifier: factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+                };
+            }
+
+            switch (action.instrument.identifier) {
+                case factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
+
+                    // tslint:disable-next-line:no-suspicious-comment
+                    // TODO COAで仮予約取消
+                    break;
+
+                default:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre>>responseBody;
+
+                    // 座席予約キャンセル
+                    await repos.reserveService.cancel({ id: responseBody.id });
+            }
         }
     };
 }

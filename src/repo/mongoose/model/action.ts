@@ -52,6 +52,14 @@ const locationSchema = new mongoose.Schema(
         strict: false
     }
 );
+const instrumentSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
 
 /**
  * アクションスキーマ
@@ -71,7 +79,8 @@ const schema = new mongoose.Schema(
         potentialActions: potentialActionsSchema,
         amount: Number,
         fromLocation: locationSchema,
-        toLocation: locationSchema
+        toLocation: locationSchema,
+        instrument: instrumentSchema
     },
     {
         collection: 'actions',

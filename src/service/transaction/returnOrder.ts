@@ -28,6 +28,8 @@ export type ITaskAndTransactionOperation<T> = (repos: {
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+export type WebAPIIdentifier = factory.action.authorize.offer.seatReservation.WebAPIIdentifier;
+
 /**
  * 注文返品取引開始
  */
@@ -111,7 +113,7 @@ export function start(
         }
 
         // 予約キャンセル取引開始
-        const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction[]>
+        const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             placeOrderTransaction.object.authorizeActions
                 .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
@@ -120,25 +122,48 @@ export function start(
                 if (authorizeSeatReservationAction.result === undefined) {
                     throw new factory.errors.NotFound('Result of seat reservation authorize action');
                 }
-                const reserveTransaction = authorizeSeatReservationAction.result.responseBody;
 
-                return repos.cancelReservationService.start({
-                    typeOf: factory.chevre.transactionType.CancelReservation,
-                    agent: {
-                        typeOf: returnOrderTransaction.agent.typeOf,
-                        id: returnOrderTransaction.agent.id,
-                        name: reserveTransaction.agent.name
-                    },
-                    object: {
-                        transaction: {
-                            typeOf: reserveTransaction.typeOf,
-                            id: reserveTransaction.id
-                        }
-                    },
-                    expires: moment(params.expires).add(1, 'month').toDate() // 余裕を持って
-                });
+                let responseBody = authorizeSeatReservationAction.result.responseBody;
+
+                if (authorizeSeatReservationAction.instrument === undefined) {
+                    authorizeSeatReservationAction.instrument = {
+                        typeOf: 'WebAPI',
+                        identifier: factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+                    };
+                }
+
+                switch (authorizeSeatReservationAction.instrument.identifier) {
+                    case factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA:
+                        // tslint:disable-next-line:max-line-length
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
+
+                        // tslint:disable-next-line:no-suspicious-comment
+                        // TODO COA対応
+                        return <any>{};
+
+                    default:
+                        // tslint:disable-next-line:max-line-length
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre>>responseBody;
+
+                        return repos.cancelReservationService.start({
+                            typeOf: factory.chevre.transactionType.CancelReservation,
+                            agent: {
+                                typeOf: returnOrderTransaction.agent.typeOf,
+                                id: returnOrderTransaction.agent.id,
+                                name: order.customer.name
+                            },
+                            object: {
+                                transaction: {
+                                    typeOf: responseBody.typeOf,
+                                    id: responseBody.id
+                                }
+                            },
+                            expires: moment(params.expires).add(1, 'month').toDate() // 余裕を持って
+                        });
+                }
             })
         );
+
         await repos.transaction.transactionModel.findByIdAndUpdate(
             returnOrderTransaction.id,
             { 'object.pendingCancelReservationTransactions': cancelReservationTransactions }
