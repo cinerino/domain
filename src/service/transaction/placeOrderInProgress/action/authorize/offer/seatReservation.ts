@@ -280,7 +280,7 @@ export function cancel(params: {
         const action = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>>
             await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         if (action.result !== undefined) {
-            const actionResult = <factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier>>action.result;
+            const actionResult = action.result;
             let responseBody = actionResult.responseBody;
             const event = action.object.event;
 
