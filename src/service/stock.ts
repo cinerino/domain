@@ -449,6 +449,10 @@ export function createScreeningEventFromCOA(params: {
     const endDate = moment(`${params.performanceFromCOA.dateJouei} ${params.performanceFromCOA.timeEnd} +09:00`, 'YYYYMMDD HHmm Z').toDate();
     // tslint:disable-next-line:max-line-length
     const startDate = moment(`${params.performanceFromCOA.dateJouei} ${params.performanceFromCOA.timeBegin} +09:00`, 'YYYYMMDD HHmm Z').toDate();
+    const validFrom = moment(`${params.performanceFromCOA.rsvStartDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ').toDate();
+    const validThrough = moment(`${params.performanceFromCOA.rsvEndDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ').add(1, 'day').toDate();
+
+    const kbnService = params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0];
 
     return {
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
@@ -466,7 +470,31 @@ export function createScreeningEventFromCOA(params: {
         endDate: endDate,
         startDate: startDate,
         superEvent: params.screeningEventSeries,
-        offers: <any>{},
+        offers: {
+            id: kbnService.kubunCode,
+            name: {
+                ja: kbnService.kubunName,
+                en: kbnService.kubunNameEng
+            },
+            typeOf: 'Offer',
+            priceCurrency: factory.priceCurrency.JPY,
+            availabilityEnds: validThrough,
+            availabilityStarts: validFrom,
+            validFrom: validFrom,
+            validThrough: validThrough,
+            eligibleQuantity: {
+                maxValue: 4,
+                unitCode: factory.chevre.unitCode.C62,
+                typeOf: 'QuantitativeValue'
+            },
+            itemOffered: {
+                serviceType: {
+                    typeOf: 'ServiceType',
+                    id: kbnService.kubunCode,
+                    name: kbnService.kubunName
+                }
+            }
+        },
         checkInCount: 0,
         attendeeCount: 0,
         additionalProperty: [
