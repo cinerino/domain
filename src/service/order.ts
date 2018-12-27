@@ -282,7 +282,8 @@ export function cancelReservations(params: { orderNumber: string }) {
         try {
             const order = returnOrderTransaction.object.order;
 
-            await Promise.all(order.acceptedOffers.map(async (acceptedOffer) => {
+            // 直列で実行しないとCOAの予約取消に失敗する可能性ありなので要注意
+            for (const acceptedOffer of order.acceptedOffers) {
                 // COAで予約の場合予約取消
                 if (acceptedOffer.itemOffered.bookedThrough !== undefined
                     && acceptedOffer.itemOffered.bookedThrough.identifier === factory.service.webAPI.Identifier.COA) {
@@ -316,7 +317,7 @@ export function cancelReservations(params: { orderNumber: string }) {
                         debug('COA delReserve processed.');
                     }
                 }
-            }));
+            }
 
             // 予約キャンセル確定
             const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
