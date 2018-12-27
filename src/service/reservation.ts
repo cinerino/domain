@@ -1,8 +1,9 @@
 /**
  * 予約サービス
- * 予約の保管先はChevreです
+ * 予約の保管先はChevre | COAです
  */
 import * as chevre from '../chevre';
+import * as COA from '../coa';
 import * as factory from '../factory';
 
 import { handleChevreError } from '../errorHandler';
@@ -19,7 +20,7 @@ export type ISearchScreeningEventReservationsOperation<T> = (repos: {
 /**
  * 予約を確定する
  */
-export function confirmReservation(params: factory.action.interact.confirm.reservation.IAttributes) {
+export function confirmReservation(params: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>) {
     return async (repos: {
         action: ActionRepo;
         reserveService: chevre.service.transaction.Reserve;
@@ -29,8 +30,35 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
         const action = await repos.action.start(confirmActionAttributes);
 
         try {
-            // 座席予約確定
-            await repos.reserveService.confirm(confirmActionAttributes.object);
+            let object = confirmActionAttributes.object;
+            if (params.instrument === undefined) {
+                params.instrument = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+            }
+            switch (params.instrument.identifier) {
+                case factory.service.webAPI.Identifier.COA:
+                    // COA本予約
+                    // 未本予約であれば実行(COA本予約は一度成功すると成功できない)
+                    object = <factory.action.interact.confirm.reservation.IObject4COA>object;
+
+                    // リトライ可能な前提でつくる必要があるので、要注意
+                    // すでに本予約済みかどうか確認
+                    const stateReserveResult = await COA.services.reserve.stateReserve({
+                        theaterCode: object.theaterCode,
+                        reserveNum: object.tmpReserveNum,
+                        telNum: object.telNum
+                    });
+
+                    if (stateReserveResult === null) {
+                        await COA.services.reserve.updReserve(object);
+                    }
+
+                    break;
+
+                default:
+                    // 座席予約確定
+                    object = <factory.action.interact.confirm.reservation.IObject4Chevre>object;
+                    await repos.reserveService.confirm(object);
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {

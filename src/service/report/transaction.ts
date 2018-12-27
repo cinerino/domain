@@ -183,7 +183,7 @@ export function transaction2report(params: {
     if (params.transaction.result !== undefined) {
         // 注文データがまだ存在しなければ取引結果から参照
         const order = (params.order !== undefined) ? params.order : params.transaction.result.order;
-        let event: factory.chevre.event.screeningEvent.IEvent | undefined;
+        let event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> | undefined;
         const items = order.acceptedOffers.map(
             (orderItem) => {
                 const offer = orderItem.itemOffered;

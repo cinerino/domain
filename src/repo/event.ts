@@ -12,7 +12,9 @@ export class MongoRepository {
         this.eventModel = connection.model(eventModel.modelName);
     }
     // tslint:disable-next-line:max-func-body-length
-    public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params: factory.chevre.event.screeningEvent.ISearchConditions) {
+    public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(
+        params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>
+    ) {
         const andConditions: any[] = [
             {
                 typeOf: factory.chevre.eventType.ScreeningEvent
@@ -172,7 +174,7 @@ export class MongoRepository {
     /**
      * イベントを保管する
      */
-    public async save<T extends factory.chevre.eventType>(params: factory.chevre.event.IEvent<T>) {
+    public async save<T extends factory.chevre.eventType>(params: factory.event.IEvent<T>) {
         await this.eventModel.findOneAndUpdate(
             {
                 _id: params.id,
@@ -183,7 +185,7 @@ export class MongoRepository {
         ).exec();
     }
 
-    public async countScreeningEvents(params: factory.chevre.event.screeningEvent.ISearchConditions): Promise<number> {
+    public async countScreeningEvents(params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>): Promise<number> {
         const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
 
         return this.eventModel.countDocuments(
@@ -196,8 +198,8 @@ export class MongoRepository {
      * 上映イベントを検索する
      */
     public async searchScreeningEvents(
-        params: factory.chevre.event.screeningEvent.ISearchConditions
-    ): Promise<factory.chevre.event.screeningEvent.IEvent[]> {
+        params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>
+    ): Promise<factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[]> {
         const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
         const query = this.eventModel.find(
             { $and: conditions },
@@ -223,7 +225,7 @@ export class MongoRepository {
     public async findById<T extends factory.chevre.eventType>(params: {
         typeOf: T;
         id: string;
-    }): Promise<factory.chevre.event.IEvent<T>> {
+    }): Promise<factory.event.IEvent<T>> {
         const doc = await this.eventModel.findOne(
             {
                 typeOf: params.typeOf,

@@ -16,7 +16,6 @@ const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
-export type WebAPIIdentifier = factory.action.authorize.offer.seatReservation.WebAPIIdentifier;
 
 /**
  * 上映イベントをインポートする
@@ -35,7 +34,7 @@ export function importScreeningEvents(params: {
         const limit = 100;
         let page = 0;
         let numData: number = limit;
-        const screeningEvents: factory.chevre.event.screeningEvent.IEvent[] = [];
+        const screeningEvents: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
         while (numData === limit) {
             page += 1;
             const searchScreeningEventsResult = await repos.eventService.searchScreeningEvents({
@@ -91,6 +90,7 @@ export function importScreeningEvents(params: {
 
                 await repos.event.save<factory.chevre.eventType.ScreeningEvent>({
                     ...e,
+                    suppliedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                     superEvent: superEvent,
                     doorTime: (e.doorTime !== undefined) ? moment(e.doorTime).toDate() : undefined,
                     endDate: moment(e.endDate).toDate(),
@@ -206,7 +206,7 @@ export function importScreeningEventsFromCOA(params: {
             }));
 
             // 上映イベントごとに永続化トライ
-            const screeningEvents: factory.chevre.event.screeningEvent.IEvent[] = [];
+            const screeningEvents: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
             schedulesFromCOA.forEach((scheduleFromCOA) => {
                 if (params.xmlEndPoint === undefined) {
                     const screeningEventIdentifier = createIdentifier({
@@ -267,7 +267,7 @@ export function createScreeningEventSeriesFromCOA(params: {
     eizouKubuns: COA.services.master.IKubunNameResult[];
     joueihousikiKubuns: COA.services.master.IKubunNameResult[];
     jimakufukikaeKubuns: COA.services.master.IKubunNameResult[];
-}): factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEventSeries> {
+}): factory.event.IEvent<factory.chevre.eventType.ScreeningEventSeries> {
     const endDate = (moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z').isValid())
         ? moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z').toDate()
         : undefined;
@@ -282,6 +282,7 @@ export function createScreeningEventSeriesFromCOA(params: {
     });
 
     return {
+        suppliedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
         id: identifier,
         identifier: identifier,
         name: {
@@ -432,10 +433,10 @@ export function createScreeningRoomFromCOA(
 export function createScreeningEventFromCOA(params: {
     performanceFromCOA: COA.services.master.IScheduleResult;
     screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
-    screeningEventSeries: factory.chevre.event.screeningEventSeries.IEvent;
+    screeningEventSeries: factory.event.IEvent<factory.chevre.eventType.ScreeningEventSeries>;
     serviceKubuns: COA.services.master.IKubunNameResult[];
     acousticKubuns: COA.services.master.IKubunNameResult[];
-}): factory.chevre.event.screeningEvent.IEvent {
+}): factory.event.IEvent<factory.chevre.eventType.ScreeningEvent> {
     const identifier = createScreeningEventIdentifierFromCOA({
         theaterCode: params.screeningEventSeries.location.branchCode,
         titleCode: params.performanceFromCOA.titleCode,
@@ -456,6 +457,7 @@ export function createScreeningEventFromCOA(params: {
     const kbnService = params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0];
 
     return {
+        suppliedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         typeOf: factory.chevre.eventType.ScreeningEvent,
         id: identifier,
@@ -598,7 +600,7 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
         reserveService: chevre.service.transaction.Reserve;
     }) => {
         // 座席仮予約アクションを取得
-        const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+        const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
             await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
                 .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
             );
@@ -606,27 +608,40 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
+                const requestBody = action.result.requestBody;
                 let responseBody = action.result.responseBody;
 
                 if (action.instrument === undefined) {
                     action.instrument = {
                         typeOf: 'WebAPI',
-                        identifier: factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+                        identifier: factory.service.webAPI.Identifier.Chevre
                     };
                 }
 
                 switch (action.instrument.identifier) {
-                    case factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA:
+                    case factory.service.webAPI.Identifier.COA:
                         // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
 
                         // tslint:disable-next-line:no-suspicious-comment
-                        // TODO COAで仮予約取消
+                        // COAで仮予約取消
+                        const updTmpReserveSeatArgs = requestBody;
+                        const updTmpReserveSeatResult = responseBody;
+
+                        await COA.services.reserve.delTmpReserve({
+                            theaterCode: updTmpReserveSeatArgs.theaterCode,
+                            dateJouei: updTmpReserveSeatArgs.dateJouei,
+                            titleCode: updTmpReserveSeatArgs.titleCode,
+                            titleBranchNum: updTmpReserveSeatArgs.titleBranchNum,
+                            timeBegin: updTmpReserveSeatArgs.timeBegin,
+                            tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum
+                        });
+
                         break;
 
                     default:
                         // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre>>responseBody;
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
                         debug('calling reserve transaction...');

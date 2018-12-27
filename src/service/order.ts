@@ -249,6 +249,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 /**
  * 注文返品アクション
  */
+// tslint:disable-next-line:max-func-body-length
 export function cancelReservations(params: { orderNumber: string }) {
     return async (repos: {
         action: ActionRepo;
@@ -277,6 +278,36 @@ export function cancelReservations(params: { orderNumber: string }) {
         const action = await repos.action.start(returnOrderActionAttributes);
         try {
             const order = returnOrderTransaction.object.order;
+
+            // await Promise.all(order.acceptedOffers.map(async (acceptedOffer) => {
+            // }));
+
+            // const phoneUtil = googleLibphonenumber.PhoneNumberUtil.getInstance();
+            // const phoneNumber = phoneUtil.parse(order.orderInquiryKey.telephone, 'JP');
+            // let telNum = phoneUtil.format(phoneNumber, googleLibphonenumber.PhoneNumberFormat.NATIONAL);
+            // // COAでは数字のみ受け付けるので数字以外を除去
+            // telNum = telNum.replace(/[^\d]/g, '');
+            // const stateReserveResult = await COA.services.reserve.stateReserve({
+            //     theaterCode: order.orderInquiryKey.theaterCode,
+            //     reserveNum: order.orderInquiryKey.confirmationNumber,
+            //     telNum: telNum
+            // });
+            // debug('COA stateReserveResult is', stateReserveResult);
+
+            // if (stateReserveResult !== null) {
+            //     debug('deleting COA reservation...');
+            //     await COA.services.reserve.delReserve({
+            //         theaterCode: order.orderInquiryKey.theaterCode,
+            //         reserveNum: order.orderInquiryKey.confirmationNumber,
+            //         telNum: telNum,
+            //         dateJouei: stateReserveResult.dateJouei,
+            //         titleCode: stateReserveResult.titleCode,
+            //         titleBranchNum: stateReserveResult.titleBranchNum,
+            //         timeBegin: stateReserveResult.timeBegin,
+            //         listSeat: stateReserveResult.listTicket
+            //     });
+            //     debug('COA delReserve processed.');
+            // }
 
             // 予約キャンセル確定
             const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;

@@ -28,7 +28,7 @@ export type ITaskAndTransactionOperation<T> = (repos: {
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
-export type WebAPIIdentifier = factory.action.authorize.offer.seatReservation.WebAPIIdentifier;
+export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 /**
  * 注文返品取引開始
@@ -128,14 +128,14 @@ export function start(
                 if (authorizeSeatReservationAction.instrument === undefined) {
                     authorizeSeatReservationAction.instrument = {
                         typeOf: 'WebAPI',
-                        identifier: factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+                        identifier: factory.service.webAPI.Identifier.Chevre
                     };
                 }
 
                 switch (authorizeSeatReservationAction.instrument.identifier) {
-                    case factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA:
+                    case factory.service.webAPI.Identifier.COA:
                         // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
 
                         // tslint:disable-next-line:no-suspicious-comment
                         // TODO COA対応
@@ -143,7 +143,7 @@ export function start(
 
                     default:
                         // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre>>responseBody;
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                         return repos.cancelReservationService.start({
                             typeOf: factory.chevre.transactionType.CancelReservation,

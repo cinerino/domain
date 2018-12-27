@@ -32,7 +32,7 @@ export class MvtkRepository {
     public async checkByIdentifier(params: {
         movieTickets: IMovieTicket[];
         movieTicketPaymentAccepted: factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>;
-        screeningEvent: factory.chevre.event.screeningEvent.IEvent;
+        screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     }): Promise<ICheckResult> {
         const movieTickets: factory.action.check.paymentMethod.movieTicket.IMovieTicketResult[] = [];
         let purchaseNumberAuthIn: factory.action.check.paymentMethod.movieTicket.IPurchaseNumberAuthIn;

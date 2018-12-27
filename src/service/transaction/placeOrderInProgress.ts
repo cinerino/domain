@@ -28,7 +28,6 @@ export type IStartOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
-export type WebAPIIdentifier = factory.action.authorize.offer.seatReservation.WebAPIIdentifier;
 
 /**
  * 取引開始
@@ -385,22 +384,23 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         throw new factory.errors.Argument('transactionId', 'Incentive amount must be 1');
     }
 
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+    const seatReservationAuthorizeActions =
+        <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
     if (seatReservationAuthorizeActions.length > 1) {
         throw new factory.errors.Argument('transactionId', 'The number of seat reservation authorize actions must be one');
     }
     priceBySeller += seatReservationAuthorizeActions.reduce(
-        (a, b) => a + (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier>>b.result).price, 0
+        (a, b) => a + (<factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>>b.result).price, 0
     );
 
     // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
     let requiredPoint = 0;
     const seatReservationAuthorizeAction = seatReservationAuthorizeActions.shift();
     if (seatReservationAuthorizeAction !== undefined) {
-        requiredPoint
-            = (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier>>seatReservationAuthorizeAction.result).point;
+        requiredPoint = (<factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>>
+            seatReservationAuthorizeAction.result).point;
         // 必要ポイントがある場合、ポイント承認金額と比較
         if (requiredPoint > 0) {
             const authorizedPointAmount =
@@ -438,9 +438,10 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
 
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
+        authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
 
     // ムビチケオファーを受け付けた座席予約を検索する
     const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
@@ -524,7 +525,7 @@ export function createOrderFromTransaction(params: {
     seller: factory.organization.IOrganization<factory.organizationType.MovieTheater>;
 }): factory.order.IOrder {
     // 座席予約に対する承認アクション取り出す
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
@@ -589,23 +590,21 @@ export function createOrderFromTransaction(params: {
         if (seatReservationAuthorizeAction.instrument === undefined) {
             seatReservationAuthorizeAction.instrument = {
                 typeOf: 'WebAPI',
-                identifier: factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+                identifier: factory.service.webAPI.Identifier.Chevre
             };
         }
 
-        let screeningEvent = seatReservationAuthorizeAction.object.event;
+        let screeningEvent: factory.chevre.event.screeningEvent.IEvent = seatReservationAuthorizeAction.object.event;
 
         switch (seatReservationAuthorizeAction.instrument.identifier) {
-            case factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA:
+            case factory.service.webAPI.Identifier.COA:
                 // tslint:disable-next-line:max-line-length
-                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
+                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
 
                 const updTmpReserveSeatResult = responseBody;
 
-                // 確認番号はCOAの仮予約番号と同じ
-                // const confirmationNumber = updTmpReserveSeatResult.tmpReserveNum;
-
                 // 座席仮予約からオファー情報を生成する
+                // tslint:disable-next-line:max-func-body-length
                 acceptedOffers.push(...updTmpReserveSeatResult.listTmpReserve.map((tmpReserve, index) => {
                     const requestedOffer = <factory.chevre.event.screeningEvent.IAcceptedTicketOffer>
                         seatReservationAuthorizeAction.object.acceptedOffer.find((offer) => {
@@ -613,7 +612,7 @@ export function createOrderFromTransaction(params: {
                                 && offer.ticketedSeat.seatSection === tmpReserve.seatSection);
                         });
                     if (requestedOffer === undefined) {
-                        throw new factory.errors.Argument('offers', '要求された供給情報と仮予約結果が一致しません。');
+                        throw new factory.errors.Argument('offers', '要求された供給情報と仮予約結果が一致しません');
                     }
 
                     let coaInfo: any;
@@ -643,8 +642,8 @@ export function createOrderFromTransaction(params: {
                         throw new factory.errors.Argument('Accepted Offer', 'Unit price specification not found');
                     }
 
-                    const eventReservation: factory.chevre.reservation.event.IReservation<factory.chevre.event.screeningEvent.IEvent> = {
-                        id: ticketToken,
+                    const eventReservation: factory.order.IReservation = {
+                        id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
                         checkedIn: false,
                         attended: false,
                         typeOf: factory.chevre.reservationType.EventReservation,
@@ -654,7 +653,7 @@ export function createOrderFromTransaction(params: {
                         price: requestedOffer.priceSpecification,
                         priceCurrency: factory.priceCurrency.JPY,
                         reservationFor: screeningEvent,
-                        reservationNumber: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
+                        reservationNumber: `${updTmpReserveSeatResult.tmpReserveNum}`,
                         reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed,
                         reservedTicket: {
                             typeOf: 'Ticket',
@@ -665,9 +664,9 @@ export function createOrderFromTransaction(params: {
                                 description: requestedOffer.description,
                                 availability: factory.chevre.itemAvailability.InStock,
                                 priceSpecification: unitPriceSpec,
-                                priceCurrency: requestedOffer.priceCurrency
+                                priceCurrency: requestedOffer.priceCurrency,
+                                additionalProperty: requestedOffer.additionalProperty
                             },
-                            // coaTicketInfo: requestedOffer.ticketInfo,
                             dateIssued: params.orderDate,
                             issuedBy: {
                                 typeOf: screeningEvent.location.typeOf,
@@ -692,7 +691,8 @@ export function createOrderFromTransaction(params: {
                         underName: {
                             typeOf: factory.personType.Person,
                             name: customer.name
-                        }
+                        },
+                        bookedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
                     };
 
                     return {
@@ -711,7 +711,7 @@ export function createOrderFromTransaction(params: {
 
             default:
                 // tslint:disable-next-line:max-line-length
-                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre>>responseBody;
+                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                 if (screeningEvent.name === undefined) {
                     screeningEvent = responseBody.object.reservations[0].reservationFor;
@@ -719,9 +719,14 @@ export function createOrderFromTransaction(params: {
 
                 // 座席仮予約からオファー情報を生成する
                 acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
+                    const itemOffered: factory.order.IReservation = {
+                        ...tmpReserve,
+                        bookedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
+                    };
+
                     return {
                         typeOf: <factory.offer.OfferType>'Offer',
-                        itemOffered: tmpReserve,
+                        itemOffered: itemOffered,
                         priceSpecification: tmpReserve.price,
                         priceCurrency: factory.priceCurrency.JPY,
                         seller: {
@@ -808,33 +813,87 @@ export async function createPotentialActionsFromTransaction(params: {
     emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // 予約確定アクション
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-    const confirmReservationActions: factory.action.interact.confirm.reservation.IAttributes[] = [];
+    const confirmReservationActions: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>[] = [];
+    // tslint:disable-next-line:max-func-body-length
     seatReservationAuthorizeActions.forEach((a) => {
         const actionResult = a.result;
 
         if (a.instrument === undefined) {
             a.instrument = {
                 typeOf: 'WebAPI',
-                identifier: factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre
+                identifier: factory.service.webAPI.Identifier.Chevre
             };
         }
 
         if (actionResult !== undefined) {
+            const requestBody = actionResult.requestBody;
             let responseBody = actionResult.responseBody;
 
             switch (a.instrument.identifier) {
-                case factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA:
+                case factory.service.webAPI.Identifier.COA:
                     // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.COA>>responseBody;
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+
+                    const updTmpReserveSeatArgs = requestBody;
+                    const updTmpReserveSeatResult = responseBody;
+
+                    // 電話番号のフォーマットを日本人にリーダブルに調整(COAではこのフォーマットで扱うので)
+                    const phoneUtil = PhoneNumberUtil.getInstance();
+                    const phoneNumber = phoneUtil.parse(params.order.customer.telephone, 'JP');
+                    let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
+
+                    // COAでは数字のみ受け付けるので数字以外を除去
+                    telNum = telNum.replace(/[^\d]/g, '');
+
+                    const updReserveArgs: factory.action.interact.confirm.reservation.IObject4COA = {
+                        theaterCode: updTmpReserveSeatArgs.theaterCode,
+                        dateJouei: updTmpReserveSeatArgs.dateJouei,
+                        titleCode: updTmpReserveSeatArgs.titleCode,
+                        titleBranchNum: updTmpReserveSeatArgs.titleBranchNum,
+                        timeBegin: updTmpReserveSeatArgs.timeBegin,
+                        tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum,
+                        // tslint:disable-next-line:no-irregular-whitespace
+                        reserveName: `${params.order.customer.familyName}　${params.order.customer.givenName}`,
+                        // tslint:disable-next-line:no-irregular-whitespace
+                        reserveNameJkana: `${params.order.customer.familyName}　${params.order.customer.givenName}`,
+                        telNum: telNum,
+                        mailAddr: params.order.customer.email,
+                        reserveAmount: params.order.price, // デフォルトのpriceCurrencyがJPYなのでこれでよし
+                        listTicket: params.order.acceptedOffers.map(
+                            // tslint:disable-next-line:max-line-length
+                            (offer) => {
+                                const additionalProperty = offer.itemOffered.reservedTicket.ticketType.additionalProperty;
+                                if (additionalProperty === undefined) {
+                                    throw new factory.errors.NotFound('ticketType.additionalProperty');
+                                }
+
+                                const coaInfoProperty = additionalProperty.find((p) => p.name === 'coaInfo');
+                                if (coaInfoProperty === undefined) {
+                                    throw new factory.errors.NotFound('coaInfo');
+                                }
+
+                                return coaInfoProperty.value;
+                            }
+                        )
+                    };
+
+                    confirmReservationActions.push({
+                        typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
+                        object: updReserveArgs,
+                        agent: params.transaction.agent,
+                        purpose: params.order,
+                        instrument: a.instrument
+                    });
+
                     break;
 
                 default:
                     // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.action.authorize.offer.seatReservation.WebAPIIdentifier.Chevre>>responseBody;
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                     confirmReservationActions.push({
                         typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
@@ -868,7 +927,8 @@ export async function createPotentialActionsFromTransaction(params: {
                             }
                         },
                         agent: params.transaction.agent,
-                        purpose: params.order
+                        purpose: params.order,
+                        instrument: a.instrument
                     });
             }
         }

@@ -31,8 +31,17 @@ const superEventSchema = new mongoose.Schema(
     }
 );
 
+const suppliedThroughSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 /**
- * イベント(公演など)スキーマ
+ * イベントスキーマ
  */
 const schema = new mongoose.Schema(
     {
@@ -56,7 +65,8 @@ const schema = new mongoose.Schema(
         alternativeHeadline: MultilingualStringSchemaType,
         ticketTypeGroup: String,
         maximumAttendeeCapacity: Number,
-        remainingAttendeeCapacity: Number
+        remainingAttendeeCapacity: Number,
+        suppliedThrough: suppliedThroughSchema
     },
     {
         collection: 'events',
@@ -217,6 +227,24 @@ schema.index(
         name: 'searchByOffersId',
         partialFilterExpression: {
             'offers.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'suppliedThrough.typeOf': 1 },
+    {
+        name: 'searchBySuppliedThroughTypeOf',
+        partialFilterExpression: {
+            'suppliedThrough.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'suppliedThrough.identifier': 1 },
+    {
+        name: 'searchBySuppliedThroughIdentifier',
+        partialFilterExpression: {
+            'suppliedThrough.identifier': { $exists: true }
         }
     }
 );
