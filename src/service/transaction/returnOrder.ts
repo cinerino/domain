@@ -112,61 +112,61 @@ export function start(
             throw error;
         }
 
-        // 予約キャンセル取引開始
+        // Chevre予約の場合、予約キャンセル取引開始
+        const pendingCancelReservationTransactions: factory.chevre.transaction.cancelReservation.ITransaction[] = [];
         const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             placeOrderTransaction.object.authorizeActions
                 .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-        const cancelReservationTransactions = await Promise.all(
-            authorizeSeatReservationActions.map(async (authorizeSeatReservationAction) => {
-                if (authorizeSeatReservationAction.result === undefined) {
-                    throw new factory.errors.NotFound('Result of seat reservation authorize action');
-                }
 
-                let responseBody = authorizeSeatReservationAction.result.responseBody;
+        for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
+            if (authorizeSeatReservationAction.result === undefined) {
+                throw new factory.errors.NotFound('Result of seat reservation authorize action');
+            }
 
-                if (authorizeSeatReservationAction.instrument === undefined) {
-                    authorizeSeatReservationAction.instrument = {
-                        typeOf: 'WebAPI',
-                        identifier: factory.service.webAPI.Identifier.Chevre
-                    };
-                }
+            let responseBody = authorizeSeatReservationAction.result.responseBody;
 
-                switch (authorizeSeatReservationAction.instrument.identifier) {
-                    case factory.service.webAPI.Identifier.COA:
-                        // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+            if (authorizeSeatReservationAction.instrument === undefined) {
+                authorizeSeatReservationAction.instrument = {
+                    typeOf: 'WebAPI',
+                    identifier: factory.service.webAPI.Identifier.Chevre
+                };
+            }
 
-                        // tslint:disable-next-line:no-suspicious-comment
-                        // TODO COA対応
-                        return <any>{};
+            switch (authorizeSeatReservationAction.instrument.identifier) {
+                case factory.service.webAPI.Identifier.COA:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
 
-                    default:
-                        // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+                    // no op
 
-                        return repos.cancelReservationService.start({
-                            typeOf: factory.chevre.transactionType.CancelReservation,
-                            agent: {
-                                typeOf: returnOrderTransaction.agent.typeOf,
-                                id: returnOrderTransaction.agent.id,
-                                name: order.customer.name
-                            },
-                            object: {
-                                transaction: {
-                                    typeOf: responseBody.typeOf,
-                                    id: responseBody.id
-                                }
-                            },
-                            expires: moment(params.expires).add(1, 'month').toDate() // 余裕を持って
-                        });
-                }
-            })
-        );
+                    break;
+
+                default:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+
+                    pendingCancelReservationTransactions.push(await repos.cancelReservationService.start({
+                        typeOf: factory.chevre.transactionType.CancelReservation,
+                        agent: {
+                            typeOf: returnOrderTransaction.agent.typeOf,
+                            id: returnOrderTransaction.agent.id,
+                            name: order.customer.name
+                        },
+                        object: {
+                            transaction: {
+                                typeOf: responseBody.typeOf,
+                                id: responseBody.id
+                            }
+                        },
+                        expires: moment(params.expires).add(1, 'month').toDate() // 余裕を持って
+                    }));
+            }
+        }
 
         await repos.transaction.transactionModel.findByIdAndUpdate(
             returnOrderTransaction.id,
-            { 'object.pendingCancelReservationTransactions': cancelReservationTransactions }
+            { 'object.pendingCancelReservationTransactions': pendingCancelReservationTransactions }
         ).exec();
 
         return returnOrderTransaction;

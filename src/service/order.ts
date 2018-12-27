@@ -2,6 +2,7 @@
  * 注文サービス
  */
 import * as createDebug from 'debug';
+import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
 import * as chevre from '../chevre';
 import * as factory from '../factory';
@@ -10,6 +11,8 @@ import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
+
+import * as COA from '../coa';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -279,35 +282,41 @@ export function cancelReservations(params: { orderNumber: string }) {
         try {
             const order = returnOrderTransaction.object.order;
 
-            // await Promise.all(order.acceptedOffers.map(async (acceptedOffer) => {
-            // }));
+            await Promise.all(order.acceptedOffers.map(async (acceptedOffer) => {
+                // COAで予約の場合予約取消
+                if (acceptedOffer.itemOffered.bookedThrough !== undefined
+                    && acceptedOffer.itemOffered.bookedThrough.identifier === factory.service.webAPI.Identifier.COA) {
+                    const reservation = acceptedOffer.itemOffered;
+                    const superEventLocationBranchCode = reservation.reservationFor.superEvent.location.branchCode;
 
-            // const phoneUtil = googleLibphonenumber.PhoneNumberUtil.getInstance();
-            // const phoneNumber = phoneUtil.parse(order.orderInquiryKey.telephone, 'JP');
-            // let telNum = phoneUtil.format(phoneNumber, googleLibphonenumber.PhoneNumberFormat.NATIONAL);
-            // // COAでは数字のみ受け付けるので数字以外を除去
-            // telNum = telNum.replace(/[^\d]/g, '');
-            // const stateReserveResult = await COA.services.reserve.stateReserve({
-            //     theaterCode: order.orderInquiryKey.theaterCode,
-            //     reserveNum: order.orderInquiryKey.confirmationNumber,
-            //     telNum: telNum
-            // });
-            // debug('COA stateReserveResult is', stateReserveResult);
+                    const phoneUtil = PhoneNumberUtil.getInstance();
+                    const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
+                    let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
+                    // COAでは数字のみ受け付けるので数字以外を除去
+                    telNum = telNum.replace(/[^\d]/g, '');
+                    const stateReserveResult = await COA.services.reserve.stateReserve({
+                        theaterCode: superEventLocationBranchCode,
+                        reserveNum: Number(reservation.reservationNumber),
+                        telNum: telNum
+                    });
+                    debug('COA stateReserveResult is', stateReserveResult);
 
-            // if (stateReserveResult !== null) {
-            //     debug('deleting COA reservation...');
-            //     await COA.services.reserve.delReserve({
-            //         theaterCode: order.orderInquiryKey.theaterCode,
-            //         reserveNum: order.orderInquiryKey.confirmationNumber,
-            //         telNum: telNum,
-            //         dateJouei: stateReserveResult.dateJouei,
-            //         titleCode: stateReserveResult.titleCode,
-            //         titleBranchNum: stateReserveResult.titleBranchNum,
-            //         timeBegin: stateReserveResult.timeBegin,
-            //         listSeat: stateReserveResult.listTicket
-            //     });
-            //     debug('COA delReserve processed.');
-            // }
+                    if (stateReserveResult !== null) {
+                        debug('deleting COA reservation...');
+                        await COA.services.reserve.delReserve({
+                            theaterCode: superEventLocationBranchCode,
+                            reserveNum: Number(reservation.reservationNumber),
+                            telNum: telNum,
+                            dateJouei: stateReserveResult.dateJouei,
+                            titleCode: stateReserveResult.titleCode,
+                            titleBranchNum: stateReserveResult.titleBranchNum,
+                            timeBegin: stateReserveResult.timeBegin,
+                            listSeat: stateReserveResult.listTicket
+                        });
+                        debug('COA delReserve processed.');
+                    }
+                }
+            }));
 
             // 予約キャンセル確定
             const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;

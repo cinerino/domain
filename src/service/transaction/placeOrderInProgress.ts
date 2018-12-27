@@ -721,7 +721,7 @@ export function createOrderFromTransaction(params: {
                 acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
                     const itemOffered: factory.order.IReservation = {
                         ...tmpReserve,
-                        bookedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
+                        bookedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre }
                     };
 
                     return {
