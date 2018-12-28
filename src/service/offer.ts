@@ -36,11 +36,11 @@ export function searchScreeningEventOffers(params: {
             id: params.event.id
         });
 
-        if (event.suppliedThrough === undefined) {
-            event.suppliedThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+        if (event.offers.offeredThrough === undefined) {
+            event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
 
-        switch (event.suppliedThrough.identifier) {
+        switch (event.offers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
                 let coaInfo: any;
                 if (Array.isArray(event.additionalProperty)) {
@@ -112,11 +112,11 @@ export function searchScreeningEventTicketOffers(params: {
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[];
 
-        if (event.suppliedThrough === undefined) {
-            event.suppliedThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+        if (event.offers.offeredThrough === undefined) {
+            event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
 
-        switch (event.suppliedThrough.identifier) {
+        switch (event.offers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
                 let coaInfo: any;
                 if (Array.isArray(event.additionalProperty)) {

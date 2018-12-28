@@ -58,9 +58,9 @@ export function create(params: {
             id: params.object.event.id
         });
 
-        let suppliedThrough = event.suppliedThrough;
-        if (suppliedThrough === undefined) {
-            suppliedThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+        let offeredThrough = event.offers.offeredThrough;
+        if (offeredThrough === undefined) {
+            offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
 
         const acceptedOffers = await validateAcceptedOffers({
@@ -70,7 +70,7 @@ export function create(params: {
         })(repos);
 
         // 承認アクションを開始
-        const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes<typeof suppliedThrough.identifier> = {
+        const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes<typeof offeredThrough.identifier> = {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
@@ -89,15 +89,15 @@ export function create(params: {
             },
             recipient: transaction.agent,
             purpose: { typeOf: transaction.typeOf, id: transaction.id },
-            instrument: event.suppliedThrough
+            instrument: event.offers.offeredThrough
         };
         const action = await repos.action.start(actionAttributes);
 
         // 座席仮予約
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody;
-        let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof suppliedThrough.identifier>;
+        let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         try {
-            switch (suppliedThrough.identifier) {
+            switch (offeredThrough.identifier) {
                 case factory.service.webAPI.Identifier.COA:
                     let coaInfo: any;
                     if (Array.isArray(event.additionalProperty)) {
@@ -122,7 +122,7 @@ export function create(params: {
                         })
                     };
                     debug('updTmpReserveSeat processing...', requestBody);
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof suppliedThrough.identifier>>
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
                         await COA.services.reserve.updTmpReserveSeat(requestBody);
                     debug('updTmpReserveSeat processed', responseBody);
 
@@ -131,7 +131,7 @@ export function create(params: {
                 default:
                     // 基本的にCHEVREにて予約取引開始
                     debug('starting reserve transaction...');
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof suppliedThrough.identifier>>
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
                         await repos.reserveService.start({
                             typeOf: chevre.factory.transactionType.Reserve,
                             agent: {
@@ -197,7 +197,7 @@ export function create(params: {
 
         // アクションを完了
         debug('ending authorize action...');
-        const result: factory.action.authorize.offer.seatReservation.IResult<typeof suppliedThrough.identifier> = {
+        const result: factory.action.authorize.offer.seatReservation.IResult<typeof offeredThrough.identifier> = {
             price: amount,
             priceCurrency: acceptedOffers[0].priceCurrency,
             point: 0,
@@ -243,12 +243,12 @@ function validateAcceptedOffers(params: {
                 ...offer
             };
 
-            let suppliedThrough = params.event.suppliedThrough;
-            if (suppliedThrough === undefined) {
-                suppliedThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+            let offeredThrough = params.event.offers.offeredThrough;
+            if (offeredThrough === undefined) {
+                offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
             }
 
-            switch (suppliedThrough.identifier) {
+            switch (offeredThrough.identifier) {
                 case factory.service.webAPI.Identifier.COA:
                     // 制限単位がn人単位(例えば夫婦割り)の場合、同一券種の数を確認
                     // '001'の値は、区分マスター取得APIにて、"kubunCode": "011"を指定すると取得できる
@@ -341,12 +341,12 @@ export function cancel(params: {
             let responseBody = actionResult.responseBody;
             const event = action.object.event;
 
-            if (event.suppliedThrough === undefined) {
-                event.suppliedThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+            if (event.offers.offeredThrough === undefined) {
+                event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
             }
 
             if (action.instrument === undefined) {
-                action.instrument = event.suppliedThrough;
+                action.instrument = event.offers.offeredThrough;
             }
 
             switch (action.instrument.identifier) {

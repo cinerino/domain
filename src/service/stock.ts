@@ -20,16 +20,18 @@ export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction
 /**
  * 上映イベントをインポートする
  */
-export function importScreeningEvents(params: {
-    locationBranchCode: string;
-    importFrom: Date;
-    importThrough: Date;
-}) {
+export function importScreeningEvents(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         eventService: chevre.service.Event;
     }) => {
+        if (params.offeredThrough !== undefined && params.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+            await importScreeningEventsFromCOA(params)(repos);
+
+            return;
+        }
+
         // 上映スケジュール取得
         const limit = 100;
         let page = 0;
@@ -80,17 +82,17 @@ export function importScreeningEvents(params: {
                     endDate: (e.superEvent.endDate !== undefined) ? moment(e.superEvent.endDate).toDate() : undefined
                 };
 
-                const offers: chevre.factory.event.screeningEvent.IOffer = {
+                const offers: factory.event.IOffer<factory.chevre.eventType.ScreeningEvent> = {
                     ...e.offers,
                     availabilityEnds: moment(e.offers.availabilityEnds).toDate(),
                     availabilityStarts: moment(e.offers.availabilityStarts).toDate(),
                     validFrom: moment(e.offers.validFrom).toDate(),
-                    validThrough: moment(e.offers.validThrough).toDate()
+                    validThrough: moment(e.offers.validThrough).toDate(),
+                    offeredThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre }
                 };
 
                 await repos.event.save<factory.chevre.eventType.ScreeningEvent>({
                     ...e,
-                    suppliedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                     superEvent: superEvent,
                     doorTime: (e.doorTime !== undefined) ? moment(e.doorTime).toDate() : undefined,
                     endDate: moment(e.endDate).toDate(),
@@ -282,7 +284,6 @@ export function createScreeningEventSeriesFromCOA(params: {
     });
 
     return {
-        suppliedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
         id: identifier,
         identifier: identifier,
         name: {
@@ -457,7 +458,6 @@ export function createScreeningEventFromCOA(params: {
     const kbnService = params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0];
 
     return {
-        suppliedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         typeOf: factory.chevre.eventType.ScreeningEvent,
         id: identifier,
@@ -496,7 +496,8 @@ export function createScreeningEventFromCOA(params: {
                     id: kbnService.kubunCode,
                     name: kbnService.kubunName
                 }
-            }
+            },
+            offeredThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
         },
         checkInCount: 0,
         attendeeCount: 0,

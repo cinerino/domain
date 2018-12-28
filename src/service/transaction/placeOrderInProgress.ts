@@ -691,13 +691,13 @@ export function createOrderFromTransaction(params: {
                         underName: {
                             typeOf: factory.personType.Person,
                             name: customer.name
-                        },
-                        bookedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
+                        }
                     };
 
                     return {
                         typeOf: <factory.offer.OfferType>'Offer',
                         itemOffered: eventReservation,
+                        offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
                         priceSpecification: eventReservation.price,
                         priceCurrency: factory.priceCurrency.JPY,
                         seller: {
@@ -719,14 +719,12 @@ export function createOrderFromTransaction(params: {
 
                 // 座席仮予約からオファー情報を生成する
                 acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
-                    const itemOffered: factory.order.IReservation = {
-                        ...tmpReserve,
-                        bookedThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre }
-                    };
+                    const itemOffered: factory.order.IReservation = tmpReserve;
 
                     return {
                         typeOf: <factory.offer.OfferType>'Offer',
                         itemOffered: itemOffered,
+                        offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                         priceSpecification: tmpReserve.price,
                         priceCurrency: factory.priceCurrency.JPY,
                         seller: {

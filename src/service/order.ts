@@ -285,8 +285,8 @@ export function cancelReservations(params: { orderNumber: string }) {
             // 直列で実行しないとCOAの予約取消に失敗する可能性ありなので要注意
             for (const acceptedOffer of order.acceptedOffers) {
                 // COAで予約の場合予約取消
-                if (acceptedOffer.itemOffered.bookedThrough !== undefined
-                    && acceptedOffer.itemOffered.bookedThrough.identifier === factory.service.webAPI.Identifier.COA) {
+                if (acceptedOffer.offeredThrough !== undefined
+                    && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
                     const reservation = acceptedOffer.itemOffered;
                     const superEventLocationBranchCode = reservation.reservationFor.superEvent.location.branchCode;
 
