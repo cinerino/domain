@@ -1,7 +1,6 @@
 /**
  * タスクサービス
  */
-import * as mocoinapi from '@mocoin/api-nodejs-client';
 import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
@@ -34,10 +33,6 @@ export interface IConnectionSettings {
      * PecorinoAPI認証クライアント
      */
     pecorinoAuthClient?: pecorinoapi.auth.ClientCredentials;
-    /**
-     * MocoinAPI認証クライアント
-     */
-    mocoinAuthClient?: mocoinapi.auth.ClientCredentials;
     /**
      * Cognitoサービスプロバイダー
      */

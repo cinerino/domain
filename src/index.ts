@@ -2,7 +2,6 @@
 /**
  * domain index
  */
-import * as mocoinapi from '@mocoin/api-nodejs-client';
 import * as GMO from '@motionpicture/gmo-service';
 import * as mvtkreserveapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
@@ -51,7 +50,6 @@ export import GMO = GMO;
  * Pecorinoサービスとの連携は全てこのクライアントを通じて行います。
  */
 export import pecorinoapi = pecorinoapi;
-export import mocoin = mocoinapi;
 export import chevre = chevre;
 export import mvtkreserveapi = mvtkreserveapi;
 /**

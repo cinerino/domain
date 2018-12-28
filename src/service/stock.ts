@@ -283,6 +283,16 @@ export function createScreeningEventSeriesFromCOA(params: {
         titleBranchNum: params.filmFromCOA.titleBranchNum
     });
 
+    const coaInfo: factory.event.screeningEventSeries.ICOAInfo = {
+        titleBranchNum: params.filmFromCOA.titleBranchNum,
+        kbnEirin: params.eirinKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnEirin)[0],
+        kbnEizou: params.eizouKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnEizou)[0],
+        kbnJoueihousiki: params.joueihousikiKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnJoueihousiki)[0],
+        kbnJimakufukikae: params.jimakufukikaeKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnJimakufukikae)[0],
+        flgMvtkUse: params.filmFromCOA.flgMvtkUse,
+        dateMvtkBegin: params.filmFromCOA.dateMvtkBegin
+    };
+
     return {
         id: identifier,
         identifier: identifier,
@@ -328,15 +338,7 @@ export function createScreeningEventSeriesFromCOA(params: {
             },
             {
                 name: 'coaInfo',
-                value: <any>{
-                    titleBranchNum: params.filmFromCOA.titleBranchNum,
-                    kbnJoueihousiki: params.joueihousikiKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnJoueihousiki)[0],
-                    kbnJimakufukikae: params.jimakufukikaeKubuns.filter(
-                        (kubun) => kubun.kubunCode === params.filmFromCOA.kbnJimakufukikae
-                    )[0],
-                    flgMvtkUse: params.filmFromCOA.flgMvtkUse,
-                    dateMvtkBegin: params.filmFromCOA.dateMvtkBegin
-                }
+                value: coaInfo
             }
         ],
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
@@ -456,6 +458,22 @@ export function createScreeningEventFromCOA(params: {
     const validThrough = moment(`${params.performanceFromCOA.rsvEndDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ').add(1, 'day').toDate();
 
     const kbnService = params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0];
+    const coaInfo: factory.event.screeningEvent.ICOAInfo = {
+        theaterCode: params.screeningEventSeries.location.branchCode,
+        dateJouei: params.performanceFromCOA.dateJouei,
+        titleCode: params.performanceFromCOA.titleCode,
+        titleBranchNum: params.performanceFromCOA.titleBranchNum,
+        timeBegin: params.performanceFromCOA.timeBegin,
+        screenCode: params.performanceFromCOA.screenCode,
+        trailerTime: params.performanceFromCOA.trailerTime,
+        kbnService: params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0],
+        kbnAcoustic: params.acousticKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnAcoustic)[0],
+        nameServiceDay: params.performanceFromCOA.nameServiceDay,
+        availableNum: params.performanceFromCOA.availableNum,
+        rsvStartDate: params.performanceFromCOA.rsvStartDate,
+        rsvEndDate: params.performanceFromCOA.rsvEndDate,
+        flgEarlyBooking: params.performanceFromCOA.flgEarlyBooking
+    };
 
     return {
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
@@ -510,22 +528,7 @@ export function createScreeningEventFromCOA(params: {
             },
             {
                 name: 'coaInfo',
-                value: <any>{
-                    theaterCode: params.screeningEventSeries.location.branchCode,
-                    dateJouei: params.performanceFromCOA.dateJouei,
-                    titleCode: params.performanceFromCOA.titleCode,
-                    titleBranchNum: params.performanceFromCOA.titleBranchNum,
-                    timeBegin: params.performanceFromCOA.timeBegin,
-                    screenCode: params.performanceFromCOA.screenCode,
-                    trailerTime: params.performanceFromCOA.trailerTime,
-                    kbnService: params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0],
-                    kbnAcoustic: params.acousticKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnAcoustic)[0],
-                    nameServiceDay: params.performanceFromCOA.nameServiceDay,
-                    availableNum: params.performanceFromCOA.availableNum,
-                    rsvStartDate: params.performanceFromCOA.rsvStartDate,
-                    rsvEndDate: params.performanceFromCOA.rsvEndDate,
-                    flgEarlyBooking: params.performanceFromCOA.flgEarlyBooking
-                }
+                value: coaInfo
             }
         ]
     };

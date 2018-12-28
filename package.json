@@ -9,9 +9,8 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "^1.0.0-alpha.37",
-    "@cinerino/factory": "^1.0.0-alpha.81",
-    "@mocoin/api-nodejs-client": "0.0.0-alpha.6",
+    "@chevre/api-nodejs-client": "^1.0.0-alpha.39",
+    "@cinerino/factory": "^1.0.0-alpha.82",
     "@motionpicture/coa-service": "^6.0.1",
     "@motionpicture/gmo-service": "^4.3.0",
     "@movieticket/reserve-api-nodejs-client": "^1.0.0",
