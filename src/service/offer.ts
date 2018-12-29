@@ -183,6 +183,7 @@ export function searchScreeningEventTicketOffers(params: {
     };
 }
 
+// tslint:disable-next-line:max-func-body-length
 async function searchTicketOffersFromCOA(params: {
     isMember: boolean;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
@@ -212,6 +213,7 @@ async function searchTicketOffersFromCOA(params: {
     // COA券種をオファーへ変換
     availableSalesTickets.forEach((availableSalesTicket) => {
         const offer: factory.chevre.event.screeningEvent.ITicketOffer = coaSalesTicket2offer({
+            event: params.event,
             salesTicket: availableSalesTicket,
             coaInfo: params.coaInfo,
             superEventCOAInfo: params.superEventCOAInfo
@@ -219,6 +221,50 @@ async function searchTicketOffersFromCOA(params: {
 
         offers.push(offer);
     });
+
+    // ムビチケ決済が許可されていればムビチケオファーを恣意的に追加
+    const movieTicketPaymentAccepted = params.event.offers.acceptedPaymentMethod === undefined
+        || params.event.offers.acceptedPaymentMethod.indexOf(factory.paymentMethodType.MovieTicket) >= 0;
+    if (movieTicketPaymentAccepted) {
+        const mvtkOffer: factory.chevre.event.screeningEvent.ITicketOffer = {
+            typeOf: 'Offer',
+            id: 'offer-by-movieTicket',
+            name: { ja: 'ムビチケ', en: 'Movie Ticket' },
+            description: { ja: '', en: '' },
+            availability: factory.chevre.itemAvailability.InStock,
+            availabilityStarts: params.event.offers.availabilityStarts,
+            availabilityEnds: params.event.offers.availabilityEnds,
+            validThrough: params.event.offers.validThrough,
+            validFrom: params.event.offers.validFrom,
+            priceCurrency: factory.chevre.priceCurrency.JPY,
+            priceSpecification: {
+                typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+                valueAddedTaxIncluded: true,
+                priceCurrency: factory.chevre.priceCurrency.JPY,
+                priceComponent: [
+                    {
+                        typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                        price: 0,
+                        priceCurrency: factory.chevre.priceCurrency.JPY,
+                        valueAddedTaxIncluded: true,
+                        referenceQuantity: {
+                            typeOf: 'QuantitativeValue',
+                            unitCode: factory.chevre.unitCode.C62,
+                            value: 1
+                        }
+                    }
+                ]
+            },
+            eligibleQuantity: {
+                typeOf: 'QuantitativeValue',
+                unitCode: factory.chevre.unitCode.C62,
+                value: 1
+            },
+            itemOffered: params.event.offers.itemOffered
+        };
+
+        offers.push(mvtkOffer);
+    }
 
     return offers;
 }
@@ -228,6 +274,7 @@ async function searchTicketOffersFromCOA(params: {
  */
 // tslint:disable-next-line:max-func-body-length
 function coaSalesTicket2offer(params: {
+    event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     salesTicket: COA.services.reserve.ISalesTicketResult;
     coaInfo: factory.event.screeningEvent.ICOAInfo;
     superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo;
@@ -362,15 +409,15 @@ function coaSalesTicket2offer(params: {
         },
         priceSpecification: priceSpecification,
         availability: factory.chevre.itemAvailability.InStock,
-        availabilityEnds: new Date(),
-        availabilityStarts: new Date(),
+        availabilityStarts: params.event.offers.availabilityStarts,
+        availabilityEnds: params.event.offers.availabilityEnds,
+        validThrough: params.event.offers.validThrough,
+        validFrom: params.event.offers.validFrom,
         eligibleQuantity: {
             typeOf: 'QuantitativeValue',
             unitCode: factory.chevre.unitCode.C62,
             value: 1
         },
-        validFrom: new Date(),
-        validThrough: new Date(),
         itemOffered: {
             serviceType: {
                 typeOf: 'ServiceType',

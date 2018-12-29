@@ -293,6 +293,17 @@ export function createScreeningEventSeriesFromCOA(params: {
         dateMvtkBegin: params.filmFromCOA.dateMvtkBegin
     };
 
+    const acceptedPaymentMethod: factory.paymentMethodType[] = [
+        factory.paymentMethodType.Account,
+        factory.paymentMethodType.Cash,
+        factory.paymentMethodType.CreditCard,
+        factory.paymentMethodType.EMoney
+    ];
+
+    if (coaInfo.flgMvtkUse === '1') {
+        acceptedPaymentMethod.push(factory.paymentMethodType.MovieTicket);
+    }
+
     return {
         id: identifier,
         identifier: identifier,
@@ -331,6 +342,11 @@ export function createScreeningEventSeriesFromCOA(params: {
         duration: moment.duration(params.filmFromCOA.showTime, 'm').toISOString(),
         endDate: endDate,
         startDate: startDate,
+        offers: {
+            typeOf: 'Offer',
+            priceCurrency: factory.chevre.priceCurrency.JPY,
+            acceptedPaymentMethod: acceptedPaymentMethod
+        },
         additionalProperty: [
             {
                 name: 'COA_ENDPOINT',
@@ -433,6 +449,7 @@ export function createScreeningRoomFromCOA(
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
+// tslint:disable-next-line:max-func-body-length
 export function createScreeningEventFromCOA(params: {
     performanceFromCOA: COA.services.master.IScheduleResult;
     screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
@@ -475,6 +492,9 @@ export function createScreeningEventFromCOA(params: {
         flgEarlyBooking: params.performanceFromCOA.flgEarlyBooking
     };
 
+    const acceptedPaymentMethod: factory.paymentMethodType[] | undefined =
+        (params.screeningEventSeries.offers !== undefined) ? params.screeningEventSeries.offers.acceptedPaymentMethod : undefined;
+
     return {
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         typeOf: factory.chevre.eventType.ScreeningEvent,
@@ -499,6 +519,7 @@ export function createScreeningEventFromCOA(params: {
             },
             typeOf: 'Offer',
             priceCurrency: factory.priceCurrency.JPY,
+            acceptedPaymentMethod: acceptedPaymentMethod,
             availabilityEnds: validThrough,
             availabilityStarts: validFrom,
             validFrom: validFrom,
