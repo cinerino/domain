@@ -29,6 +29,7 @@ export class MvtkRepository {
     /**
      * ムビチケ認証
      */
+    // tslint:disable-next-line:max-func-body-length
     public async checkByIdentifier(params: {
         movieTickets: IMovieTicket[];
         movieTicketPaymentAccepted: factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>;
@@ -49,11 +50,25 @@ export class MvtkRepository {
                 });
             }
         });
+
+        let skhnCd = params.screeningEvent.superEvent.workPerformed.identifier;
+        const offeredThrough = params.screeningEvent.offers.offeredThrough;
+        // イベントインポート元がCOAの場合、作品コード連携方法が異なる
+        if (offeredThrough !== undefined && offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+            const DIGITS = -2;
+            let eventCOAInfo: any;
+            if (Array.isArray(params.screeningEvent.additionalProperty)) {
+                const coaInfoProperty = params.screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
+                eventCOAInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+            }
+            skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
+        }
+
         purchaseNumberAuthIn = {
             kgygishCd: params.movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
             jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
             knyknrNoInfoIn: knyknrNoInfoIn,
-            skhnCd: params.screeningEvent.superEvent.workPerformed.identifier,
+            skhnCd: skhnCd,
             stCd: params.movieTicketPaymentAccepted.movieTicketInfo.stCd,
             jeiYmd: moment(params.screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD')
         };

@@ -91,13 +91,28 @@ export function searchScreeningEventOffers(params: {
     };
 }
 
+export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTicket.IMovieTicket;
+
 /**
  * 上映イベントに対する券種オファーを検索する
  */
 export function searchScreeningEventTicketOffers(params: {
+    /**
+     * どのイベントに対して
+     */
     event: { id: string };
+    /**
+     * どの販売者に対して
+     */
     seller: { typeOf: factory.organizationType; id: string };
+    /**
+     * どの店舗に対して
+     */
     store?: { id: string };
+    /**
+     * どの決済方法に対して
+     */
+    paymentMethod?: IAcceptedPaymentMethod;
 }): ISearchScreeningEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     return async (repos: {
         event: EventRepo;
@@ -252,6 +267,14 @@ async function searchTicketOffersFromCOA(params: {
                             unitCode: factory.chevre.unitCode.C62,
                             value: 1
                         }
+                    },
+                    {
+                        typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
+                        price: 0,
+                        priceCurrency: factory.chevre.priceCurrency.JPY,
+                        valueAddedTaxIncluded: true,
+                        appliesToVideoFormat: factory.chevre.videoFormatType['2D'],
+                        appliesToMovieTicketType: ''
                     }
                 ]
             },

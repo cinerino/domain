@@ -195,6 +195,20 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             });
 
             const seatNumbers = movieTickets.map((t) => t.serviceOutput.reservedTicket.ticketedSeat.seatNumber);
+
+            let skhnCd = screeningEvent.superEvent.workPerformed.identifier;
+            const offeredThrough = screeningEvent.offers.offeredThrough;
+            // イベントインポート元がCOAの場合、作品コード連携方法が異なる
+            if (offeredThrough !== undefined && offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+                const DIGITS = -2;
+                let eventCOAInfo: any;
+                if (Array.isArray(screeningEvent.additionalProperty)) {
+                    const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
+                    eventCOAInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                }
+                skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
+            }
+
             seatInfoSyncIn = {
                 kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
                 yykDvcTyp: mvtkapi.mvtk.services.seat.seatInfoSync.ReserveDeviceType.EntertainerSitePC, // 予約デバイス区分
@@ -209,7 +223,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 zskInfo: seatNumbers.map((seatNumber) => {
                     return { zskCd: seatNumber };
                 }),
-                skhnCd: screeningEvent.superEvent.workPerformed.identifier // 作品コード
+                skhnCd: skhnCd // 作品コード
             };
 
             seatInfoSyncResult = await repos.movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
