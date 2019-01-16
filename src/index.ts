@@ -10,6 +10,7 @@ import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
 import * as chevre from './chevre';
+import * as errorHandler from './errorHandler';
 import * as factory from './factory';
 import * as repository from './repository';
 import * as service from './service';
@@ -57,6 +58,7 @@ export import mvtkreserveapi = mvtkreserveapi;
  */
 export import AWS = AWS;
 
+export import errorHandler = errorHandler;
 export import factory = factory;
 export import repository = repository;
 export import service = service;
