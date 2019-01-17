@@ -34,7 +34,7 @@ export function exportTasks(status: factory.transactionStatusType) {
 }
 
 /**
- * ID指定で取引のタスク出力
+ * 取引のタスクを出力します
  */
 export function exportTasksById(params: { transactionId: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     // tslint:disable-next-line:max-func-body-length

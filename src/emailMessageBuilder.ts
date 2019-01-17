@@ -30,8 +30,13 @@ export async function createSendOrderMessage(params: {
             // const orderDate = moment(params.order.orderDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm:ss');
             const eventStartDate = util.format(
                 '%s - %s',
-                moment(event.startDate).locale('ja').tz('Asia/Tokyo').format('YYYY年MM月DD日(ddd) HH:mm'),
-                moment(event.endDate).tz('Asia/Tokyo').format('HH:mm')
+                moment(event.startDate)
+                    .locale('ja')
+                    .tz('Asia/Tokyo')
+                    .format('YYYY年MM月DD日(ddd) HH:mm'),
+                moment(event.endDate)
+                    .tz('Asia/Tokyo')
+                    .format('HH:mm')
             );
 
             // テンプレートからEメールメッセージを作成
@@ -68,7 +73,8 @@ export async function createSendOrderMessage(params: {
                                 const reservation = o.itemOffered;
                                 let option = '';
                                 if (Array.isArray(reservation.reservationFor.superEvent.videoFormat)) {
-                                    option += reservation.reservationFor.superEvent.videoFormat.map((format) => format.typeOf).join(',');
+                                    option += reservation.reservationFor.superEvent.videoFormat.map((format) => format.typeOf)
+                                        .join(',');
                                 }
                                 let priceStr = '';
                                 // tslint:disable-next-line:max-line-length
@@ -88,7 +94,8 @@ export async function createSendOrderMessage(params: {
                                     reservation.priceCurrency,
                                     option
                                 );
-                            }).join('\n')
+                            })
+                                .join('\n')
                         },
                         (renderMessageErr, message) => {
                             if (renderMessageErr instanceof Error) {

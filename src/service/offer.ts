@@ -86,7 +86,7 @@ export function searchScreeningEventOffers(params: {
 
             default:
                 // 基本的にはCHEVREへ空席確認
-                return repos.eventService.searchScreeningEventOffers({ eventId: params.event.id });
+                return repos.eventService.searchOffers({ id: params.event.id });
         }
     };
 }
@@ -160,7 +160,7 @@ export function searchScreeningEventTicketOffers(params: {
 
             default:
                 // Chevreで券種オファーを検索
-                offers = await repos.eventService.searchScreeningEventTicketOffers({ eventId: params.event.id });
+                offers = await repos.eventService.searchTicketOffers({ id: params.event.id });
 
                 // 店舗条件によって対象を絞る
                 if (params.seller.typeOf !== factory.organizationType.MovieTheater) {
@@ -294,6 +294,7 @@ async function searchTicketOffersFromCOA(params: {
 
 /**
  * COA販売券種をオファーへ変換する
+ * COAの券種インターフェースをchevreのチケットオファーインターフェースへ変換します
  */
 // tslint:disable-next-line:max-func-body-length
 function coaSalesTicket2offer(params: {

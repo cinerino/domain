@@ -96,7 +96,9 @@ export function create<T extends factory.accountType>(params: {
                 debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.withdrawTransactionService.start({
                     // 最大1ヵ月のオーソリ
-                    expires: moment().add(1, 'month').toDate(),
+                    expires: moment()
+                        .add(1, 'month')
+                        .toDate(),
                     agent: {
                         typeOf: transaction.agent.typeOf,
                         id: transaction.agent.id,
@@ -138,7 +140,9 @@ export function create<T extends factory.accountType>(params: {
                 debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.transferTransactionService.start({
                     // 最大1ヵ月のオーソリ
-                    expires: moment().add(1, 'month').toDate(),
+                    expires: moment()
+                        .add(1, 'month')
+                        .toDate(),
                     agent: {
                         typeOf: transaction.agent.typeOf,
                         id: transaction.agent.id,

@@ -89,9 +89,10 @@ export function cancelAccountAuth(params: { transactionId: string }) {
     }) => {
         // 口座承認アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
-            await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
-                .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-            );
+            await repos.action.findAuthorizeByTransactionId(params)
+                .then((actions) => actions
+                    .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+                );
         await Promise.all(authorizeActions.map(async (action) => {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
@@ -149,8 +150,10 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         const depositTransaction = await repos.depositService.start({
                             accountType: pendingTransaction.object.accountType,
                             toAccountNumber: pendingTransaction.object.fromAccountNumber,
-                            // tslint:disable-next-line:no-magic-numbers
-                            expires: moment().add(5, 'minutes').toDate(),
+                            expires: moment()
+                                // tslint:disable-next-line:no-magic-numbers
+                                .add(5, 'minutes')
+                                .toDate(),
                             agent: pendingTransaction.recipient,
                             recipient: pendingTransaction.agent,
                             amount: pendingTransaction.object.amount,
@@ -165,8 +168,10 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             accountType: pendingTransaction.object.accountType,
                             toAccountNumber: pendingTransaction.object.fromAccountNumber,
                             fromAccountNumber: pendingTransaction.object.toAccountNumber,
-                            // tslint:disable-next-line:no-magic-numbers
-                            expires: moment().add(5, 'minutes').toDate(),
+                            expires: moment()
+                                // tslint:disable-next-line:no-magic-numbers
+                                .add(5, 'minutes')
+                                .toDate(),
                             agent: pendingTransaction.recipient,
                             recipient: pendingTransaction.agent,
                             amount: pendingTransaction.object.amount,

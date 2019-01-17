@@ -75,9 +75,10 @@ export class MongoRepository {
         return andConditions;
     }
     public async save<T extends factory.taskName>(taskAttributes: factory.task.IAttributes<T>): Promise<factory.task.ITask<T>> {
-        return this.taskModel.create(taskAttributes).then(
-            (doc) => doc.toObject()
-        );
+        return this.taskModel.create(taskAttributes)
+            .then(
+                (doc) => doc.toObject()
+            );
     }
     public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T> | null> {
         const doc = await this.taskModel.findOneAndUpdate(
@@ -95,7 +96,9 @@ export class MongoRepository {
                 }
             },
             { new: true }
-        ).sort(sortOrder4executionOfTasks).exec();
+        )
+            .sort(sortOrder4executionOfTasks)
+            .exec();
         if (doc === null) {
             return null;
         }
@@ -103,7 +106,9 @@ export class MongoRepository {
         return doc.toObject();
     }
     public async retry(intervalInMinutes: number) {
-        const lastTriedAtShoudBeLessThan = moment().add(-intervalInMinutes, 'minutes').toDate();
+        const lastTriedAtShoudBeLessThan = moment()
+            .add(-intervalInMinutes, 'minutes')
+            .toDate();
         await this.taskModel.update(
             {
                 status: factory.taskStatus.Running,
@@ -117,10 +122,13 @@ export class MongoRepository {
                 status: factory.taskStatus.Ready // 実行前に変更
             },
             { multi: true }
-        ).exec();
+        )
+            .exec();
     }
     public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<factory.taskName> | null> {
-        const lastTriedAtShoudBeLessThan = moment().add(-intervalInMinutes, 'minutes').toDate();
+        const lastTriedAtShoudBeLessThan = moment()
+            .add(-intervalInMinutes, 'minutes')
+            .toDate();
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Running,
@@ -134,7 +142,8 @@ export class MongoRepository {
                 status: factory.taskStatus.Aborted
             },
             { new: true }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             return null;
         }
@@ -152,10 +161,11 @@ export class MongoRepository {
                 status: status, // 失敗してもここでは戻さない(Runningのまま待機)
                 $push: { executionResults: executionResult }
             }
-        ).exec();
+        )
+            .exec();
     }
     /**
-     * IDで取得する
+     * 特定タスク検索
      */
     public async findById<T extends factory.taskName>(params: {
         name: T;
@@ -171,7 +181,8 @@ export class MongoRepository {
                 createdAt: 0,
                 updatedAt: 0
             }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Task');
         }
@@ -181,7 +192,9 @@ export class MongoRepository {
     public async count<T extends factory.taskName>(params: factory.task.ISearchConditions<T>): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.taskModel.countDocuments({ $and: conditions }).setOptions({ maxTimeMS: 10000 }).exec();
+        return this.taskModel.countDocuments({ $and: conditions })
+            .setOptions({ maxTimeMS: 10000 })
+            .exec();
     }
     /**
      * 検索する
@@ -201,7 +214,8 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit).skip(params.limit * (params.page - 1));
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -209,6 +223,8 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

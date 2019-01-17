@@ -125,7 +125,8 @@ export class MongoRepository {
         await this.ownershipInfoModel.create({ ...ownershipInfo, _id: ownershipInfo.id });
     }
     public async findById(params: { id: string }): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
-        const doc = await this.ownershipInfoModel.findById(params.id).exec();
+        const doc = await this.ownershipInfoModel.findById(params.id)
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('OwnershipInfo');
         }
@@ -137,7 +138,9 @@ export class MongoRepository {
     ): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.ownershipInfoModel.countDocuments({ $and: conditions }).setOptions({ maxTimeMS: 10000 }).exec();
+        return this.ownershipInfoModel.countDocuments({ $and: conditions })
+            .setOptions({ maxTimeMS: 10000 })
+            .exec();
     }
     /**
      * 所有権を検索する
@@ -157,7 +160,8 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit).skip(params.limit * (params.page - 1));
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -165,6 +169,8 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

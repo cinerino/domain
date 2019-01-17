@@ -72,13 +72,14 @@ schema.index(
     { name: 'searchByUpdatedAt' }
 );
 
-export default mongoose.model('ProgramMembership', schema).on(
-    'index',
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore next */
-    (error) => {
-        if (error !== undefined) {
-            console.error(error);
+export default mongoose.model('ProgramMembership', schema)
+    .on(
+        'index',
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        (error) => {
+            if (error !== undefined) {
+                console.error(error);
+            }
         }
-    }
-);
+    );

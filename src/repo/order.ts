@@ -376,7 +376,9 @@ export class MongoRepository {
                 createdAt: 0,
                 updatedAt: 0
             }
-        ).sort({ orderDate: -1 }).exec();
+        )
+            .sort({ orderDate: -1 })
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
         }
@@ -392,7 +394,8 @@ export class MongoRepository {
             { orderNumber: order.orderNumber },
             { $setOnInsert: order },
             { upsert: true }
-        ).exec();
+        )
+            .exec();
     }
     /**
      * 注文ステータスを変更する
@@ -404,7 +407,8 @@ export class MongoRepository {
         const doc = await this.orderModel.findOneAndUpdate(
             { orderNumber: params.orderNumber },
             { orderStatus: params.orderStatus }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
         }
@@ -419,7 +423,8 @@ export class MongoRepository {
                 orderStatus: factory.orderStatus.OrderReturned,
                 dateReturned: params.dateReturned
             }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
         }
@@ -435,7 +440,8 @@ export class MongoRepository {
                 createdAt: 0,
                 updatedAt: 0
             }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
         }
@@ -447,7 +453,8 @@ export class MongoRepository {
 
         return this.orderModel.countDocuments(
             { $and: conditions }
-        ).setOptions({ maxTimeMS: 10000 })
+        )
+            .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
     /**
@@ -467,7 +474,8 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit).skip(params.limit * (params.page - 1));
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -475,6 +483,8 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

@@ -8,14 +8,17 @@ import * as factory from '../factory';
 const debug = createDebug('cinerino-domain:repository');
 
 /**
- * 注文番号Redisリポジトリー
+ * 注文番号リポジトリー
  */
 export class RedisRepository {
     public static REDIS_KEY_PREFIX: string = 'cinerino:orderNumber';
+
     public readonly redisClient: redis.RedisClient;
+
     constructor(redisClient: redis.RedisClient) {
         this.redisClient = redisClient;
     }
+
     /**
      * 発行する
      * 注文日時と販売者ごとに注文数をカウントして、ユニークな注文番号を発行します。
@@ -39,13 +42,18 @@ export class RedisRepository {
             const orderNumberPrefix = util.format(
                 '%s%s-%s',
                 // tslint:disable-next-line:no-magic-numbers
-                params.sellerType.slice(0, 2).toUpperCase(), // 販売者タイプの頭２文字
+                params.sellerType.slice(0, 2)
+                    .toUpperCase(), // 販売者タイプの頭２文字
                 params.sellerBranchCode,
-                moment(params.orderDate).tz('Asia/Tokyo').format('YYMMDD')
+                moment(params.orderDate)
+                    .tz('Asia/Tokyo')
+                    .format('YYMMDD')
             );
             const now = moment();
             // 一日ごとにカウントアップするので、データ保管期間は一日あれば十分
-            const TTL = moment(now).add(1, 'day').diff(now, 'seconds');
+            const TTL = moment(now)
+                .add(1, 'day')
+                .diff(now, 'seconds');
             debug(`TTL:${TTL} seconds`);
             const key = util.format(
                 '%s:%s',

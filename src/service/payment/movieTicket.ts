@@ -99,7 +99,8 @@ export function checkMovieTicket(
                     },
                     movieTicket,
                     { upsert: true }
-                ).exec();
+                )
+                    .exec();
             }));
         } catch (error) {
             // actionにエラー結果を追加
@@ -215,8 +216,12 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 trkshFlg: mvtkapi.mvtk.services.seat.seatInfoSync.DeleteFlag.False, // 取消フラグ
                 kgygishSstmZskyykNo: order.orderNumber, // 興行会社システム座席予約番号
                 kgygishUsrZskyykNo: order.confirmationNumber.toString(), // 興行会社ユーザー座席予約番号
-                jeiDt: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD HH:mm:ss'), // 上映日時
-                kijYmd: moment(screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'), // 計上年月日
+                jeiDt: moment(screeningEvent.startDate)
+                    .tz('Asia/Tokyo')
+                    .format('YYYY/MM/DD HH:mm:ss'), // 上映日時
+                kijYmd: moment(screeningEvent.startDate)
+                    .tz('Asia/Tokyo')
+                    .format('YYYY/MM/DD'), // 計上年月日
                 stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
                 screnCd: screeningEvent.location.branchCode, // スクリーンコード
                 knyknrNoInfo: knyknrNoInfo,

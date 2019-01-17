@@ -58,8 +58,10 @@ export function open<T extends factory.accountType>(params: {
                 },
                 ownedBy: params.agent,
                 ownedFrom: now,
-                // tslint:disable-next-line:no-magic-numbers
-                ownedThrough: moment(now).add(100, 'years').toDate() // 十分に無期限
+                ownedThrough: moment(now)
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(100, 'years')
+                    .toDate() // 十分に無期限
             };
             await repos.ownershipInfo.save(ownershipInfo);
             ownershipInfoWithDetail = { ...ownershipInfo, typeOfGood: account };

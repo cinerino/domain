@@ -47,9 +47,11 @@ export class RedisRepository {
         }
 
         let sum = 0;
-        source.split('').reverse().forEach((digitNumber, index) => {
-            sum += parseInt(digitNumber, 10) * RedisRepository.CHECK_DIGIT_WEIGHTS[index];
-        });
+        source.split('')
+            .reverse()
+            .forEach((digitNumber, index) => {
+                sum += parseInt(digitNumber, 10) * RedisRepository.CHECK_DIGIT_WEIGHTS[index];
+            });
         const checkDigit = 11 - (sum % 11);
 
         // 2桁の場合0、1桁であればそのまま(必ず1桁になるように)
@@ -64,9 +66,12 @@ export class RedisRepository {
     public async publish(openDate: Date): Promise<string> {
         // 上映日を過ぎたら期限が切れるようにTTLを設定
         const now = moment();
-        const TTL = moment(openDate).add(1, 'day').diff(now, 'seconds');
+        const TTL = moment(openDate)
+            .add(1, 'day')
+            .diff(now, 'seconds');
         debug(`TTL:${TTL} seconds`);
-        const date = moment(openDate).format('YYMMDD');
+        const date = moment(openDate)
+            .format('YYMMDD');
         const key = `${RedisRepository.REDIS_KEY_PREFIX}:${date}`;
 
         const results = await new Promise<any[]>((resolve, reject) => {
@@ -105,6 +110,7 @@ export class RedisRepository {
         const sortType = RedisRepository.SORT_TYPES[checKDigit];
         debug('sortType:', sortType);
 
-        return `${checKDigit.toString()}${sortType.map((index) => source.substr(index, 1)).join('')}`;
+        return `${checKDigit.toString()}${sortType.map((index) => source.substr(index, 1))
+            .join('')}`;
     }
 }

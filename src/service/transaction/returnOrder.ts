@@ -159,7 +159,9 @@ export function start(
                                 id: responseBody.id
                             }
                         },
-                        expires: moment(params.expires).add(1, 'month').toDate() // 余裕を持って
+                        expires: moment(params.expires)
+                            .add(1, 'month')
+                            .toDate() // 余裕を持って
                     }));
             }
         }
@@ -167,7 +169,8 @@ export function start(
         await repos.transaction.transactionModel.findByIdAndUpdate(
             returnOrderTransaction.id,
             { 'object.pendingCancelReservationTransactions': pendingCancelReservationTransactions }
-        ).exec();
+        )
+            .exec();
 
         return returnOrderTransaction;
     };
@@ -363,7 +366,9 @@ export function exportTasks(status: factory.transactionStatusType) {
 }
 
 /**
- * ID指定で取引のタスク出力
+ * 取引のタスクを出力します
+ * 複数タスクが生成されます
+ * この関数では、取引のタスクエクスポートステータスは見ません
  */
 export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {

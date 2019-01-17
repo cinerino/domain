@@ -82,11 +82,12 @@ export function download(params: {
         //     throw new Error('Too many transactions');
         // }
 
-        const inputStream = repos.transaction.stream(params.conditions).map((doc) => {
-            return <any>JSON.stringify(transaction2report({
-                transaction: doc.toObject()
-            }));
-        });
+        const inputStream = repos.transaction.stream(params.conditions)
+            .map((doc) => {
+                return <any>JSON.stringify(transaction2report({
+                    transaction: doc.toObject()
+                }));
+            });
         let processor: Readable;
 
         switch (params.format) {
@@ -230,8 +231,10 @@ export function transaction2report(params: {
                                 typeOf: (event !== undefined) ? event.typeOf : '',
                                 id: (event !== undefined) ? event.id : '',
                                 name: (event !== undefined) ? event.name.ja : '',
-                                startDate: (event !== undefined) ? moment(event.startDate).toISOString() : '',
-                                endDate: (event !== undefined) ? moment(event.endDate).toISOString() : '',
+                                startDate: (event !== undefined) ? moment(event.startDate)
+                                    .toISOString() : '',
+                                endDate: (event !== undefined) ? moment(event.endDate)
+                                    .toISOString() : '',
                                 location: (event !== undefined) ? event.location.name.ja : '',
                                 superEventLocationBranchCode: (event !== undefined) ? event.superEvent.location.branchCode : '',
                                 superEventLocation: (event !== undefined) ? event.superEvent.location.name.ja : ''
@@ -249,8 +252,10 @@ export function transaction2report(params: {
         return {
             id: params.transaction.id,
             status: params.transaction.status,
-            startDate: (params.transaction.startDate !== undefined) ? moment(params.transaction.startDate).toISOString() : '',
-            endDate: (params.transaction.endDate !== undefined) ? moment(params.transaction.endDate).toISOString() : '',
+            startDate: (params.transaction.startDate !== undefined) ? moment(params.transaction.startDate)
+                .toISOString() : '',
+            endDate: (params.transaction.endDate !== undefined) ? moment(params.transaction.endDate)
+                .toISOString() : '',
             seller: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,
@@ -284,8 +289,10 @@ export function transaction2report(params: {
         return {
             id: params.transaction.id,
             status: params.transaction.status,
-            startDate: (params.transaction.startDate !== undefined) ? moment(params.transaction.startDate).toISOString() : '',
-            endDate: (params.transaction.endDate !== undefined) ? moment(params.transaction.endDate).toISOString() : '',
+            startDate: (params.transaction.startDate !== undefined) ? moment(params.transaction.startDate)
+                .toISOString() : '',
+            endDate: (params.transaction.endDate !== undefined) ? moment(params.transaction.endDate)
+                .toISOString() : '',
             seller: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,

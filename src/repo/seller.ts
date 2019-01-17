@@ -97,7 +97,7 @@ export class MongoRepository {
     }
 
     /**
-     * IDで検索
+     * 特定販売者検索
      */
     public async findById<T extends factory.organizationType>(params: {
         id: string;
@@ -112,7 +112,8 @@ export class MongoRepository {
                 createdAt: 0,
                 updatedAt: 0
             }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Organization');
         }
@@ -139,7 +140,8 @@ export class MongoRepository {
                 },
                 params.attributes,
                 { upsert: false, new: true }
-            ).exec();
+            )
+                .exec();
             if (doc === null) {
                 throw new factory.errors.NotFound('Organization');
             }
@@ -154,7 +156,8 @@ export class MongoRepository {
 
         return this.organizationModel.countDocuments(
             { $and: conditions }
-        ).setOptions({ maxTimeMS: 10000 })
+        )
+            .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
 
@@ -178,7 +181,8 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit).skip(params.limit * (params.page - 1));
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -186,7 +190,9 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 
     /**
@@ -200,6 +206,7 @@ export class MongoRepository {
                 paymentAccepted: { $exists: true },
                 _id: params.id
             }
-        ).exec();
+        )
+            .exec();
     }
 }

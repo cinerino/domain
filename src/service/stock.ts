@@ -39,9 +39,10 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         const screeningEvents: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
         while (numData === limit) {
             page += 1;
-            const searchScreeningEventsResult = await repos.eventService.searchScreeningEvents({
+            const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
                 limit: limit,
                 page: page,
+                typeOf: factory.chevre.eventType.ScreeningEvent,
                 inSessionFrom: params.importFrom,
                 inSessionThrough: params.importThrough,
                 superEvent: {
@@ -56,7 +57,8 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         // 各作品画像を検索
         const movies = screeningEvents
             .map((e) => e.superEvent.workPerformed)
-            .filter((movie, pos, arr) => arr.map((mapObj) => mapObj.identifier).indexOf(movie.identifier) === pos);
+            .filter((movie, pos, arr) => arr.map((mapObj) => mapObj.identifier)
+                .indexOf(movie.identifier) === pos);
         const thumbnailsByMovie = await Promise.all(movies.map(async (movie) => {
             return {
                 identifier: movie.identifier,
@@ -78,25 +80,34 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 
                 const superEvent: chevre.factory.event.screeningEventSeries.IEvent = {
                     ...e.superEvent,
-                    startDate: (e.superEvent.startDate !== undefined) ? moment(e.superEvent.startDate).toDate() : undefined,
-                    endDate: (e.superEvent.endDate !== undefined) ? moment(e.superEvent.endDate).toDate() : undefined
+                    startDate: (e.superEvent.startDate !== undefined) ? moment(e.superEvent.startDate)
+                        .toDate() : undefined,
+                    endDate: (e.superEvent.endDate !== undefined) ? moment(e.superEvent.endDate)
+                        .toDate() : undefined
                 };
 
                 const offers: factory.event.IOffer<factory.chevre.eventType.ScreeningEvent> = {
                     ...e.offers,
-                    availabilityEnds: moment(e.offers.availabilityEnds).toDate(),
-                    availabilityStarts: moment(e.offers.availabilityStarts).toDate(),
-                    validFrom: moment(e.offers.validFrom).toDate(),
-                    validThrough: moment(e.offers.validThrough).toDate(),
+                    availabilityEnds: moment(e.offers.availabilityEnds)
+                        .toDate(),
+                    availabilityStarts: moment(e.offers.availabilityStarts)
+                        .toDate(),
+                    validFrom: moment(e.offers.validFrom)
+                        .toDate(),
+                    validThrough: moment(e.offers.validThrough)
+                        .toDate(),
                     offeredThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre }
                 };
 
                 await repos.event.save<factory.chevre.eventType.ScreeningEvent>({
                     ...e,
                     superEvent: superEvent,
-                    doorTime: (e.doorTime !== undefined) ? moment(e.doorTime).toDate() : undefined,
-                    endDate: moment(e.endDate).toDate(),
-                    startDate: moment(e.startDate).toDate(),
+                    doorTime: (e.doorTime !== undefined) ? moment(e.doorTime)
+                        .toDate() : undefined,
+                    endDate: moment(e.endDate)
+                        .toDate(),
+                    startDate: moment(e.startDate)
+                        .toDate(),
                     offers: offers
                 });
             } catch (error) {
@@ -134,21 +145,35 @@ export function importScreeningEventsFromCOA(params: {
             theaterCode: params.locationBranchCode
         });
 
-        const targetImportFrom = moment(`${moment(params.importFrom).tz('Asia/Tokyo').format('YYYY-MM-DD')}T00:00:00+09:00`);
+        const targetImportFrom = moment(`${moment(params.importFrom)
+            .tz('Asia/Tokyo')
+            .format('YYYY-MM-DD')}T00:00:00+09:00`);
         const targetImportThrough = moment(`${moment(params.importThrough)
-            .tz('Asia/Tokyo').format('YYYY-MM-DD')}T00:00:00+09:00`).add(1, 'day');
+            .tz('Asia/Tokyo')
+            .format('YYYY-MM-DD')}T00:00:00+09:00`)
+            .add(1, 'day');
         debug('importing screening events...', targetImportFrom, targetImportThrough);
 
         // COAから上映イベント取得
         debug(
             'finding schedules from COA...',
-            moment(targetImportFrom).tz('Asia/Tokyo').format('YYYYMMDD'),
-            moment(targetImportThrough).add(-1, 'day').tz('Asia/Tokyo').format('YYYYMMDD')
+            moment(targetImportFrom)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD'),
+            moment(targetImportThrough)
+                .add(-1, 'day')
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD')
         );
         const schedulesFromCOA = await COA.services.master.schedule({
             theaterCode: params.locationBranchCode,
-            begin: moment(targetImportFrom).tz('Asia/Tokyo').format('YYYYMMDD'), // COAは日本時間で判断
-            end: moment(targetImportThrough).add(-1, 'day').tz('Asia/Tokyo').format('YYYYMMDD') // COAは日本時間で判断
+            begin: moment(targetImportFrom)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD'), // COAは日本時間で判断
+            end: moment(targetImportThrough)
+                .add(-1, 'day')
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD') // COAは日本時間で判断
         });
 
         let schedulesFromXML: COA.services.master.IXMLScheduleResult[][] = [];
@@ -270,11 +295,15 @@ export function createScreeningEventSeriesFromCOA(params: {
     joueihousikiKubuns: COA.services.master.IKubunNameResult[];
     jimakufukikaeKubuns: COA.services.master.IKubunNameResult[];
 }): factory.event.IEvent<factory.chevre.eventType.ScreeningEventSeries> {
-    const endDate = (moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z').isValid())
-        ? moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z').toDate()
+    const endDate = (moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z')
+        .isValid())
+        ? moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z')
+            .toDate()
         : undefined;
-    const startDate = (moment(`${params.filmFromCOA.dateBegin} +09:00`, 'YYYYMMDD Z').isValid())
-        ? moment(`${params.filmFromCOA.dateBegin} +09:00`, 'YYYYMMDD Z').toDate()
+    const startDate = (moment(`${params.filmFromCOA.dateBegin} +09:00`, 'YYYYMMDD Z')
+        .isValid())
+        ? moment(`${params.filmFromCOA.dateBegin} +09:00`, 'YYYYMMDD Z')
+            .toDate()
         : undefined;
     // title_codeは劇場をまたいで共有、title_branch_numは劇場毎に管理
     const identifier = createIdentifier({
@@ -335,11 +364,13 @@ export function createScreeningEventSeriesFromCOA(params: {
         workPerformed: {
             identifier: params.filmFromCOA.titleCode,
             name: params.filmFromCOA.titleNameOrig,
-            duration: moment.duration(params.filmFromCOA.showTime, 'm').toISOString(),
+            duration: moment.duration(params.filmFromCOA.showTime, 'm')
+                .toISOString(),
             // contentRating: params.eirinKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnEirin)[0],
             typeOf: factory.chevre.creativeWorkType.Movie
         },
-        duration: moment.duration(params.filmFromCOA.showTime, 'm').toISOString(),
+        duration: moment.duration(params.filmFromCOA.showTime, 'm')
+            .toISOString(),
         endDate: endDate,
         startDate: startDate,
         offers: {
@@ -404,6 +435,7 @@ export function createMovieTheaterFromCOA(
 
 /**
  * COAのスクリーン抽出結果から上映室を作成する
+ * COAのスクリーンインターフェースをchevreインターフェースに変換します
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
@@ -466,13 +498,30 @@ export function createScreeningEventFromCOA(params: {
         timeBegin: params.performanceFromCOA.timeBegin
     });
 
-    // COA情報を整形して開始日時と終了日時を作成
+    // COA情報を整形して開始日時と終了日時を作成('2500'のような日またぎの時刻入力に対応)
+    let timeEnd = params.performanceFromCOA.timeEnd;
+    let addDay = 0;
+    try {
+        const DAY = 2400;
+        addDay += Math.floor(Number(timeEnd) / DAY);
+        // tslint:disable-next-line:no-magic-numbers
+        timeEnd = `0000${Number(timeEnd) % DAY}`.slice(-4);
+    } catch (error) {
+        // no op
+    }
+
+    const endDate = moment(`${params.performanceFromCOA.dateJouei} ${timeEnd} +09:00`, 'YYYYMMDD HHmm Z')
+        .add(addDay, 'days')
+        .toDate();
     // tslint:disable-next-line:max-line-length
-    const endDate = moment(`${params.performanceFromCOA.dateJouei} ${params.performanceFromCOA.timeEnd} +09:00`, 'YYYYMMDD HHmm Z').toDate();
-    // tslint:disable-next-line:max-line-length
-    const startDate = moment(`${params.performanceFromCOA.dateJouei} ${params.performanceFromCOA.timeBegin} +09:00`, 'YYYYMMDD HHmm Z').toDate();
-    const validFrom = moment(`${params.performanceFromCOA.rsvStartDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ').toDate();
-    const validThrough = moment(`${params.performanceFromCOA.rsvEndDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ').add(1, 'day').toDate();
+    const startDate = moment(`${params.performanceFromCOA.dateJouei} ${params.performanceFromCOA.timeBegin} +09:00`, 'YYYYMMDD HHmm Z')
+        .toDate();
+
+    const validFrom = moment(`${params.performanceFromCOA.rsvStartDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ')
+        .toDate();
+    const validThrough = moment(`${params.performanceFromCOA.rsvEndDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ')
+        .add(1, 'day')
+        .toDate();
 
     const kbnService = params.serviceKubuns.filter((kubun) => kubun.kubunCode === params.performanceFromCOA.kbnService)[0];
     const coaInfo: factory.event.screeningEvent.ICOAInfo = {
@@ -556,7 +605,8 @@ export function createScreeningEventFromCOA(params: {
 }
 
 /**
- * COA情報から個々の上映イベント識別子を作成する
+ * COA情報から上映イベント識別子を作成する
+ * COAのパフォーマンス情報を利用してユニークなIDを生成します
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
@@ -626,9 +676,10 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
     }) => {
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
-            await repos.action.findAuthorizeByTransactionId(params).then((actions) => actions
-                .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
-            );
+            await repos.action.findAuthorizeByTransactionId(params)
+                .then((actions) => actions
+                    .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+                );
         await Promise.all(authorizeActions.map(async (action) => {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */

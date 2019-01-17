@@ -367,13 +367,14 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
     let priceBySeller = 0;
 
     // 決済承認を確認
-    Object.keys(factory.paymentMethodType).forEach((key) => {
-        const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-        priceByAgent += authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === paymentMethodType)
-            .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
-    });
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            priceByAgent += authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.object.typeOf === paymentMethodType)
+                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+        });
 
     // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
     const pointAwardAuthorizeActions = <factory.action.authorize.award.point.IAction[]>authorizeActions
@@ -739,23 +740,24 @@ export function createOrderFromTransaction(params: {
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
 
     // 決済方法をセット
-    Object.keys(factory.paymentMethodType).forEach((key) => {
-        const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === paymentMethodType)
-            .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
-                const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
-                paymentMethods.push({
-                    name: result.name,
-                    typeOf: paymentMethodType,
-                    paymentMethodId: result.paymentMethodId,
-                    totalPaymentDue: result.totalPaymentDue,
-                    additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            params.transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.result !== undefined)
+                .filter((a) => a.result.paymentMethod === paymentMethodType)
+                .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
+                    const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                    paymentMethods.push({
+                        name: result.name,
+                        typeOf: paymentMethodType,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+                    });
                 });
-            });
-    });
+        });
 
     const url = util.format(
         '%s/inquiry/login?confirmationNumber=%s',
@@ -765,13 +767,14 @@ export function createOrderFromTransaction(params: {
 
     // 決済方法から注文金額の計算
     let price = 0;
-    Object.keys(factory.paymentMethodType).forEach((key) => {
-        const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-        price += params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === paymentMethodType)
-            .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
-    });
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            price += params.transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.object.typeOf === paymentMethodType)
+                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+        });
 
     return {
         typeOf: 'Order',

@@ -145,7 +145,9 @@ export function create(params: {
                                 name: transaction.agent.id
                             },
                             object: params.object,
-                            expires: moment(transaction.expires).add(1, 'month').toDate() // 余裕を持って
+                            expires: moment(transaction.expires)
+                                .add(1, 'month')
+                                .toDate() // 余裕を持って
                         });
                     debug('reserve transaction started', responseBody);
             }

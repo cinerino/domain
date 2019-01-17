@@ -147,7 +147,8 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
                         $exists: true,
                         $eq: potentialActions.sendEmailMessage.object.identifier
                     }
-                }).exec();
+                })
+                    .exec();
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (sendEmailMessageTaskDoc === null) {
@@ -235,8 +236,10 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 auth: repos.pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
-                // tslint:disable-next-line:no-magic-numbers
-                expires: moment().add(5, 'minutes').toDate(),
+                expires: moment()
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(5, 'minutes')
+                    .toDate(),
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,

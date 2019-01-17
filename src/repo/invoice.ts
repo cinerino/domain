@@ -150,7 +150,8 @@ export class MongoRepository {
             },
             { $setOnInsert: params },
             { upsert: true }
-        ).exec();
+        )
+            .exec();
     }
 
     public async changePaymentStatus(params: {
@@ -166,7 +167,8 @@ export class MongoRepository {
                 'referencesOrder.orderNumber': params.referencesOrder.orderNumber
             },
             { paymentStatus: params.paymentStatus }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
         }
@@ -177,7 +179,8 @@ export class MongoRepository {
 
         return this.invoiceModel.countDocuments(
             { $and: conditions }
-        ).setOptions({ maxTimeMS: 10000 })
+        )
+            .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
 
@@ -195,7 +198,8 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit).skip(params.limit * (params.page - 1));
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -203,6 +207,8 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 10000 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

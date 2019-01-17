@@ -24,7 +24,8 @@ export class MongoRepository {
             ...attributes,
             actionStatus: factory.actionStatusType.ActiveActionStatus,
             startDate: new Date()
-        }).then((doc) => doc.toObject());
+        })
+            .then((doc) => doc.toObject());
     }
     /**
      * アクション完了
@@ -45,7 +46,9 @@ export class MongoRepository {
                 endDate: new Date()
             },
             { new: true }
-        ).select({ __v: 0, createdAt: 0, updatedAt: 0 }).exec();
+        )
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound(this.actionModel.modelName);
         }
@@ -66,7 +69,9 @@ export class MongoRepository {
             },
             { actionStatus: factory.actionStatusType.CanceledActionStatus },
             { new: true }
-        ).select({ __v: 0, createdAt: 0, updatedAt: 0 }).exec();
+        )
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound(this.actionModel.modelName);
         }
@@ -92,7 +97,9 @@ export class MongoRepository {
                 endDate: new Date()
             },
             { new: true }
-        ).select({ __v: 0, createdAt: 0, updatedAt: 0 }).exec();
+        )
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound(this.actionModel.modelName);
         }
@@ -100,7 +107,7 @@ export class MongoRepository {
         return doc.toObject();
     }
     /**
-     * IDで取得する
+     * 特定アクション検索
      */
     public async findById<T extends factory.actionType>(params: {
         typeOf: T;
@@ -111,7 +118,9 @@ export class MongoRepository {
                 typeOf: params.typeOf,
                 _id: params.id
             }
-        ).select({ __v: 0, createdAt: 0, updatedAt: 0 }).exec();
+        )
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound(this.actionModel.modelName);
         }
@@ -128,7 +137,10 @@ export class MongoRepository {
                 $exists: true,
                 $eq: params.transactionId
             }
-        }).select({ __v: 0, createdAt: 0, updatedAt: 0 }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        })
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
     /**
      * 取引に対するアクションを検索する
@@ -148,14 +160,16 @@ export class MongoRepository {
                 $eq: params.transactionId
             }
         };
-        const query = this.actionModel.find(conditions).select({ __v: 0, createdAt: 0, updatedAt: 0 });
+        const query = this.actionModel.find(conditions)
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.sort !== undefined) {
             query.sort(params.sort);
         }
 
-        return query.exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
     /**
      * 注文番号から、注文に対するアクションを検索する
@@ -170,13 +184,15 @@ export class MongoRepository {
                 { 'purpose.orderNumber': params.orderNumber }
             ]
         };
-        const query = this.actionModel.find(conditions).select({ __v: 0, createdAt: 0, updatedAt: 0 });
+        const query = this.actionModel.find(conditions)
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.sort !== undefined) {
             query.sort(params.sort);
         }
 
-        return query.exec().then((docs) => docs.map((doc) => doc.toObject()));
+        return query.exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

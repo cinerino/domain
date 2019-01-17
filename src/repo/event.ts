@@ -182,7 +182,8 @@ export class MongoRepository {
             },
             params,
             { new: true, upsert: true }
-        ).exec();
+        )
+            .exec();
     }
 
     public async countScreeningEvents(params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>): Promise<number> {
@@ -190,7 +191,8 @@ export class MongoRepository {
 
         return this.eventModel.countDocuments(
             { $and: conditions }
-        ).setOptions({ maxTimeMS: 10000 })
+        )
+            .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
 
@@ -210,7 +212,8 @@ export class MongoRepository {
             }
         );
         if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit).skip(params.limit * (params.page - 1));
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
         }
 
         return query.sort({ startDate: 1 })
@@ -220,7 +223,7 @@ export class MongoRepository {
     }
 
     /**
-     * IDでイベントを取得する
+     * 特定イベント検索
      */
     public async findById<T extends factory.chevre.eventType>(params: {
         typeOf: T;
@@ -236,7 +239,8 @@ export class MongoRepository {
                 createdAt: 0,
                 updatedAt: 0
             }
-        ).exec();
+        )
+            .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Event');
         }

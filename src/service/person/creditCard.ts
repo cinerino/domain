@@ -154,7 +154,8 @@ export function find(
                 memberId: memberId,
                 seqMode: GMO.utils.util.SeqMode.Physics
                 // 未削除のものに絞り込む
-            }).then((results) => results.filter((result) => result.deleteFlag === '0'));
+            })
+                .then((results) => results.filter((result) => result.deleteFlag === '0'));
         } catch (error) {
             debug(error);
             if (error.name === 'GMOServiceBadRequestError') {

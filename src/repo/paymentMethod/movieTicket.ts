@@ -70,7 +70,9 @@ export class MvtkRepository {
             knyknrNoInfoIn: knyknrNoInfoIn,
             skhnCd: skhnCd,
             stCd: params.movieTicketPaymentAccepted.movieTicketInfo.stCd,
-            jeiYmd: moment(params.screeningEvent.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD')
+            jeiYmd: moment(params.screeningEvent.startDate)
+                .tz('Asia/Tokyo')
+                .format('YYYY/MM/DD')
         };
 
         const authService = new mvtkapi.service.Auth(this.options);
@@ -132,7 +134,8 @@ export class MvtkRepository {
                                             }
                                         }
                                     },
-                                    validThrough: moment(`${mkknInfo.yykDt}+09:00`, 'YYYY/MM/DD HH:mm:ssZ').toDate()
+                                    validThrough: moment(`${mkknInfo.yykDt}+09:00`, 'YYYY/MM/DD HH:mm:ssZ')
+                                        .toDate()
                                 });
                             });
                         });

@@ -7,6 +7,7 @@ import { errors } from './factory';
 
 /**
  * Chevreサービスエラーをハンドリングする
+ * 可能であればCinerinoエラーへ変換します
  */
 export function handleChevreError(error: any) {
     let handledError: Error = error;
@@ -41,6 +42,7 @@ export function handleChevreError(error: any) {
 
 /**
  * Pecorinoサービスエラーをハンドリングする
+ * 可能であればCinerinoエラーへ変換します
  */
 export function handlePecorinoError(error: any) {
     let handledError: Error = error;
@@ -75,6 +77,7 @@ export function handlePecorinoError(error: any) {
 
 /**
  * ムビチケ着券サービスエラーをハンドリングする
+ * 可能であればCinerinoエラーへ変換します
  */
 export function handleMvtkReserveError(error: any) {
     let handledError: Error = error;

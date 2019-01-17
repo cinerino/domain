@@ -113,7 +113,9 @@ export function create(params: {
             debug('starting pecorino pay transaction...', params.amount);
             pecorinoTransaction = await repos.depositTransactionService.start({
                 // 最大1ヵ月のオーソリ
-                expires: moment().add(1, 'month').toDate(),
+                expires: moment()
+                    .add(1, 'month')
+                    .toDate(),
                 agent: {
                     typeOf: transaction.seller.typeOf,
                     id: transaction.seller.id,

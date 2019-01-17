@@ -23,12 +23,16 @@ export class RedisRepository {
     }): Promise<number> {
         return new Promise<number>((resolve, reject) => {
             // データ保管期間はとりあえず一か月(これで十分かどうかはプロジェクト毎に検討すること)
-            const TTL = moment(params.orderDate).add(1, 'month').diff(moment(params.orderDate), 'seconds');
+            const TTL = moment(params.orderDate)
+                .add(1, 'month')
+                .diff(moment(params.orderDate), 'seconds');
             debug(`TTL:${TTL} seconds`);
             const key = util.format(
                 '%s:%s',
                 RedisRepository.REDIS_KEY_PREFIX,
-                moment(params.orderDate).tz('Asia/Tokyo').format('YYMM')
+                moment(params.orderDate)
+                    .tz('Asia/Tokyo')
+                    .format('YYMM')
             );
             this.redisClient.multi()
                 .incr(key, debug)

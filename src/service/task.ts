@@ -156,8 +156,10 @@ export function abort(intervalInMinutes: number): TaskOperation<void> {
             ABORT_REPORT_SUBJECT,
             `id:${abortedTask.id}
 name:${abortedTask.name}
-runsAt:${moment(abortedTask.runsAt).toISOString()}
-lastTriedAt:${moment(<Date>abortedTask.lastTriedAt).toISOString()}
+runsAt:${moment(abortedTask.runsAt)
+                .toISOString()}
+lastTriedAt:${moment(<Date>abortedTask.lastTriedAt)
+                .toISOString()}
 numberOfTried:${abortedTask.numberOfTried}
 lastResult:${lastResult}`
         )();
