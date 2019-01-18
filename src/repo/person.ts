@@ -12,15 +12,20 @@ export type IPerson = factory.person.IProfile & factory.person.IPerson;
  */
 export class CognitoRepository {
     public readonly cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
+
     constructor(cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider) {
         this.cognitoIdentityServiceProvider = cognitoIdentityServiceProvider;
     }
+
     public static ATTRIBUTE2PROFILE(userAttributes: AWS.CognitoIdentityServiceProvider.AttributeListType) {
         const profile: factory.person.IProfile = {
             givenName: '',
             familyName: '',
             email: '',
-            telephone: ''
+            telephone: '',
+            additionalProperty: userAttributes.map((a) => {
+                return { name: a.Name, value: a.Value };
+            })
         };
 
         userAttributes.forEach((userAttribute) => {
@@ -188,27 +193,37 @@ export class CognitoRepository {
                 return;
             }
 
+            const userAttributes: AttributeListType = [
+                {
+                    Name: 'given_name',
+                    Value: params.profile.givenName
+                },
+                {
+                    Name: 'family_name',
+                    Value: params.profile.familyName
+                },
+                {
+                    Name: 'phone_number',
+                    Value: formatedPhoneNumber
+                },
+                {
+                    Name: 'email',
+                    Value: params.profile.email
+                }
+            ];
+            if (params.profile.additionalProperty !== undefined) {
+                userAttributes.push(...params.profile.additionalProperty.map((a) => {
+                    return {
+                        Name: a.name,
+                        Value: a.value
+                    };
+                }));
+            }
+
             this.cognitoIdentityServiceProvider.updateUserAttributes(
                 {
                     AccessToken: params.accessToken,
-                    UserAttributes: [
-                        {
-                            Name: 'given_name',
-                            Value: params.profile.givenName
-                        },
-                        {
-                            Name: 'family_name',
-                            Value: params.profile.familyName
-                        },
-                        {
-                            Name: 'phone_number',
-                            Value: formatedPhoneNumber
-                        },
-                        {
-                            Name: 'email',
-                            Value: params.profile.email
-                        }
-                    ]
+                    UserAttributes: userAttributes
                 },
                 (err) => {
                     if (err instanceof Error) {
