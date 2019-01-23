@@ -19,8 +19,8 @@ jobs:
       #     command: |
       #       npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
       #       npm whoami
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
+      # - restore_cache:
+      #     key: dependency-cache-{{ checksum "package.json" }}
       - run:
           name: install npm packages
           command: npm ci
