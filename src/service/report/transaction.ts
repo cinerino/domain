@@ -214,7 +214,9 @@ export function transaction2report(params: {
                         if (ticketedSeat !== undefined) {
                             name = util.format(
                                 '%s %s',
-                                offer.reservedTicket.ticketedSeat.seatNumber,
+                                (offer.reservedTicket.ticketedSeat !== undefined)
+                                    ? offer.reservedTicket.ticketedSeat.seatNumber
+                                    : '',
                                 offer.reservedTicket.ticketType.name.ja
                             );
                         }

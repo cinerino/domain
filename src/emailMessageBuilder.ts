@@ -88,7 +88,9 @@ export async function createSendOrderMessage(params: {
 
                                 return util.format(
                                     '%s %s %s %s (%s)',
-                                    reservation.reservedTicket.ticketedSeat.seatNumber,
+                                    (reservation.reservedTicket.ticketedSeat !== undefined)
+                                        ? reservation.reservedTicket.ticketedSeat.seatNumber
+                                        : '',
                                     reservation.reservedTicket.ticketType.name.ja,
                                     priceStr,
                                     reservation.priceCurrency,

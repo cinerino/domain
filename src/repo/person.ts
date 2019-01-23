@@ -252,24 +252,38 @@ export class CognitoRepository {
                 // Limit: 60,
                 UserPoolId: params.userPooId
             };
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (params.id !== undefined) {
                 request.Filter = `sub^="${params.id}"`;
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (params.username !== undefined) {
                 request.Filter = `username^="${params.username}"`;
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (params.email !== undefined) {
                 request.Filter = `email^="${params.email}"`;
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (params.telephone !== undefined) {
                 request.Filter = `phone_number^="${params.telephone}"`;
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (params.givenName !== undefined) {
                 request.Filter = `given_name^="${params.givenName}"`;
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (params.familyName !== undefined) {
                 request.Filter = `family_name^="${params.familyName}"`;
             }
+
             this.cognitoIdentityServiceProvider.listUsers(
                 request,
                 (err, data) => {

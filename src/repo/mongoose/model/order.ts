@@ -135,15 +135,6 @@ schema.index(
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.id': 1 },
-    {
-        name: 'searchOrdersByReservedEvent',
-        partialFilterExpression: {
-            'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
-        }
-    }
-);
-schema.index(
     { confirmationNumber: 1 },
     {
         name: 'searchOrdersByConfirmationNumber',
@@ -252,11 +243,29 @@ schema.index(
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationNumber': 1 },
+    {
+        name: 'searchByItemOfferedReservationNumber',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'acceptedOffers.itemOffered.reservationFor.id': 1 },
     {
         name: 'searchByItemOfferedReservationForId',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.identifier': 1 },
+    {
+        name: 'searchByItemOfferedReservationForIdentifier',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.identifier': { $exists: true }
         }
     }
 );

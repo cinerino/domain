@@ -445,21 +445,24 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
     const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     seatReservationAuthorizeActions.forEach((a) => {
         a.object.acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
-            offer.priceSpecification.priceComponent.forEach((component) => {
-                // ムビチケ券種区分チャージ仕様があれば検証リストに追加
-                if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
-                    requiredMovieTickets.push({
-                        typeOf: factory.paymentMethodType.MovieTicket,
-                        identifier: '',
-                        accessCode: '',
-                        serviceType: component.appliesToMovieTicketType,
-                        serviceOutput: {
-                            reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: a.object.event.id },
-                            reservedTicket: { ticketedSeat: offer.ticketedSeat }
-                        }
-                    });
-                }
-            });
+            const offeredTicketedSeat = offer.ticketedSeat;
+            if (offeredTicketedSeat !== undefined) {
+                offer.priceSpecification.priceComponent.forEach((component) => {
+                    // ムビチケ券種区分チャージ仕様があれば検証リストに追加
+                    if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
+                        requiredMovieTickets.push({
+                            typeOf: factory.paymentMethodType.MovieTicket,
+                            identifier: '',
+                            accessCode: '',
+                            serviceType: component.appliesToMovieTicketType,
+                            serviceOutput: {
+                                reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: a.object.event.id },
+                                reservedTicket: { ticketedSeat: offeredTicketedSeat }
+                            }
+                        });
+                    }
+                });
+            }
         });
     });
     debug(requiredMovieTickets.length, 'movie tickets required');
@@ -601,7 +604,8 @@ export function createOrderFromTransaction(params: {
                     acceptedOffers.push(...updTmpReserveSeatResult.listTmpReserve.map((tmpReserve, index) => {
                         const requestedOffer = <factory.chevre.event.screeningEvent.IAcceptedTicketOffer>
                             authorizeSeatReservationAction.object.acceptedOffer.find((offer) => {
-                                return (offer.ticketedSeat.seatNumber === tmpReserve.seatNum
+                                return (offer.ticketedSeat !== undefined
+                                    && offer.ticketedSeat.seatNumber === tmpReserve.seatNum
                                     && offer.ticketedSeat.seatSection === tmpReserve.seatSection);
                             });
                         if (requestedOffer === undefined) {

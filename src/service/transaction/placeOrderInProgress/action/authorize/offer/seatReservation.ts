@@ -81,8 +81,7 @@ export function create(params: {
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
                 event: event,
-                acceptedOffer: acceptedOffers,
-                notes: params.object.notes
+                acceptedOffer: acceptedOffers
             },
             agent: {
                 id: transaction.seller.id,
@@ -122,8 +121,8 @@ export function create(params: {
                         screenCode: coaInfo.screenCode,
                         listSeat: params.object.acceptedOffer.map((offer) => {
                             return {
-                                seatSection: offer.ticketedSeat.seatSection,
-                                seatNum: offer.ticketedSeat.seatNumber
+                                seatSection: (offer.ticketedSeat !== undefined) ? offer.ticketedSeat.seatSection : '',
+                                seatNum: (offer.ticketedSeat !== undefined) ? offer.ticketedSeat.seatNumber : ''
                             };
                         })
                     };
@@ -393,7 +392,7 @@ function validateAcceptedOffers(params: {
                             addGlasses: 0, // まずメガネ代金なしでデータをセット
                             mvtkAppPrice: mvtkTicketCodeIn.appPrice,
                             ticketCount: 1,
-                            seatNum: acceptedOffer.ticketedSeat.seatNumber,
+                            seatNum: (acceptedOffer.ticketedSeat !== undefined) ? acceptedOffer.ticketedSeat.seatNumber : '',
                             kbnEisyahousiki: mvtkTicketCodeIn.kbnEisyahousiki,
                             mvtkNum: movieTicket.identifier,
                             mvtkKbnDenshiken: mvtkTicketCodeIn.kbnDenshiken,
@@ -446,7 +445,7 @@ function validateAcceptedOffers(params: {
                             addGlasses: 0,
                             mvtkAppPrice: 0,
                             ticketCount: 1,
-                            seatNum: acceptedOffer.ticketedSeat.seatNumber,
+                            seatNum: (acceptedOffer.ticketedSeat !== undefined) ? acceptedOffer.ticketedSeat.seatNumber : '',
                             kbnEisyahousiki: '00', // ムビチケを使用しない場合の初期値をセット
                             mvtkNum: '', // ムビチケを使用しない場合の初期値をセット
                             mvtkKbnDenshiken: '00', // ムビチケを使用しない場合の初期値をセット
