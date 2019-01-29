@@ -105,7 +105,7 @@ export function start(
                 /* istanbul ignore else */
                 // tslint:disable-next-line:no-magic-numbers
                 if (error.code === 11000) {
-                    throw new factory.errors.Argument('Order number', 'Already returned.');
+                    throw new factory.errors.Argument('Order number', 'Already returned');
                 }
             }
 

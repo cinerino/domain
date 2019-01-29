@@ -31,6 +31,10 @@ const superEventSchema = new mongoose.Schema(
     }
 );
 
+const videoFormatSchema = mongoose.SchemaTypes.Mixed;
+const identifierSchema = mongoose.SchemaTypes.Mixed;
+const alternativeHeadlineSchema = mongoose.SchemaTypes.Mixed;
+
 /**
  * イベントスキーマ
  */
@@ -41,6 +45,7 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
+        identifier: identifierSchema,
         name: MultilingualStringSchemaType,
         description: MultilingualStringSchemaType,
         doorTime: Date,
@@ -51,9 +56,9 @@ const schema = new mongoose.Schema(
         startDate: Date,
         workPerformed: workPerformedSchema,
         superEvent: superEventSchema,
-        videoFormat: String,
+        videoFormat: videoFormatSchema,
         kanaName: String,
-        alternativeHeadline: MultilingualStringSchemaType,
+        alternativeHeadline: alternativeHeadlineSchema,
         ticketTypeGroup: String,
         maximumAttendeeCapacity: Number,
         remainingAttendeeCapacity: Number
