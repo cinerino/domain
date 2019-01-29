@@ -94,7 +94,7 @@ export function create(params: {
             },
             recipient: transaction.agent,
             purpose: { typeOf: transaction.typeOf, id: transaction.id },
-            instrument: event.offers.offeredThrough
+            instrument: offeredThrough
         };
         const action = await repos.action.start(actionAttributes);
 
@@ -525,7 +525,7 @@ export function cancel(params: {
                 event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
             }
 
-            if (action.instrument === undefined) {
+            if (action.instrument === undefined || action.instrument === null) {
                 action.instrument = event.offers.offeredThrough;
             }
 
