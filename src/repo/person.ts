@@ -183,6 +183,8 @@ export class CognitoRepository {
             try {
                 const phoneUtil = PhoneNumberUtil.getInstance();
                 const phoneNumber = phoneUtil.parse(params.profile.telephone);
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore if */
                 if (!phoneUtil.isValidNumber(phoneNumber)) {
                     throw new Error('Invalid phone number');
                 }
@@ -211,7 +213,7 @@ export class CognitoRepository {
                     Value: params.profile.email
                 }
             ];
-            if (params.profile.additionalProperty !== undefined) {
+            if (Array.isArray(params.profile.additionalProperty)) {
                 userAttributes.push(...params.profile.additionalProperty.map((a) => {
                     return {
                         Name: a.name,
