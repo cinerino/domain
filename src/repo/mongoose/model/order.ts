@@ -2,6 +2,8 @@ import * as mongoose from 'mongoose';
 
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
+const modelName = 'Order';
+
 const customerSchema = new mongoose.Schema(
     {},
     {
@@ -333,14 +335,17 @@ schema.index(
     }
 );
 
-export default mongoose.model('Order', schema)
+mongoose.model(modelName, schema)
     .on(
         'index',
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
         (error) => {
             if (error !== undefined) {
+                // tslint:disable-next-line:no-console
                 console.error(error);
             }
         }
     );
+
+export { modelName, schema };

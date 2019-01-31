@@ -1,5 +1,5 @@
-import { Connection } from 'mongoose';
-import organizationModel from './mongoose/model/organization';
+import { Connection, Model } from 'mongoose';
+import { modelName } from './mongoose/model/organization';
 
 import * as factory from '../factory';
 
@@ -7,10 +7,10 @@ import * as factory from '../factory';
  * 販売者リポジトリ
  */
 export class MongoRepository {
-    public readonly organizationModel: typeof organizationModel;
+    public readonly organizationModel: typeof Model;
 
     constructor(connection: Connection) {
-        this.organizationModel = connection.model(organizationModel.modelName);
+        this.organizationModel = connection.model(modelName);
     }
 
     public static CREATE_MONGO_CONDITIONS(params: factory.organization.ISearchConditions<factory.organizationType>) {

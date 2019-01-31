@@ -28,14 +28,6 @@
     ],
     "no-any": false,
     "no-backbone-get-set-outside-model": false,
-    "no-console": [
-      true,
-      "debug",
-      "info",
-      "log",
-      "trace",
-      "warn"
-    ],
     "no-default-export": false,
     "no-internal-module": true,
     "no-magic-numbers": true,

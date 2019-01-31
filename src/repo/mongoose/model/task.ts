@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 
+const modelName = 'Task';
+
 import * as factory from '../../../factory';
 
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
@@ -123,6 +125,15 @@ schema.index(
         }
     }
 );
+// 取引のタスク検索に使用
+schema.index(
+    { 'data.transactionId': 1 },
+    {
+        partialFilterExpression: {
+            'data.transactionId': { $exists: true }
+        }
+    }
+);
 // 会員プログラム登録解除に使用
 schema.index(
     {
@@ -140,14 +151,17 @@ schema.index(
     }
 );
 
-export default mongoose.model('Task', schema)
+mongoose.model(modelName, schema)
     .on(
         'index',
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
         (error) => {
             if (error !== undefined) {
+                // tslint:disable-next-line:no-console
                 console.error(error);
             }
         }
     );
+
+export { modelName, schema };

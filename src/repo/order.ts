@@ -1,8 +1,8 @@
 import * as createDebug from 'debug';
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import OrderModel from './mongoose/model/order';
+import { modelName } from './mongoose/model/order';
 
 const debug = createDebug('cinerino-domain:repository');
 
@@ -10,9 +10,9 @@ const debug = createDebug('cinerino-domain:repository');
  * 注文リポジトリー
  */
 export class MongoRepository {
-    public readonly orderModel: typeof OrderModel;
+    public readonly orderModel: typeof Model;
     constructor(connection: Connection) {
-        this.orderModel = connection.model(OrderModel.modelName);
+        this.orderModel = connection.model(modelName);
     }
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.order.ISearchConditions) {

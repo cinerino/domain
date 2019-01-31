@@ -1,16 +1,16 @@
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import PaymentMethodModel from './mongoose/model/paymentMethod';
+import { modelName } from './mongoose/model/paymentMethod';
 
 /**
  * 決済方法リポジトリー
  */
 export class MongoRepository {
-    public readonly paymentMethodModel: typeof PaymentMethodModel;
+    public readonly paymentMethodModel: typeof Model;
 
     constructor(connection: Connection) {
-        this.paymentMethodModel = connection.model(PaymentMethodModel.modelName);
+        this.paymentMethodModel = connection.model(modelName);
     }
 
     public static CREATE_MOVIE_TICKET_MONGO_CONDITIONS(

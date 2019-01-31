@@ -1,15 +1,15 @@
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import eventModel from './mongoose/model/event';
+import { modelName } from './mongoose/model/event';
 
 /**
  * イベントリポジトリー
  */
 export class MongoRepository {
-    public readonly eventModel: typeof eventModel;
+    public readonly eventModel: typeof Model;
     constructor(connection: Connection) {
-        this.eventModel = connection.model(eventModel.modelName);
+        this.eventModel = connection.model(modelName);
     }
     // tslint:disable-next-line:max-func-body-length
     public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(

@@ -1,5 +1,5 @@
-import { Connection } from 'mongoose';
-import ownershipInfoModel from './mongoose/model/ownershipInfo';
+import { Connection, Model } from 'mongoose';
+import { modelName } from './mongoose/model/ownershipInfo';
 
 import * as factory from '../factory';
 
@@ -9,9 +9,9 @@ export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> =
  * 所有権リポジトリー
  */
 export class MongoRepository {
-    public readonly ownershipInfoModel: typeof ownershipInfoModel;
+    public readonly ownershipInfoModel: typeof Model;
     constructor(connection: Connection) {
-        this.ownershipInfoModel = connection.model(ownershipInfoModel.modelName);
+        this.ownershipInfoModel = connection.model(modelName);
     }
     // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS<T extends factory.ownershipInfo.IGoodType>(

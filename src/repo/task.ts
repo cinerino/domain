@@ -1,8 +1,8 @@
 import * as moment from 'moment';
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import taskModel from './mongoose/model/task';
+import { modelName } from './mongoose/model/task';
 
 /**
  * タスク実行時のソート条件
@@ -15,9 +15,9 @@ const sortOrder4executionOfTasks = {
  * タスクリポジトリー
  */
 export class MongoRepository {
-    public readonly taskModel: typeof taskModel;
+    public readonly taskModel: typeof Model;
     constructor(connection: Connection) {
-        this.taskModel = connection.model(taskModel.modelName);
+        this.taskModel = connection.model(modelName);
     }
     public static CREATE_MONGO_CONDITIONS<T extends factory.taskName>(params: factory.task.ISearchConditions<T>) {
         const andConditions: any[] = [{

@@ -113,6 +113,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             } catch (error) {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
+                // tslint:disable-next-line:no-console
                 console.error(error);
             }
         }));
@@ -184,6 +185,7 @@ export function importScreeningEventsFromCOA(params: {
                     theaterCodeName: params.xmlEndPoint.theaterCodeName
                 });
             } catch (err) {
+                // tslint:disable-next-line:no-console
                 console.error(err);
             }
         }
@@ -247,6 +249,7 @@ export function importScreeningEventsFromCOA(params: {
                         (place) => place.branchCode === scheduleFromCOA.screenCode
                     );
                     if (screenRoom === undefined) {
+                        // tslint:disable-next-line:no-console
                         console.error('screenRoom not found.', scheduleFromCOA.screenCode);
 
                         return;
@@ -255,6 +258,7 @@ export function importScreeningEventsFromCOA(params: {
                     // 上映イベント取得
                     const screeningEventSeries = screeningEventSerieses.find((event) => event.identifier === screeningEventIdentifier);
                     if (screeningEventSeries === undefined) {
+                        // tslint:disable-next-line:no-console
                         console.error('screeningEventSeries not found.', screeningEventIdentifier);
 
                         return;
@@ -279,6 +283,7 @@ export function importScreeningEventsFromCOA(params: {
                 } catch (error) {
                     // tslint:disable-next-line:no-single-line-block-comment
                     /* istanbul ignore next */
+                    // tslint:disable-next-line:no-console
                     console.error(error);
                 }
             }));

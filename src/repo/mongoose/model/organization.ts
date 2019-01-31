@@ -2,6 +2,8 @@ import * as mongoose from 'mongoose';
 
 import MultilingualStringSchemaType from '../schemaTypes/multilingualString';
 
+const modelName = 'Organization';
+
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
 const parentOrganizationSchema = new mongoose.Schema(
@@ -79,7 +81,8 @@ const schema = new mongoose.Schema(
         paymentAccepted: [paymentAcceptedSchema],
         hasPOS: [hasPOSSchema],
         areaServed: [areaServedSchema],
-        makesOffer: [makesOfferSchema]
+        makesOffer: [makesOfferSchema],
+        additionalProperty: [mongoose.SchemaTypes.Mixed]
     },
     {
         collection: 'organizations',
@@ -162,14 +165,17 @@ schema.index(
     }
 );
 
-export default mongoose.model('Organization', schema)
+mongoose.model(modelName, schema)
     .on(
         'index',
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
         (error) => {
             if (error !== undefined) {
+                // tslint:disable-next-line:no-console
                 console.error(error);
             }
         }
     );
+
+export { modelName, schema };

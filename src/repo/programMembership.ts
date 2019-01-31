@@ -1,8 +1,8 @@
 import * as createDebug from 'debug';
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import programMembershipModel from './mongoose/model/programMembership';
+import { modelName } from './mongoose/model/programMembership';
 
 const debug = createDebug('cinerino-domain:repository');
 
@@ -10,10 +10,10 @@ const debug = createDebug('cinerino-domain:repository');
  * 会員プログラムリポジトリー
  */
 export class MongoRepository {
-    public readonly programMembershipModel: typeof programMembershipModel;
+    public readonly programMembershipModel: typeof Model;
 
     constructor(connection: Connection) {
-        this.programMembershipModel = connection.model(programMembershipModel.modelName);
+        this.programMembershipModel = connection.model(modelName);
     }
 
     /**

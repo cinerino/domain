@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 
+const modelName = 'PaymentMethod';
+
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
 const serviceOutputSchema = new mongoose.Schema(
@@ -91,14 +93,17 @@ schema.index(
     }
 );
 
-export default mongoose.model('PaymentMethod', schema)
+mongoose.model(modelName, schema)
     .on(
         'index',
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
         (error) => {
             if (error !== undefined) {
+                // tslint:disable-next-line:no-console
                 console.error(error);
             }
         }
     );
+
+export { modelName, schema };

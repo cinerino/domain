@@ -1,17 +1,17 @@
 import * as moment from 'moment';
-import { Connection, Document, QueryCursor } from 'mongoose';
+import { Connection, Document, Model, QueryCursor } from 'mongoose';
 
 import * as factory from '../factory';
-import TransactionModel from './mongoose/model/transaction';
+import { modelName } from './mongoose/model/transaction';
 
 /**
  * 取引リポジトリー
  */
 export class MongoRepository {
-    public readonly transactionModel: typeof TransactionModel;
+    public readonly transactionModel: typeof Model;
 
     constructor(connection: Connection) {
-        this.transactionModel = connection.model(TransactionModel.modelName);
+        this.transactionModel = connection.model(modelName);
     }
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.transaction.ISearchConditions<factory.transactionType>) {

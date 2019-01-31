@@ -1,8 +1,8 @@
 import * as createDebug from 'debug';
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import InvoiceModel from './mongoose/model/invoice';
+import { modelName } from './mongoose/model/invoice';
 
 const debug = createDebug('cinerino-domain:repository');
 
@@ -10,10 +10,10 @@ const debug = createDebug('cinerino-domain:repository');
  * 請求書リポジトリー
  */
 export class MongoRepository {
-    public readonly invoiceModel: typeof InvoiceModel;
+    public readonly invoiceModel: typeof Model;
 
     constructor(connection: Connection) {
-        this.invoiceModel = connection.model(InvoiceModel.modelName);
+        this.invoiceModel = connection.model(modelName);
     }
 
     // tslint:disable-next-line:max-func-body-length

@@ -1,7 +1,7 @@
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import ActionModel from './mongoose/model/action';
+import { modelName } from './mongoose/model/action';
 
 export type IAuthorizeAction = factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>;
 export type IAction<T extends factory.actionType> =
@@ -12,9 +12,9 @@ export type IAction<T extends factory.actionType> =
  * アクションリポジトリー
  */
 export class MongoRepository {
-    public readonly actionModel: typeof ActionModel;
+    public readonly actionModel: typeof Model;
     constructor(connection: Connection) {
-        this.actionModel = connection.model(ActionModel.modelName);
+        this.actionModel = connection.model(modelName);
     }
     /**
      * アクション開始
