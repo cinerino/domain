@@ -45,13 +45,25 @@ describe('action.authorize.any.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Organization(domain.mongoose.connection);
+        const sellerRepo = new domain.repository.Seller(domain.mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findById').once().resolves(seller);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(sellerRepo)
+            .expects('findById')
+            .once()
+            .resolves(seller);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.create({
             agent: agent,
@@ -64,7 +76,7 @@ describe('action.authorize.any.create()', () => {
         })({
             action: actionRepo,
             transaction: transactionRepo,
-            organization: organizationRepo
+            seller: sellerRepo
         });
 
         assert.deepEqual(result, action);
@@ -109,8 +121,14 @@ describe('action.authorize.any.cancel()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('cancel')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.cancel({
             agent: agent,
@@ -152,8 +170,13 @@ describe('action.authorize.any.cancel()', () => {
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('cancel')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.cancel({
             agent: agent,
@@ -162,7 +185,8 @@ describe('action.authorize.any.cancel()', () => {
         })({
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();

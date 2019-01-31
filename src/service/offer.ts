@@ -1,7 +1,7 @@
 import * as createDebug from 'debug';
 
 import { MongoRepository as EventRepo } from '../repo/event';
-import { MongoRepository as OrganizationRepo } from '../repo/organization';
+import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as chevre from '../chevre';
 import * as COA from '../coa';
@@ -17,7 +17,7 @@ type ISearchScreeningEventOffersOperation<T> = (repos: {
 }) => Promise<T>;
 type ISearchScreeningEventTicketOffersOperation<T> = (repos: {
     event: EventRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     eventService: chevre.service.Event;
 }) => Promise<T>;
 
@@ -116,7 +116,7 @@ export function searchScreeningEventTicketOffers(params: {
 }): ISearchScreeningEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     return async (repos: {
         event: EventRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         eventService: chevre.service.Event;
     }) => {
         debug('searching screeninf event offers...', params);
@@ -166,7 +166,7 @@ export function searchScreeningEventTicketOffers(params: {
                 if (params.seller.typeOf !== factory.organizationType.MovieTheater) {
                     throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
                 }
-                const seller = await repos.organization.findById({ typeOf: params.seller.typeOf, id: params.seller.id });
+                const seller = await repos.seller.findById({ id: params.seller.id });
                 debug('seller.areaServed is', seller.areaServed);
 
                 const specifiedStore = params.store;

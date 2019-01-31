@@ -8,8 +8,8 @@ import * as COA from '../../../../../../coa';
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
-import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
 import { MvtkRepository as MovieTicketRepo } from '../../../../../../repo/paymentMethod/movieTicket';
+import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 import * as OfferService from '../../../../../offer';
@@ -21,7 +21,7 @@ export type ICreateOperation<T> = (repos: {
     eventService: chevre.service.Event;
     action: ActionRepo;
     movieTicket: MovieTicketRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     reserveService: chevre.service.transaction.Reserve;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -44,7 +44,7 @@ export function create(params: {
         eventService: chevre.service.Event;
         action: ActionRepo;
         movieTicket: MovieTicketRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         reserveService: chevre.service.transaction.Reserve;
         transaction: TransactionRepo;
     }) => {
@@ -229,7 +229,7 @@ function validateAcceptedOffers(params: {
         event: EventRepo;
         eventService: chevre.service.Event;
         movieTicket: MovieTicketRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer[]> => {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = await OfferService.searchScreeningEventTicketOffers({
@@ -288,14 +288,13 @@ function validateAcceptedOffers(params: {
                             throw new factory.errors.Argument('Offer', 'Movie Ticket accessCode not specified');
                         }
 
-                        const movieTheater = await repos.organization.findById({
-                            typeOf: params.seller.typeOf,
+                        const movieTheater = await repos.seller.findById({
                             id: params.seller.id
                         });
                         if (movieTheater.paymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
                         }
-                        const movieTicketPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+                        const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
                             movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
                         if (movieTicketPaymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');

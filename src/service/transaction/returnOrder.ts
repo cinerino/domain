@@ -10,7 +10,8 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
-import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
+// import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -187,7 +188,7 @@ export function confirm(params: {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
     }) => {
         let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
         if (transaction.status === factory.transactionStatusType.Confirmed) {
@@ -204,8 +205,7 @@ export function confirm(params: {
         }
 
         const order = transaction.object.order;
-        const seller = await repos.organization.findById({
-            typeOf: order.seller.typeOf,
+        const seller = await repos.seller.findById({
             id: order.seller.id
         });
 

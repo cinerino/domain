@@ -10,16 +10,16 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
-import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as PaymentMethodRepo } from '../../repo/paymentMethod';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
 export type ICheckMovieTicketOperation<T> = (repos: {
     action: ActionRepo;
     event: EventRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     movieTicket: MovieTicketRepo;
     paymentMethod: PaymentMethodRepo;
 }) => Promise<T>;
@@ -34,7 +34,7 @@ export function checkMovieTicket(
     return async (repos: {
         action: ActionRepo;
         event: EventRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         movieTicket: MovieTicketRepo;
         paymentMethod: PaymentMethodRepo;
     }) => {
@@ -56,14 +56,13 @@ export function checkMovieTicket(
             const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventIds[0] });
 
             // ショップ情報取得
-            const movieTheater = await repos.organization.findById({
-                typeOf: params.object.seller.typeOf,
+            const movieTheater = await repos.seller.findById({
                 id: params.object.seller.id
             });
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
@@ -130,7 +129,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         action: ActionRepo;
         event: EventRepo;
         invoice: InvoiceRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         movieTicketSeatService: mvtkapi.service.Seat;
     }) => {
         // アクション開始
@@ -154,14 +153,13 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const order = params.purpose;
 
             // ショップ情報取得
-            const seller = <factory.organization.IOrganization<factory.organizationType.MovieTheater>>await repos.organization.findById({
-                typeOf: order.seller.typeOf,
+            const seller = await repos.seller.findById({
                 id: order.seller.id
             });
             if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
                 seller.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
@@ -273,7 +271,6 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         action: ActionRepo;
         event: EventRepo;
         invoice: InvoiceRepo;
-        organization: OrganizationRepo;
         movieTicketSeatService: mvtkapi.service.Seat;
         task: TaskRepo;
     }) => {

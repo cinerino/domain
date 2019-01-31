@@ -11,7 +11,7 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
@@ -24,10 +24,11 @@ import * as AuthorizeMovieTicketActionService from './placeOrderInProgress/actio
 const debug = createDebug('cinerino-domain:service');
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type IStartOperation<T> = (repos: {
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
+export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
 /**
  * 取引開始
@@ -36,11 +37,11 @@ export function start(
     params: factory.transaction.placeOrder.IStartParamsWithoutDetail
 ): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         // 売り手を取得
-        const seller = await repos.organization.findById({ typeOf: params.seller.typeOf, id: params.seller.id });
+        const seller = await repos.seller.findById({ id: params.seller.id });
 
         let passport: factory.waiter.passport.IPassport | undefined;
         // WAITER許可証トークンがあれば検証する
@@ -267,7 +268,7 @@ export function confirm(params: {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         orderNumber: OrderNumberRepo;
         confirmationNumber: ConfirmationNumberRepo;
     }) => {
@@ -288,8 +289,7 @@ export function confirm(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours');
         }
 
-        const seller = await repos.organization.findById({
-            typeOf: <factory.organizationType.MovieTheater>transaction.seller.typeOf,
+        const seller = await repos.seller.findById({
             id: transaction.seller.id
         });
         debug('seller found.', seller.id);
@@ -315,7 +315,7 @@ export function confirm(params: {
         const orderNumber = await repos.orderNumber.publish({
             orderDate: params.result.order.orderDate,
             sellerType: seller.typeOf,
-            sellerBranchCode: seller.location.branchCode
+            sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined) ? seller.location.branchCode : ''
         });
         const confirmationNumber = await repos.confirmationNumber.publish({
             orderDate: params.result.order.orderDate
@@ -523,7 +523,7 @@ export function createOrderFromTransaction(params: {
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
-    seller: factory.organization.IOrganization<factory.organizationType.MovieTheater>;
+    seller: ISeller;
 }): factory.order.IOrder {
     // 座席予約に対する承認アクション取り出す
     const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
@@ -806,7 +806,7 @@ export async function createPotentialActionsFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
     order: factory.order.IOrder;
-    seller: factory.organization.IOrganization<factory.organizationType.MovieTheater>;
+    seller: ISeller;
     sendEmailMessage?: boolean;
     emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {

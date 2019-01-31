@@ -7,8 +7,8 @@ import { handleMvtkReserveError } from '../../../../../../errorHandler';
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
-import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../../../../../repo/paymentMethod/movieTicket';
+import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
@@ -16,7 +16,7 @@ const debug = createDebug('cinerino-domain:service');
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     event: EventRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     transaction: TransactionRepo;
     movieTicket: MovieTicketRepo;
 }) => Promise<T>;
@@ -33,7 +33,7 @@ export function create(params: {
     return async (repos: {
         action: ActionRepo;
         event: EventRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         transaction: TransactionRepo;
         movieTicket: MovieTicketRepo;
     }) => {
@@ -65,8 +65,7 @@ export function create(params: {
         const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventIds[0] });
 
         // ショップ情報取得
-        const movieTheater = await repos.organization.findById({
-            typeOf: factory.organizationType.MovieTheater,
+        const movieTheater = await repos.seller.findById({
             id: transaction.seller.id
         });
 
@@ -90,7 +89,7 @@ export function create(params: {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');

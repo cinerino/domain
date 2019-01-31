@@ -1,13 +1,13 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 会員プログラムリポジトリーテスト
+ * 会員プログラムリポジトリテスト
  */
 import { } from 'mocha';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
-import * as domain from '../index';
+import * as sskts from '../index';
 
 let sandbox: sinon.SinonSandbox;
 
@@ -22,7 +22,7 @@ describe('会員プログラムを検索する', () => {
 
     it('MongoDBが正常であれば配列を取得できるはず', async () => {
         const searchConditions = { id: 'id' };
-        const programMembershipRepo = new domain.repository.ProgramMembership(domain.mongoose.connection);
+        const programMembershipRepo = new sskts.repository.ProgramMembership(sskts.mongoose.connection);
         sandbox.mock(programMembershipRepo.programMembershipModel).expects('find').once()
             .chain('sort')
             .chain('exec')

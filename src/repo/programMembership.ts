@@ -1,10 +1,7 @@
-import * as createDebug from 'debug';
 import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/programMembership';
-
-const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 会員プログラムリポジトリー
@@ -31,8 +28,6 @@ export class MongoRepository {
         if (params.id !== undefined) {
             andConditions.push({ _id: params.id });
         }
-
-        debug('searching programMemberships...', andConditions);
 
         return this.programMembershipModel.find({ $and: andConditions })
             .sort({ programName: 1 })

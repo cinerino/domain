@@ -32,7 +32,7 @@ export class MvtkRepository {
     // tslint:disable-next-line:max-func-body-length
     public async checkByIdentifier(params: {
         movieTickets: IMovieTicket[];
-        movieTicketPaymentAccepted: factory.organization.IPaymentAccepted<factory.paymentMethodType.MovieTicket>;
+        movieTicketPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>;
         screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     }): Promise<ICheckResult> {
         const movieTickets: factory.action.check.paymentMethod.movieTicket.IMovieTicketResult[] = [];

@@ -7,8 +7,8 @@ import * as moment from 'moment';
 
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
 import { MongoRepository as OwnershipInfoRepo } from '../../../../../../repo/ownershipInfo';
+import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 import { handlePecorinoError } from '../../../../../../errorHandler';
@@ -17,7 +17,7 @@ const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     ownershipInfo: OwnershipInfoRepo;
     transaction: TransactionRepo;
     withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
@@ -38,7 +38,7 @@ export function create<T extends factory.accountType>(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         ownershipInfo: OwnershipInfoRepo;
         transaction: TransactionRepo;
         /**
@@ -119,8 +119,7 @@ export function create<T extends factory.accountType>(params: {
                 debug('pecorinoTransaction started.', pendingTransaction.id);
             } else if (repos.transferTransactionService !== undefined) {
                 // 組織から転送先口座IDを取得する
-                const seller = await repos.organization.findById({
-                    typeOf: transaction.seller.typeOf,
+                const seller = await repos.seller.findById({
                     id: transaction.seller.id
                 });
                 // tslint:disable-next-line:no-single-line-block-comment
@@ -128,7 +127,7 @@ export function create<T extends factory.accountType>(params: {
                 if (seller.paymentAccepted === undefined) {
                     throw new factory.errors.Argument('transaction', 'Pecorino payment not accepted.');
                 }
-                const accountPaymentsAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.Account>[]>
+                const accountPaymentsAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.Account>[]>
                     seller.paymentAccepted.filter((a) => a.paymentMethodType === factory.paymentMethodType.Account);
                 const paymentAccepted = accountPaymentsAccepted.find((a) => a.accountType === params.object.fromAccount.accountType);
                 // tslint:disable-next-line:no-single-line-block-comment

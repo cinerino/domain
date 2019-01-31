@@ -6,14 +6,14 @@ import * as createDebug from 'debug';
 
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 /**
@@ -27,7 +27,7 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -43,8 +43,7 @@ export function create(params: {
         // }
 
         // GMOショップ情報取得
-        const movieTheater = await repos.organization.findById({
-            typeOf: factory.organizationType.MovieTheater,
+        const movieTheater = await repos.seller.findById({
             id: transaction.seller.id
         });
 
@@ -67,12 +66,17 @@ export function create(params: {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
             }
-            const creditCardPaymentAccepted = <factory.organization.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
+            const creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
                 movieTheater.paymentAccepted.find(
                     (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
                 );
             if (creditCardPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
+            if (creditCardPaymentAccepted.gmoInfo.shopPass === undefined) {
+                throw new factory.errors.Argument('transaction', 'Credit card payment settings not enough');
             }
             entryTranArgs = {
                 shopId: creditCardPaymentAccepted.gmoInfo.shopId,

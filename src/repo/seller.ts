@@ -3,6 +3,8 @@ import { modelName } from './mongoose/model/organization';
 
 import * as factory from '../factory';
 
+export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
+
 /**
  * 販売者リポジトリ
  */
@@ -13,7 +15,7 @@ export class MongoRepository {
         this.organizationModel = connection.model(modelName);
     }
 
-    public static CREATE_MONGO_CONDITIONS(params: factory.organization.ISearchConditions<factory.organizationType>) {
+    public static CREATE_MONGO_CONDITIONS(params: factory.seller.ISearchConditions) {
         // MongoDB検索条件
         const andConditions: any[] = [
             {
@@ -99,9 +101,9 @@ export class MongoRepository {
     /**
      * 特定販売者検索
      */
-    public async findById<T extends factory.organizationType>(params: {
+    public async findById(params: {
         id: string;
-    }): Promise<factory.organization.IOrganization<T>> {
+    }): Promise<ISeller> {
         const doc = await this.organizationModel.findOne(
             {
                 paymentAccepted: { $exists: true },
@@ -122,13 +124,13 @@ export class MongoRepository {
     }
 
     /**
-     * 組織を保管する
+     * 販売者を保管する
      */
     public async save<T extends factory.organizationType>(params: {
         id?: string;
-        attributes: factory.organization.IAttributes<T>;
-    }): Promise<factory.organization.IOrganization<T>> {
-        let organization: factory.organization.IOrganization<T>;
+        attributes: factory.seller.IAttributes<T>;
+    }): Promise<ISeller> {
+        let organization: ISeller;
         if (params.id === undefined) {
             const doc = await this.organizationModel.create(params.attributes);
             organization = doc.toObject();
@@ -151,7 +153,7 @@ export class MongoRepository {
         return organization;
     }
 
-    public async count(params: factory.organization.ISearchConditions<factory.organizationType>): Promise<number> {
+    public async count(params: factory.seller.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.organizationModel.countDocuments(
@@ -165,8 +167,8 @@ export class MongoRepository {
      * 販売者検索
      */
     public async search(
-        params: factory.organization.ISearchConditions<factory.organizationType>
-    ): Promise<factory.organization.IOrganization<factory.organizationType>[]> {
+        params: factory.seller.ISearchConditions
+    ): Promise<ISeller[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.organizationModel.find(
             { $and: conditions },
@@ -196,7 +198,7 @@ export class MongoRepository {
     }
 
     /**
-     * 組織を削除する
+     * 販売者を削除する
      */
     public async deleteById(params: {
         id: string;

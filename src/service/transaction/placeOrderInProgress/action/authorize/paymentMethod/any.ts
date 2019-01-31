@@ -5,14 +5,14 @@ import * as createDebug from 'debug';
 
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as OrganizationRepo } from '../../../../../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    organization: OrganizationRepo;
+    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 /**
@@ -26,7 +26,7 @@ export function create<T extends factory.paymentMethodType>(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        organization: OrganizationRepo;
+        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -42,8 +42,7 @@ export function create<T extends factory.paymentMethodType>(params: {
         // }
 
         // ショップ情報取得
-        const movieTheater = await repos.organization.findById({
-            typeOf: factory.organizationType.MovieTheater,
+        const movieTheater = await repos.seller.findById({
             id: transaction.seller.id
         });
 
@@ -65,7 +64,7 @@ export function create<T extends factory.paymentMethodType>(params: {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
             }
-            const paymentAccepted = <factory.organization.IPaymentAccepted<T>>
+            const paymentAccepted = <factory.seller.IPaymentAccepted<T>>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === params.object.typeOf);
             if (paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);

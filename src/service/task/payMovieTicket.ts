@@ -5,7 +5,7 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
-import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 
 import * as PaymentService from '../payment';
 
@@ -28,7 +28,7 @@ export function call(data: factory.task.IData<factory.taskName.PayMovieTicket>):
         const actionRepo = new ActionRepo(settings.connection);
         const eventRepo = new EventRepo(settings.connection);
         const invoiceRepo = new InvoiceRepo(settings.connection);
-        const organizationRepo = new OrganizationRepo(settings.connection);
+        const sellerRepo = new SellerRepo(settings.connection);
         const movieTicketSeatService = new mvtkapi.service.Seat({
             endpoint: settings.mvtkReserveEndpoint,
             auth: settings.mvtkReserveAuthClient
@@ -37,7 +37,7 @@ export function call(data: factory.task.IData<factory.taskName.PayMovieTicket>):
             action: actionRepo,
             event: eventRepo,
             invoice: invoiceRepo,
-            organization: organizationRepo,
+            seller: sellerRepo,
             movieTicketSeatService: movieTicketSeatService
         });
     };
