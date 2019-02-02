@@ -291,7 +291,13 @@ export function cancelPointAward(params: {
     }) => {
         // ポイントインセンティブ承認アクションを取得
         const authorizeActions = <factory.action.authorize.award.point.IAction[]>
-            await repos.action.findAuthorizeByTransactionId({ transactionId: params.transactionId })
+            await repos.action.searchByPurpose({
+                typeOf: factory.actionType.AuthorizeAction,
+                purpose: {
+                    typeOf: factory.transactionType.PlaceOrder,
+                    id: params.transactionId
+                }
+            })
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
                 );

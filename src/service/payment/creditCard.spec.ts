@@ -70,8 +70,10 @@ describe('cancelCreditCardAuth()', () => {
             }
         ];
         const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        sandbox.mock(actionRepo).expects('findAuthorizeByTransactionId').once()
-            .withExactArgs(existingTransaction.id).resolves(authorizeActions);
+        sandbox.mock(actionRepo)
+            .expects('searchByPurpose')
+            .once()
+            .resolves(authorizeActions);
         sandbox.mock(domain.GMO.services.credit).expects('alterTran').exactly(authorizeActions.length).resolves();
         sandbox.mock(actionRepo).expects('cancel').exactly(authorizeActions.length).resolves({});
 

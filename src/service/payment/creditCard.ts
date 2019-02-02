@@ -97,7 +97,13 @@ export function cancelCreditCardAuth(params: { transactionId: string }) {
     return async (repos: { action: ActionRepo }) => {
         // クレジットカード仮売上アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
-            await repos.action.findAuthorizeByTransactionId(params)
+            await repos.action.searchByPurpose({
+                typeOf: factory.actionType.AuthorizeAction,
+                purpose: {
+                    typeOf: factory.transactionType.PlaceOrder,
+                    id: params.transactionId
+                }
+            })
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard)
                     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)

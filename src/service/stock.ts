@@ -681,7 +681,13 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
     }) => {
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
-            await repos.action.findAuthorizeByTransactionId(params)
+            await repos.action.searchByPurpose({
+                typeOf: factory.actionType.AuthorizeAction,
+                purpose: {
+                    typeOf: factory.transactionType.PlaceOrder,
+                    id: params.transactionId
+                }
+            })
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
                 );

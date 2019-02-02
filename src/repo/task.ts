@@ -11,15 +11,18 @@ const sortOrder4executionOfTasks = {
     numberOfTried: 1, // トライ回数の少なさ優先
     runsAt: 1 // 実行予定日時の早さ優先
 };
+
 /**
  * タスクリポジトリー
  */
 export class MongoRepository {
     public readonly taskModel: typeof Model;
+
     constructor(connection: Connection) {
         this.taskModel = connection.model(modelName);
     }
-    public static CREATE_MONGO_CONDITIONS<T extends factory.taskName>(params: factory.task.ISearchConditions<T>) {
+
+    public static CREATE_MONGO_CONDITIONS<T extends string>(params: factory.task.ISearchConditions<T>) {
         const andConditions: any[] = [{
             name: { $exists: true }
         }];
@@ -74,13 +77,15 @@ export class MongoRepository {
 
         return andConditions;
     }
-    public async save<T extends factory.taskName>(taskAttributes: factory.task.IAttributes<T>): Promise<factory.task.ITask<T>> {
+
+    public async save<T extends string>(taskAttributes: factory.task.IAttributes<T>): Promise<factory.task.ITask<T>> {
         return this.taskModel.create(taskAttributes)
             .then(
                 (doc) => doc.toObject()
             );
     }
-    public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T> | null> {
+
+    public async executeOneByName<T extends string>(taskName: T): Promise<factory.task.ITask<T> | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Ready,
@@ -105,6 +110,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     public async retry(intervalInMinutes: number) {
         const lastTriedAtShoudBeLessThan = moment()
             .add(-intervalInMinutes, 'minutes')
@@ -125,7 +131,8 @@ export class MongoRepository {
         )
             .exec();
     }
-    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<factory.taskName> | null> {
+
+    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<any> | null> {
         const lastTriedAtShoudBeLessThan = moment()
             .add(-intervalInMinutes, 'minutes')
             .toDate();
@@ -150,6 +157,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     public async pushExecutionResultById(
         id: string,
         status: factory.taskStatus,
@@ -164,10 +172,11 @@ export class MongoRepository {
         )
             .exec();
     }
+
     /**
      * 特定タスク検索
      */
-    public async findById<T extends factory.taskName>(params: {
+    public async findById<T extends string>(params: {
         name: T;
         id: string;
     }): Promise<factory.task.ITask<T>> {
@@ -189,17 +198,19 @@ export class MongoRepository {
 
         return doc.toObject();
     }
-    public async count<T extends factory.taskName>(params: factory.task.ISearchConditions<T>): Promise<number> {
+
+    public async count<T extends string>(params: factory.task.ISearchConditions<T>): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.taskModel.countDocuments({ $and: conditions })
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
+
     /**
      * 検索する
      */
-    public async search<T extends factory.taskName>(
+    public async search<T extends string>(
         params: factory.task.ISearchConditions<T>
     ): Promise<factory.task.ITask<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);

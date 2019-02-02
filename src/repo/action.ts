@@ -3,19 +3,21 @@ import { Connection, Model } from 'mongoose';
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/action';
 
-export type IAuthorizeAction = factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>;
 export type IAction<T extends factory.actionType> =
     T extends factory.actionType.OrderAction ? factory.action.trade.order.IAction :
     T extends factory.actionType.AuthorizeAction ? factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>> :
     factory.action.IAction<factory.action.IAttributes<T, any, any>>;
+
 /**
  * アクションリポジトリー
  */
 export class MongoRepository {
     public readonly actionModel: typeof Model;
+
     constructor(connection: Connection) {
         this.actionModel = connection.model(modelName);
     }
+
     /**
      * アクション開始
      */
@@ -27,6 +29,7 @@ export class MongoRepository {
         })
             .then((doc) => doc.toObject());
     }
+
     /**
      * アクション完了
      */
@@ -55,6 +58,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     /**
      * アクション取消
      */
@@ -78,6 +82,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     /**
      * アクション失敗
      */
@@ -106,6 +111,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     /**
      * 特定アクション検索
      */
@@ -127,41 +133,40 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     /**
-     * 取引内の承認アクションを取得する
+     * アクション目的から検索する
+     * 取引に対するアクション検索時などに使用
      */
-    public async findAuthorizeByTransactionId(params: { transactionId: string }): Promise<IAuthorizeAction[]> {
-        return this.actionModel.find({
-            typeOf: factory.actionType.AuthorizeAction,
-            'purpose.id': {
-                $exists: true,
-                $eq: params.transactionId
-            }
-        })
-            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
-            .exec()
-            .then((docs) => docs.map((doc) => doc.toObject()));
-    }
-    /**
-     * 取引に対するアクションを検索する
-     */
-    public async searchByTransactionId(params: {
-        transactionType: factory.transactionType;
-        transactionId: string;
+    public async searchByPurpose<T extends factory.actionType>(params: {
+        typeOf?: T;
+        purpose: {
+            typeOf: factory.transactionType;
+            id?: string;
+        };
         sort?: factory.action.ISortOrder;
-    }): Promise<IAction<factory.actionType>[]> {
-        const conditions = {
+    }): Promise<IAction<T>[]> {
+        const conditions: any = {
             'purpose.typeOf': {
                 $exists: true,
-                $eq: params.transactionType
-            },
-            'purpose.id': {
-                $exists: true,
-                $eq: params.transactionId
+                $eq: params.purpose.typeOf
             }
         };
+
+        if (params.typeOf !== undefined) {
+            conditions.typeOf = params.typeOf;
+        }
+
+        if (params.purpose.id !== undefined) {
+            conditions['purpose.id'] = {
+                $exists: true,
+                $eq: params.purpose.id
+            };
+        }
+
         const query = this.actionModel.find(conditions)
             .select({ __v: 0, createdAt: 0, updatedAt: 0 });
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.sort !== undefined) {
@@ -171,6 +176,7 @@ export class MongoRepository {
         return query.exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
+
     /**
      * 注文番号から、注文に対するアクションを検索する
      */

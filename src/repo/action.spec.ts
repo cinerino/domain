@@ -205,34 +205,6 @@ describe('findById()', () => {
     });
 });
 
-describe('findAuthorizeByTransactionId()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('アクションが存在すればオブジェクト配列が返却されるはず', async () => {
-        const transactionId = 'transactionId';
-        const actions = [
-            { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' },
-            { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' }
-        ];
-
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
-
-        sandbox.mock(repository.actionModel)
-            .expects('find')
-            .once()
-            .chain('exec')
-            .resolves(actions.map((a) => new repository.actionModel(a)));
-
-        const result = await repository.findAuthorizeByTransactionId({ transactionId });
-
-        assert(Array.isArray(result));
-        assert.equal(result.length, actions.length);
-        sandbox.verify();
-    });
-});
-
 describe('searchByOrderNumber()', () => {
     afterEach(() => {
         sandbox.restore();
@@ -261,7 +233,7 @@ describe('searchByOrderNumber()', () => {
     });
 });
 
-describe('取引に対するアクション検索', () => {
+describe('アクション目的から検索', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -279,7 +251,7 @@ describe('取引に対するアクション検索', () => {
             .chain('exec')
             .resolves(actions.map((a) => new repository.actionModel(a)));
 
-        const result = await repository.searchByTransactionId(<any>{ sort: {} });
+        const result = await repository.searchByPurpose(<any>{ purpose: {}, sort: {} });
         assert(Array.isArray(result));
         assert.equal(result.length, actions.length);
         sandbox.verify();
