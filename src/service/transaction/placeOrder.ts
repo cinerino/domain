@@ -58,7 +58,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 3,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {
@@ -86,7 +85,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: orderActionAttributes
@@ -104,7 +102,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
@@ -116,7 +113,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
@@ -128,7 +124,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
@@ -140,7 +135,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {

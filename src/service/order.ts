@@ -139,7 +139,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: orderPotentialActions.sendOrder
@@ -158,7 +157,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -177,7 +175,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -196,7 +193,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -215,7 +211,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -234,7 +229,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -381,7 +375,6 @@ function onReturn(returnActionAttributes: factory.action.transfer.returnAction.o
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -401,7 +394,6 @@ function onReturn(returnActionAttributes: factory.action.transfer.returnAction.o
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -421,7 +413,6 @@ function onReturn(returnActionAttributes: factory.action.transfer.returnAction.o
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a
@@ -441,7 +432,6 @@ function onReturn(returnActionAttributes: factory.action.transfer.returnAction.o
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
-                            lastTriedAt: null,
                             numberOfTried: 0,
                             executionResults: [],
                             data: a

@@ -337,7 +337,6 @@ function onRefund(refundActionAttributes: factory.action.trade.refund.IAttribute
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
                     remainingNumberOfTries: 3,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {

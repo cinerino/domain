@@ -157,7 +157,6 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
                         status: factory.taskStatus.Ready,
                         runsAt: now, // なるはやで実行
                         remainingNumberOfTries: 3,
-                        lastTriedAt: null,
                         numberOfTried: 0,
                         executionResults: [],
                         data: {
