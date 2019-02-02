@@ -30,10 +30,22 @@ describe('exportTasks()', () => {
             result: {},
             potentialActions: {}
         };
-        sandbox.mock(transactionRepo).expects('startExportTasks').once().resolves(transaction);
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').atLeast(1).resolves(task);
-        sandbox.mock(transactionRepo).expects('setTasksExportedById').once().resolves();
+        sandbox.mock(transactionRepo)
+            .expects('startExportTasks')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(transactionRepo)
+            .expects('findById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(taskRepo)
+            .expects('save')
+            .atLeast(1)
+            .resolves(task);
+        sandbox.mock(transactionRepo)
+            .expects('setTasksExportedById')
+            .once()
+            .resolves();
 
         const result = await domain.service.transaction.placeOrder.exportTasks(
             status
@@ -50,9 +62,16 @@ describe('exportTasks()', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('startExportTasks').once().resolves(null);
-        sandbox.mock(domain.service.transaction.placeOrder).expects('exportTasksById').never();
-        sandbox.mock(transactionRepo).expects('setTasksExportedById').never();
+        sandbox.mock(transactionRepo)
+            .expects('startExportTasks')
+            .once()
+            .resolves(null);
+        sandbox.mock(domain.service.transaction.placeOrder)
+            .expects('exportTasksById')
+            .never();
+        sandbox.mock(transactionRepo)
+            .expects('setTasksExportedById')
+            .never();
 
         const result = await domain.service.transaction.placeOrder.exportTasks(
             status
@@ -82,12 +101,16 @@ describe('exportTasksById()', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').exactly(numberOfTasks).resolves();
+        sandbox.mock(transactionRepo)
+            .expects('findById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(taskRepo)
+            .expects('save')
+            .exactly(numberOfTasks)
+            .resolves();
 
-        const result = await domain.service.transaction.placeOrder.exportTasksById(
-            { transactionId: transaction.id }
-        )({
+        const result = await domain.service.transaction.placeOrder.exportTasksById(transaction)({
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -105,15 +128,19 @@ describe('exportTasksById()', () => {
         const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
         const taskRepo = new domain.repository.Task(domain.mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').never();
+        sandbox.mock(transactionRepo)
+            .expects('findById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(taskRepo)
+            .expects('save')
+            .never();
 
-        const result = await domain.service.transaction.placeOrder.exportTasksById(
-            { transactionId: transaction.id }
-        )({
+        const result = await domain.service.transaction.placeOrder.exportTasksById(transaction)({
             task: taskRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotImplemented);
         sandbox.verify();
     });

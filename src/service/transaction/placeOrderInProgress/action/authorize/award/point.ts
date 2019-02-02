@@ -26,23 +26,22 @@ export type ICreateOperation<T> = (repos: {
  * Pecorino入金取引を開始する
  */
 export function create(params: {
-    agentId: string;
-    /**
-     * 取引ID
-     */
-    transactionId: string;
-    /**
-     * 金額
-     */
-    amount: number;
-    /**
-     * Pecorino口座番号
-     */
-    toAccountNumber: string;
-    /**
-     * 取引メモ
-     */
-    notes?: string;
+    transaction: { id: string };
+    agent: { id: string };
+    object: {
+        /**
+         * 金額
+         */
+        amount: number;
+        /**
+         * Pecorino口座番号
+         */
+        toAccountNumber: string;
+        /**
+         * 取引メモ
+         */
+        notes?: string;
+    };
 }): ICreateOperation<factory.action.authorize.award.point.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -56,12 +55,12 @@ export function create(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if: please write tests */
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
@@ -86,8 +85,8 @@ export function create(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                transactionId: params.transactionId,
-                amount: params.amount
+                transactionId: params.transaction.id,
+                amount: params.object.amount
             },
             agent: {
                 id: transaction.seller.id,
@@ -110,7 +109,7 @@ export function create(params: {
         try {
             pecorinoEndpoint = repos.depositTransactionService.options.endpoint;
 
-            debug('starting pecorino pay transaction...', params.amount);
+            debug('starting pecorino pay transaction...', params.object.amount);
             pecorinoTransaction = await repos.depositTransactionService.start({
                 // 最大1ヵ月のオーソリ
                 expires: moment()
@@ -128,11 +127,11 @@ export function create(params: {
                     name: `placeOrderTransaction-${transaction.id}`,
                     url: transaction.agent.url
                 },
-                amount: params.amount,
+                amount: params.object.amount,
                 // tslint:disable-next-line:no-single-line-block-comment
-                notes: (params.notes !== undefined) ? /* istanbul ignore next */ params.notes : 'Cinerino 注文取引インセンティブ',
+                notes: (params.object.notes !== undefined) ? /* istanbul ignore next */ params.object.notes : 'Cinerino 注文取引インセンティブ',
                 accountType: factory.accountType.Point,
-                toAccountNumber: params.toAccountNumber
+                toAccountNumber: params.object.toAccountNumber
             });
             debug('pecorinoTransaction started.', pecorinoTransaction.id);
         } catch (error) {
@@ -153,7 +152,7 @@ export function create(params: {
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.award.point.IResult = {
             price: 0, // JPYとして0円
-            amount: params.amount,
+            amount: params.object.amount,
             pointTransaction: pecorinoTransaction,
             pointAPIEndpoint: pecorinoEndpoint
         };
@@ -167,17 +166,17 @@ export function create(params: {
  */
 export function cancel(params: {
     /**
-     * 取引進行者ID
-     */
-    agentId: string;
-    /**
-     * 取引ID
-     */
-    transactionId: string;
-    /**
      * 承認アクションID
      */
-    actionId: string;
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    transaction: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -187,17 +186,17 @@ export function cancel(params: {
         debug('canceling pecorino authorize action...');
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.transaction.id
         });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
         // まずアクションをキャンセル
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.award.point.IResult>action.result;
 
         // Pecorinoで取消中止実行

@@ -28,7 +28,7 @@ export function exportTasks(status: factory.transactionStatusType) {
         }
 
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        await exportTasksById({ transactionId: transaction.id })(repos);
+        await exportTasksById(transaction)(repos);
         await repos.transaction.setTasksExportedById({ id: transaction.id });
     };
 }
@@ -36,7 +36,7 @@ export function exportTasks(status: factory.transactionStatusType) {
 /**
  * 取引のタスクを出力します
  */
-export function exportTasksById(params: { transactionId: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
+export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
@@ -44,7 +44,7 @@ export function exportTasksById(params: { transactionId: string }): ITaskAndTran
     }) => {
         const transaction = await repos.transaction.findById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.id
         });
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];

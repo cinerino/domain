@@ -192,15 +192,17 @@ export namespace action {
  * 取引中の購入者情報を変更する
  */
 export function setCustomerContact(params: {
-    agentId: string;
-    transactionId: string;
-    contact: factory.transaction.placeOrder.ICustomerContact;
+    id: string;
+    agent: { id: string };
+    object: {
+        customerContact: factory.transaction.placeOrder.ICustomerContact;
+    };
 }): ITransactionOperation<factory.transaction.placeOrder.ICustomerContact> {
     return async (repos: { transaction: TransactionRepo }) => {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(params.contact.telephone);
+            const phoneNumber = phoneUtil.parse(params.object.customerContact.telephone);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
                 throw new Error('Invalid phone number');
             }
@@ -211,20 +213,20 @@ export function setCustomerContact(params: {
 
         // 連絡先を生成
         const customerContact: factory.transaction.placeOrder.ICustomerContact = {
-            familyName: params.contact.familyName,
-            givenName: params.contact.givenName,
-            email: params.contact.email,
+            familyName: params.object.customerContact.familyName,
+            givenName: params.object.customerContact.givenName,
+            email: params.object.customerContact.email,
             telephone: formattedTelephone
         };
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            id: params.id
         });
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours');
         }
         await repos.transaction.setCustomerContactOnPlaceOrderInProgress({
-            id: params.transactionId,
+            id: params.id,
             contact: customerContact
         });
 
