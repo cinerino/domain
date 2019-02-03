@@ -71,10 +71,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                const transactionResult = transaction.result;
-                if (transactionResult === undefined) {
-                    throw new factory.errors.NotFound('Transaction Result');
-                }
                 const potentialActions = transaction.potentialActions;
                 if (potentialActions === undefined) {
                     throw new factory.errors.NotFound('Transaction PotentialActions');
