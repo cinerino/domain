@@ -52,7 +52,8 @@ export class MvtkRepository {
         });
 
         let skhnCd = params.screeningEvent.superEvent.workPerformed.identifier;
-        const offeredThrough = params.screeningEvent.offers.offeredThrough;
+        const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.screeningEvent.offers;
+        const offeredThrough = eventOffers.offeredThrough;
         // イベントインポート元がCOAの場合、作品コード連携方法が異なる
         if (offeredThrough !== undefined && offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
             const DIGITS = -2;

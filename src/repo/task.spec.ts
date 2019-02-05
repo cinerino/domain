@@ -3,6 +3,7 @@
  * task repository test
  */
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -23,7 +24,7 @@ describe('save()', () => {
     it('MongoDBの状態が正常であれば、保管できるはず', async () => {
         const ownershipInfo = {};
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('create').once()
             .resolves(new repository.taskModel());
 
@@ -41,7 +42,7 @@ describe('executeOneByName()', () => {
     it('MongoDBの状態が正常であれば、オブジェクトが返却されるはず', async () => {
         const taskName = domain.factory.taskName.PlaceOrder;
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
 
@@ -53,7 +54,7 @@ describe('executeOneByName()', () => {
     it('存在しなければ、nullが返却されるはず', async () => {
         const taskName = domain.factory.taskName.PlaceOrder;
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
 
         const result = await repository.executeOneByName(taskName);
@@ -70,7 +71,7 @@ describe('retry()', () => {
     it('MongoDBの状態が正常であれば、成功するはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('update').once()
             .chain('exec').resolves();
 
@@ -88,7 +89,7 @@ describe('abortOne()', () => {
     it('MongoDBの状態が正常であれば、オブジェクトが返却されるはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
 
@@ -100,7 +101,7 @@ describe('abortOne()', () => {
     it('存在しなければ、nullが返却されるはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
 
         const result = await repository.abortOne(intervalInMinutes);
@@ -119,7 +120,7 @@ describe('pushExecutionResultById()', () => {
         const status = domain.factory.taskStatus.Executed;
         const executionResult = {};
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('findByIdAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
 
@@ -135,7 +136,7 @@ describe('IDでタスク検索', () => {
     });
 
     it('MongoDBの状態が正常であれば、オブジェクトが返るはず', async () => {
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('findOne').once()
             .chain('exec')
             .resolves(new repository.taskModel());
@@ -167,7 +168,7 @@ describe('タスク検索', () => {
             lastTriedThrough: new Date()
         };
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('find').once()
             .chain('exec')
             .resolves([new repository.taskModel()]);
@@ -196,7 +197,7 @@ describe('タスクカウント', () => {
             lastTriedThrough: new Date()
         };
 
-        const repository = new domain.repository.Task(domain.mongoose.connection);
+        const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel).expects('countDocuments').once()
             .chain('exec')
             .resolves(1);

@@ -6,7 +6,7 @@ import * as GMO from '@motionpicture/gmo-service';
 import * as mvtkreserveapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
-import * as mongoose from 'mongoose';
+// import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
 import * as chevre from './chevre';
@@ -18,11 +18,11 @@ import * as service from './service';
 /**
  * MongoDBクライアント`mongoose`
  * @example
- * var promise = domain.mongoose.connect('mongodb://localhost/myapp', {
+ * var promise = mongoose.connect('mongodb://localhost/myapp', {
  *     useMongoClient: true
  * });
  */
-export import mongoose = mongoose;
+// export import mongoose = mongoose;
 /**
  * Redis Cacheクライアント
  * @example

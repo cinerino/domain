@@ -11,6 +11,10 @@ import * as factory from './factory';
 const debug = createDebug('cinerino-domain:emailMessageBuilder');
 const templateDirectory = `${__dirname}/../emails`;
 
+export type IUnitPriceSpecification =
+    factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
+export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
+
 /**
  * 注文配送メッセージを作成する
  */
@@ -70,16 +74,16 @@ export async function createSendOrderMessage(params: {
                             workPerformedName: event.workPerformed.name,
                             screenName: screenName,
                             reservedSeats: params.order.acceptedOffers.map((o) => {
-                                const reservation = o.itemOffered;
+                                const reservation = <factory.order.IReservation>o.itemOffered;
                                 let option = '';
                                 if (Array.isArray(reservation.reservationFor.superEvent.videoFormat)) {
                                     option += reservation.reservationFor.superEvent.videoFormat.map((format) => format.typeOf)
                                         .join(',');
                                 }
                                 let priceStr = '';
-                                // tslint:disable-next-line:max-line-length
-                                const unitPriceSpec = <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
-                                    reservation.price.priceComponent.find(
+                                const reservationPriceSpec = <ICompoundPriceSpecification>reservation.price;
+                                const unitPriceSpec = <IUnitPriceSpecification>
+                                    reservationPriceSpec.priceComponent.find(
                                         (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
                                     );
                                 if (unitPriceSpec !== undefined) {

@@ -3,6 +3,7 @@
  * 会員プログラムリポジトリテスト
  */
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -22,7 +23,7 @@ describe('会員プログラムを検索する', () => {
 
     it('MongoDBが正常であれば配列を取得できるはず', async () => {
         const searchConditions = { id: 'id' };
-        const programMembershipRepo = new sskts.repository.ProgramMembership(sskts.mongoose.connection);
+        const programMembershipRepo = new sskts.repository.ProgramMembership(mongoose.connection);
         sandbox.mock(programMembershipRepo.programMembershipModel).expects('find').once()
             .chain('sort')
             .chain('exec')

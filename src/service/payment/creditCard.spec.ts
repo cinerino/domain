@@ -2,6 +2,7 @@
 /**
  * クレジットカード決済サービステスト
  */
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../../index';
@@ -69,7 +70,7 @@ describe('cancelCreditCardAuth()', () => {
                 }
             }
         ];
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
         sandbox.mock(actionRepo)
             .expects('searchByPurpose')
             .once()
@@ -110,8 +111,8 @@ describe('payCreditCard()', () => {
             purpose: existingTransaction
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const invoiceRepo = new domain.repository.Invoice(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
@@ -150,8 +151,8 @@ describe('payCreditCard()', () => {
             purpose: existingTransaction
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const invoiceRepo = new domain.repository.Invoice(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').never();
@@ -191,8 +192,8 @@ describe('payCreditCard()', () => {
             purpose: existingTransaction
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const invoiceRepo = new domain.repository.Invoice(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('giveUp').resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
@@ -236,8 +237,8 @@ describe('refundCreditCard()', () => {
         const action = refundActionAttributes;
         const searchTradeResult = { status: domain.GMO.utils.util.Status.Sales };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
@@ -275,8 +276,8 @@ describe('refundCreditCard()', () => {
         const action = refundActionAttributes;
         const searchTradeResult = { status: domain.GMO.utils.util.Status.Void };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
@@ -315,8 +316,8 @@ describe('refundCreditCard()', () => {
         const searchTradeResult = { status: domain.GMO.utils.util.Status.Sales };
         const alterTranResult = new Error('alterTranError');
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(actionRepo).expects('start').once().withExactArgs(refundActionAttributes).resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();

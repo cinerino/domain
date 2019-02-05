@@ -35,12 +35,13 @@ export function searchScreeningEventOffers(params: {
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: params.event.id
         });
+        const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
 
-        if (event.offers.offeredThrough === undefined) {
-            event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+        if (eventOffers.offeredThrough === undefined) {
+            eventOffers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
 
-        switch (event.offers.offeredThrough.identifier) {
+        switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
                 let coaInfo: any;
                 if (Array.isArray(event.additionalProperty)) {
@@ -126,12 +127,13 @@ export function searchScreeningEventTicketOffers(params: {
         });
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[];
+        const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
 
-        if (event.offers.offeredThrough === undefined) {
-            event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+        if (eventOffers.offeredThrough === undefined) {
+            eventOffers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
 
-        switch (event.offers.offeredThrough.identifier) {
+        switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
                 let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;
                 if (Array.isArray(event.additionalProperty)) {
@@ -206,6 +208,7 @@ async function searchTicketOffersFromCOA(params: {
     superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo;
 }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     const offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
+    const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.event.offers;
 
     // 供給情報が適切かどうか確認
     const availableSalesTickets: COA.services.reserve.ISalesTicketResult[] = [];
@@ -238,8 +241,8 @@ async function searchTicketOffersFromCOA(params: {
     });
 
     // ムビチケ決済が許可されていればムビチケオファーを恣意的に追加
-    const movieTicketPaymentAccepted = params.event.offers.acceptedPaymentMethod === undefined
-        || params.event.offers.acceptedPaymentMethod.indexOf(factory.paymentMethodType.MovieTicket) >= 0;
+    const movieTicketPaymentAccepted = eventOffers.acceptedPaymentMethod === undefined
+        || eventOffers.acceptedPaymentMethod.indexOf(factory.paymentMethodType.MovieTicket) >= 0;
     if (movieTicketPaymentAccepted) {
         const mvtkOffer: factory.chevre.event.screeningEvent.ITicketOffer = {
             typeOf: 'Offer',
@@ -247,10 +250,10 @@ async function searchTicketOffersFromCOA(params: {
             name: { ja: 'ムビチケ', en: 'Movie Ticket' },
             description: { ja: '', en: '' },
             availability: factory.chevre.itemAvailability.InStock,
-            availabilityStarts: params.event.offers.availabilityStarts,
-            availabilityEnds: params.event.offers.availabilityEnds,
-            validThrough: params.event.offers.validThrough,
-            validFrom: params.event.offers.validFrom,
+            availabilityStarts: eventOffers.availabilityStarts,
+            availabilityEnds: eventOffers.availabilityEnds,
+            validThrough: eventOffers.validThrough,
+            validFrom: eventOffers.validFrom,
             priceCurrency: factory.chevre.priceCurrency.JPY,
             priceSpecification: {
                 typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
@@ -283,7 +286,7 @@ async function searchTicketOffersFromCOA(params: {
                 unitCode: factory.chevre.unitCode.C62,
                 value: 1
             },
-            itemOffered: params.event.offers.itemOffered
+            itemOffered: eventOffers.itemOffered
         };
 
         offers.push(mvtkOffer);
@@ -419,6 +422,7 @@ function coaSalesTicket2offer(params: {
     // tslint:disable-next-line:no-suspicious-comment
     // TODO メガネ単価を変換
 
+    const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.event.offers;
     const offer: factory.chevre.event.screeningEvent.ITicketOffer = {
         typeOf: 'Offer',
         priceCurrency: factory.priceCurrency.JPY,
@@ -433,10 +437,10 @@ function coaSalesTicket2offer(params: {
         },
         priceSpecification: priceSpecification,
         availability: factory.chevre.itemAvailability.InStock,
-        availabilityStarts: params.event.offers.availabilityStarts,
-        availabilityEnds: params.event.offers.availabilityEnds,
-        validThrough: params.event.offers.validThrough,
-        validFrom: params.event.offers.validFrom,
+        availabilityStarts: eventOffers.availabilityStarts,
+        availabilityEnds: eventOffers.availabilityEnds,
+        validThrough: eventOffers.validThrough,
+        validFrom: eventOffers.validFrom,
         eligibleQuantity: {
             typeOf: 'QuantitativeValue',
             unitCode: factory.chevre.unitCode.C62,

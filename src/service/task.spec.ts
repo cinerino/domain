@@ -2,6 +2,7 @@
 /**
  * task service test
  */
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../index';
@@ -26,7 +27,7 @@ describe('executeByName()', () => {
             data: { datakey: 'dataValue' },
             status: domain.factory.taskStatus.Running
         };
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
         sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(task.name).resolves(task);
         sandbox.mock(PlaceOrderTask).expects('call').once().withArgs(task.data).returns(async () => Promise.resolve());
@@ -34,7 +35,7 @@ describe('executeByName()', () => {
 
         const result = await domain.service.task.executeByName(task.name)({
             taskRepo: taskRepo,
-            connection: domain.mongoose.connection,
+            connection: mongoose.connection,
             pecorinoAuthClient: authClient
         });
 
@@ -44,7 +45,7 @@ describe('executeByName()', () => {
 
     it('未実行タスクが存在しなければ、実行されないはず', async () => {
         const taskName = domain.factory.taskName.PlaceOrder;
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
         sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(taskName).resolves(null);
@@ -52,7 +53,7 @@ describe('executeByName()', () => {
 
         const result = await domain.service.task.executeByName(taskName)({
             taskRepo: taskRepo,
-            connection: domain.mongoose.connection,
+            connection: mongoose.connection,
             pecorinoAuthClient: authClient
         });
 
@@ -68,7 +69,7 @@ describe('retry()', () => {
 
     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
         const INTERVAL = 10;
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(taskRepo).expects('retry').once()
             .withArgs(INTERVAL).resolves();
@@ -91,7 +92,7 @@ describe('abort()', () => {
             id: 'id',
             executionResults: [{ error: 'error' }]
         };
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(taskRepo).expects('abortOne').once().withArgs(INTERVAL).resolves(task);
         sandbox.mock(domain.service.notification).expects('report2developers').once()
@@ -116,7 +117,7 @@ describe('execute()', () => {
             data: { datakey: 'dataValue' },
             status: domain.factory.taskStatus.Running
         };
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
         sandbox.mock(PlaceOrderTask).expects('call').once().withArgs(task.data).returns(async () => Promise.resolve());
@@ -124,7 +125,7 @@ describe('execute()', () => {
 
         const result = await domain.service.task.execute(<any>task)({
             taskRepo: taskRepo,
-            connection: domain.mongoose.connection,
+            connection: mongoose.connection,
             pecorinoAuthClient: authClient
         });
 
@@ -139,14 +140,14 @@ describe('execute()', () => {
             data: { datakey: 'dataValue' },
             status: domain.factory.taskStatus.Running
         };
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, task.status).resolves();
 
         const result = await domain.service.task.execute(<any>task)({
             taskRepo: taskRepo,
-            connection: domain.mongoose.connection,
+            connection: mongoose.connection,
             pecorinoAuthClient: authClient
         });
 

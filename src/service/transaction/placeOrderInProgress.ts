@@ -703,7 +703,7 @@ export function createOrderFromTransaction(params: {
                             typeOf: <factory.offer.OfferType>'Offer',
                             itemOffered: eventReservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
-                            priceSpecification: eventReservation.price,
+                            priceSpecification: <any>eventReservation.price,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
                                 typeOf: params.seller.typeOf,
@@ -730,7 +730,7 @@ export function createOrderFromTransaction(params: {
                             typeOf: <factory.offer.OfferType>'Offer',
                             itemOffered: itemOffered,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-                            priceSpecification: tmpReserve.price,
+                            priceSpecification: <any>tmpReserve.price,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
                                 typeOf: params.seller.typeOf,
@@ -872,7 +872,8 @@ export async function createPotentialActionsFromTransaction(params: {
                         listTicket: params.order.acceptedOffers.map(
                             // tslint:disable-next-line:max-line-length
                             (offer) => {
-                                const additionalProperty = offer.itemOffered.reservedTicket.ticketType.additionalProperty;
+                                const itemOffered = <factory.order.IReservation>offer.itemOffered;
+                                const additionalProperty = itemOffered.reservedTicket.ticketType.additionalProperty;
                                 if (additionalProperty === undefined) {
                                     throw new factory.errors.NotFound('ticketType.additionalProperty');
                                 }

@@ -196,7 +196,8 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const seatNumbers = movieTickets.map((t) => t.serviceOutput.reservedTicket.ticketedSeat.seatNumber);
 
             let skhnCd = screeningEvent.superEvent.workPerformed.identifier;
-            const offeredThrough = screeningEvent.offers.offeredThrough;
+            const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>screeningEvent.offers;
+            const offeredThrough = offers.offeredThrough;
             // イベントインポート元がCOAの場合、作品コード連携方法が異なる
             if (offeredThrough !== undefined && offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
                 const DIGITS = -2;

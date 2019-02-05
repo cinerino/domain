@@ -86,15 +86,16 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                         .toDate() : undefined
                 };
 
-                const offers: factory.event.IOffer<factory.chevre.eventType.ScreeningEvent> = {
-                    ...e.offers,
-                    availabilityEnds: moment(e.offers.availabilityEnds)
+                let offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>e.offers;
+                offers = {
+                    ...offers,
+                    availabilityEnds: moment(offers.availabilityEnds)
                         .toDate(),
-                    availabilityStarts: moment(e.offers.availabilityStarts)
+                    availabilityStarts: moment(offers.availabilityStarts)
                         .toDate(),
-                    validFrom: moment(e.offers.validFrom)
+                    validFrom: moment(offers.validFrom)
                         .toDate(),
-                    validThrough: moment(e.offers.validThrough)
+                    validThrough: moment(offers.validThrough)
                         .toDate(),
                     offeredThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre }
                 };

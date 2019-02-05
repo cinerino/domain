@@ -1,4 +1,4 @@
-import { Connection, Model } from 'mongoose';
+import * as mongoose from 'mongoose';
 
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/event';
@@ -7,10 +7,12 @@ import { modelName } from './mongoose/model/event';
  * イベントリポジトリー
  */
 export class MongoRepository {
-    public readonly eventModel: typeof Model;
-    constructor(connection: Connection) {
+    public readonly eventModel: typeof mongoose.Model;
+
+    constructor(connection: mongoose.Connection) {
         this.eventModel = connection.model(modelName);
     }
+
     // tslint:disable-next-line:max-func-body-length
     public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(
         params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>

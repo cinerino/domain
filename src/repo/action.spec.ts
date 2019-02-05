@@ -3,6 +3,7 @@
  * アクションリポジトリテスト
  */
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -23,7 +24,7 @@ describe('start()', () => {
     it('アクションオブジェクトが返却されるはず', async () => {
         const params = {};
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('create')
@@ -46,7 +47,7 @@ describe('complete()', () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
         const actionResult = {};
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOneAndUpdate')
@@ -64,7 +65,7 @@ describe('complete()', () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
         const actionResult = {};
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOneAndUpdate')
@@ -88,7 +89,7 @@ describe('cancel()', () => {
     it('アクションが存在すればオブジェクトが返却されるはず', async () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOneAndUpdate')
@@ -105,7 +106,7 @@ describe('cancel()', () => {
     it('アクションが存在しなければNotFoundエラーとなるはず', async () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOneAndUpdate')
@@ -130,7 +131,7 @@ describe('giveUp()', () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
         const error = {};
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOneAndUpdate')
@@ -148,7 +149,7 @@ describe('giveUp()', () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
         const error = {};
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOneAndUpdate')
@@ -172,7 +173,7 @@ describe('findById()', () => {
     it('アクションが存在すればオブジェクトが返却されるはず', async () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOne')
@@ -189,7 +190,7 @@ describe('findById()', () => {
     it('アクションが存在しなければNotFoundエラーとなるはず', async () => {
         const action = { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' };
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('findOne')
@@ -217,7 +218,7 @@ describe('searchByOrderNumber()', () => {
             { typeOf: sskts.factory.actionType.OrderAction, id: 'actionId' }
         ];
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('find')
@@ -243,7 +244,7 @@ describe('アクション目的から検索', () => {
             { id: 'actionId' }
         ];
 
-        const repository = new sskts.repository.Action(sskts.mongoose.connection);
+        const repository = new sskts.repository.Action(mongoose.connection);
 
         sandbox.mock(repository.actionModel)
             .expects('find')

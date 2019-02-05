@@ -2,6 +2,7 @@
 /**
  * 汎用決済承認サービステスト
  */
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../../../../../../index';
@@ -44,9 +45,9 @@ describe('action.authorize.any.create()', () => {
             recipient: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const sellerRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
@@ -118,8 +119,8 @@ describe('action.authorize.any.cancel()', () => {
             seller: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
@@ -167,8 +168,8 @@ describe('action.authorize.any.cancel()', () => {
             seller: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')

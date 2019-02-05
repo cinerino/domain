@@ -2,6 +2,7 @@
 /**
  * クレジットカード決済承認サービステスト
  */
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../../../../../../index';
@@ -48,9 +49,9 @@ describe('action.authorize.creditCard.create()', () => {
             recipient: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
@@ -121,9 +122,9 @@ describe('action.authorize.creditCard.create()', () => {
     //     const amount = 1234;
     //     const creditCard = <any>{};
 
-    //     const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-    //     const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-    //     const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+    //     const actionRepo = new domain.repository.Action(mongoose.connection);
+    //     const organizationRepo = new domain.repository.Seller(mongoose.connection);
+    //     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
     //     sandbox.mock(transactionRepo).expects('findInProgressById').once()
     //         .withExactArgs(transaction.id).resolves(transaction);
@@ -181,9 +182,9 @@ describe('action.authorize.creditCard.create()', () => {
         };
         const entryTranResult = new Error('entryTranResultError');
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
@@ -245,9 +246,9 @@ describe('action.authorize.creditCard.create()', () => {
         };
         const entryTranResult = new Error('entryTranResult');
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
@@ -312,9 +313,9 @@ describe('action.authorize.creditCard.create()', () => {
             info: 'E92000001'
         }];
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
@@ -380,9 +381,9 @@ describe('action.authorize.creditCard.create()', () => {
             info: 'E01040010'
         }];
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
@@ -448,9 +449,9 @@ describe('action.authorize.creditCard.create()', () => {
             info: 'info'
         }];
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const organizationRepo = new domain.repository.Seller(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
@@ -516,8 +517,8 @@ describe('action.authorize.creditCard.cancel()', () => {
             seller: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
@@ -560,8 +561,8 @@ describe('action.authorize.creditCard.cancel()', () => {
             seller: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('cancel').never();
@@ -609,8 +610,8 @@ describe('action.authorize.creditCard.cancel()', () => {
             seller: seller
         };
 
-        const actionRepo = new domain.repository.Action(domain.mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('cancel').once().resolves(action);

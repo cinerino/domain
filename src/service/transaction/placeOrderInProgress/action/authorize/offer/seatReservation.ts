@@ -64,7 +64,9 @@ export function create(params: {
             id: params.object.event.id
         });
 
-        let offeredThrough = event.offers.offeredThrough;
+        const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
+
+        let offeredThrough = offers.offeredThrough;
         if (offeredThrough === undefined) {
             offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
@@ -254,7 +256,9 @@ function validateAcceptedOffers(params: {
                 ...offer
             };
 
-            let offeredThrough = params.event.offers.offeredThrough;
+            const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.event.offers;
+
+            let offeredThrough = offers.offeredThrough;
             if (offeredThrough === undefined) {
                 offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
             }
@@ -519,13 +523,14 @@ export function cancel(params: {
             const actionResult = action.result;
             let responseBody = actionResult.responseBody;
             const event = action.object.event;
+            const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
 
-            if (event.offers.offeredThrough === undefined) {
-                event.offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+            if (offers.offeredThrough === undefined) {
+                offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
             }
 
             if (action.instrument === undefined || action.instrument === null) {
-                action.instrument = event.offers.offeredThrough;
+                action.instrument = offers.offeredThrough;
             }
 
             switch (action.instrument.identifier) {

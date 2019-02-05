@@ -3,6 +3,7 @@
  * 注文リポジトリーテスト
  */
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -23,7 +24,7 @@ describe('createIfNotExist()', () => {
     it('MongoDBの状態が正常であれば、作成できるはず', async () => {
         const order = {};
 
-        const repository = new domain.repository.Order(domain.mongoose.connection);
+        const repository = new domain.repository.Order(mongoose.connection);
 
         sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.orderModel());
@@ -44,7 +45,7 @@ describe('changeStatus()', () => {
         const orderNumber = 'orderNumber';
         const orderStatus = domain.factory.orderStatus.OrderDelivered;
 
-        const repository = new domain.repository.Order(domain.mongoose.connection);
+        const repository = new domain.repository.Order(mongoose.connection);
 
         sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.orderModel());
@@ -59,7 +60,7 @@ describe('changeStatus()', () => {
         const orderNumber = 'orderNumber';
         const orderStatus = domain.factory.orderStatus.OrderDelivered;
 
-        const repository = new domain.repository.Order(domain.mongoose.connection);
+        const repository = new domain.repository.Order(mongoose.connection);
 
         sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
@@ -82,7 +83,7 @@ describe('findByOrderNumber()', () => {
             orderNumber: 'orderNumber'
         };
 
-        const repository = new domain.repository.Order(domain.mongoose.connection);
+        const repository = new domain.repository.Order(mongoose.connection);
 
         sandbox.mock(repository.orderModel).expects('findOne').once()
             .chain('exec').resolves(new repository.orderModel(order));
@@ -96,7 +97,7 @@ describe('findByOrderNumber()', () => {
     it('注文が存在しなければNotFoundエラーとなるはず', async () => {
         const orderNumber = 'orderNumber';
 
-        const repository = new domain.repository.Order(domain.mongoose.connection);
+        const repository = new domain.repository.Order(mongoose.connection);
 
         sandbox.mock(repository.orderModel).expects('findOne').once()
             .chain('exec').resolves(null);
@@ -115,7 +116,7 @@ describe('注文を検索する', () => {
     });
 
     it('MongoDBが正常であれば配列を取得できるはず', async () => {
-        const orderRepo = new domain.repository.Order(domain.mongoose.connection);
+        const orderRepo = new domain.repository.Order(mongoose.connection);
         sandbox.mock(orderRepo.orderModel).expects('find').once()
             // .chain('sort')
             .chain('exec')

@@ -22,7 +22,7 @@ export class MongoRepository {
         this.taskModel = connection.model(modelName);
     }
 
-    public static CREATE_MONGO_CONDITIONS<T extends string>(params: factory.task.ISearchConditions<T>) {
+    public static CREATE_MONGO_CONDITIONS<T extends factory.taskName>(params: factory.task.ISearchConditions<T>) {
         const andConditions: any[] = [{
             name: { $exists: true }
         }];
@@ -78,14 +78,14 @@ export class MongoRepository {
         return andConditions;
     }
 
-    public async save<T extends string>(taskAttributes: factory.task.IAttributes<T>): Promise<factory.task.ITask<T>> {
+    public async save<T extends factory.taskName>(taskAttributes: factory.task.IAttributes<T>): Promise<factory.task.ITask<T>> {
         return this.taskModel.create(taskAttributes)
             .then(
                 (doc) => doc.toObject()
             );
     }
 
-    public async executeOneByName<T extends string>(taskName: T): Promise<factory.task.ITask<T> | null> {
+    public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T> | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Ready,
@@ -176,7 +176,7 @@ export class MongoRepository {
     /**
      * 特定タスク検索
      */
-    public async findById<T extends string>(params: {
+    public async findById<T extends factory.taskName>(params: {
         name: T;
         id: string;
     }): Promise<factory.task.ITask<T>> {
@@ -199,7 +199,7 @@ export class MongoRepository {
         return doc.toObject();
     }
 
-    public async count<T extends string>(params: factory.task.ISearchConditions<T>): Promise<number> {
+    public async count<T extends factory.taskName>(params: factory.task.ISearchConditions<T>): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.taskModel.countDocuments({ $and: conditions })
@@ -210,7 +210,7 @@ export class MongoRepository {
     /**
      * 検索する
      */
-    public async search<T extends string>(
+    public async search<T extends factory.taskName>(
         params: factory.task.ISearchConditions<T>
     ): Promise<factory.task.ITask<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);

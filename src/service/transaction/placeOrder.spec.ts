@@ -2,6 +2,7 @@
 /**
  * placeOrder transaction service test
  */
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -20,8 +21,8 @@ describe('exportTasks()', () => {
     });
 
     it('タスクエクスポート待ちの取引があれば、エクスポートされるはず', async () => {
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
         const status = domain.factory.transactionStatusType.Confirmed;
         const task = {};
         const transaction = {
@@ -59,8 +60,8 @@ describe('exportTasks()', () => {
 
     it('タスクエクスポート待ちの取引がなければ、何もしないはず', async () => {
         const status = domain.factory.transactionStatusType.Confirmed;
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('startExportTasks')
@@ -98,8 +99,8 @@ describe('exportTasksById()', () => {
             result: {},
             potentialActions: {}
         };
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findById')
@@ -125,8 +126,8 @@ describe('exportTasksById()', () => {
             id: 'transactionId',
             status: domain.factory.transactionStatusType.InProgress
         };
-        const transactionRepo = new domain.repository.Transaction(domain.mongoose.connection);
-        const taskRepo = new domain.repository.Task(domain.mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findById')

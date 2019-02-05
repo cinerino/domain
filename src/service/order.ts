@@ -282,7 +282,7 @@ export function cancelReservations(params: { orderNumber: string }) {
                 // COAで予約の場合予約取消
                 if (acceptedOffer.offeredThrough !== undefined
                     && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
-                    const reservation = acceptedOffer.itemOffered;
+                    const reservation = <factory.order.IReservation>acceptedOffer.itemOffered;
                     const superEventLocationBranchCode = reservation.reservationFor.superEvent.location.branchCode;
 
                     const phoneUtil = PhoneNumberUtil.getInstance();
