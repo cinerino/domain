@@ -18,68 +18,76 @@ export class MongoRepository {
         params: factory.ownershipInfo.ISearchConditions<T>
     ) {
         const andConditions: any[] = [
-            {
-                'typeOfGood.typeOf': params.typeOfGood.typeOf
-            }
+            { typeOfGood: { $exists: true } }
         ];
-        const typeOfGood = <factory.ownershipInfo.ITypeOfGoodSearchConditions<typeof params.typeOfGood.typeOf>>params.typeOfGood;
-        switch (typeOfGood.typeOf) {
-            case factory.ownershipInfo.AccountGoodType.Account:
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (typeOfGood.accountType !== undefined) {
-                    andConditions.push({
-                        'typeOfGood.accountType': {
-                            $exists: true,
-                            $eq: typeOfGood.accountType
-                        }
-                    });
-                }
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (typeOfGood.accountNumber !== undefined) {
-                    andConditions.push({
-                        'typeOfGood.accountNumber': {
-                            $exists: true,
-                            $eq: typeOfGood.accountNumber
-                        }
-                    });
-                }
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (typeOfGood.accountNumbers !== undefined) {
-                    andConditions.push({
-                        'typeOfGood.accountNumber': {
-                            $exists: true,
-                            $in: typeOfGood.accountNumbers
-                        }
-                    });
-                }
-                break;
-            case factory.chevre.reservationType.EventReservation:
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (typeOfGood.id !== undefined) {
-                    andConditions.push({
-                        'typeOfGood.id': {
-                            $exists: true,
-                            $eq: typeOfGood.id
-                        }
-                    });
-                }
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (typeOfGood.ids !== undefined) {
-                    andConditions.push({
-                        'typeOfGood.id': {
-                            $exists: true,
-                            $in: typeOfGood.ids
-                        }
-                    });
-                }
-                break;
-            default:
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        const typeOfGood = <factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.IGoodType>>params.typeOfGood;
+        if (typeOfGood !== undefined) {
+            andConditions.push({
+                'typeOfGood.typeOf': typeOfGood.typeOf
+            });
+
+            switch (typeOfGood.typeOf) {
+                case factory.ownershipInfo.AccountGoodType.Account:
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (typeOfGood.accountType !== undefined) {
+                        andConditions.push({
+                            'typeOfGood.accountType': {
+                                $exists: true,
+                                $eq: typeOfGood.accountType
+                            }
+                        });
+                    }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (typeOfGood.accountNumber !== undefined) {
+                        andConditions.push({
+                            'typeOfGood.accountNumber': {
+                                $exists: true,
+                                $eq: typeOfGood.accountNumber
+                            }
+                        });
+                    }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (typeOfGood.accountNumbers !== undefined) {
+                        andConditions.push({
+                            'typeOfGood.accountNumber': {
+                                $exists: true,
+                                $in: typeOfGood.accountNumbers
+                            }
+                        });
+                    }
+                    break;
+                case factory.chevre.reservationType.EventReservation:
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (typeOfGood.id !== undefined) {
+                        andConditions.push({
+                            'typeOfGood.id': {
+                                $exists: true,
+                                $eq: typeOfGood.id
+                            }
+                        });
+                    }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (typeOfGood.ids !== undefined) {
+                        andConditions.push({
+                            'typeOfGood.id': {
+                                $exists: true,
+                                $in: typeOfGood.ids
+                            }
+                        });
+                    }
+                    break;
+                default:
+            }
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.ids !== undefined) {
@@ -87,6 +95,18 @@ export class MongoRepository {
                 _id: { $in: params.ids }
             });
         }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray((<any>params).identifiers)) {
+            andConditions.push({
+                identifier: {
+                    $exists: true,
+                    $in: (<any>params).identifiers
+                }
+            });
+        }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.ownedBy !== undefined) {
@@ -101,23 +121,26 @@ export class MongoRepository {
                 });
             }
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.ownedFrom instanceof Date) {
             andConditions.push({
-                ownedThrough: { $gt: params.ownedFrom }
+                ownedThrough: { $gte: params.ownedFrom }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.ownedThrough instanceof Date) {
             andConditions.push({
-                ownedFrom: { $lt: params.ownedThrough }
+                ownedFrom: { $lte: params.ownedThrough }
             });
         }
 
         return andConditions;
     }
+
     /**
      * 所有権情報を保管する
      */

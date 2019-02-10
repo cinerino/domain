@@ -87,6 +87,15 @@ schema.index(
     { name: 'searchByTypeOf' }
 );
 schema.index(
+    { identifier: 1 },
+    {
+        name: 'searchByIdentifier',
+        partialFilterExpression: {
+            identifier: { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'acquiredFrom.id': 1 },
     {
         name: 'searchByAcquiredFromId',

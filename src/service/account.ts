@@ -125,9 +125,12 @@ export function search(
             // 口座所有権を検索
             const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>(params);
             const accountNumbers = ownershipInfos.map((o) => o.typeOfGood.accountNumber);
+            const typeOfGood =
+                (<factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.AccountGoodType.Account>>params.typeOfGood);
+
             if (accountNumbers.length > 0) {
                 const accounts = await repos.accountService.search({
-                    accountType: params.typeOfGood.accountType,
+                    accountType: typeOfGood.accountType,
                     accountNumbers: accountNumbers,
                     statuses: [],
                     limit: 100
