@@ -234,6 +234,60 @@ schema.index(
         }
     }
 );
+schema.index(
+    { 'object.customerContact.familyName': 1 },
+    {
+        name: 'searchByObjectCustomerContactFamilyName',
+        partialFilterExpression: {
+            'object.customerContact.familyName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'object.customerContact.givenName': 1 },
+    {
+        name: 'searchByObjectCustomerContactGivenName',
+        partialFilterExpression: {
+            'object.customerContact.givenName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'object.customerContact.email': 1 },
+    {
+        name: 'searchByObjectCustomerContactEmail',
+        partialFilterExpression: {
+            'object.customerContact.email': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'object.customerContact.telephone': 1 },
+    {
+        name: 'searchByObjectCustomerContactTelephone',
+        partialFilterExpression: {
+            'object.customerContact.telephone': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { typeOf: 1, status: 1, tasksExportationStatus: 1 },
+    {
+        name: 'startExportTasks'
+    }
+);
+schema.index(
+    { tasksExportationStatus: 1, updatedAt: 1 },
+    {
+        name: 'reexportTasks'
+    }
+);
+schema.index(
+    { status: 1, expires: 1 },
+    {
+        name: 'makeExpired'
+    }
+);
 
 mongoose.model(modelName, schema)
     .on(

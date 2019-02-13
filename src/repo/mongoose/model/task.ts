@@ -97,8 +97,19 @@ schema.index(
     { name: 'searchByRemainingNumberOfTries' }
 );
 schema.index(
-    { numberOfTried: 1 },
-    { name: 'searchByNumberOfTried' }
+    { status: 1, name: 1, numberOfTried: 1, runsAt: 1 },
+    {
+        name: 'executeOneByName'
+    }
+);
+schema.index(
+    { status: 1, remainingNumberOfTries: 1, lastTriedAt: 1 },
+    {
+        name: 'retry',
+        partialFilterExpression: {
+            lastTriedAt: { $type: 'date' }
+        }
+    }
 );
 schema.index(
     { 'data.transactionId': 1 },
