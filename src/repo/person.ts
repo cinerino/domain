@@ -17,7 +17,7 @@ export class CognitoRepository {
         this.cognitoIdentityServiceProvider = cognitoIdentityServiceProvider;
     }
 
-    public static ATTRIBUTE2PROFILE(userAttributes: AWS.CognitoIdentityServiceProvider.AttributeListType) {
+    public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType) {
         const profile: factory.person.IProfile = {
             givenName: '',
             familyName: '',
@@ -86,6 +86,51 @@ export class CognitoRepository {
         return person;
     }
 
+    public static PROFILE2ATTRIBUTE(params: factory.person.IProfile): AttributeListType {
+        let formatedPhoneNumber: string;
+        try {
+            const phoneUtil = PhoneNumberUtil.getInstance();
+            const phoneNumber = phoneUtil.parse(params.telephone);
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore if */
+            if (!phoneUtil.isValidNumber(phoneNumber)) {
+                throw new Error('Invalid phone number');
+            }
+            formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
+        } catch (error) {
+            throw new factory.errors.Argument('telephone', 'Invalid phone number');
+        }
+
+        const userAttributes: AttributeListType = [
+            {
+                Name: 'given_name',
+                Value: params.givenName
+            },
+            {
+                Name: 'family_name',
+                Value: params.familyName
+            },
+            {
+                Name: 'phone_number',
+                Value: formatedPhoneNumber
+            },
+            {
+                Name: 'email',
+                Value: params.email
+            }
+        ];
+        if (Array.isArray(params.additionalProperty)) {
+            userAttributes.push(...params.additionalProperty.map((a) => {
+                return {
+                    Name: a.name,
+                    Value: a.value
+                };
+            }));
+        }
+
+        return userAttributes;
+    }
+
     /**
      * 管理者権限でユーザー属性を取得する
      */
@@ -110,6 +155,33 @@ export class CognitoRepository {
                         } else {
                             resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
                         }
+                    }
+                });
+        });
+    }
+
+    /**
+     * 管理者権限でプロフィール更新
+     */
+    public async updateProfile(params: {
+        userPooId: string;
+        username: string;
+        profile: factory.person.IProfile;
+    }): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const userAttributes = CognitoRepository.PROFILE2ATTRIBUTE(params.profile);
+
+            this.cognitoIdentityServiceProvider.adminUpdateUserAttributes(
+                {
+                    UserPoolId: params.userPooId,
+                    Username: params.username,
+                    UserAttributes: userAttributes
+                },
+                (err) => {
+                    if (err instanceof Error) {
+                        reject(new factory.errors.Argument('profile', err.message));
+                    } else {
+                        resolve();
                     }
                 });
         });
@@ -179,48 +251,7 @@ export class CognitoRepository {
         profile: factory.person.IProfile;
     }): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            let formatedPhoneNumber: string;
-            try {
-                const phoneUtil = PhoneNumberUtil.getInstance();
-                const phoneNumber = phoneUtil.parse(params.profile.telephone);
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore if */
-                if (!phoneUtil.isValidNumber(phoneNumber)) {
-                    throw new Error('Invalid phone number');
-                }
-                formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
-            } catch (error) {
-                reject(new factory.errors.Argument('telephone', 'Invalid phone number'));
-
-                return;
-            }
-
-            const userAttributes: AttributeListType = [
-                {
-                    Name: 'given_name',
-                    Value: params.profile.givenName
-                },
-                {
-                    Name: 'family_name',
-                    Value: params.profile.familyName
-                },
-                {
-                    Name: 'phone_number',
-                    Value: formatedPhoneNumber
-                },
-                {
-                    Name: 'email',
-                    Value: params.profile.email
-                }
-            ];
-            if (Array.isArray(params.profile.additionalProperty)) {
-                userAttributes.push(...params.profile.additionalProperty.map((a) => {
-                    return {
-                        Name: a.name,
-                        Value: a.value
-                    };
-                }));
-            }
+            const userAttributes = CognitoRepository.PROFILE2ATTRIBUTE(params.profile);
 
             this.cognitoIdentityServiceProvider.updateUserAttributes(
                 {
