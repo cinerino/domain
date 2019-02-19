@@ -253,8 +253,8 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 },
                 amount: authorizePointAwardAction.pointTransaction.object.amount,
                 notes: '注文返品によるポイントインセンティブ取消',
-                accountType: factory.accountType.Point,
-                fromAccountNumber: authorizePointAwardAction.pointTransaction.object.toAccountNumber
+                accountType: authorizePointAwardAction.pointTransaction.object.toLocation.accountType,
+                fromAccountNumber: authorizePointAwardAction.pointTransaction.object.toLocation.accountNumber
             });
             await withdrawService.confirm({ transactionId: withdrawTransaction.id });
         } catch (error) {

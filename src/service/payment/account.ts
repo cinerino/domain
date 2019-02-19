@@ -154,8 +154,8 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 switch (pendingTransaction.typeOf) {
                     case factory.pecorino.transactionType.Withdraw:
                         const depositTransaction = await repos.depositService.start({
-                            accountType: pendingTransaction.object.accountType,
-                            toAccountNumber: pendingTransaction.object.fromAccountNumber,
+                            accountType: pendingTransaction.object.fromLocation.accountType,
+                            toAccountNumber: pendingTransaction.object.fromLocation.accountNumber,
                             expires: moment()
                                 // tslint:disable-next-line:no-magic-numbers
                                 .add(5, 'minutes')
@@ -171,9 +171,9 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
                     case factory.pecorino.transactionType.Transfer:
                         const transferTransaction = await repos.transferService.start({
-                            accountType: pendingTransaction.object.accountType,
-                            toAccountNumber: pendingTransaction.object.fromAccountNumber,
-                            fromAccountNumber: pendingTransaction.object.toAccountNumber,
+                            accountType: pendingTransaction.object.fromLocation.accountType,
+                            toAccountNumber: pendingTransaction.object.fromLocation.accountNumber,
+                            fromAccountNumber: pendingTransaction.object.toLocation.accountNumber,
                             expires: moment()
                                 // tslint:disable-next-line:no-magic-numbers
                                 .add(5, 'minutes')

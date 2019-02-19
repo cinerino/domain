@@ -39,7 +39,7 @@ describe('ポイントインセンティブを適用する', () => {
         const result = await domain.service.delivery.givePointAward(<any>{
             object: {
                 pointAPIEndpoint: 'https://example.com',
-                pointTransaction: {}
+                pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         })({
             action: actionRepo,
@@ -72,7 +72,7 @@ describe('ポイントインセンティブを適用する', () => {
         const result = await domain.service.delivery.givePointAward(<any>{
             object: {
                 pointAPIEndpoint: 'https://example.com',
-                pointTransaction: {}
+                pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         })({
             action: actionRepo,
@@ -115,7 +115,7 @@ describe('ポイントインセンティブを返却する', () => {
             object: {
                 object: {
                     pointAPIEndpoint: 'https://example.com',
-                    pointTransaction: { object: {} }
+                    pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
                 },
                 purpose: {
                     customer: {},
@@ -159,7 +159,7 @@ describe('ポイントインセンティブを返却する', () => {
             object: {
                 object: {
                     pointAPIEndpoint: 'https://example.com',
-                    pointTransaction: { object: {} }
+                    pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
                 },
                 purpose: {
                     customer: {},
@@ -187,7 +187,7 @@ describe('ポイントインセンティブ承認取消', () => {
             actionStatus: domain.factory.actionStatusType.CompletedActionStatus,
             result: {
                 pointAPIEndpoint: 'https://example.com',
-                pointTransaction: { object: {} }
+                pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         }];
         const actionRepo = new domain.repository.Action(mongoose.connection);
