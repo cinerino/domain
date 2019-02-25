@@ -116,219 +116,219 @@ schema.index(
     }
 );
 schema.index(
-    { 'seller.id': 1 },
+    { 'seller.id': 1, orderDate: -1 },
     {
-        name: 'searchOrdersBySeller',
+        name: 'searchOrdersBySellerAndOrderDate',
         partialFilterExpression: {
             'seller.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { orderDate: 1 },
+    { orderDate: -1 },
     {
-        name: 'searchOrdersByOrderDate'
+        name: 'searchByOrderDate'
     }
 );
 schema.index(
-    { orderStatus: 1 },
+    { orderStatus: 1, orderDate: -1 },
     {
-        name: 'searchOrdersByOrderStatus'
+        name: 'searchOrdersByOrderStatusAndOrderDate'
     }
 );
 schema.index(
-    { confirmationNumber: 1 },
+    { confirmationNumber: 1, orderDate: -1 },
     {
-        name: 'searchOrdersByConfirmationNumber',
+        name: 'searchOrdersByConfirmationNumberAndOrderDate',
         partialFilterExpression: {
             confirmationNumber: { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.typeOf': 1 },
+    { 'customer.typeOf': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerTypeOf',
+        name: 'searchByCustomerTypeOfAndOrderDate',
         partialFilterExpression: {
             'customer.typeOf': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.id': 1 },
+    { 'customer.id': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerId',
+        name: 'searchByCustomerIdAndOrderDate',
         partialFilterExpression: {
             'customer.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.identifier': 1 },
+    { 'customer.identifier': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerIdentifier',
+        name: 'searchByCustomerIdentifierAndOrderDate',
         partialFilterExpression: {
             'customer.identifier': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.memberOf.membershipNumber': 1 },
+    { 'customer.memberOf.membershipNumber': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerMemberhipNumber',
+        name: 'searchByCustomerMemberhipNumberAndOrderDate',
         partialFilterExpression: {
             'customer.memberOf.membershipNumber': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.givenName': 1 },
+    { 'customer.givenName': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerGivenName',
+        name: 'searchByCustomerGivenNameAndOrderDate',
         partialFilterExpression: {
             'customer.givenName': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.familyName': 1 },
+    { 'customer.familyName': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerFamilyName',
+        name: 'searchByCustomerFamilyNameAndOrderDate',
         partialFilterExpression: {
             'customer.familyName': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.email': 1 },
+    { 'customer.email': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerEmail',
+        name: 'searchByCustomerEmailAndOrderDate',
         partialFilterExpression: {
             'customer.email': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'customer.telephone': 1 },
+    { 'customer.telephone': 1, orderDate: -1 },
     {
-        name: 'searchByCustomerTelephone',
+        name: 'searchByCustomerTelephoneAndOrderDate',
         partialFilterExpression: {
             'customer.telephone': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'paymentMethods.typeOf': 1 },
+    { 'paymentMethods.typeOf': 1, orderDate: -1 },
     {
-        name: 'searchByPaymentMethodType',
+        name: 'searchByPaymentMethodTypeAndOrderDate',
         partialFilterExpression: {
             'paymentMethods.typeOf': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'paymentMethods.paymentMethodId': 1 },
+    { 'paymentMethods.paymentMethodId': 1, orderDate: -1 },
     {
-        name: 'searchByPaymentMethodId',
+        name: 'searchByPaymentMethodIdAndOrderDate',
         partialFilterExpression: {
             'paymentMethods.paymentMethodId': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.id': 1 },
+    { 'acceptedOffers.itemOffered.id': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedId',
+        name: 'searchByItemOfferedIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationNumber': 1 },
+    { 'acceptedOffers.itemOffered.reservationNumber': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationNumber',
+        name: 'searchByItemOfferedReservationNumberAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationNumber': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.id': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.id': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForId',
+        name: 'searchByItemOfferedReservationForIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.identifier': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.identifier': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForIdentifier',
+        name: 'searchByItemOfferedReservationForIdentifierAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.identifier': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.name': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.name': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForName',
+        name: 'searchByItemOfferedReservationForNameAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.name': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.endDate': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.endDate': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForEndDate',
+        name: 'searchByItemOfferedReservationForEndDateAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.endDate': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.startDate': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.startDate': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForStartDate',
+        name: 'searchByItemOfferedReservationForStartDateAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.startDate': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.location.branchCode': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.location.branchCode': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForLocationBranchCode',
+        name: 'searchByItemOfferedReservationForLocationBranchCodeAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.location.branchCode': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.superEvent.id': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.superEvent.id': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForLocationSuperEventId',
+        name: 'searchByItemOfferedReservationForLocationSuperEventIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.superEvent.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForLocationSuperEventLocationBranchCode',
+        name: 'searchByItemOfferedReservationForLocationSuperEventLocationBranchCodeAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': 1 },
+    { 'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForLocationSuperEventWorkPerformedIdentifier',
+        name: 'searchByItemOfferedReservationForLocationSuperEventWorkPerformedIdentifierAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': { $exists: true }
         }

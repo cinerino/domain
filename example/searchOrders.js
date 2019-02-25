@@ -11,7 +11,24 @@ async function main() {
     const orderRepo = new domain.repository.Order(mongoose.connection);
     const orders = await orderRepo.search({
         orderDateFrom: moment().add(-3, 'days').toDate(),
-        orderDateThrough: moment().toDate()
+        orderDateThrough: moment().toDate(),
+        paymentMethods: {
+            typeOfs: [domain.factory.paymentMethodType.MovieTicket],
+            paymentMethodIds: ['xxx']
+        },
+        seller: { ids: ['xxx'] },
+        customer: {
+            ids: ['xxx'],
+            identifiers: [{ name: '', value: '' }],
+            givenName: 'xxx'
+        },
+        acceptedOffers: {
+            itemOffered: {
+                ids: ['xxx'],
+                reservationFor: { ids: ['xxx'] }
+            }
+        },
+        sort: { orderDate: -1 }
     });
     console.log(orders.length, 'orders found.');
 
@@ -20,16 +37,24 @@ async function main() {
     //         { orderDate: { $gte: moment().add(-3, 'days').toDate() } },
     //         { orderDate: { $lte: moment().toDate() } },
     //         { confirmationNumber: { $in: ['0', '517205'] } },
-    //         // { orderStatus: { $in: [domain.factory.orderStatus.OrderDelivered] } },
     //         {
     //             'paymentMethods.typeOf': {
     //                 $exists: true,
     //                 $in: [domain.factory.paymentMethodType.CreditCard, domain.factory.paymentMethodType.MovieTicket]
     //             }
+    //         },
+    //         {
+    //             'customer.identifier': {
+    //                 $exists: true,
+    //                 $in: [
+    //                     { name: 'clientId', value: 'xxx' }
+    //                 ]
+
+    //             }
     //         }
     //     ]
     // })
-    //     .sort({ orderDate: -1 })
+    //     .sort({ orderDate: 1 })
     //     .explain();
     // console.log(res[0].executionStats.allPlansExecution.map((e) => e.executionStages));
 

@@ -16,29 +16,7 @@ export class MongoRepository {
     }
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.order.ISearchConditions) {
-        const andConditions: any[] = [
-            // 注文日時の範囲条件
-            {
-                orderDate: {
-                    $exists: true
-                }
-            }
-        ];
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.orderDateFrom instanceof Date) {
-            andConditions.push({
-                orderDate: { $gte: params.orderDateFrom }
-            });
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.orderDateThrough instanceof Date) {
-            andConditions.push({
-                orderDate: { $lte: params.orderDateThrough }
-            });
-        }
+        const andConditions: any[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -341,6 +319,21 @@ export class MongoRepository {
             }
         }
 
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.orderDateFrom instanceof Date) {
+            andConditions.push({
+                orderDate: { $gte: params.orderDateFrom }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.orderDateThrough instanceof Date) {
+            andConditions.push({
+                orderDate: { $lte: params.orderDateThrough }
+            });
+        }
+
         return andConditions;
     }
     /**
@@ -451,9 +444,7 @@ export class MongoRepository {
     public async count(params: factory.order.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.orderModel.countDocuments(
-            { $and: conditions }
-        )
+        return this.orderModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -464,7 +455,7 @@ export class MongoRepository {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         debug('searching orders...', conditions);
         const query = this.orderModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,
@@ -482,6 +473,9 @@ export class MongoRepository {
         if (params.sort !== undefined) {
             query.sort(params.sort);
         }
+
+        // const explainResult = await (<any>query).explain();
+        // console.log(explainResult[0].executionStats.allPlansExecution.map((e: any) => e.executionStages.inputStage));
 
         return query.setOptions({ maxTimeMS: 10000 })
             .exec()
