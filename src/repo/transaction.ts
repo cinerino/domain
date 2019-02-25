@@ -15,11 +15,8 @@ export class MongoRepository {
     }
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.transaction.ISearchConditions<factory.transactionType>) {
-        const andConditions: any[] = [
-            {
-                typeOf: params.typeOf
-            }
-        ];
+        const andConditions: any[] = [];
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.startFrom !== undefined) {
@@ -518,9 +515,7 @@ export class MongoRepository {
     public async count<T extends factory.transactionType>(params: factory.transaction.ISearchConditions<T>): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.transactionModel.countDocuments(
-            { $and: conditions }
-        )
+        return this.transactionModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -532,7 +527,7 @@ export class MongoRepository {
         params: factory.transaction.ISearchConditions<T>
     ): Promise<factory.transaction.ITransaction<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-        const query = this.transactionModel.find({ $and: conditions })
+        const query = this.transactionModel.find((conditions.length > 0) ? { $and: conditions } : {})
             .select({ __v: 0, createdAt: 0, updatedAt: 0 });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -545,6 +540,9 @@ export class MongoRepository {
         if (params.sort !== undefined) {
             query.sort(params.sort);
         }
+
+        // const explainResult = await (<any>query).explain();
+        // console.log(explainResult[0].executionStats.allPlansExecution.map((e: any) => e.executionStages.inputStage));
 
         return query.setOptions({ maxTimeMS: 30000 })
             .exec()
