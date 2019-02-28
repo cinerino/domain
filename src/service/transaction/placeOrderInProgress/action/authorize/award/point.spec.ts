@@ -5,7 +5,7 @@
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
-import * as sskts from '../../../../../../index';
+import * as domain from '../../../../../../index';
 
 let sandbox: sinon.SinonSandbox;
 
@@ -23,10 +23,10 @@ describe('ポイントインセンティブ承認を作成する', () => {
             agent: { memberOf: {} },
             seller: { name: {} }
         };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const ownershipInfoRepo = new sskts.repository.OwnershipInfo(mongoose.connection);
-        const depositService = new sskts.pecorinoapi.service.transaction.Deposit(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -44,7 +44,7 @@ describe('ポイントインセンティブ承認を作成する', () => {
             .once()
             .resolves({});
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.award.point.create({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.award.point.create({
             transaction: <any>transaction,
             agent: <any>{},
             object: <any>{}
@@ -63,10 +63,10 @@ describe('ポイントインセンティブ承認を作成する', () => {
             agent: {},
             seller: { name: {} }
         };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const ownershipInfoRepo = new sskts.repository.OwnershipInfo(mongoose.connection);
-        const depositService = new sskts.pecorinoapi.service.transaction.Deposit(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -75,7 +75,7 @@ describe('ポイントインセンティブ承認を作成する', () => {
             .expects('start')
             .never();
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.award.point.create({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.award.point.create({
             transaction: <any>transaction,
             agent: <any>{},
             object: <any>{}
@@ -86,7 +86,7 @@ describe('ポイントインセンティブ承認を作成する', () => {
             depositTransactionService: depositService
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Forbidden);
+        assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
     });
 
@@ -96,10 +96,10 @@ describe('ポイントインセンティブ承認を作成する', () => {
             seller: { name: {} }
         };
         const pecorinoError = { name: 'PecorinoRequestError' };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const ownershipInfoRepo = new sskts.repository.OwnershipInfo(mongoose.connection);
-        const depositService = new sskts.pecorinoapi.service.transaction.Deposit(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -120,7 +120,7 @@ describe('ポイントインセンティブ承認を作成する', () => {
             .once()
             .resolves({});
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.award.point.create({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.award.point.create({
             transaction: <any>transaction,
             agent: <any>{},
             object: <any>{}
@@ -131,7 +131,7 @@ describe('ポイントインセンティブ承認を作成する', () => {
             depositTransactionService: depositService
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Cinerino);
+        assert(result instanceof domain.factory.errors.Cinerino);
         sandbox.verify();
     });
 });
@@ -147,9 +147,9 @@ describe('ポイントインセンティブ承認を取り消す', () => {
             seller: { name: {} }
         };
         const action = { result: { pointTransaction: {} } };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const depositService = new sskts.pecorinoapi.service.transaction.Deposit(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -163,7 +163,7 @@ describe('ポイントインセンティブ承認を取り消す', () => {
             .once()
             .resolves();
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.award.point.cancel({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.award.point.cancel({
             id: 'id',
             agent: <any>{},
             transaction: <any>transaction

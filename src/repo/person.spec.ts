@@ -8,7 +8,7 @@ import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
-import * as sskts from '../index';
+import * as domain from '../index';
 
 let sandbox: sinon.SinonSandbox;
 let cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
@@ -24,7 +24,7 @@ describe('管理者権限でユーザー属性を取得する', () => {
     });
 
     it('AWSが正常であればユーザー属性を取得できるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const data = {
             UserAttributes: []
         };
@@ -42,7 +42,7 @@ describe('管理者権限でユーザー属性を取得する', () => {
     });
 
     it('AWSが正常でなければそのままエラーとなるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('adminGetUser')
@@ -65,7 +65,7 @@ describe('IDでユーザーを検索する', () => {
     });
 
     it('ユーザーが存在すればオブジェクトを取得できるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const data = {
             Users: [{
                 Attributes: [
@@ -91,7 +91,7 @@ describe('IDでユーザーを検索する', () => {
     });
 
     it('ユーザーが存在しなければNotFoundエラーとなるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const data = {
             Users: []
         };
@@ -105,12 +105,12 @@ describe('IDでユーザーを検索する', () => {
             userId: 'userId'
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.NotFound);
+        assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
 
     it('AWSが正常でなければそのままエラーとなるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('listUsers')
@@ -133,7 +133,7 @@ describe('アクセストークンでユーザー属性を取得する', () => {
     });
 
     it('ユーザーが存在すればオブジェクトを取得できるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const data = {
             UserAttributes: [{ Name: 'sub', Value: 'value' }]
         };
@@ -148,7 +148,7 @@ describe('アクセストークンでユーザー属性を取得する', () => {
     });
 
     it('AWSが正常でなければそのままエラーとなるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('getUser')
@@ -168,7 +168,7 @@ describe('アクセストークンでユーザー属性を更新する', () => {
     });
 
     it('AWSが正常であれば成功するはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('updateUserAttributes')
             .once()
@@ -188,7 +188,7 @@ describe('アクセストークンでユーザー属性を更新する', () => {
     });
 
     it('AWSがエラーを返せばArgumentエラーとなるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('updateUserAttributes')
@@ -202,12 +202,12 @@ describe('アクセストークンでユーザー属性を更新する', () => {
             }
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Argument);
+        assert(result instanceof domain.factory.errors.Argument);
         sandbox.verify();
     });
 
     it('電話番号フォーマットが適切でなければArgumentエラーとなるはず', async () => {
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('updateUserAttributes')
             .never();
@@ -219,7 +219,7 @@ describe('アクセストークンでユーザー属性を更新する', () => {
             }
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Argument);
+        assert(result instanceof domain.factory.errors.Argument);
         sandbox.verify();
     });
 });
@@ -234,7 +234,7 @@ describe('unregister', () => {
             userPooId: 'userPoolId',
             username: 'username'
         };
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('adminDisableUser')
@@ -252,7 +252,7 @@ describe('unregister', () => {
             userPooId: 'userPoolId',
             username: 'username'
         };
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('adminDisableUser')
             .once()
@@ -279,7 +279,7 @@ describe('会員検索', () => {
             givenName: 'givenName',
             familyName: 'familyName'
         };
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const awsError = new Error('awsError');
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('listUsers')
@@ -300,7 +300,7 @@ describe('会員検索', () => {
         const data = {
             Users: [{ Username: 'Username', Attributes: [{ Name: 'name', Value: 'value' }] }]
         };
-        const personRepo = new sskts.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         sandbox.mock(cognitoIdentityServiceProvider)
             .expects('listUsers')
             .once()

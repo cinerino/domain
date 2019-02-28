@@ -5,7 +5,7 @@
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
-import * as sskts from '../../../../../../index';
+import * as domain from '../../../../../../index';
 
 let sandbox: sinon.SinonSandbox;
 
@@ -30,7 +30,10 @@ describe('ポイント決済を承認する', () => {
                 shopId: 'shopId',
                 shopPass: 'shopPass'
             },
-            paymentAccepted: [{ paymentMethodType: sskts.factory.paymentMethodType.Account, accountType: sskts.factory.accountType.Point }]
+            paymentAccepted: [{
+                paymentMethodType: domain.factory.paymentMethodType.Account,
+                accountType: domain.factory.accountType.Point
+            }]
         };
         const transaction = {
             id: 'transactionId',
@@ -43,26 +46,26 @@ describe('ポイント決済を承認する', () => {
             agent: agent,
             recipient: seller
         };
-        const pendingTransaction = { typeOf: sskts.factory.pecorino.transactionType.Transfer, id: 'transactionId' };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const sellerRepo = new sskts.repository.Seller(mongoose.connection);
-        const ownershipInfoRepo = new sskts.repository.OwnershipInfo(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const transferService = new sskts.pecorinoapi.service.transaction.Transfer(<any>{});
+        const pendingTransaction = { typeOf: domain.factory.pecorino.transactionType.Transfer, id: 'transactionId' };
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const sellerRepo = new domain.repository.Seller(mongoose.connection);
+        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(sellerRepo).expects('findById').once().resolves(seller);
         sandbox.mock(actionRepo).expects('complete').once().resolves(action);
         sandbox.mock(transferService).expects('start').once().resolves(pendingTransaction);
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.create({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.create({
             transaction: transaction,
             agent: transaction.agent,
             object: {
-                typeOf: sskts.factory.paymentMethodType.Account,
+                typeOf: domain.factory.paymentMethodType.Account,
                 amount: amount,
                 fromAccount: {
-                    accountType: sskts.factory.accountType.Point,
+                    accountType: domain.factory.accountType.Point,
                     accountNumber: 'fromAccountNumber'
                 },
                 notes: 'notes'
@@ -98,23 +101,23 @@ describe('ポイント決済を承認する', () => {
             seller: seller
         };
         const amount = 1234;
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const sellerRepo = new sskts.repository.Seller(mongoose.connection);
-        const ownershipInfoRepo = new sskts.repository.OwnershipInfo(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const transferService = new sskts.pecorinoapi.service.transaction.Transfer(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const sellerRepo = new domain.repository.Seller(mongoose.connection);
+        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
 
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').never();
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.create({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.create({
             transaction: transaction,
             agent: transaction.agent,
             object: {
-                typeOf: sskts.factory.paymentMethodType.Account,
+                typeOf: domain.factory.paymentMethodType.Account,
                 amount: amount,
                 fromAccount: {
-                    accountType: sskts.factory.accountType.Point,
+                    accountType: domain.factory.accountType.Point,
                     accountNumber: 'fromAccountNumber'
                 },
                 notes: 'notes'
@@ -127,7 +130,7 @@ describe('ポイント決済を承認する', () => {
             transferTransactionService: transferService
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Forbidden);
+        assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
     });
 
@@ -143,7 +146,7 @@ describe('ポイント決済を承認する', () => {
                 shopId: 'shopId',
                 shopPass: 'shopPass'
             },
-            paymentAccepted: [{ paymentMethodType: sskts.factory.paymentMethodType.Account, accountType: sskts.factory.accountType.Point }]
+            paymentAccepted: [{ paymentMethodType: domain.factory.paymentMethodType.Account, accountType: domain.factory.accountType.Point }]
         };
         const transaction = {
             id: 'transactionId',
@@ -152,17 +155,17 @@ describe('ポイント決済を承認する', () => {
         };
         const amount = 1234;
         const action = {
-            typeOf: sskts.factory.actionType.AuthorizeAction,
+            typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId',
             agent: agent,
             recipient: seller
         };
         const startPayTransactionResult = new Error('startPayTransactionError');
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const sellerRepo = new sskts.repository.Seller(mongoose.connection);
-        const ownershipInfoRepo = new sskts.repository.OwnershipInfo(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const transferService = new sskts.pecorinoapi.service.transaction.Transfer(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const sellerRepo = new domain.repository.Seller(mongoose.connection);
+        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('start').once().resolves(action);
         sandbox.mock(sellerRepo).expects('findById').once().resolves(seller);
@@ -170,14 +173,15 @@ describe('ポイント決済を承認する', () => {
         sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
         sandbox.mock(actionRepo).expects('complete').never();
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.create({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.create({
             transaction: transaction,
             agent: transaction.agent,
             object: {
-                typeOf: sskts.factory.paymentMethodType.Account,
+                typeOf: domain.factory.paymentMethodType.Account,
                 amount: amount,
+                currency: domain.factory.priceCurrency.JPY,
                 fromAccount: {
-                    accountType: sskts.factory.accountType.Point,
+                    accountType: domain.factory.accountType.Point,
                     accountNumber: 'fromAccountNumber'
                 },
                 notes: 'notes'
@@ -211,14 +215,14 @@ describe('ポイント決済承認を取り消す', () => {
                 pendingTransaction: {}
             }
         };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const transferService = new sskts.pecorinoapi.service.transaction.Transfer(<any>{});
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
         sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
         sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
         sandbox.mock(transferService).expects('cancel').once().resolves();
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.cancel({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.cancel({
             id: 'actionId',
             agent: transaction.agent,
             transaction: transaction
@@ -243,14 +247,23 @@ describe('ポイント決済承認を取り消す', () => {
                 pendingTransaction: {}
             }
         };
-        const actionRepo = new sskts.repository.Action(mongoose.connection);
-        const transactionRepo = new sskts.repository.Transaction(mongoose.connection);
-        const transferService = new sskts.pecorinoapi.service.transaction.Transfer(<any>{});
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
-        sandbox.mock(transferService).expects('cancel').once().resolves();
+        const actionRepo = new domain.repository.Action(mongoose.connection);
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('cancel')
+            .once()
+            .resolves(action);
+        sandbox.mock(transferService)
+            .expects('cancel')
+            .once()
+            .resolves();
 
-        const result = await sskts.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.cancel({
+        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.account.cancel({
             id: 'actionId',
             agent: transaction.agent,
             transaction: transaction

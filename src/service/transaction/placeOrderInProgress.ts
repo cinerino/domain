@@ -393,10 +393,6 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
     //     }
     // }
 
-    // JPY承認金額も承認ポイントも0より大きくなければ取引成立不可
-    // if (priceByAgent < 0 && requiredPoint < 0) {
-    //     throw new factory.errors.Argument('transactionId', 'Price or point must be over 0');
-    // }
     if (priceByAgent !== priceBySeller) {
         throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched');
     }

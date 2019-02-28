@@ -31,6 +31,7 @@ export type ICreateOperation<T> = (repos: {
 export function create<T extends factory.accountType>(params: {
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
         fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
+        currency?: string;
     };
     agent: { id: string };
     transaction: { id: string };
@@ -198,7 +199,7 @@ export function create<T extends factory.accountType>(params: {
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
-                currency: factory.priceCurrency.JPY,
+                currency: (params.object.currency !== undefined) ? params.object.currency : factory.priceCurrency.JPY,
                 value: params.object.amount
             }
         };
