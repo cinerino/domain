@@ -333,6 +333,15 @@ export function confirm(params: {
     };
 }
 
+export type IAuthorizeSeatReservationOfferResult =
+    factory.action.authorize.offer.seatReservation.IResult<any>;
+export type IAuthorizePointAccountPayment =
+    factory.action.authorize.paymentMethod.account.IAccount<factory.accountType.Point>;
+export type IAuthorizeActionResultBySeller =
+    // factory.action.authorize.offer.programMembership.IResult |
+    IAuthorizeSeatReservationOfferResult |
+    factory.action.authorize.award.point.IResult;
+
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
@@ -349,6 +358,11 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
             priceByAgent += authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.object.typeOf === paymentMethodType)
+                .filter((a) => {
+                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
+
+                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
+                })
                 .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
         });
 
@@ -361,37 +375,38 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         throw new factory.errors.Argument('transactionId', 'Incentive amount must be 1');
     }
 
-    const seatReservationAuthorizeActions =
-        <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-    priceBySeller += seatReservationAuthorizeActions.reduce(
-        (a, b) => a + (<factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>>b.result).price, 0
-    );
+    // 販売者が提供するアイテムの発生金額
+    priceBySeller += transaction.object.authorizeActions
+        .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
+        .reduce((a, b) => a + (<IAuthorizeActionResultBySeller>b.result).price, 0);
+    debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
 
     // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
-    // let requiredPoint = 0;
-    // const seatReservationAuthorizeAction = seatReservationAuthorizeActions.shift();
-    // if (seatReservationAuthorizeAction !== undefined) {
-    //     requiredPoint = (<factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>>
-    //         seatReservationAuthorizeAction.result).point;
-    //     // 必要ポイントがある場合、ポイント承認金額と比較
-    //     if (requiredPoint > 0) {
-    //         const authorizedPointAmount =
-    //             (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Point>[]>authorizeActions)
-    //                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //                 .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-    //                 .filter((a) => {
-    //                     const result = (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType.Point>>a.result);
+    const requiredPoint = (<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.COA>[]>
+        transaction.object.authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+        .reduce(
+            (a, b) => {
+                const point = (<IAuthorizeSeatReservationOfferResult>b.result).point;
 
-    //                     return result.fromAccount.accountType === factory.accountType.Point;
-    //                 })
-    //                 .reduce((a, b) => a + b.object.amount, 0);
-    //         if (requiredPoint !== authorizedPointAmount) {
-    //             throw new factory.errors.Argument('transactionId', 'Required point amount not satisfied');
-    //         }
-    //     }
-    // }
+                return a + ((typeof point === 'number') ? point : 0);
+            },
+            0
+        );
+
+    // 必要ポイントがある場合、ポイントのオーソリ金額と比較
+    const authorizedPointAmount =
+        (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Point>[]>transaction.object.authorizeActions)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+            .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === factory.accountType.Point)
+            .reduce((a, b) => a + b.object.amount, 0);
+
+    if (requiredPoint !== authorizedPointAmount) {
+        throw new factory.errors.Argument('transactionId', 'Required point amount not satisfied');
+    }
 
     if (priceByAgent !== priceBySeller) {
         throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched');
