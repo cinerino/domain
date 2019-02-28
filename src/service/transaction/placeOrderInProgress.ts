@@ -30,12 +30,15 @@ export type IStartOperation<T> = (repos: {
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
+export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
+export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
+    passportValidator?: IPassportValidator;
+};
+
 /**
  * 取引開始
  */
-export function start(
-    params: factory.transaction.placeOrder.IStartParamsWithoutDetail
-): IStartOperation<factory.transaction.placeOrder.ITransaction> {
+export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
         seller: SellerRepo;
         transaction: TransactionRepo;
@@ -55,14 +58,11 @@ export function start(
                 throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
             }
 
-            // スコープを判別
-            if (!validatePassport({
-                passport: passport,
-                issuer: params.object.passport.issuer,
-                sellerId: seller.id,
-                clientId: (params.object.clientUser !== undefined) ? params.object.clientUser.client_id : undefined
-            })) {
-                throw new factory.errors.Argument('Passport Token', 'Invalid passport');
+            // 許可証バリデーション
+            if (typeof params.passportValidator === 'function') {
+                if (!params.passportValidator({ passport: passport })) {
+                    throw new factory.errors.Argument('Passport Token', 'Invalid passport');
+                }
             }
         }
 
@@ -114,38 +114,6 @@ export function start(
 
         return transaction;
     };
-}
-
-/**
- * WAITER許可証の有効性チェック
- */
-function validatePassport(params: {
-    passport: factory.waiter.passport.IPassport;
-    issuer: string;
-    sellerId: string;
-    clientId?: string;
-}) {
-
-    const validIssuer = params.passport.iss === params.issuer; // 許可証発行者確認
-
-    // スコープのフォーマットは、Transaction:PlaceOrder:${sellerId}
-    const explodedScopeStrings = params.passport.scope.split(':');
-    const validScope = (
-        explodedScopeStrings[0] === 'Transaction' && // スコープ接頭辞確認
-        explodedScopeStrings[1] === factory.transactionType.PlaceOrder && // スコープ接頭辞確認
-        // tslint:disable-next-line:no-magic-numbers
-        explodedScopeStrings[2] === params.sellerId // 販売者識別子確認
-    );
-
-    // クライアントの有効性
-    let validClient = true;
-    if (params.clientId !== undefined) {
-        if (Array.isArray(params.passport.aud) && params.passport.aud.indexOf(params.clientId) < 0) {
-            validClient = false;
-        }
-    }
-
-    return validIssuer && validScope && validClient;
 }
 
 /**
