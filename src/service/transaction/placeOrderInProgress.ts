@@ -211,10 +211,23 @@ export function setCustomerContact(params: {
     };
 }
 
-/**
- * 注文取引を確定する
- */
-export function confirm(params: {
+export type IOrderConfirmationNumberGenerator = (order: factory.order.IOrder) => number;
+export type IOrderURLGenerator = (order: factory.order.IOrder) => string;
+export interface IConfirmResultOrderParams {
+    /**
+     * 注文日時
+     */
+    orderDate: Date;
+    /**
+     * 確認番号のカスタム指定
+     */
+    confirmationNumber?: number | IOrderConfirmationNumberGenerator;
+    /**
+     * 注文確認URLのカスタム指定
+     */
+    url?: string | IOrderURLGenerator;
+}
+export interface IConfirmParams {
     /**
      * 取引ID
      */
@@ -224,12 +237,7 @@ export function confirm(params: {
      */
     agent: { id: string };
     result: {
-        order: {
-            /**
-             * 注文日時
-             */
-            orderDate: Date;
-        };
+        order: IConfirmResultOrderParams;
     };
     options: {
         /**
@@ -243,7 +251,13 @@ export function confirm(params: {
          */
         emailTemplate?: string;
     };
-}) {
+}
+
+/**
+ * 注文取引を確定する
+ */
+export function confirm(params: IConfirmParams) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -255,6 +269,7 @@ export function confirm(params: {
             typeOf: factory.transactionType.PlaceOrder,
             id: params.id
         });
+
         if (transaction.status === factory.transactionStatusType.Confirmed) {
             // すでに確定済の場合
             return <factory.transaction.placeOrder.IResult>transaction.result;
@@ -268,15 +283,8 @@ export function confirm(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours');
         }
 
-        const seller = await repos.seller.findById({
-            id: transaction.seller.id
-        });
+        const seller = await repos.seller.findById({ id: transaction.seller.id });
         debug('seller found.', seller.id);
-
-        const customerContact = transaction.object.customerContact;
-        if (customerContact === undefined) {
-            throw new factory.errors.Argument('Customer contact required');
-        }
 
         // 取引に対する全ての承認アクションをマージ
         let authorizeActions = await repos.action.searchByPurpose({
@@ -302,10 +310,12 @@ export function confirm(params: {
             sellerType: seller.typeOf,
             sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined) ? seller.location.branchCode : ''
         });
+
         const confirmationNumber = await repos.confirmationNumber.publish({
             orderDate: params.result.order.orderDate
         });
-        // 結果作成
+
+        // 注文作成
         const order = createOrderFromTransaction({
             transaction: transaction,
             orderNumber: orderNumber,
@@ -315,14 +325,26 @@ export function confirm(params: {
             isGift: false,
             seller: seller
         });
-        const result: factory.transaction.placeOrder.IResult = {
-            order: order
-        };
+
+        // 確認番号の指定があれば上書き
+        if (typeof params.result.order.confirmationNumber === 'number') {
+            order.confirmationNumber = params.result.order.confirmationNumber;
+        } else if (typeof params.result.order.confirmationNumber === 'function') {
+            order.confirmationNumber = params.result.order.confirmationNumber(order);
+        }
+
+        // URLの指定があれば上書き
+        if (typeof params.result.order.url === 'string') {
+            order.url = params.result.order.url;
+        } else if (typeof params.result.order.url === 'function') {
+            order.url = params.result.order.url(order);
+        }
+
+        const result: factory.transaction.placeOrder.IResult = { order };
 
         // ポストアクションを作成
         const potentialActions = await createPotentialActionsFromTransaction({
             transaction: transaction,
-            customerContact: customerContact,
             order: order,
             seller: seller,
             sendEmailMessage: params.options.sendEmailMessage,
@@ -330,7 +352,7 @@ export function confirm(params: {
         });
 
         // ステータス変更
-        debug('updating transaction...');
+        debug('finally confirming transaction...');
         transaction = await repos.transaction.confirmPlaceOrder({
             id: params.id,
             authorizeActions: authorizeActions,
@@ -349,6 +371,10 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
     const authorizeActions = transaction.object.authorizeActions;
     let priceByAgent = 0;
     let priceBySeller = 0;
+
+    if (transaction.object.customerContact === undefined) {
+        throw new factory.errors.Argument('Transaction', 'Customer Contact Required');
+    }
 
     // 決済承認を確認
     Object.keys(factory.paymentMethodType)
@@ -400,15 +426,15 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
     const givenAmount = pointAwardAuthorizeActions.reduce((a, b) => a + b.object.amount, 0);
     if (givenAmount > 1) {
-        throw new factory.errors.Argument('transactionId', 'Incentive amount must be 1');
+        throw new factory.errors.Argument('Transaction', 'Incentive amount must be 1');
     }
 
     if (requiredPoint !== authorizedPointAmount) {
-        throw new factory.errors.Argument('transactionId', 'Required point amount not satisfied');
+        throw new factory.errors.Argument('Transaction', 'Required point amount not satisfied');
     }
 
     if (priceByAgent !== priceBySeller) {
-        throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched');
+        throw new factory.errors.Argument('Transaction', 'Transaction cannot be confirmed because prices are not matched');
     }
 }
 
@@ -532,11 +558,11 @@ export function createOrderFromTransaction(params: {
     }
     const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
 
-    if (params.transaction.object.customerContact === undefined) {
+    const cutomerContact = params.transaction.object.customerContact;
+    if (cutomerContact === undefined) {
         throw new factory.errors.Argument('Transaction', 'Customer contact does not exist');
     }
 
-    const cutomerContact = params.transaction.object.customerContact;
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
@@ -555,7 +581,7 @@ export function createOrderFromTransaction(params: {
         name: `${cutomerContact.familyName} ${cutomerContact.givenName}`,
         url: '',
         identifier: customerIdentifier,
-        ...params.transaction.object.customerContact
+        ...cutomerContact
     };
     if (params.transaction.agent.memberOf !== undefined) {
         customer.memberOf = params.transaction.agent.memberOf;
@@ -728,8 +754,8 @@ export function createOrderFromTransaction(params: {
         acceptedOffers.push(programMembershipAuthorizeAction.object);
     }
 
-    // 結果作成
     const discounts: factory.order.IDiscount[] = [];
+
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
 
     // 決済方法をセット
@@ -798,7 +824,6 @@ export function createOrderFromTransaction(params: {
 // tslint:disable-next-line:max-func-body-length
 export async function createPotentialActionsFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
-    customerContact: factory.transaction.placeOrder.ICustomerContact;
     order: factory.order.IOrder;
     seller: ISeller;
     sendEmailMessage?: boolean;
