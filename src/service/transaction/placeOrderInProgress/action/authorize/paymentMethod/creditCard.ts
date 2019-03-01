@@ -151,7 +151,7 @@ export function create(params: {
                 currency: factory.priceCurrency.JPY,
                 value: params.object.amount
             },
-            additionalProperty: params.object.additionalProperty,
+            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             entryTranArgs: entryTranArgs,
             entryTranResult: entryTranResult,
             execTranArgs: execTranArgs,

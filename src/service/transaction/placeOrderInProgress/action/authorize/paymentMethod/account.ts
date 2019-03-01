@@ -195,7 +195,7 @@ export function create<T extends factory.accountType>(params: {
             paymentMethodId: params.object.fromAccount.accountNumber,
             name: params.object.fromAccount.accountType,
             fromAccount: params.object.fromAccount,
-            additionalProperty: params.object.additionalProperty,
+            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',

@@ -20,6 +20,7 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 const debug = createDebug('cinerino-domain:service');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
+export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
 
 /**
  * 注文を配送する
@@ -37,7 +38,8 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         // アクション開始
         const sendOrderActionAttributes = params;
         const action = await repos.action.start(sendOrderActionAttributes);
-        let ownershipInfos: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[];
+        let ownershipInfos: IOwnershipInfo[];
+
         try {
             // 所有権作成
             ownershipInfos = createOwnershipInfosFromOrder({ order });
@@ -68,6 +70,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
             ownershipInfos: ownershipInfos
         };
         await repos.action.complete({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, result: result });
+
         // 潜在アクション
         await onSend(sendOrderActionAttributes)({ task: repos.task });
     };
@@ -78,10 +81,10 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
  */
 export function createOwnershipInfosFromOrder(params: {
     order: factory.order.IOrder;
-}): factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>[] {
+}): IOwnershipInfo[] {
     return params.order.acceptedOffers.map((acceptedOffer) => {
         const itemOffered = acceptedOffer.itemOffered;
-        let ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
+        let ownershipInfo: IOwnershipInfo;
         const ownedFrom = params.order.orderDate;
         const seller = params.order.seller;
         let ownedThrough: Date;

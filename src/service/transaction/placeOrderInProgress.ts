@@ -35,6 +35,15 @@ export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDet
     passportValidator?: IPassportValidator;
 };
 
+export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
+export type IAuthorizeSeatReservationOfferResult =
+    factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
+export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType.Point>;
+export type IAuthorizeActionResultBySeller =
+    // factory.action.authorize.offer.programMembership.IResult |
+    IAuthorizeSeatReservationOfferResult |
+    factory.action.authorize.award.point.IResult;
+
 /**
  * 取引開始
  */
@@ -333,19 +342,9 @@ export function confirm(params: {
     };
 }
 
-export type IAuthorizeSeatReservationOfferResult =
-    factory.action.authorize.offer.seatReservation.IResult<any>;
-export type IAuthorizePointAccountPayment =
-    factory.action.authorize.paymentMethod.account.IAccount<factory.accountType.Point>;
-export type IAuthorizeActionResultBySeller =
-    // factory.action.authorize.offer.programMembership.IResult |
-    IAuthorizeSeatReservationOfferResult |
-    factory.action.authorize.award.point.IResult;
-
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
-// tslint:disable-next-line:max-func-body-length
 export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
     let priceByAgent = 0;
@@ -366,25 +365,16 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
                 .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
         });
 
-    // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
-    const pointAwardAuthorizeActions = <factory.action.authorize.award.point.IAction[]>authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
-    const givenAmount = pointAwardAuthorizeActions.reduce((a, b) => a + b.object.amount, 0);
-    if (givenAmount > 1) {
-        throw new factory.errors.Argument('transactionId', 'Incentive amount must be 1');
-    }
-
     // 販売者が提供するアイテムの発生金額
-    priceBySeller += transaction.object.authorizeActions
+    priceBySeller += authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
         .reduce((a, b) => a + (<IAuthorizeActionResultBySeller>b.result).price, 0);
     debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
 
     // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
-    const requiredPoint = (<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.COA>[]>
-        transaction.object.authorizeActions)
+    const requiredPoint = (<IAuthorizeSeatReservationOffer[]>
+        authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
         .reduce(
@@ -403,6 +393,15 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
             .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === factory.accountType.Point)
             .reduce((a, b) => a + b.object.amount, 0);
+
+    // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
+    const pointAwardAuthorizeActions = <factory.action.authorize.award.point.IAction[]>authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
+    const givenAmount = pointAwardAuthorizeActions.reduce((a, b) => a + b.object.amount, 0);
+    if (givenAmount > 1) {
+        throw new factory.errors.Argument('transactionId', 'Incentive amount must be 1');
+    }
 
     if (requiredPoint !== authorizedPointAmount) {
         throw new factory.errors.Argument('transactionId', 'Required point amount not satisfied');
@@ -423,7 +422,7 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
 
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
+    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
@@ -513,7 +512,7 @@ export function createOrderFromTransaction(params: {
     seller: ISeller;
 }): factory.order.IOrder {
     // 座席予約に対する承認アクション取り出す
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
+    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
@@ -526,6 +525,8 @@ export function createOrderFromTransaction(params: {
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === 'Offer')
         .filter((a) => a.object.itemOffered.typeOf === 'ProgramMembership');
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
     if (programMembershipAuthorizeActions.length > 1) {
         throw new factory.errors.NotImplemented('Number of programMembership authorizeAction must be 1');
     }
@@ -538,6 +539,7 @@ export function createOrderFromTransaction(params: {
     const cutomerContact = params.transaction.object.customerContact;
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
+        identifier: params.transaction.seller.identifier,
         name: params.transaction.seller.name.ja,
         legalName: params.transaction.seller.legalName,
         typeOf: params.transaction.seller.typeOf,
@@ -764,6 +766,11 @@ export function createOrderFromTransaction(params: {
             price += params.transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.object.typeOf === paymentMethodType)
+                .filter((a) => {
+                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
+
+                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
+                })
                 .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
         });
 
@@ -798,7 +805,7 @@ export async function createPotentialActionsFromTransaction(params: {
     emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // 予約確定アクション
-    const seatReservationAuthorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
+    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);

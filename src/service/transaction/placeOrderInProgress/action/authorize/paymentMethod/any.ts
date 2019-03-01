@@ -96,7 +96,7 @@ export function create<T extends factory.paymentMethodType>(params: {
                 currency: factory.priceCurrency.JPY,
                 value: params.object.amount
             },
-            additionalProperty: params.object.additionalProperty
+            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : []
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });

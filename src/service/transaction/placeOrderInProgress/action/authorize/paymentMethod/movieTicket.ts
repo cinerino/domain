@@ -153,7 +153,7 @@ export function create(params: {
                 currency: factory.unitCode.C62,
                 value: params.object.movieTickets.length
             },
-            additionalProperty: params.object.additionalProperty,
+            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             ...checkResult
         };
 
