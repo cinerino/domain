@@ -36,6 +36,8 @@ export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDet
 };
 
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
+export type IAuthorizeSeatReservationOfferObject =
+    factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
 export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType.Point>;
@@ -456,7 +458,8 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
     // ムビチケオファーを受け付けた座席予約を検索する
     const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     seatReservationAuthorizeActions.forEach((a) => {
-        a.object.acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
+        const acceptedOffer = (<IAuthorizeSeatReservationOfferObject>a.object).acceptedOffer;
+        acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
             const offeredTicketedSeat = offer.ticketedSeat;
             if (offeredTicketedSeat !== undefined) {
                 offer.priceSpecification.priceComponent.forEach((component) => {
@@ -618,7 +621,9 @@ export function createOrderFromTransaction(params: {
                     // tslint:disable-next-line:max-func-body-length
                     acceptedOffers.push(...updTmpReserveSeatResult.listTmpReserve.map((tmpReserve, index) => {
                         const requestedOffer = <factory.chevre.event.screeningEvent.IAcceptedTicketOffer>
-                            authorizeSeatReservationAction.object.acceptedOffer.find((offer) => {
+                            authorizeSeatReservationAction.object.acceptedOffer.find((o) => {
+                                const offer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4chevre>o;
+
                                 return (offer.ticketedSeat !== undefined
                                     && offer.ticketedSeat.seatNumber === tmpReserve.seatNum
                                     && offer.ticketedSeat.seatSection === tmpReserve.seatSection);

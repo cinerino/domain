@@ -34,7 +34,7 @@ export type IMovieTicketTypeChargeSpecification =
  * 座席予約承認
  */
 export function create(params: {
-    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail;
+    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     agent: { id: string };
     transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>> {
@@ -101,7 +101,7 @@ export function create(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 座席仮予約
-        let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody;
+        let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         try {
             switch (offeredThrough.identifier) {
@@ -222,7 +222,7 @@ export function create(params: {
  * 受け入れらたオファーの内容を検証
  */
 function validateAcceptedOffers(params: {
-    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail;
+    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     seller: { typeOf: factory.organizationType; id: string };
 }) {
@@ -232,7 +232,7 @@ function validateAcceptedOffers(params: {
         eventService: chevre.service.Event;
         movieTicket: MovieTicketRepo;
         seller: SellerRepo;
-    }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer[]> => {
+    }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = await OfferService.searchScreeningEventTicketOffers({
             event: params.object.event,
@@ -250,7 +250,7 @@ function validateAcceptedOffers(params: {
                 throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
             }
 
-            const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer = {
+            const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
                 additionalProperty: [],
                 ...offerWithoutDetail,
                 ...offer
