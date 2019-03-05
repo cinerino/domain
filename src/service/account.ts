@@ -73,6 +73,7 @@ export function open<T extends factory.accountType>(params: {
         return ownershipInfoWithDetail;
     };
 }
+
 /**
  * 口座解約
  */
@@ -110,6 +111,7 @@ export function close<T extends factory.accountType>(params: {
         }
     };
 }
+
 /**
  * 口座検索
  */
@@ -152,6 +154,7 @@ export function search(
         return ownershipInfosWithDetail;
     };
 }
+
 /**
  * 口座取引履歴検索
  */
@@ -192,5 +195,104 @@ export function searchMoneyTransferActions<T extends factory.accountType>(
         }
 
         return actions;
+    };
+}
+
+/**
+ * 所有権なしにポイント口座を開設する
+ */
+export function openWithoutOwnershipInfo<T extends factory.accountType>(params: {
+    name: string;
+    accountType: T;
+}) {
+    return async (repos: {
+        /**
+         * 口座番号リポジトリ
+         */
+        accountNumber: AccountNumberRepo;
+        /**
+         * Pecorino口座サービス
+         */
+        accountService: pecorinoapi.service.Account;
+    }) => {
+        // 口座番号を発行
+        const accountNumber = await repos.accountNumber.publish(new Date());
+
+        let account: factory.pecorino.account.IAccount<T>;
+        try {
+            account = await repos.accountService.open({
+                accountType: params.accountType,
+                accountNumber: accountNumber,
+                name: params.name
+            });
+        } catch (error) {
+            error = handlePecorinoError(error);
+            throw error;
+        }
+
+        return account;
+    };
+}
+
+/**
+ * 入金処理を実行する
+ */
+export function deposit(params: {
+    agent: {
+        id: string;
+        name: string;
+        url: string;
+    };
+    recipient: {
+        id: string;
+        name: string;
+        url: string;
+    };
+    /**
+     * 入金先口座番号
+     */
+    toAccountNumber: string;
+    /**
+     * 入金金額
+     */
+    amount: number;
+    /**
+     * 入金説明
+     */
+    notes: string;
+}) {
+    return async (repos: {
+        /**
+         * Pecorino入金サービス
+         */
+        depositService: pecorinoapi.service.transaction.Deposit;
+    }) => {
+        try {
+            const transaction = await repos.depositService.start({
+                accountType: factory.accountType.Point,
+                toAccountNumber: params.toAccountNumber,
+                expires: moment()
+                    .add(1, 'minutes')
+                    .toDate(),
+                agent: {
+                    typeOf: factory.personType.Person,
+                    id: params.agent.id,
+                    name: params.agent.name,
+                    url: params.agent.url
+                },
+                recipient: {
+                    typeOf: factory.personType.Person,
+                    id: params.recipient.id,
+                    name: params.recipient.name,
+                    url: params.recipient.url
+                },
+                amount: params.amount,
+                notes: params.notes
+            });
+            await repos.depositService.confirm({ transactionId: transaction.id });
+        } catch (error) {
+            error = handlePecorinoError(error);
+            throw error;
+        }
     };
 }

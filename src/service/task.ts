@@ -77,6 +77,8 @@ export function executeByName<T extends factory.taskName>(taskName: T): IExecute
             task = await settings.taskRepo.executeOneByName(taskName);
             debug('task found', task);
         } catch (error) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             debug('executeByName error:', error);
         }
 
@@ -95,13 +97,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOpe
     debug('executing a task...', task);
     const now = new Date();
 
-    return async (settings: {
-        taskRepo: TaskRepo;
-        connection: mongoose.Connection;
-        redisClient?: redis.RedisClient;
-        pecorinoAuthClient?: pecorinoapi.auth.ClientCredentials;
-        cognitoIdentityServiceProvider?: AWS.CognitoIdentityServiceProvider;
-    }) => {
+    return async (settings: ISettings) => {
         try {
             // タスク名の関数が定義されていなければ、TypeErrorとなる
             const { call } = await import(`./task/${task.name}`);
@@ -140,6 +136,8 @@ export function retry(intervalInMinutes: number): TaskOperation<void> {
 export function abort(intervalInMinutes: number): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
         const abortedTask = await repos.task.abortOne(intervalInMinutes);
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
         if (abortedTask === null) {
             return;
         }
