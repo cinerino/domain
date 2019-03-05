@@ -140,3 +140,51 @@ describe('注文を検索する', () => {
         sandbox.verify();
     });
 });
+
+describe('findByLocationBranchCodeAndReservationNumber()', () => {
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('注文が存在すれば、取得できるはず', async () => {
+        const orderInquiryKey = {
+            theaterCode: '111',
+            reservationNumber: 123,
+            telephone: '+819012345678'
+        };
+
+        const repository = new domain.repository.Order(mongoose.connection);
+
+        sandbox.mock(repository.orderModel)
+            .expects('findOne')
+            .once()
+            .chain('exec')
+            .resolves(new repository.orderModel());
+
+        const result = await repository.findByLocationBranchCodeAndReservationNumber(orderInquiryKey);
+
+        assert.notEqual(result, undefined);
+        sandbox.verify();
+    });
+
+    it('存在しなければ、NotFoundエラーとなるはず', async () => {
+        const orderInquiryKey = {
+            theaterCode: '111',
+            reservationNumber: 123,
+            telephone: '+819012345678'
+        };
+
+        const repository = new domain.repository.Order(mongoose.connection);
+
+        sandbox.mock(repository.orderModel)
+            .expects('findOne')
+            .once()
+            .chain('exec')
+            .resolves(null);
+
+        const result = await repository.findByLocationBranchCodeAndReservationNumber(orderInquiryKey)
+            .catch((err) => err);
+        assert(result instanceof domain.factory.errors.NotFound);
+        sandbox.verify();
+    });
+});

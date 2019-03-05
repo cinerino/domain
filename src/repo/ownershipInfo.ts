@@ -10,9 +10,11 @@ export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> =
  */
 export class MongoRepository {
     public readonly ownershipInfoModel: typeof Model;
+
     constructor(connection: Connection) {
         this.ownershipInfoModel = connection.model(modelName);
     }
+
     // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS<T extends factory.ownershipInfo.IGoodType>(
         params: factory.ownershipInfo.ISearchConditions<T>
@@ -147,6 +149,19 @@ export class MongoRepository {
     public async save(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
         await this.ownershipInfoModel.create({ ...ownershipInfo, _id: ownershipInfo.id });
     }
+
+    /**
+     * 所有権情報を保管する
+     */
+    public async saveByIdentifier(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
+        await this.ownershipInfoModel.findOneAndUpdate(
+            { identifier: ownershipInfo.identifier },
+            ownershipInfo,
+            { upsert: true }
+        )
+            .exec();
+    }
+
     public async findById(params: { id: string }): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
         const doc = await this.ownershipInfoModel.findById(params.id)
             .exec();
@@ -156,6 +171,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     public async count<T extends factory.ownershipInfo.IGoodType>(
         params: factory.ownershipInfo.ISearchConditions<T>
     ): Promise<number> {
@@ -165,6 +181,7 @@ export class MongoRepository {
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
+
     /**
      * 所有権を検索する
      */

@@ -275,8 +275,25 @@ describe('取引を中止する', () => {
         sandbox.mock(transactionRepo.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new transactionRepo.transactionModel());
 
-        const result = await transactionRepo.cancel({ typeOf: domain.factory.transactionType.PlaceOrder, id: 'transactionId' });
+        const result = await transactionRepo.cancel({
+            typeOf: domain.factory.transactionType.PlaceOrder,
+            id: 'transactionId'
+        });
         assert.equal(typeof result, 'object');
+        sandbox.verify();
+    });
+
+    it('進行中取引が存在しなければNotFoundエラー', async () => {
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        sandbox.mock(transactionRepo.transactionModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
+        sandbox.mock(transactionRepo.transactionModel).expects('findOne').once().chain('exec').resolves(null);
+
+        const result = await transactionRepo.cancel({
+            typeOf: domain.factory.transactionType.PlaceOrder,
+            id: 'transactionId'
+        })
+            .catch((err) => err);
+        assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
 });
@@ -286,17 +303,85 @@ describe('取引を検索する', () => {
         sandbox.restore();
     });
 
-    it('MongoDBが正常であれば配列を取得できるはず', async () => {
+    it('MongoDBが正常であれば注文取引配列を取得できるはず', async () => {
+        const searchConditions = {
+            typeOf: domain.factory.transactionType.PlaceOrder,
+            ids: [],
+            statuses: [],
+            agent: {
+                typeOf: '',
+                ids: [],
+                identifiers: []
+            },
+            startFrom: new Date(),
+            startThrough: new Date(),
+            endFrom: new Date(),
+            endThrough: new Date(),
+            seller: {
+                typeOf: '',
+                ids: []
+            },
+            object: {
+                customerContact: {
+                    givenName: '',
+                    familyName: '',
+                    telephone: '',
+                    email: ''
+                }
+            },
+            result: {
+                order: {
+                    orderNumbers: []
+                }
+            },
+            tasksExportationStatuses: [domain.factory.transactionTasksExportationStatus.Exported],
+            limit: 10,
+            sort: { startDate: domain.factory.sortType.Ascending }
+        };
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         sandbox.mock(transactionRepo.transactionModel).expects('find').once()
             .chain('exec').resolves([new transactionRepo.transactionModel()]);
 
-        const result = await transactionRepo.search({
+        const result = await transactionRepo.search(<any>searchConditions);
+        assert(Array.isArray(result));
+        sandbox.verify();
+    });
+
+    it('MongoDBが正常であれば返品注文取引配列を取得できるはず', async () => {
+        const searchConditions = {
+            typeOf: domain.factory.transactionType.ReturnOrder,
+            object: {
+                order: {
+                    orderNumbers: []
+                }
+            }
+        };
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        sandbox.mock(transactionRepo.transactionModel).expects('find').once()
+            .chain('exec').resolves([new transactionRepo.transactionModel()]);
+
+        const result = await transactionRepo.search(<any>searchConditions);
+        assert(Array.isArray(result));
+        sandbox.verify();
+    });
+});
+
+describe('取引をカウントする', () => {
+    beforeEach(() => {
+        sandbox.restore();
+    });
+
+    it('MongoDBが正常であれば数字を取得できるはず', async () => {
+        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        sandbox.mock(transactionRepo.transactionModel).expects('countDocuments').once()
+            .chain('exec').resolves(1);
+
+        const result = await transactionRepo.count({
             typeOf: domain.factory.transactionType.PlaceOrder,
             startFrom: new Date(),
             startThrough: new Date()
         });
-        assert(Array.isArray(result));
+        assert(Number.isInteger(result));
         sandbox.verify();
     });
 });

@@ -258,3 +258,49 @@ describe('アクション目的から検索', () => {
         sandbox.verify();
     });
 });
+
+describe('ActionRepo.printTicket()', () => {
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('アクションが存在すれば、オブジェクトを取得できるはず', async () => {
+        const agentId = 'agentId';
+        const ticket = {};
+
+        const printActionRepo = new domain.repository.Action(mongoose.connection);
+        const doc = new printActionRepo.actionModel();
+
+        sandbox.mock(printActionRepo.actionModel)
+            .expects('create')
+            .once()
+            .resolves(doc);
+
+        const result = await printActionRepo.printTicket(agentId, <any>ticket);
+        assert(typeof result, 'object');
+        sandbox.verify();
+    });
+});
+
+describe('ActionRepo.searchPrintTicket()', () => {
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('アクションが存在すれば、配列を取得できるはず', async () => {
+        const conditions = {};
+
+        const printActionRepo = new domain.repository.Action(mongoose.connection);
+        const doc = new printActionRepo.actionModel();
+
+        sandbox.mock(printActionRepo.actionModel)
+            .expects('find')
+            .once()
+            .chain('exec')
+            .resolves([doc]);
+
+        const result = await printActionRepo.searchPrintTicket(<any>conditions);
+        assert(Array.isArray(result));
+        sandbox.verify();
+    });
+});

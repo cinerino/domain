@@ -335,13 +335,21 @@ export class MongoRepository {
         // NotFoundであれば取引状態確認
         if (doc === null) {
             const transaction = await this.findById({ typeOf: factory.transactionType.PlaceOrder, id: params.id });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             if (transaction.status === factory.transactionStatusType.Confirmed) {
                 // すでに確定済の場合
                 return transaction;
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
             } else if (transaction.status === factory.transactionStatusType.Expired) {
                 throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
             } else if (transaction.status === factory.transactionStatusType.Canceled) {
                 throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
             } else {
                 throw new factory.errors.NotFound(this.transactionModel.modelName);
             }
@@ -376,6 +384,8 @@ export class MongoRepository {
         // NotFoundであれば取引状態確認
         if (doc === null) {
             const transaction = await this.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             if (transaction.status === factory.transactionStatusType.Confirmed) {
                 // すでに確定済の場合
                 return transaction;
@@ -498,6 +508,8 @@ export class MongoRepository {
         // NotFoundであれば取引状態確認
         if (doc === null) {
             const transaction = await this.findById<T>(params);
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             if (transaction.status === factory.transactionStatusType.Canceled) {
                 // すでに中止済の場合
                 return transaction;
