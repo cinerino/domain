@@ -81,7 +81,29 @@ export async function createSendOrderMessage(params: {
                                         .join(',');
                                 }
                                 let priceStr = '';
-                                const reservationPriceSpec = <ICompoundPriceSpecification>reservation.price;
+
+                                let reservationPriceSpec: ICompoundPriceSpecification;
+
+                                if (typeof reservation.price === 'number') {
+                                    // priceが数字の場合単価仕様を含む複合価格仕様に変換
+                                    reservationPriceSpec = {
+                                        typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+                                        priceCurrency: factory.chevre.priceCurrency.JPY,
+                                        valueAddedTaxIncluded: true,
+                                        priceComponent: [
+                                            {
+                                                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                                price: reservation.price,
+                                                priceCurrency: factory.chevre.priceCurrency.JPY,
+                                                valueAddedTaxIncluded: true
+                                            }
+                                        ]
+
+                                    };
+                                } else {
+                                    reservationPriceSpec = reservation.price;
+                                }
+
                                 const unitPriceSpec = <IUnitPriceSpecification>
                                     reservationPriceSpec.priceComponent.find(
                                         (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
