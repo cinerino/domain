@@ -1,6 +1,7 @@
 /**
  * 進行中注文取引サービス
  */
+import * as COA from '@motionpicture/coa-service';
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
@@ -982,17 +983,29 @@ export async function createPotentialActionsFromTransaction(params: {
                             // tslint:disable-next-line:max-line-length
                             (offer) => {
                                 const itemOffered = <factory.order.IReservation>offer.itemOffered;
-                                const additionalProperty = itemOffered.reservedTicket.ticketType.additionalProperty;
-                                if (additionalProperty === undefined) {
-                                    throw new factory.errors.NotFound('ticketType.additionalProperty');
+
+                                let coaTicketInfo: COA.services.reserve.IUpdReserveTicket | undefined;
+                                if (itemOffered.reservedTicket.coaTicketInfo !== undefined) {
+                                    coaTicketInfo = itemOffered.reservedTicket.coaTicketInfo;
+                                } else {
+                                    const additionalProperty = itemOffered.reservedTicket.ticketType.additionalProperty;
+                                    if (additionalProperty === undefined) {
+                                        throw new factory.errors.NotFound('ticketType.additionalProperty');
+                                    }
+
+                                    const coaInfoProperty = additionalProperty.find((p) => p.name === 'coaInfo');
+                                    if (coaInfoProperty === undefined) {
+                                        throw new factory.errors.NotFound('coaInfo');
+                                    }
+
+                                    coaTicketInfo = coaInfoProperty.value;
                                 }
 
-                                const coaInfoProperty = additionalProperty.find((p) => p.name === 'coaInfo');
-                                if (coaInfoProperty === undefined) {
-                                    throw new factory.errors.NotFound('coaInfo');
+                                if (coaTicketInfo === undefined) {
+                                    throw new factory.errors.NotFound('COA Ticket Info');
                                 }
 
-                                return coaInfoProperty.value;
+                                return coaTicketInfo;
                             }
                         )
                     };
