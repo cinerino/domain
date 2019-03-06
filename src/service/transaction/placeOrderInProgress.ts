@@ -580,9 +580,6 @@ export function createOrderFromTransaction(params: {
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-    if (seatReservationAuthorizeActions.length === 0) {
-        throw new factory.errors.Argument('Transaction', 'Seat reservation does not exist');
-    }
 
     // 会員プログラムに対する承認アクションを取り出す
     const programMembershipAuthorizeActions = params.transaction.object.authorizeActions
