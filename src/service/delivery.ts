@@ -9,10 +9,12 @@
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
+import * as util from 'util';
 import * as uuid from 'uuid';
 
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
+import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -31,6 +33,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         task: TaskRepo;
     }) => {
         const order = params.object;
@@ -44,7 +47,11 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
             // 所有権作成
             ownershipInfos = createOwnershipInfosFromOrder({ order });
             await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
-                await repos.ownershipInfo.save(ownershipInfo);
+                if (process.env.OWNERSHIP_INFO_UUID_DISABLED === '1') {
+                    await repos.ownershipInfo.saveByIdentifier(ownershipInfo);
+                } else {
+                    await repos.ownershipInfo.save(ownershipInfo);
+                }
             }));
 
             // 注文ステータス変更
@@ -52,6 +59,18 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 orderNumber: order.orderNumber,
                 orderStatus: factory.orderStatus.OrderDelivered
             });
+
+            // 会員プログラムがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
+            const programMembershipOwnershipInfos
+                = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<'ProgramMembership'>>[]>
+                ownershipInfos.filter((o) => o.typeOfGood.typeOf === 'ProgramMembership');
+            await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
+                const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
+                await repos.registerActionInProgress.unlock({
+                    membershipNumber: <string>memberOf.membershipNumber,
+                    programMembershipId: <string>o.typeOfGood.id
+                });
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -82,41 +101,93 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
 export function createOwnershipInfosFromOrder(params: {
     order: factory.order.IOrder;
 }): IOwnershipInfo[] {
-    return params.order.acceptedOffers.map((acceptedOffer) => {
+    return params.order.acceptedOffers.map((acceptedOffer, offerIndex) => {
         const itemOffered = acceptedOffer.itemOffered;
         let ownershipInfo: IOwnershipInfo;
         const ownedFrom = params.order.orderDate;
         const seller = params.order.seller;
         let ownedThrough: Date;
+        const acquiredFrom = {
+            id: seller.id,
+            typeOf: seller.typeOf,
+            name: {
+                ja: seller.name,
+                en: ''
+            },
+            telephone: seller.telephone,
+            url: seller.url
+        };
+        const id = uuid.v4();
+        const identifier = util.format(
+            '%s-%s-%s',
+            itemOffered.typeOf,
+            params.order.orderNumber,
+            offerIndex
+        );
 
         switch (itemOffered.typeOf) {
+            case 'ProgramMembership':
+                // どういう期間でいくらのオファーなのか
+                const eligibleDuration = acceptedOffer.eligibleDuration;
+                if (eligibleDuration === undefined) {
+                    throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
+                }
+                // 期間単位としては秒のみ実装
+                if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
+                    throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
+                }
+                ownedThrough = moment(params.order.orderDate)
+                    .add(eligibleDuration.value, 'seconds')
+                    .toDate();
+                ownershipInfo = {
+                    id: id,
+                    typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
+                    identifier: identifier,
+                    ownedBy: params.order.customer,
+                    acquiredFrom: acquiredFrom,
+                    ownedFrom: ownedFrom,
+                    ownedThrough: ownedThrough,
+                    typeOfGood: itemOffered
+                };
+
+                break;
+
             case factory.chevre.reservationType.EventReservation:
                 // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
                 // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
                 // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
                 ownedThrough = itemOffered.reservationFor.endDate;
-                ownershipInfo = {
-                    typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                    id: uuid.v4(),
-                    ownedBy: params.order.customer,
-                    acquiredFrom: {
-                        id: seller.id,
-                        typeOf: seller.typeOf,
-                        name: {
-                            ja: seller.name,
-                            en: ''
-                        },
-                        telephone: seller.telephone,
-                        url: seller.url
-                    },
-                    ownedFrom: ownedFrom,
-                    ownedThrough: ownedThrough,
-                    typeOfGood: {
-                        typeOf: itemOffered.typeOf,
-                        id: itemOffered.id,
-                        reservationNumber: itemOffered.reservationNumber
-                    }
-                };
+
+                if (acceptedOffer.offeredThrough !== undefined
+                    && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+                    // COA予約の場合、typeOfGoodにはアイテムをそのまま挿入する
+                    ownershipInfo = {
+                        id: '',
+                        typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
+                        identifier: identifier,
+                        ownedBy: params.order.customer,
+                        acquiredFrom: acquiredFrom,
+                        ownedFrom: ownedFrom,
+                        ownedThrough: ownedThrough,
+                        typeOfGood: itemOffered
+                    };
+                } else {
+                    ownershipInfo = {
+                        typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
+                        id: id,
+                        identifier: identifier,
+                        ownedBy: params.order.customer,
+                        acquiredFrom: acquiredFrom,
+                        ownedFrom: ownedFrom,
+                        ownedThrough: ownedThrough,
+                        typeOfGood: {
+                            typeOf: itemOffered.typeOf,
+                            id: itemOffered.id,
+                            reservationNumber: itemOffered.reservationNumber
+                        }
+                    };
+
+                }
 
                 break;
 
@@ -131,7 +202,7 @@ export function createOwnershipInfosFromOrder(params: {
 /**
  * 注文配送後のアクション
  */
-function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes) {
+export function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes) {
     return async (repos: { task: TaskRepo }) => {
         const potentialActions = sendOrderActionAttributes.potentialActions;
         const now = new Date();
@@ -168,6 +239,11 @@ function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IA
                     };
                     taskAttributes.push(sendEmailMessageTask);
                 }
+            }
+
+            // 会員プログラム更新タスクがあれば追加
+            if (Array.isArray(potentialActions.registerProgramMembership)) {
+                taskAttributes.push(...potentialActions.registerProgramMembership);
             }
         }
 

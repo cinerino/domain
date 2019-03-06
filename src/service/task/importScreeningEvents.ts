@@ -3,6 +3,8 @@ import { IConnectionSettings, IOperation } from '../task';
 import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 import { MongoRepository as EventRepo } from '../../repo/event';
+import { MongoRepository as PlaceRepo } from '../../repo/place';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 
 import * as StockService from '../stock';
 
@@ -17,13 +19,19 @@ export function call(data: factory.task.IData<factory.taskName.ImportScreeningEv
         if (settings.chevreAuthClient === undefined) {
             throw new Error('settings.chevreAuthClient undefined.');
         }
+
         const eventRepo = new EventRepo(settings.connection);
+        const placeRepo = new PlaceRepo(settings.connection);
+        const sellerRepo = new SellerRepo(settings.connection);
         const eventService = new chevre.service.Event({
             endpoint: settings.chevreEndpoint,
             auth: settings.chevreAuthClient
         });
+
         await StockService.importScreeningEvents(data)({
             event: eventRepo,
+            place: placeRepo,
+            seller: sellerRepo,
             eventService: eventService
         });
     };

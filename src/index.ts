@@ -2,6 +2,7 @@
 /**
  * domain index
  */
+import * as COA from '@motionpicture/coa-service';
 import * as GMO from '@motionpicture/gmo-service';
 import * as mvtkreserveapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
@@ -25,6 +26,16 @@ import * as service from './service';
  * });
  */
 export import redis = redis;
+
+/**
+ * COAのAPIクライアント
+ * @example
+ * domain.COA.services.master.theater({ theater_code: '118' }).then(() => {
+ *     console.log(result);
+ * });
+ */
+export import COA = COA;
+
 /**
  * GMOのAPIクライアント
  * @example
@@ -37,6 +48,7 @@ export import redis = redis;
  * });
  */
 export import GMO = GMO;
+
 /**
  * Pecorino APIクライアント
  * Pecorinoサービスとの連携は全てこのクライアントを通じて行います。
@@ -44,6 +56,7 @@ export import GMO = GMO;
 export import pecorinoapi = pecorinoapi;
 export import chevre = chevre;
 export import mvtkreserveapi = mvtkreserveapi;
+
 /**
  * AWS SDK
  */

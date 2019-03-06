@@ -1,25 +1,33 @@
 import * as createDebug from 'debug';
+import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
+import { RedisRepository as ScreeningEventItemAvailabilityRepo } from '../repo/itemAvailability/screeningEvent';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
 
+import * as MasterSync from './masterSync';
 import * as StockService from './stock';
 
 const debug = createDebug('cinerino-domain:service');
 
-type ISearchScreeningEventOffersOperation<T> = (repos: {
+export type ISearchScreeningEventOffersOperation<T> = (repos: {
     event: EventRepo;
     eventService: chevre.service.Event;
 }) => Promise<T>;
-type ISearchScreeningEventTicketOffersOperation<T> = (repos: {
+export type ISearchScreeningEventTicketOffersOperation<T> = (repos: {
     event: EventRepo;
     seller: SellerRepo;
     eventService: chevre.service.Event;
 }) => Promise<T>;
+export type IEventOperation4cinemasunshine<T> = (repos: {
+    event: EventRepo;
+    itemAvailability?: ScreeningEventItemAvailabilityRepo;
+}) => Promise<T>;
+export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: ScreeningEventItemAvailabilityRepo }) => Promise<T>;
 
 /**
  * 上映イベントに対する座席オファーを検索する
@@ -468,4 +476,150 @@ function coaSalesTicket2offer(params: {
     }
 
     return offer;
+}
+
+/**
+ * 個々の上映イベントを検索する
+ * 在庫状況リポジトリをパラメーターとして渡せば、在庫状況も取得してくれる
+ */
+export function searchScreeningEvents4cinemasunshine(
+    searchConditions: factory.event.screeningEvent.ISearchConditions
+): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent[]> {
+    return async (repos: {
+        event: EventRepo;
+        itemAvailability?: ScreeningEventItemAvailabilityRepo;
+    }) => {
+        debug('finding screeningEvents...', searchConditions);
+        const events = await repos.event.searchIndividualScreeningEvents(searchConditions);
+
+        return Promise.all(events.map(async (event) => {
+            // 必ず定義されている前提
+            const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
+
+            // 空席状況情報を追加
+            const offer: factory.chevre.event.screeningEvent.IOffer4cinemasunshine = {
+                typeOf: 'Offer',
+                availability: null,
+                url: ''
+            };
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (repos.itemAvailability !== undefined) {
+                offer.availability = await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
+            }
+
+            return {
+                ...event,
+                offer: offer, //  本来不要だが、互換性維持のため
+                offers: offer
+            };
+        }));
+    };
+}
+
+/**
+ * 個々の上映イベントを識別子で取得する
+ */
+export function findScreeningEventById4cinemasunshine(
+    id: string
+): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
+    return async (repos: {
+        event: EventRepo;
+        itemAvailability?: ScreeningEventItemAvailabilityRepo;
+    }) => {
+        const event = await repos.event.findById({
+            typeOf: factory.chevre.eventType.ScreeningEvent,
+            id: id
+        });
+
+        // 必ず定義されている前提
+        const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
+
+        // add item availability info
+        const offer: factory.chevre.event.screeningEvent.IOffer4cinemasunshine = {
+            typeOf: 'Offer',
+            availability: null,
+            url: ''
+        };
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (repos.itemAvailability !== undefined) {
+            offer.availability = await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
+        }
+
+        return {
+            ...event,
+            offer: offer, //  本来不要だが、互換性維持のため
+            offers: offer
+        };
+    };
+}
+
+/**
+ * 劇場IDと上映日範囲から上映イベント在庫状況を更新する
+ */
+export function updateScreeningEventItemAvailability(locationBranchCode: string, startFrom: Date, startThrough: Date):
+    IUpdateItemAvailabilityOperation<void> {
+    return async (repos: { itemAvailability: ScreeningEventItemAvailabilityRepo }) => {
+        // COAから空席状況取得
+        const countFreeSeatResult = await COA.services.reserve.countFreeSeat({
+            theaterCode: locationBranchCode,
+            begin: moment(startFrom)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD'), // COAは日本時間で判断
+            end: moment(startThrough)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD') // COAは日本時間で判断
+        });
+
+        // 上映日ごとに
+        await Promise.all(countFreeSeatResult.listDate.map(async (countFreeSeatDate) => {
+            debug('saving screeningEvent item availability... day:', countFreeSeatDate.dateJouei);
+            // 上映イベントごとに空席状況を生成して保管
+            await Promise.all(
+                countFreeSeatDate.listPerformance.map(async (countFreeSeatPerformance) => {
+                    const eventId = MasterSync.createScreeningEventIdFromCOA({
+                        theaterCode: countFreeSeatResult.theaterCode,
+                        titleCode: countFreeSeatPerformance.titleCode,
+                        titleBranchNum: countFreeSeatPerformance.titleBranchNum,
+                        dateJouei: countFreeSeatDate.dateJouei,
+                        screenCode: countFreeSeatPerformance.screenCode,
+                        timeBegin: countFreeSeatPerformance.timeBegin
+                    });
+
+                    const itemAvailability = createItemAvailability(
+                        // COAからのレスポンスが負の値の場合があるので調整
+                        Math.max(0, countFreeSeatPerformance.cntReserveFree),
+                        Math.max(0, countFreeSeatPerformance.cntReserveMax)
+                    );
+
+                    // 永続化
+                    debug('saving item availability... identifier:', eventId);
+                    await repos.itemAvailability.updateOne(
+                        countFreeSeatDate.dateJouei,
+                        eventId,
+                        itemAvailability
+                    );
+                    debug('item availability saved');
+                })
+            );
+        }));
+    };
+}
+
+/**
+ * 座席数から在庫状況表現を生成する
+ */
+// tslint:disable-next-line:no-single-line-block-comment
+/* istanbul ignore next */
+export function createItemAvailability(
+    numberOfAvailableSeats: number, numberOfAllSeats: number
+): number {
+    if (numberOfAllSeats === 0) {
+        return 0;
+    }
+
+    // 残席数より空席率を算出
+    // tslint:disable-next-line:no-magic-numbers
+    return Math.floor(numberOfAvailableSeats / numberOfAllSeats * 100);
 }

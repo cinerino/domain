@@ -3,12 +3,14 @@
  */
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
+import * as moment from 'moment';
 
 import * as chevre from '../chevre';
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
+import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -17,6 +19,7 @@ import * as COA from '../coa';
 const debug = createDebug('cinerino-domain:service');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
+export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 /**
  * 注文取引から注文を作成する
@@ -182,7 +185,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                     }));
             }
 
-            // Pecorino決済
+            // 口座決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(orderPotentialActions.payAccount)) {
@@ -218,7 +221,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                     }));
             }
 
-            // Pecorinoポイント付与
+            // ポイント付与
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(orderPotentialActions.givePointAward)) {
@@ -247,14 +250,15 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 /**
  * 注文返品アクション
  */
-// tslint:disable-next-line:max-func-body-length
-export function cancelReservations(params: { orderNumber: string }) {
+export function returnOrder(params: { orderNumber: string }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
+        ownershipInfo: OwnershipInfoRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
-        cancelReservationService: chevre.service.transaction.CancelReservation;
+        cancelReservationService?: chevre.service.transaction.CancelReservation;
     }) => {
         const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
             typeOf: factory.transactionType.ReturnOrder,
@@ -271,7 +275,19 @@ export function cancelReservations(params: { orderNumber: string }) {
             throw new factory.errors.NotFound('PotentialActions of return order transaction');
         }
 
+        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+            typeOf: factory.transactionType.PlaceOrder,
+            result: {
+                order: { orderNumbers: [returnOrderTransaction.object.order.orderNumber] }
+            }
+        });
+        const placeOrderTransaction = placeOrderTransactions.shift();
+        if (placeOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Place Order Transaction');
+        }
+
         // アクション開始
+        const cancelReservationService = repos.cancelReservationService;
         const returnOrderActionAttributes = potentialActions.returnOrder;
         const action = await repos.action.start(returnOrderActionAttributes);
         try {
@@ -279,46 +295,111 @@ export function cancelReservations(params: { orderNumber: string }) {
 
             // 直列で実行しないとCOAの予約取消に失敗する可能性ありなので要注意
             for (const acceptedOffer of order.acceptedOffers) {
-                // COAで予約の場合予約取消
-                if (acceptedOffer.offeredThrough !== undefined
-                    && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
-                    const reservation = <factory.order.IReservation>acceptedOffer.itemOffered;
-                    const superEventLocationBranchCode = reservation.reservationFor.superEvent.location.branchCode;
+                const itemOffered = acceptedOffer.itemOffered;
 
-                    const phoneUtil = PhoneNumberUtil.getInstance();
-                    const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
-                    let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
-                    // COAでは数字のみ受け付けるので数字以外を除去
-                    telNum = telNum.replace(/[^\d]/g, '');
-                    const stateReserveResult = await COA.services.reserve.stateReserve({
-                        theaterCode: superEventLocationBranchCode,
-                        reserveNum: Number(reservation.reservationNumber),
-                        telNum: telNum
-                    });
-                    debug('COA stateReserveResult is', stateReserveResult);
+                // 座席予約の場合キャンセル
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
+                    const reservation = itemOffered;
 
-                    if (stateReserveResult !== null) {
-                        debug('deleting COA reservation...');
-                        await COA.services.reserve.delReserve({
+                    // COAで予約の場合予約取消
+                    if (acceptedOffer.offeredThrough !== undefined
+                        && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+                        const superEventLocationBranchCode = reservation.reservationFor.superEvent.location.branchCode;
+
+                        const phoneUtil = PhoneNumberUtil.getInstance();
+                        const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
+                        let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
+                        // COAでは数字のみ受け付けるので数字以外を除去
+                        telNum = telNum.replace(/[^\d]/g, '');
+                        const stateReserveResult = await COA.services.reserve.stateReserve({
                             theaterCode: superEventLocationBranchCode,
                             reserveNum: Number(reservation.reservationNumber),
-                            telNum: telNum,
-                            dateJouei: stateReserveResult.dateJouei,
-                            titleCode: stateReserveResult.titleCode,
-                            titleBranchNum: stateReserveResult.titleBranchNum,
-                            timeBegin: stateReserveResult.timeBegin,
-                            listSeat: stateReserveResult.listTicket
+                            telNum: telNum
                         });
-                        debug('COA delReserve processed.');
+                        debug('COA stateReserveResult is', stateReserveResult);
+
+                        if (stateReserveResult !== null) {
+                            debug('deleting COA reservation...');
+                            await COA.services.reserve.delReserve({
+                                theaterCode: superEventLocationBranchCode,
+                                reserveNum: Number(reservation.reservationNumber),
+                                telNum: telNum,
+                                dateJouei: stateReserveResult.dateJouei,
+                                titleCode: stateReserveResult.titleCode,
+                                titleBranchNum: stateReserveResult.titleBranchNum,
+                                timeBegin: stateReserveResult.timeBegin,
+                                listSeat: stateReserveResult.listTicket
+                            });
+                            debug('COA delReserve processed.');
+                        }
                     }
+                }
+            }
+
+            const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+                placeOrderTransaction.object.authorizeActions
+                    .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+            for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
+                if (authorizeSeatReservationAction.result === undefined) {
+                    throw new factory.errors.NotFound('Result of seat reservation authorize action');
+                }
+
+                let responseBody = authorizeSeatReservationAction.result.responseBody;
+
+                if (authorizeSeatReservationAction.instrument === undefined) {
+                    authorizeSeatReservationAction.instrument = {
+                        typeOf: 'WebAPI',
+                        identifier: factory.service.webAPI.Identifier.Chevre
+                    };
+                }
+
+                switch (authorizeSeatReservationAction.instrument.identifier) {
+                    case factory.service.webAPI.Identifier.COA:
+                        // tslint:disable-next-line:max-line-length
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+
+                        // no op
+
+                        break;
+
+                    default:
+                        // tslint:disable-next-line:max-line-length
+                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+
+                        if (cancelReservationService !== undefined) {
+                            const cancelReservationTransaction = await cancelReservationService.start({
+                                typeOf: factory.chevre.transactionType.CancelReservation,
+                                agent: {
+                                    typeOf: returnOrderTransaction.agent.typeOf,
+                                    id: returnOrderTransaction.agent.id,
+                                    name: order.customer.name
+                                },
+                                object: {
+                                    transaction: {
+                                        typeOf: responseBody.typeOf,
+                                        id: responseBody.id
+                                    }
+                                },
+                                expires: moment(returnOrderTransaction.expires)
+                                    // tslint:disable-next-line:no-magic-numbers
+                                    .add(5, 'minutes')
+                                    .toDate()
+                            });
+
+                            await cancelReservationService.confirm(cancelReservationTransaction);
+                        }
                 }
             }
 
             // 予約キャンセル確定
             const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
-            if (cancelReservationTransactions !== undefined) {
+            if (cancelReservationTransactions !== undefined && cancelReservationService !== undefined) {
                 await Promise.all(cancelReservationTransactions.map(async (cancelReservationTransaction) => {
-                    await repos.cancelReservationService.confirm({ id: cancelReservationTransaction.id });
+                    await cancelReservationService.confirm({ id: cancelReservationTransaction.id });
                 }));
             }
 
@@ -352,10 +433,8 @@ export function cancelReservations(params: { orderNumber: string }) {
 /**
  * 返品アクション後の処理
  * 注文返品後に何をすべきかは返品アクションのpotentialActionsとして定義されているはずなので、それらをタスクとして登録します。
- * @param transactionId 注文返品取引ID
- * @param returnActionAttributes 返品アクション属性
  */
-function onReturn(returnActionAttributes: factory.action.transfer.returnAction.order.IAttributes) {
+export function onReturn(returnActionAttributes: factory.action.transfer.returnAction.order.IAttributes) {
     return async (repos: {
         task: TaskRepo;
     }) => {

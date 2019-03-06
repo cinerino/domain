@@ -4,6 +4,7 @@
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
+import * as moment from 'moment';
 import * as util from 'util';
 
 import * as emailMessageBuilder from '../../emailMessageBuilder';
@@ -15,7 +16,10 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
+import * as AuthorizeMvtkDiscountActionService from './placeOrderInProgress/action/authorize/discount/mvtk';
+import * as ProgramMembershipAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/programMembership';
 import * as AuthorizeSeatReservationActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
+import * as AuthorizeSeatReservation4coaActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4coa';
 import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/account';
 import * as AuthorizeAnyPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/any';
 import * as AuthorizeCreditCardActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
@@ -139,12 +143,25 @@ export namespace action {
             export import point = AuthorizePointAwardActionService;
         }
         export namespace discount {
+            /**
+             * ムビチケ承認アクションサービス
+             * @deprecated
+             */
+            export import mvtk = AuthorizeMvtkDiscountActionService;
         }
         export namespace offer {
+            /**
+             * 会員プログラム承認アクションサービス
+             */
+            export import programMembership = ProgramMembershipAuthorizeActionService;
             /**
              * 座席予約承認アクションサービス
              */
             export import seatReservation = AuthorizeSeatReservationActionService;
+            /**
+             * 座席予約承認アクションサービス(連携先がCOA限定)
+             */
+            export import seatReservation4coa = AuthorizeSeatReservation4coaActionService;
         }
         export namespace paymentMethod {
             /**
@@ -252,6 +269,10 @@ export interface IConfirmParams {
          * @see https://pugjs.org/api/getting-started.html
          */
         emailTemplate?: string;
+        /**
+         * ムビチケバリデーションを適用するかどうか
+         */
+        validateMovieTicket?: boolean;
     };
 }
 
@@ -265,7 +286,7 @@ export function confirm(params: IConfirmParams) {
         transaction: TransactionRepo;
         seller: SellerRepo;
         orderNumber: OrderNumberRepo;
-        confirmationNumber: ConfirmationNumberRepo;
+        confirmationNumber?: ConfirmationNumberRepo;
     }) => {
         let transaction = await repos.transaction.findById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -304,7 +325,9 @@ export function confirm(params: IConfirmParams) {
         validateTransaction(transaction);
 
         // ムビチケ条件が整っているかどうか確認
-        validateMovieTicket(transaction);
+        if (params.options.validateMovieTicket === true) {
+            validateMovieTicket(transaction);
+        }
 
         // 注文番号を発行
         const orderNumber = await repos.orderNumber.publish({
@@ -313,9 +336,12 @@ export function confirm(params: IConfirmParams) {
             sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined) ? seller.location.branchCode : ''
         });
 
-        const confirmationNumber = await repos.confirmationNumber.publish({
-            orderDate: params.result.order.orderDate
-        });
+        let confirmationNumber = 0;
+        if (repos.confirmationNumber !== undefined) {
+            confirmationNumber = await repos.confirmationNumber.publish({
+                orderDate: params.result.order.orderDate
+            });
+        }
 
         // 注文作成
         const order = createOrderFromTransaction({
@@ -329,16 +355,24 @@ export function confirm(params: IConfirmParams) {
         });
 
         // 確認番号の指定があれば上書き
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
         if (typeof params.result.order.confirmationNumber === 'number') {
             order.confirmationNumber = params.result.order.confirmationNumber;
-        } else if (typeof params.result.order.confirmationNumber === 'function') {
+        } else /* istanbul ignore next */ if (typeof params.result.order.confirmationNumber === 'function') {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             order.confirmationNumber = params.result.order.confirmationNumber(order);
         }
 
         // URLの指定があれば上書き
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
         if (typeof params.result.order.url === 'string') {
             order.url = params.result.order.url;
-        } else if (typeof params.result.order.url === 'function') {
+        } else /* istanbul ignore next */ if (typeof params.result.order.url === 'function') {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             order.url = params.result.order.url(order);
         }
 
@@ -620,23 +654,39 @@ export function createOrderFromTransaction(params: {
                     // 座席仮予約からオファー情報を生成する
                     // tslint:disable-next-line:max-func-body-length
                     acceptedOffers.push(...updTmpReserveSeatResult.listTmpReserve.map((tmpReserve, index) => {
-                        const requestedOffer = <factory.chevre.event.screeningEvent.IAcceptedTicketOffer>
-                            authorizeSeatReservationAction.object.acceptedOffer.find((o) => {
-                                const offer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4chevre>o;
+                        const requestedOffer = authorizeSeatReservationAction.object.acceptedOffer.find((o) => {
+                            let offer = o;
+
+                            if ((<any>offer).ticketInfo !== undefined) {
+                                offer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4COA>o;
+
+                                return (offer.seatNumber === tmpReserve.seatNum && offer.seatSection === tmpReserve.seatSection);
+                            } else {
+                                offer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4chevre>o;
 
                                 return (offer.ticketedSeat !== undefined
                                     && offer.ticketedSeat.seatNumber === tmpReserve.seatNum
                                     && offer.ticketedSeat.seatSection === tmpReserve.seatSection);
-                            });
+
+                            }
+                        });
                         if (requestedOffer === undefined) {
                             throw new factory.errors.Argument('offers', '要求された供給情報と仮予約結果が一致しません');
                         }
 
-                        let coaInfo: any;
-                        if (Array.isArray(screeningEvent.additionalProperty)) {
-                            // const coaEndpointProperty = event.additionalProperty.find((p) => p.name === 'COA_ENDPOINT');
-                            const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                            coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                        let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;
+                        if (screeningEvent.coaInfo !== undefined) {
+                            coaInfo = screeningEvent.coaInfo;
+                        } else {
+                            if (Array.isArray(screeningEvent.additionalProperty)) {
+                                // const coaEndpointProperty = event.additionalProperty.find((p) => p.name === 'COA_ENDPOINT');
+                                const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
+                                coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                            }
+                        }
+
+                        if (coaInfo === undefined) {
+                            throw new factory.errors.NotFound('Event COA Info');
                         }
 
                         // チケットトークン(QRコード文字列)を作成
@@ -650,46 +700,37 @@ export function createOrderFromTransaction(params: {
                         ].join('');
 
                         // tslint:disable-next-line:max-line-length
-                        const unitPriceSpec = <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
-                            requestedOffer.priceSpecification.priceComponent.find(
-                                (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
-                            );
-
-                        if (unitPriceSpec === undefined) {
-                            throw new factory.errors.Argument('Accepted Offer', 'Unit price specification not found');
-                        }
+                        // const unitPriceSpec = <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                        //     requestedOffer.priceSpecification.priceComponent.find(
+                        //         (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+                        //     );
+                        // if (unitPriceSpec === undefined) {
+                        //     throw new factory.errors.Argument('Accepted Offer', 'Unit price specification not found');
+                        // }
 
                         const eventReservation: factory.order.IReservation = {
+                            typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
                             checkedIn: false,
                             attended: false,
-                            typeOf: factory.chevre.reservationType.EventReservation,
                             additionalTicketText: '',
                             modifiedTime: params.orderDate,
                             numSeats: 1,
-                            price: requestedOffer.priceSpecification,
+                            price: <number>requestedOffer.price,
+                            // price: requestedOffer.priceSpecification,
                             priceCurrency: factory.priceCurrency.JPY,
                             reservationFor: screeningEvent,
                             reservationNumber: `${updTmpReserveSeatResult.tmpReserveNum}`,
                             reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed,
                             reservedTicket: {
                                 typeOf: 'Ticket',
-                                ticketType: {
-                                    typeOf: 'Offer',
-                                    id: requestedOffer.id,
-                                    name: requestedOffer.name,
-                                    description: requestedOffer.description,
-                                    availability: factory.chevre.itemAvailability.InStock,
-                                    priceSpecification: unitPriceSpec,
-                                    priceCurrency: requestedOffer.priceCurrency,
-                                    additionalProperty: requestedOffer.additionalProperty
-                                },
+                                coaTicketInfo: (<any>requestedOffer).ticketInfo,
                                 dateIssued: params.orderDate,
                                 issuedBy: {
                                     typeOf: screeningEvent.location.typeOf,
                                     name: screeningEvent.location.name.ja
                                 },
-                                totalPrice: requestedOffer.priceSpecification,
+                                totalPrice: <number>requestedOffer.price,
                                 priceCurrency: factory.priceCurrency.JPY,
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
@@ -703,6 +744,16 @@ export function createOrderFromTransaction(params: {
                                 underName: {
                                     typeOf: factory.personType.Person,
                                     name: customer.name
+                                },
+                                ticketType: {
+                                    typeOf: 'Offer',
+                                    id: <string>requestedOffer.id,
+                                    name: <factory.multilingualString>requestedOffer.name,
+                                    description: <factory.multilingualString>requestedOffer.description,
+                                    availability: factory.chevre.itemAvailability.InStock,
+                                    priceSpecification: <any>undefined,
+                                    priceCurrency: requestedOffer.priceCurrency,
+                                    additionalProperty: requestedOffer.additionalProperty
                                 }
                             },
                             underName: {
@@ -715,6 +766,7 @@ export function createOrderFromTransaction(params: {
                             typeOf: <factory.offer.OfferType>'Offer',
                             itemOffered: eventReservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
+                            price: <number>eventReservation.price,
                             priceSpecification: <any>eventReservation.price,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
@@ -760,6 +812,22 @@ export function createOrderFromTransaction(params: {
     }
 
     const discounts: factory.order.IDiscount[] = [];
+    params.transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk)
+        .forEach((mvtkAuthorizeAction: factory.action.authorize.discount.mvtk.IAction) => {
+            const discountCode = mvtkAuthorizeAction.object.seatInfoSyncIn.knyknrNoInfo
+                .map((knshInfo) => knshInfo.knyknrNo)
+                .join(',');
+
+            discounts.push({
+                typeOf: 'Discount',
+                name: 'ムビチケカード',
+                discount: (<factory.action.authorize.discount.mvtk.IResult>mvtkAuthorizeAction.result).price,
+                discountCode: discountCode,
+                discountCurrency: factory.priceCurrency.JPY
+            });
+        });
 
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
 
@@ -783,11 +851,36 @@ export function createOrderFromTransaction(params: {
                 });
         });
 
+    // ムビチケ割引があれば決済方法に追加
+    params.transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk)
+        .forEach((mvtkAuthorizeAction: factory.action.authorize.discount.mvtk.IAction) => {
+            // ムビチケ購入管理番号を決済IDに指定
+            paymentMethods.push(...mvtkAuthorizeAction.object.seatInfoSyncIn.knyknrNoInfo.map(
+                (knshInfo) => {
+                    return {
+                        name: 'ムビチケ',
+                        typeOf: factory.paymentMethodType.MovieTicket,
+                        paymentMethod: factory.paymentMethodType.MovieTicket,
+                        paymentMethodId: knshInfo.knyknrNo,
+                        additionalProperty: []
+                    };
+                }
+            ));
+        });
+
     const url = util.format(
         '%s/inquiry/login?confirmationNumber=%s',
         process.env.ORDER_INQUIRY_ENDPOINT,
         params.confirmationNumber
     );
+    // const url = (reservationNumber !== undefined) ? util.format(
+    //     '%s/inquiry/login?theater=%s&reserve=%s',
+    //     process.env.ORDER_INQUIRY_ENDPOINT,
+    //     params.seller.location.branchCode,
+    //     reservationNumber
+    // ) : '';
 
     // 決済方法から注文金額の計算
     let price = 0;
@@ -1088,13 +1181,56 @@ export async function createPotentialActionsFromTransaction(params: {
         };
     }
 
+    // 会員プログラムが注文アイテムにあれば、プログラム更新タスクを追加
+    const registerProgramMembershipTaskAttributes: factory.task.IAttributes<factory.taskName.RegisterProgramMembership>[] = [];
+    const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
+        params.order.acceptedOffers.filter(
+            (o) => o.itemOffered.typeOf === <factory.programMembership.ProgramMembershipType>'ProgramMembership'
+        );
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
+    if (programMembershipOffers.length > 0) {
+        registerProgramMembershipTaskAttributes.push(...programMembershipOffers.map((o) => {
+            const actionAttributes: factory.action.interact.register.programMembership.IAttributes = {
+                typeOf: factory.actionType.RegisterAction,
+                agent: params.transaction.agent,
+                object: o
+            };
+
+            // どういう期間でいくらのオファーなのか
+            const eligibleDuration = o.eligibleDuration;
+            if (eligibleDuration === undefined) {
+                throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
+            }
+            // 期間単位としては秒のみ実装
+            if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
+                throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
+            }
+            // プログラム更新日時は、今回のプログラムの所有期限
+            const runsAt = moment(params.order.orderDate)
+                .add(eligibleDuration.value, 'seconds')
+                .toDate();
+
+            return {
+                name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
+                status: factory.taskStatus.Ready,
+                runsAt: runsAt,
+                remainingNumberOfTries: 10,
+                numberOfTried: 0,
+                executionResults: [],
+                data: actionAttributes
+            };
+        }));
+    }
+
     const sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes = {
         typeOf: factory.actionType.SendAction,
         object: params.order,
         agent: params.transaction.seller,
         recipient: params.transaction.agent,
         potentialActions: {
-            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined
+            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined,
+            registerProgramMembership: registerProgramMembershipTaskAttributes
         }
     };
 

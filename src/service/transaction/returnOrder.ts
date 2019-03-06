@@ -2,7 +2,6 @@
  * 注文返品取引サービス
  */
 import * as createDebug from 'debug';
-import * as moment from 'moment';
 
 import * as chevre from '../../chevre';
 import * as emailMessageBuilder from '../../emailMessageBuilder';
@@ -147,23 +146,25 @@ export function start(
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
-                    pendingCancelReservationTransactions.push(await repos.cancelReservationService.start({
-                        typeOf: factory.chevre.transactionType.CancelReservation,
-                        agent: {
-                            typeOf: returnOrderTransaction.agent.typeOf,
-                            id: returnOrderTransaction.agent.id,
-                            name: order.customer.name
-                        },
-                        object: {
-                            transaction: {
-                                typeOf: responseBody.typeOf,
-                                id: responseBody.id
-                            }
-                        },
-                        expires: moment(params.expires)
-                            .add(1, 'month')
-                            .toDate() // 余裕を持って
-                    }));
+                // 予約キャンセル取引開始は保留
+
+                // pendingCancelReservationTransactions.push(await repos.cancelReservationService.start({
+                //     typeOf: factory.chevre.transactionType.CancelReservation,
+                //     agent: {
+                //         typeOf: returnOrderTransaction.agent.typeOf,
+                //         id: returnOrderTransaction.agent.id,
+                //         name: order.customer.name
+                //     },
+                //     object: {
+                //         transaction: {
+                //             typeOf: responseBody.typeOf,
+                //             id: responseBody.id
+                //         }
+                //     },
+                //     expires: moment(params.expires)
+                //         .add(1, 'month')
+                //         .toDate() // 余裕を持って
+                // }));
             }
         }
 

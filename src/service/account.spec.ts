@@ -5,7 +5,7 @@
 import * as assert from 'power-assert';
 import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
-import * as sskts from '../index';
+import * as domain from '../index';
 
 let sandbox: sinon.SinonSandbox;
 let redisClient: redis.RedisClient;
@@ -22,8 +22,8 @@ describe('ポイント口座を開設する', () => {
 
     it('口座リポジトリが正常であれば開設できるはず', async () => {
         const account = {};
-        const accountNumberRepo = new sskts.repository.AccountNumber(redisClient);
-        const accountService = new sskts.pecorinoapi.service.Account(<any>{});
+        const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
+        const accountService = new domain.pecorinoapi.service.Account(<any>{});
         sandbox.mock(accountNumberRepo)
             .expects('publish')
             .once()
@@ -33,7 +33,7 @@ describe('ポイント口座を開設する', () => {
             .once()
             .resolves(account);
 
-        const result = await sskts.service.account.openWithoutOwnershipInfo(<any>{})({
+        const result = await domain.service.account.openWithoutOwnershipInfo(<any>{})({
             accountNumber: accountNumberRepo,
             accountService: accountService
         });
@@ -43,8 +43,8 @@ describe('ポイント口座を開設する', () => {
 
     it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
         const pecorinoRequestError = { name: 'PecorinoRequestError' };
-        const accountNumberRepo = new sskts.repository.AccountNumber(redisClient);
-        const accountService = new sskts.pecorinoapi.service.Account(<any>{});
+        const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
+        const accountService = new domain.pecorinoapi.service.Account(<any>{});
         sandbox.mock(accountNumberRepo)
             .expects('publish')
             .once()
@@ -54,12 +54,12 @@ describe('ポイント口座を開設する', () => {
             .once()
             .rejects(pecorinoRequestError);
 
-        const result = await sskts.service.account.openWithoutOwnershipInfo(<any>{})({
+        const result = await domain.service.account.openWithoutOwnershipInfo(<any>{})({
             accountNumber: accountNumberRepo,
             accountService: accountService
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Cinerino);
+        assert(result instanceof domain.factory.errors.Cinerino);
         sandbox.verify();
     });
 });
@@ -71,7 +71,7 @@ describe('ポイントを入金する', () => {
 
     it('Pecorinoサービスが正常であれば入金できるはず', async () => {
         const depositTransaction = {};
-        const depositService = new sskts.pecorinoapi.service.transaction.Deposit(<any>{});
+        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
         sandbox.mock(depositService)
             .expects('start')
             .once()
@@ -81,7 +81,7 @@ describe('ポイントを入金する', () => {
             .once()
             .resolves();
 
-        const result = await sskts.service.account.deposit(<any>{
+        const result = await domain.service.account.deposit(<any>{
             agent: {},
             recipient: {}
         })({
@@ -93,7 +93,7 @@ describe('ポイントを入金する', () => {
 
     it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
         const pecorinoRequestError = { name: 'PecorinoRequestError' };
-        const depositService = new sskts.pecorinoapi.service.transaction.Deposit(<any>{});
+        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
         sandbox.mock(depositService)
             .expects('start')
             .once()
@@ -102,14 +102,14 @@ describe('ポイントを入金する', () => {
             .expects('confirm')
             .never();
 
-        const result = await sskts.service.account.deposit(<any>{
+        const result = await domain.service.account.deposit(<any>{
             agent: {},
             recipient: {}
         })({
             depositService: depositService
         })
             .catch((err) => err);
-        assert(result instanceof sskts.factory.errors.Cinerino);
+        assert(result instanceof domain.factory.errors.Cinerino);
         sandbox.verify();
     });
 });

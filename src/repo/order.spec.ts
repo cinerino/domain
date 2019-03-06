@@ -26,8 +26,11 @@ describe('createIfNotExist()', () => {
 
         const repository = new domain.repository.Order(mongoose.connection);
 
-        sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(new repository.orderModel());
+        sandbox.mock(repository.orderModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(new repository.orderModel());
 
         const result = await repository.createIfNotExist(<any>order);
 
@@ -47,8 +50,11 @@ describe('changeStatus()', () => {
 
         const repository = new domain.repository.Order(mongoose.connection);
 
-        sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(new repository.orderModel());
+        sandbox.mock(repository.orderModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(new repository.orderModel());
 
         const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus });
 
@@ -62,8 +68,11 @@ describe('changeStatus()', () => {
 
         const repository = new domain.repository.Order(mongoose.connection);
 
-        sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
+        sandbox.mock(repository.orderModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
         const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus })
             .catch((err) => err);
@@ -85,8 +94,11 @@ describe('findByOrderNumber()', () => {
 
         const repository = new domain.repository.Order(mongoose.connection);
 
-        sandbox.mock(repository.orderModel).expects('findOne').once()
-            .chain('exec').resolves(new repository.orderModel(order));
+        sandbox.mock(repository.orderModel)
+            .expects('findOne')
+            .once()
+            .chain('exec')
+            .resolves(new repository.orderModel(order));
 
         const result = await repository.findByOrderNumber({ orderNumber: order.orderNumber });
 
@@ -99,8 +111,11 @@ describe('findByOrderNumber()', () => {
 
         const repository = new domain.repository.Order(mongoose.connection);
 
-        sandbox.mock(repository.orderModel).expects('findOne').once()
-            .chain('exec').resolves(null);
+        sandbox.mock(repository.orderModel)
+            .expects('findOne')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
         const result = await repository.findByOrderNumber({ orderNumber: orderNumber })
             .catch((err) => err);
@@ -117,7 +132,9 @@ describe('注文を検索する', () => {
 
     it('MongoDBが正常であれば配列を取得できるはず', async () => {
         const orderRepo = new domain.repository.Order(mongoose.connection);
-        sandbox.mock(orderRepo.orderModel).expects('find').once()
+        sandbox.mock(orderRepo.orderModel)
+            .expects('find')
+            .once()
             // .chain('sort')
             .chain('exec')
             .resolves([new orderRepo.orderModel()]);

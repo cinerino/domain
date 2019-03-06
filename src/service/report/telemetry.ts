@@ -38,7 +38,7 @@ export type TaskAndTelemetryAndTransactionOperation<T> = (repos: {
     action: repository.Action;
 }) => Promise<T>;
 
-const debug = createDebug('sskts-domain:service:report:telemetry');
+const debug = createDebug('cinerino-domain:service');
 const TELEMETRY_UNIT_OF_MEASUREMENT_IN_SECONDS = 60; // 測定単位時間(秒)
 
 export interface IGlobalFlowTaskResultByName {

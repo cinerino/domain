@@ -11,6 +11,10 @@ import * as COA from '../coa';
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
+import { MongoRepository as PlaceRepo } from '../repo/place';
+import { MongoRepository as SellerRepo } from '../repo/seller';
+
+import * as MasterSyncService from './masterSync';
 
 const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
@@ -24,10 +28,14 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
+        place: PlaceRepo;
+        seller: SellerRepo;
         eventService: chevre.service.Event;
     }) => {
+        // COAイベントの場合、masterSyncサービスを使用
         if (params.offeredThrough !== undefined && params.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
-            await importScreeningEventsFromCOA(params)(repos);
+            await MasterSyncService.importScreeningEvents(params)(repos);
+            // await importScreeningEventsFromCOA(params)(repos);
 
             return;
         }
@@ -678,7 +686,7 @@ export async function findMovieImage(params: {
 export function cancelSeatReservationAuth(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
-        reserveService: chevre.service.transaction.Reserve;
+        reserveService?: chevre.service.transaction.Reserve;
     }) => {
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
@@ -733,9 +741,12 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
 
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
                         debug('calling reserve transaction...');
-                        await repos.reserveService.cancel({ id: responseBody.id });
-                        await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+                        if (repos.reserveService !== undefined) {
+                            await repos.reserveService.cancel({ id: responseBody.id });
+                        }
                 }
+
+                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
         }));
     };

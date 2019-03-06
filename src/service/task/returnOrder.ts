@@ -4,6 +4,7 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as OrderRepo } from '../../repo/order';
+import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -23,15 +24,17 @@ export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IO
 
         const actionRepo = new ActionRepo(settings.connection);
         const orderRepo = new OrderRepo(settings.connection);
+        const ownershipInfoRepo = new OwnershipInfoRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
         const cancelReservationService = new chevre.service.transaction.CancelReservation({
             endpoint: settings.chevreEndpoint,
             auth: settings.chevreAuthClient
         });
-        await OrderService.cancelReservations(data)({
+        await OrderService.returnOrder(data)({
             action: actionRepo,
             order: orderRepo,
+            ownershipInfo: ownershipInfoRepo,
             transaction: transactionRepo,
             task: taskRepo,
             cancelReservationService: cancelReservationService
