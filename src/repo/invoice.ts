@@ -177,9 +177,7 @@ export class MongoRepository {
     public async count(params: factory.invoice.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.invoiceModel.countDocuments(
-            { $and: conditions }
-        )
+        return this.invoiceModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -188,7 +186,7 @@ export class MongoRepository {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         debug('searching orders...', conditions);
         const query = this.invoiceModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,

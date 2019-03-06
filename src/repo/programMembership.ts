@@ -29,7 +29,7 @@ export class MongoRepository {
             andConditions.push({ _id: params.id });
         }
 
-        return this.programMembershipModel.find({ $and: andConditions })
+        return this.programMembershipModel.find((andConditions.length > 0) ? { $and: andConditions } : {})
             .sort({ programName: 1 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));

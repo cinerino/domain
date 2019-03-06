@@ -177,7 +177,7 @@ export class MongoRepository {
     ): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.ownershipInfoModel.countDocuments({ $and: conditions })
+        return this.ownershipInfoModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -190,7 +190,7 @@ export class MongoRepository {
     ): Promise<IOwnershipInfo<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.ownershipInfoModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,

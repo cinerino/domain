@@ -339,9 +339,7 @@ export class MongoRepository {
     public async countIndividualScreeningEvents(params: factory.event.screeningEvent.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_INDIVIDUAL_SCREENING_EVENT_MONGO_CONDITIONS(params);
 
-        return this.eventModel.countDocuments(
-            { $and: conditions }
-        )
+        return this.eventModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -354,7 +352,7 @@ export class MongoRepository {
     ): Promise<factory.event.screeningEvent.IEvent[]> {
         const conditions = MongoRepository.CREATE_INDIVIDUAL_SCREENING_EVENT_MONGO_CONDITIONS(params);
         const query = this.eventModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,
@@ -396,9 +394,7 @@ export class MongoRepository {
     public async countScreeningEvents(params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>): Promise<number> {
         const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
 
-        return this.eventModel.countDocuments(
-            { $and: conditions }
-        )
+        return this.eventModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -411,7 +407,7 @@ export class MongoRepository {
     ): Promise<factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[]> {
         const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
         const query = this.eventModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,

@@ -52,7 +52,7 @@ export class MongoRepository {
     ): Promise<number> {
         const conditions = MongoRepository.CREATE_MOVIE_TICKET_MONGO_CONDITIONS(params);
 
-        return this.paymentMethodModel.countDocuments({ $and: conditions })
+        return this.paymentMethodModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -62,7 +62,7 @@ export class MongoRepository {
     ): Promise<factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[]> {
         const conditions = MongoRepository.CREATE_MOVIE_TICKET_MONGO_CONDITIONS(params);
         const query = this.paymentMethodModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,

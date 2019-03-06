@@ -19,6 +19,13 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (typeof params.typeOf === 'string') {
+            andConditions.push({
+                typeOf: params.typeOf
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (params.startFrom !== undefined) {
             andConditions.push({
                 startDate: { $gt: params.startFrom }
@@ -565,7 +572,7 @@ export class MongoRepository {
         params: factory.transaction.ISearchConditions<T>
     ): QueryCursor<Document> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-        const query = this.transactionModel.find({ $and: conditions })
+        const query = this.transactionModel.find((conditions.length > 0) ? { $and: conditions } : {})
             .select({ __v: 0, createdAt: 0, updatedAt: 0 });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */

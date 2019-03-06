@@ -202,7 +202,7 @@ export class MongoRepository {
     public async count<T extends factory.taskName>(params: factory.task.ISearchConditions<T>): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.taskModel.countDocuments({ $and: conditions })
+        return this.taskModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
@@ -215,7 +215,7 @@ export class MongoRepository {
     ): Promise<factory.task.ITask<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.taskModel.find(
-            { $and: conditions },
+            (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
                 createdAt: 0,
