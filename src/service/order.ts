@@ -260,11 +260,14 @@ export function returnOrder(params: { orderNumber: string }) {
         task: TaskRepo;
         cancelReservationService?: chevre.service.transaction.CancelReservation;
     }) => {
+        // 確定済の注文返品取引がひとつあるはず
         const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+            limit: 1,
             typeOf: factory.transactionType.ReturnOrder,
             object: {
                 order: { orderNumbers: [params.orderNumber] }
-            }
+            },
+            statuses: [factory.transactionStatusType.Confirmed]
         });
         const returnOrderTransaction = returnOrderTransactions.shift();
         if (returnOrderTransaction === undefined) {

@@ -71,37 +71,44 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
 schema.index(
-    { name: 1 },
-    { name: 'searchByName' }
+    { name: 1, runsAt: -1 },
+    { name: 'searchByName-v2' }
 );
+
 schema.index(
-    { status: 1 },
-    { name: 'searchByStatus' }
+    { status: 1, runsAt: -1 },
+    { name: 'searchByStatus-v2' }
 );
+
 schema.index(
-    { runsAt: 1 },
-    { name: 'searchByRunsAt' }
+    { runsAt: -1 },
+    { name: 'searchByRunsAt-v2' }
 );
+
 schema.index(
-    { lastTriedAt: 1 },
+    { lastTriedAt: 1, runsAt: -1 },
     {
-        name: 'searchByLastTriedAt',
+        name: 'searchByLastTriedAt-v2',
         partialFilterExpression: {
             lastTriedAt: { $type: 'date' }
         }
     }
 );
+
 schema.index(
-    { remainingNumberOfTries: 1 },
-    { name: 'searchByRemainingNumberOfTries' }
+    { remainingNumberOfTries: 1, runsAt: -1 },
+    { name: 'searchByRemainingNumberOfTries-v2' }
 );
+
 schema.index(
     { status: 1, name: 1, numberOfTried: 1, runsAt: 1 },
     {
         name: 'executeOneByName'
     }
 );
+
 schema.index(
     { status: 1, remainingNumberOfTries: 1, lastTriedAt: 1 },
     {
@@ -111,6 +118,7 @@ schema.index(
         }
     }
 );
+
 schema.index(
     { 'data.transactionId': 1 },
     {
@@ -119,6 +127,7 @@ schema.index(
         }
     }
 );
+
 schema.index(
     {
         name: 1,
