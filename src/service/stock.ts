@@ -4,6 +4,7 @@
  */
 import * as createDebug from 'debug';
 import { google } from 'googleapis';
+import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
 import * as chevre from '../chevre';
@@ -19,7 +20,10 @@ import * as MasterSyncService from './masterSync';
 const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
 
-export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
+export import IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
+export import WebAPIIdentifier = factory.service.webAPI.Identifier;
+export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
+    factory.action.authorize.offer.seatReservation.IResponseBody<T>;
 
 /**
  * 上映イベントをインポートする
@@ -33,7 +37,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         eventService: chevre.service.Event;
     }) => {
         // COAイベントの場合、masterSyncサービスを使用
-        if (params.offeredThrough !== undefined && params.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+        if (params.offeredThrough !== undefined && params.offeredThrough.identifier === WebAPIIdentifier.COA) {
             await MasterSyncService.importScreeningEvents(params)(repos);
             // await importScreeningEventsFromCOA(params)(repos);
 
@@ -105,7 +109,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                         .toDate(),
                     validThrough: moment(offers.validThrough)
                         .toDate(),
-                    offeredThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre }
+                    offeredThrough: { typeOf: 'WebAPI', identifier: WebAPIIdentifier.Chevre }
                 };
 
                 await repos.event.save<factory.chevre.eventType.ScreeningEvent>({
@@ -599,7 +603,7 @@ export function createScreeningEventFromCOA(params: {
                     name: kbnService.kubunName
                 }
             },
-            offeredThrough: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
+            offeredThrough: { typeOf: 'WebAPI', identifier: WebAPIIdentifier.COA }
         },
         checkInCount: 0,
         attendeeCount: 0,
@@ -689,7 +693,7 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
         reserveService?: chevre.service.transaction.Reserve;
     }) => {
         // 座席仮予約アクションを取得
-        const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>[]>
+        const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             await repos.action.searchByPurpose({
                 typeOf: factory.actionType.AuthorizeAction,
                 purpose: {
@@ -710,34 +714,53 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
                 if (action.instrument === undefined) {
                     action.instrument = {
                         typeOf: 'WebAPI',
-                        identifier: factory.service.webAPI.Identifier.Chevre
+                        identifier: WebAPIIdentifier.Chevre
                     };
                 }
 
                 switch (action.instrument.identifier) {
-                    case factory.service.webAPI.Identifier.COA:
+                    case WebAPIIdentifier.COA:
                         // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+                        responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.COA>>responseBody;
 
                         // tslint:disable-next-line:no-suspicious-comment
                         // COAで仮予約取消
                         const updTmpReserveSeatArgs = requestBody;
                         const updTmpReserveSeatResult = responseBody;
 
-                        await COA.services.reserve.delTmpReserve({
-                            theaterCode: updTmpReserveSeatArgs.theaterCode,
-                            dateJouei: updTmpReserveSeatArgs.dateJouei,
-                            titleCode: updTmpReserveSeatArgs.titleCode,
-                            titleBranchNum: updTmpReserveSeatArgs.titleBranchNum,
-                            timeBegin: updTmpReserveSeatArgs.timeBegin,
-                            tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum
-                        });
+                        try {
+                            await COA.services.reserve.delTmpReserve({
+                                theaterCode: updTmpReserveSeatArgs.theaterCode,
+                                dateJouei: updTmpReserveSeatArgs.dateJouei,
+                                titleCode: updTmpReserveSeatArgs.titleCode,
+                                titleBranchNum: updTmpReserveSeatArgs.titleBranchNum,
+                                timeBegin: updTmpReserveSeatArgs.timeBegin,
+                                tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum
+                            });
+                        } catch (error) {
+                            let deleted = false;
+                            // COAサービスエラーの場合ハンドリング
+                            // すでに取消済の場合こうなるので、okとする
+                            // tslint:disable-next-line:no-single-line-block-comment
+                            /* istanbul ignore if */
+                            if (error.name === 'COAServiceError') {
+                                if (error.code < INTERNAL_SERVER_ERROR) {
+                                    if (action.actionStatus === factory.actionStatusType.CanceledActionStatus) {
+                                        deleted = true;
+                                    }
+                                }
+                            }
+
+                            if (!deleted) {
+                                throw error;
+                            }
+                        }
 
                         break;
 
                     default:
                         // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+                        responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.Chevre>>responseBody;
 
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
                         debug('calling reserve transaction...');
