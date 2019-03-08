@@ -19,6 +19,7 @@ type IAccountsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     accountService: pecorinoapi.service.Account;
 }) => Promise<T>;
+
 /**
  * 口座開設
  */
@@ -43,11 +44,15 @@ export function open<T extends factory.accountType>(params: {
         try {
             // 口座番号を発行
             const accountNumber = await repos.accountNumber.publish(new Date());
+
+            // 口座開設
             const account = await repos.accountService.open({
                 accountType: params.accountType,
                 accountNumber: accountNumber,
                 name: params.name
             });
+
+            // 所有権発行
             const ownershipInfo: IOwnershipInfo = {
                 typeOf: 'OwnershipInfo',
                 id: uuid.v4(),
@@ -63,7 +68,14 @@ export function open<T extends factory.accountType>(params: {
                     .add(100, 'years')
                     .toDate() // 十分に無期限
             };
-            await repos.ownershipInfo.save(ownershipInfo);
+
+            // Cinemasunshine対応
+            if (process.env.OWNERSHIP_INFO_UUID_DISABLED === '1') {
+                await repos.ownershipInfo.saveByIdentifier(ownershipInfo);
+            } else {
+                await repos.ownershipInfo.save(ownershipInfo);
+            }
+
             ownershipInfoWithDetail = { ...ownershipInfo, typeOfGood: account };
         } catch (error) {
             error = handlePecorinoError(error);
