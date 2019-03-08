@@ -10,8 +10,11 @@ import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 
+type IReservation = factory.chevre.reservation.event.IReservation<factory.chevre.event.screeningEvent.IEvent>;
+
 type IOwnershipInfoWithDetail =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType>>;
+
 export type ISearchScreeningEventReservationsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     reservationService: chevre.service.Reservation;
@@ -93,20 +96,32 @@ export function searchScreeningEventReservations(
             // 所有権検索
             const ownershipInfos = await repos.ownershipInfo.search(params);
 
-            const reservationIds = ownershipInfos.map((o) => o.typeOfGood.id);
+            // Chevre予約の場合、詳細を取得
+            const reservationIds = ownershipInfos
+                .filter((o) => {
+                    return o.typeOfGood.bookingService === undefined
+                        || o.typeOfGood.bookingService.identifier === factory.service.webAPI.Identifier.Chevre;
+                })
+                .map((o) => o.typeOfGood.id);
+
+            let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
                 const searchReservationsResult = await repos.reservationService.searchScreeningEventReservations({
                     ids: reservationIds
                 });
-                ownershipInfosWithDetail = ownershipInfos.map((o) => {
-                    const reservation = searchReservationsResult.data.find((r) => r.id === o.typeOfGood.id);
-                    if (reservation === undefined) {
-                        throw new factory.errors.NotFound('Reservation');
-                    }
-
-                    return { ...o, typeOfGood: reservation };
-                });
+                chevreReservations = searchReservationsResult.data;
             }
+
+            ownershipInfosWithDetail = ownershipInfos.map((o) => {
+                let reservation = chevreReservations.find((r) => r.id === o.typeOfGood.id);
+                if (reservation === undefined) {
+                    // COA予約の場合、typeOfGoodに詳細も含まれる
+                    reservation = <IReservation>o.typeOfGood;
+                    // throw new factory.errors.NotFound('Reservation');
+                }
+
+                return { ...o, typeOfGood: reservation };
+            });
         } catch (error) {
             error = handleChevreError(error);
             throw error;

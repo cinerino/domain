@@ -101,6 +101,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
 export function createOwnershipInfosFromOrder(params: {
     order: factory.order.IOrder;
 }): IOwnershipInfo[] {
+    // tslint:disable-next-line:max-func-body-length
     return params.order.acceptedOffers.map((acceptedOffer, offerIndex) => {
         const itemOffered = acceptedOffer.itemOffered;
         let ownershipInfo: IOwnershipInfo;
@@ -158,8 +159,16 @@ export function createOwnershipInfosFromOrder(params: {
                 // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
                 ownedThrough = itemOffered.reservationFor.endDate;
 
-                if (acceptedOffer.offeredThrough !== undefined
-                    && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
+                let bookingService = acceptedOffer.offeredThrough;
+                if (bookingService === undefined) {
+                    // デフォルトブッキングサービスはChevre
+                    bookingService = {
+                        typeOf: 'WebAPI',
+                        identifier: factory.service.webAPI.Identifier.Chevre
+                    };
+                }
+
+                if (bookingService.identifier === factory.service.webAPI.Identifier.COA) {
                     // COA予約の場合、typeOfGoodにはアイテムをそのまま挿入する
                     ownershipInfo = {
                         id: '',
@@ -169,7 +178,7 @@ export function createOwnershipInfosFromOrder(params: {
                         acquiredFrom: acquiredFrom,
                         ownedFrom: ownedFrom,
                         ownedThrough: ownedThrough,
-                        typeOfGood: itemOffered
+                        typeOfGood: { ...itemOffered, bookingService: bookingService }
                     };
                 } else {
                     ownershipInfo = {
@@ -183,10 +192,10 @@ export function createOwnershipInfosFromOrder(params: {
                         typeOfGood: {
                             typeOf: itemOffered.typeOf,
                             id: itemOffered.id,
-                            reservationNumber: itemOffered.reservationNumber
+                            reservationNumber: itemOffered.reservationNumber,
+                            bookingService: bookingService
                         }
                     };
-
                 }
 
                 break;
