@@ -1132,21 +1132,29 @@ export async function createPotentialActionsFromTransaction(params: {
     if (authorizeMovieTicketActions.length > 0) {
         payMovieTicketActions.push({
             typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-            object: authorizeMovieTicketActions.map((a) => {
-                const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+            object: authorizeMovieTicketActions
+                // PaymentDueステータスのアクションのみ、着券アクションをセット
+                // 着券済の場合は、PaymentCompleteステータス
+                .filter((a) => {
+                    const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
 
-                return {
-                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
-                    paymentMethod: {
-                        name: result.name,
-                        typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod,
-                        paymentMethodId: result.paymentMethodId,
-                        totalPaymentDue: result.totalPaymentDue,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
-                    },
-                    movieTickets: a.object.movieTickets
-                };
-            }),
+                    return result.paymentStatus === factory.paymentStatusType.PaymentDue;
+                })
+                .map((a) => {
+                    const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+
+                    return {
+                        typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                        paymentMethod: {
+                            name: result.name,
+                            typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod,
+                            paymentMethodId: result.paymentMethodId,
+                            totalPaymentDue: result.totalPaymentDue,
+                            additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+                        },
+                        movieTickets: a.object.movieTickets
+                    };
+                }),
             agent: params.transaction.agent,
             purpose: params.order
         });
