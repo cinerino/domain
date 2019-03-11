@@ -4,6 +4,7 @@
  */
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
+import * as util from 'util';
 import * as uuid from 'uuid';
 
 import * as factory from '../factory';
@@ -53,9 +54,17 @@ export function open<T extends factory.accountType>(params: {
             });
 
             // 所有権発行
+            const identifier = util.format(
+                '%s-%s-%s-%s',
+                params.agent.id,
+                factory.pecorino.account.TypeOf.Account,
+                account.accountType,
+                account.accountNumber
+            );
             const ownershipInfo: IOwnershipInfo = {
                 typeOf: 'OwnershipInfo',
                 id: uuid.v4(),
+                identifier: identifier,
                 typeOfGood: {
                     typeOf: factory.ownershipInfo.AccountGoodType.Account,
                     accountType: account.accountType,

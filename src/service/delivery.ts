@@ -120,7 +120,8 @@ export function createOwnershipInfosFromOrder(params: {
         };
         const id = uuid.v4();
         const identifier = util.format(
-            '%s-%s-%s',
+            '%s-%s-%s-%s',
+            params.order.customer.id,
             itemOffered.typeOf,
             params.order.orderNumber,
             offerIndex
