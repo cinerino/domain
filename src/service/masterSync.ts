@@ -76,11 +76,14 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
-        place: PlaceRepo;
         seller: SellerRepo;
     }) => {
         // 劇場取得
-        const movieTheater = await repos.place.findMovieTheaterByBranchCode(params.locationBranchCode);
+        const movieTheater = createMovieTheaterFromCOA(
+            await COA.services.master.theater({ theaterCode: params.locationBranchCode }),
+            await COA.services.master.screen({ theaterCode: params.locationBranchCode })
+        );
+
         const sellers = await repos.seller.search({
             location: { branchCodes: [params.locationBranchCode] }
         });

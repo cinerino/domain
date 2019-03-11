@@ -12,7 +12,6 @@ import * as COA from '../coa';
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
-import { MongoRepository as PlaceRepo } from '../repo/place';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as MasterSyncService from './masterSync';
@@ -32,7 +31,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
-        place: PlaceRepo;
         seller: SellerRepo;
         eventService: chevre.service.Event;
     }) => {

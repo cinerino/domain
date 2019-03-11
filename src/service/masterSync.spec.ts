@@ -196,18 +196,46 @@ describe('importScreeningEvents()', () => {
             { identifier: 'cancelingId' }
         ];
         const eventRepo = new domain.repository.Event(mongoose.connection);
-        const placeRepo = new domain.repository.Place(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master).expects('title').once().resolves(filmFromCOA);
-        sandbox.mock(COA.services.master).expects('schedule').once().resolves(schedulesFromCOA);
-        // tslint:disable-next-line:no-magic-numbers
-        sandbox.mock(COA.services.master).expects('kubunName').exactly(6).resolves([{}]);
-        sandbox.mock(eventRepo).expects('save').exactly(filmFromCOA.length + schedulesFromCOA.length);
-        sandbox.mock(placeRepo).expects('findMovieTheaterByBranchCode').once().returns(movieTheater);
-        sandbox.mock(sellerRepo).expects('search').once().resolves([seller]);
-        sandbox.mock(eventRepo).expects('searchIndividualScreeningEvents').once().resolves(screeningEventsInMongo);
-        sandbox.mock(eventRepo).expects('cancelIndividualScreeningEvent')
+        sandbox.mock(COA.services.master)
+            .expects('theater')
+            .once()
+            .resolves(
+                { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
+            );
+        sandbox.mock(COA.services.master)
+            .expects('screen')
+            .once()
+            .resolves(movieTheater.containsPlace.map((p) => {
+                return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
+            }));
+        sandbox.mock(COA.services.master)
+            .expects('title')
+            .once()
+            .resolves(filmFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('schedule')
+            .once()
+            .resolves(schedulesFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('kubunName')
+            // tslint:disable-next-line:no-magic-numbers
+            .exactly(6)
+            .resolves([{}]);
+        sandbox.mock(eventRepo)
+            .expects('save')
+            .exactly(filmFromCOA.length + schedulesFromCOA.length);
+        sandbox.mock(sellerRepo)
+            .expects('search')
+            .once()
+            .resolves([seller]);
+        sandbox.mock(eventRepo)
+            .expects('searchIndividualScreeningEvents')
+            .once()
+            .resolves(screeningEventsInMongo);
+        sandbox.mock(eventRepo)
+            .expects('cancelIndividualScreeningEvent')
             .once();
 
         const result = await MasterSyncService.importScreeningEvents({
@@ -216,7 +244,6 @@ describe('importScreeningEvents()', () => {
             importThrough: new Date()
         })({
             event: eventRepo,
-            place: placeRepo,
             seller: sellerRepo
         });
 
@@ -224,6 +251,7 @@ describe('importScreeningEvents()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('XMLとCOAのデータが一緒の場合、正常で完了するはず', async () => {
         const movieTheater = {
             branchCode: '123',
@@ -279,19 +307,51 @@ describe('importScreeningEvents()', () => {
         }]];
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
-        const placeRepo = new domain.repository.Place(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master).expects('title').once().resolves(filmFromCOA);
-        sandbox.mock(COA.services.master).expects('schedule').once().resolves(schedulesFromCOA);
-        sandbox.mock(COA.services.master).expects('xmlSchedule').once().resolves(xmlSchedule);
-        // tslint:disable-next-line:no-magic-numbers
-        sandbox.mock(COA.services.master).expects('kubunName').exactly(6).resolves([{}]);
-        sandbox.mock(eventRepo).expects('save').exactly(filmFromCOA.length + 1);
-        sandbox.mock(placeRepo).expects('findMovieTheaterByBranchCode').once().returns(movieTheater);
-        sandbox.mock(sellerRepo).expects('search').once().resolves([seller]);
-        sandbox.mock(eventRepo).expects('searchIndividualScreeningEvents').once().resolves([]);
-        sandbox.mock(eventRepo).expects('cancelIndividualScreeningEvent').never();
+        sandbox.mock(COA.services.master)
+            .expects('theater')
+            .once()
+            .resolves(
+                { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
+            );
+        sandbox.mock(COA.services.master)
+            .expects('screen')
+            .once()
+            .resolves(movieTheater.containsPlace.map((p) => {
+                return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
+            }));
+        sandbox.mock(COA.services.master)
+            .expects('title')
+            .once()
+            .resolves(filmFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('schedule')
+            .once()
+            .resolves(schedulesFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('xmlSchedule')
+            .once()
+            .resolves(xmlSchedule);
+        sandbox.mock(COA.services.master)
+            .expects('kubunName')
+            // tslint:disable-next-line:no-magic-numbers
+            .exactly(6)
+            .resolves([{}]);
+        sandbox.mock(eventRepo)
+            .expects('save')
+            .exactly(filmFromCOA.length + 1);
+        sandbox.mock(sellerRepo)
+            .expects('search')
+            .once()
+            .resolves([seller]);
+        sandbox.mock(eventRepo)
+            .expects('searchIndividualScreeningEvents')
+            .once()
+            .resolves([]);
+        sandbox.mock(eventRepo)
+            .expects('cancelIndividualScreeningEvent')
+            .never();
 
         const result = await MasterSyncService.importScreeningEvents({
             locationBranchCode: movieTheater.branchCode,
@@ -299,7 +359,6 @@ describe('importScreeningEvents()', () => {
             importThrough: new Date()
         })({
             event: eventRepo,
-            place: placeRepo,
             seller: sellerRepo
         });
 
@@ -309,6 +368,7 @@ describe('importScreeningEvents()', () => {
 
     it('劇場に存在しないスクリーンのスケジュールがあれば、エラー出力だけしてスルーするはず', async () => {
         const movieTheater = {
+            branchCode: '123',
             containsPlace: [
                 { branchCode: '01' },
                 { branchCode: '02' }
@@ -336,17 +396,44 @@ describe('importScreeningEvents()', () => {
         //     identifier: 'identifier'
         // };
         const eventRepo = new domain.repository.Event(mongoose.connection);
-        const placeRepo = new domain.repository.Place(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master).expects('title').once().resolves(filmFromCOA);
-        sandbox.mock(COA.services.master).expects('schedule').once().resolves(schedulesFromCOA);
-        // tslint:disable-next-line:no-magic-numbers
-        sandbox.mock(COA.services.master).expects('kubunName').exactly(6).resolves([{}]);
-        sandbox.mock(eventRepo).expects('save').exactly(filmFromCOA.length);
-        sandbox.mock(placeRepo).expects('findMovieTheaterByBranchCode').once().returns(movieTheater);
-        sandbox.mock(sellerRepo).expects('search').once().resolves([seller]);
-        sandbox.mock(eventRepo).expects('searchIndividualScreeningEvents').once().resolves([]);
+        sandbox.mock(COA.services.master)
+            .expects('theater')
+            .once()
+            .resolves(
+                { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
+            );
+        sandbox.mock(COA.services.master)
+            .expects('screen')
+            .once()
+            .resolves(movieTheater.containsPlace.map((p) => {
+                return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
+            }));
+        sandbox.mock(COA.services.master)
+            .expects('title')
+            .once()
+            .resolves(filmFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('schedule')
+            .once()
+            .resolves(schedulesFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('kubunName')
+            // tslint:disable-next-line:no-magic-numbers
+            .exactly(6)
+            .resolves([{}]);
+        sandbox.mock(eventRepo)
+            .expects('save')
+            .exactly(filmFromCOA.length);
+        sandbox.mock(sellerRepo)
+            .expects('search')
+            .once()
+            .resolves([seller]);
+        sandbox.mock(eventRepo)
+            .expects('searchIndividualScreeningEvents')
+            .once()
+            .resolves([]);
 
         const result = await MasterSyncService.importScreeningEvents({
             locationBranchCode: '123',
@@ -354,67 +441,6 @@ describe('importScreeningEvents()', () => {
             importThrough: new Date()
         })({
             event: eventRepo,
-            place: placeRepo,
-            seller: sellerRepo
-        });
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-
-    it('上映イベントがなければ、個々の上映イベントは保管せずにスルーするはず', async () => {
-        const movieTheater = {
-            containsPlace: [
-                { branchCode: '01' },
-                { branchCode: '02' }
-            ]
-        };
-        const seller = {
-            additionalProperty: [
-                // { name: 'xmlEndPoint', value: '{"baseUrl":"http://cinema.coasystems.net","theaterCodeName":"aira"}' }
-            ]
-        };
-        const filmFromCOA = [
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum'
-            }
-        ];
-        const schedulesFromCOA = [
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                screenCode: '01'
-            },
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                screenCode: '02'
-            }
-        ];
-        // const screeningEvent = {
-        //     identifier: 'identifier'
-        // };
-        const eventRepo = new domain.repository.Event(mongoose.connection);
-        const placeRepo = new domain.repository.Place(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
-
-        sandbox.mock(COA.services.master).expects('title').once().resolves(filmFromCOA);
-        sandbox.mock(COA.services.master).expects('schedule').once().resolves(schedulesFromCOA);
-        // tslint:disable-next-line:no-magic-numbers
-        sandbox.mock(COA.services.master).expects('kubunName').exactly(6).resolves([{}]);
-        sandbox.mock(eventRepo).expects('save').exactly(filmFromCOA.length);
-        sandbox.mock(placeRepo).expects('findMovieTheaterByBranchCode').once().returns(movieTheater);
-        sandbox.mock(sellerRepo).expects('search').once().resolves([seller]);
-        sandbox.mock(eventRepo).expects('searchIndividualScreeningEvents').once().resolves([]);
-
-        const result = await MasterSyncService.importScreeningEvents({
-            locationBranchCode: '123',
-            importFrom: new Date(),
-            importThrough: new Date()
-        })({
-            event: eventRepo,
-            place: placeRepo,
             seller: sellerRepo
         });
 
@@ -424,6 +450,7 @@ describe('importScreeningEvents()', () => {
 
     it('XMLエンドポイントからデータ取得するのはエラーが発生すれば処理を止まります', async () => {
         const movieTheater = {
+            branchCode: '123',
             containsPlace: [
                 { branchCode: '01' },
                 { branchCode: '02' }
@@ -456,17 +483,45 @@ describe('importScreeningEvents()', () => {
         //     identifier: 'identifier'
         // };
         const eventRepo = new domain.repository.Event(mongoose.connection);
-        const placeRepo = new domain.repository.Place(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master).expects('title').once().resolves(filmFromCOA);
-        sandbox.mock(COA.services.master).expects('schedule').once().resolves(schedulesFromCOA);
-        sandbox.mock(COA.services.master).expects('xmlSchedule').once().rejects(new Error('some random error'));
-        sandbox.mock(COA.services.master).expects('kubunName').never();
-        sandbox.mock(eventRepo).expects('save').never();
-        sandbox.mock(placeRepo).expects('findMovieTheaterByBranchCode').once().returns(movieTheater);
-        sandbox.mock(sellerRepo).expects('search').once().resolves([seller]);
-        sandbox.mock(eventRepo).expects('searchIndividualScreeningEvents').never();
+        sandbox.mock(COA.services.master)
+            .expects('theater')
+            .once()
+            .resolves(
+                { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
+            );
+        sandbox.mock(COA.services.master)
+            .expects('screen')
+            .once()
+            .resolves(movieTheater.containsPlace.map((p) => {
+                return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
+            }));
+        sandbox.mock(COA.services.master)
+            .expects('title')
+            .once()
+            .resolves(filmFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('schedule')
+            .once()
+            .resolves(schedulesFromCOA);
+        sandbox.mock(COA.services.master)
+            .expects('xmlSchedule')
+            .once()
+            .rejects(new Error('some random error'));
+        sandbox.mock(COA.services.master)
+            .expects('kubunName')
+            .never();
+        sandbox.mock(eventRepo)
+            .expects('save')
+            .never();
+        sandbox.mock(sellerRepo)
+            .expects('search')
+            .once()
+            .resolves([seller]);
+        sandbox.mock(eventRepo)
+            .expects('searchIndividualScreeningEvents')
+            .never();
 
         const result = await MasterSyncService.importScreeningEvents({
             locationBranchCode: '123',
@@ -474,7 +529,6 @@ describe('importScreeningEvents()', () => {
             importThrough: new Date()
         })({
             event: eventRepo,
-            place: placeRepo,
             seller: sellerRepo
         });
 
@@ -503,7 +557,8 @@ describe('importMovieTheater()', () => {
         sandbox.mock(sellerRepo.organizationModel)
             .expects('findOneAndUpdate')
             .once()
-            .chain('exec').resolves();
+            .chain('exec')
+            .resolves();
 
         const result = await MasterSyncService.importMovieTheater('123')({
             seller: sellerRepo,
