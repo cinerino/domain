@@ -82,83 +82,78 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
 schema.index(
-    { typeOf: 1 },
-    { name: 'searchByTypeOf' }
+    { typeOf: 1, ownedFrom: -1 },
+    { name: 'searchByTypeOf-v2' }
 );
 schema.index(
-    { identifier: 1 },
+    { identifier: 1, ownedFrom: -1 },
     {
-        name: 'searchByIdentifier',
+        name: 'searchByIdentifier-v2',
         partialFilterExpression: {
             identifier: { $exists: true }
         }
     }
 );
 schema.index(
-    { 'acquiredFrom.id': 1 },
+    { 'acquiredFrom.id': 1, ownedFrom: -1 },
     {
-        name: 'searchByAcquiredFromId',
+        name: 'searchByAcquiredFromId-v2',
         partialFilterExpression: {
             'acquiredFrom.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'typeOfGood.typeOf': 1 },
+    { 'typeOfGood.typeOf': 1, ownedFrom: -1 },
     {
-        name: 'searchByTypeOfGoodTypeOf',
+        name: 'searchByTypeOfGoodTypeOf-v2',
         partialFilterExpression: {
             'typeOfGood.typeOf': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'ownedBy.id': 1, ownedFrom: -1 },
     {
-        'ownedBy.id': 1
-    },
-    {
-        name: 'searchByOwnerId',
+        name: 'searchByOwnedById',
         partialFilterExpression: {
             'ownedBy.id': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'ownedBy.memberOf.membershipNumber': 1, ownedFrom: -1 },
     {
-        'ownedBy.memberOf.membershipNumber': 1
-    },
-    {
-        name: 'searchByOwnerMemberOfMembershipNumber',
+        name: 'searchByOwnedByMemberOfMembershipNumber',
         partialFilterExpression: {
             'ownedBy.memberOf.membershipNumber': { $exists: true }
         }
     }
 );
 schema.index(
-    { ownedFrom: 1 },
+    { ownedFrom: -1 },
     {
-        name: 'searchByOwnedFrom',
+        name: 'searchByOwnedFrom-v2',
         partialFilterExpression: {
             ownedFrom: { $exists: true }
         }
     }
 );
 schema.index(
-    { ownedThrough: 1 },
+    { ownedThrough: -1, ownedFrom: -1 },
     {
-        name: 'searchByownedThrough',
+        name: 'searchByOwnedThrough-v2',
         partialFilterExpression: {
             ownedThrough: { $exists: true }
         }
     }
 );
 schema.index(
+    { 'typeOfGood.reservedTicket.ticketToken': 1, ownedFrom: -1 },
     {
-        'typeOfGood.reservedTicket.ticketToken': 1
-    },
-    {
-        name: 'searchByTicketToken',
+        name: 'searchByTypeOfGoofReservedTicketToken',
         partialFilterExpression: {
             'typeOfGood.reservedTicket.ticketToken': { $exists: true }
         }
