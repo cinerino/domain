@@ -144,6 +144,17 @@ schema.index(
     }
 );
 
+// メール送信タスク存在確認に使用
+schema.index(
+    { 'data.actionAttributes.object.identifier': 1, runsAt: -1 },
+    {
+        name: 'searchByDataActionAttributesObjectIdentifier',
+        partialFilterExpression: {
+            'data.actionAttributes.object.identifier': { $exists: true }
+        }
+    }
+);
+
 mongoose.model(modelName, schema)
     .on(
         'index',

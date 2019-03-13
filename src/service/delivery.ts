@@ -233,6 +233,7 @@ export function onSend(sendOrderActionAttributes: factory.action.transfer.send.o
                     }
                 })
                     .exec();
+
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (sendEmailMessageTaskDoc === null) {
