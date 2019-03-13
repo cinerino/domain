@@ -118,78 +118,108 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
 schema.index(
-    { typeOf: 1 },
-    { name: 'searchByTypeOf' }
+    { typeOf: 1, startDate: -1 },
+    { name: 'searchByTypeOf-v2' }
 );
+
 schema.index(
-    { actionStatus: 1 },
-    { name: 'searchByActionStatus' }
+    { actionStatus: 1, startDate: -1 },
+    { name: 'searchByActionStatus-v2' }
 );
+
 schema.index(
-    { startDate: 1 },
-    { name: 'searchByStartDate' }
+    { startDate: -1 },
+    { name: 'searchByStartDate-v2' }
 );
+
 schema.index(
-    { endDate: 1 },
+    { endDate: -1, startDate: -1 },
     {
-        name: 'searchByEndDate',
+        name: 'searchByEndDate-v2',
         partialFilterExpression: {
             endDate: { $exists: true }
         }
     }
 );
+
 schema.index(
-    { 'purpose.typeOf': 1 },
+    { 'purpose.typeOf': 1, startDate: -1 },
     {
-        name: 'searchByPurposeTypeOf',
+        name: 'searchByPurposeTypeOf-v2',
         partialFilterExpression: {
             'purpose.typeOf': { $exists: true }
         }
     }
 );
+
 schema.index(
-    { 'purpose.id': 1 },
+    { 'purpose.id': 1, startDate: -1 },
     {
-        name: 'searchByPurposeId',
+        name: 'searchByPurposeId-v2',
         partialFilterExpression: {
             'purpose.id': { $exists: true }
         }
     }
 );
+
 schema.index(
-    { 'object.typeOf': 1 },
+    { 'object.typeOf': 1, startDate: -1 },
     {
-        name: 'searchByObjectTypeOf',
+        name: 'searchByObjectTypeOf-v2',
         partialFilterExpression: {
             'object.typeOf': { $exists: true }
         }
     }
 );
+
 schema.index(
-    { 'object.orderNumber': 1 },
+    { 'object.orderNumber': 1, startDate: -1 },
     {
-        name: 'searchByObjectOrderNumber',
+        name: 'searchByObjectOrderNumber-v2',
         partialFilterExpression: {
             'object.orderNumber': { $exists: true }
         }
     }
 );
+
 schema.index(
-    { 'purpose.orderNumber': 1 },
+    { 'purpose.orderNumber': 1, startDate: -1 },
     {
-        name: 'searchByPurposeOrderNumber',
+        name: 'searchByPurposeOrderNumber-v2',
         partialFilterExpression: {
             'purpose.orderNumber': { $exists: true }
         }
     }
 );
+
 schema.index(
-    { 'object.paymentMethod.paymentMethodId': 1 },
+    { 'object.paymentMethod.paymentMethodId': 1, startDate: -1 },
     {
-        name: 'searchByObjectPaymentMethodId',
+        name: 'searchByObjectPaymentMethodPaymentMethodId',
         partialFilterExpression: {
             'object.paymentMethod.paymentMethodId': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'result.typeOf': 1, startDate: -1 },
+    {
+        name: 'searchByResultTypeOf',
+        partialFilterExpression: {
+            'result.typeOf': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'result.id': 1, startDate: -1 },
+    {
+        name: 'searchByResultId',
+        partialFilterExpression: {
+            'result.id': { $exists: true }
         }
     }
 );
