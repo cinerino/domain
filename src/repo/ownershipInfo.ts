@@ -5,8 +5,9 @@ import * as factory from '../factory';
 
 export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<T>>;
+
 /**
- * 所有権リポジトリー
+ * 所有権リポジトリ
  */
 export class MongoRepository {
     public readonly ownershipInfoModel: typeof Model;
@@ -19,9 +20,7 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS<T extends factory.ownershipInfo.IGoodType>(
         params: factory.ownershipInfo.ISearchConditions<T>
     ) {
-        const andConditions: any[] = [
-            { typeOfGood: { $exists: true } }
-        ];
+        const andConditions: any[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
