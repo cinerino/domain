@@ -133,7 +133,6 @@ export function createMovieTicketPaymentAuthorization(params: {
         const event = await validate(params)(repos);
 
         // 着券結果からムビチケリストを作成する
-        const movieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
         const authorizeActionObjects = seatSyncInfoIn2movieTickets({
             event: event,
             seatSyncInfoIn: params.authorizeObject.seatInfoSyncIn
@@ -193,16 +192,16 @@ export function createMovieTicketPaymentAuthorization(params: {
 
             // アクションを完了
             const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
-                accountId: movieTickets[0].identifier,
+                accountId: authorizeActionObject.movieTickets[0].identifier,
                 amount: 0,
                 paymentMethod: factory.paymentMethodType.MovieTicket,
                 paymentStatus: factory.paymentStatusType.PaymentComplete, // すでに着券済なのでPaymentComplete
-                paymentMethodId: movieTickets[0].identifier,
+                paymentMethodId: authorizeActionObject.movieTickets[0].identifier,
                 name: 'ムビチケ',
                 totalPaymentDue: {
                     typeOf: 'MonetaryAmount',
                     currency: factory.unitCode.C62,
-                    value: movieTickets.length
+                    value: authorizeActionObject.movieTickets.length
                 },
                 additionalProperty: [],
                 seatInfoSyncIn: params.authorizeObject.seatInfoSyncIn
@@ -220,8 +219,6 @@ function seatSyncInfoIn2movieTickets(params: {
     const authorizeActionObjects: factory.action.authorize.paymentMethod.movieTicket.IObject[] = [];
 
     params.seatSyncInfoIn.knyknrNoInfo.forEach((knyknrNoInfo) => {
-        const movieTicketIdentifier = knyknrNoInfo.knyknrNo;
-
         if (knyknrNoInfo !== undefined) {
             const movieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
             knyknrNoInfo.knshInfo.forEach((knshInfo) => {
@@ -229,7 +226,7 @@ function seatSyncInfoIn2movieTickets(params: {
                     movieTickets.push({
                         typeOf: factory.paymentMethodType.MovieTicket,
                         serviceType: knshInfo.knshTyp,
-                        identifier: movieTicketIdentifier,
+                        identifier: knyknrNoInfo.knyknrNo,
                         accessCode: knyknrNoInfo.pinCd,
                         serviceOutput: {
                             reservationFor: {
