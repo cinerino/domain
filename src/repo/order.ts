@@ -11,9 +11,11 @@ const debug = createDebug('cinerino-domain:repository');
  */
 export class MongoRepository {
     public readonly orderModel: typeof Model;
+
     constructor(connection: Connection) {
         this.orderModel = connection.model(modelName);
     }
+
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.order.ISearchConditions) {
         const andConditions: any[] = [];
@@ -163,6 +165,17 @@ export class MongoRepository {
                         'acceptedOffers.itemOffered.id': {
                             $exists: true,
                             $in: params.acceptedOffers.itemOffered.ids
+                        }
+                    });
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.acceptedOffers.itemOffered.reservationNumbers)) {
+                    andConditions.push({
+                        'acceptedOffers.itemOffered.reservationNumber': {
+                            $exists: true,
+                            $in: params.acceptedOffers.itemOffered.reservationNumbers
                         }
                     });
                 }
@@ -336,51 +349,9 @@ export class MongoRepository {
 
         return andConditions;
     }
-    /**
-     * 確認番号で検索
-     * 確認番号と購入者情報より、最新の注文を検索します
-     */
-    public async findByConfirmationNumber(params: {
-        confirmationNumber: number;
-        customer: {
-            email?: string;
-            telephone?: string;
-        };
-    }): Promise<factory.order.IOrder> {
-        const conditions: any = {
-            confirmationNumber: params.confirmationNumber
-        };
-        if (params.customer.email !== undefined) {
-            conditions['customer.email'] = {
-                $exists: true,
-                $eq: params.customer.email
-            };
-        }
-        if (params.customer.telephone !== undefined) {
-            conditions['customer.telephone'] = {
-                $exists: true,
-                $eq: params.customer.telephone
-            };
-        }
-        const doc = await this.orderModel.findOne(
-            conditions,
-            {
-                __v: 0,
-                createdAt: 0,
-                updatedAt: 0
-            }
-        )
-            .sort({ orderDate: -1 })
-            .exec();
-        if (doc === null) {
-            throw new factory.errors.NotFound('Order');
-        }
 
-        return doc.toObject();
-    }
     /**
      * なければ作成する
-     * @param order 注文
      */
     public async createIfNotExist(order: factory.order.IOrder) {
         await this.orderModel.findOneAndUpdate(
@@ -390,6 +361,7 @@ export class MongoRepository {
         )
             .exec();
     }
+
     /**
      * 注文ステータスを変更する
      */
@@ -406,6 +378,7 @@ export class MongoRepository {
             throw new factory.errors.NotFound('Order');
         }
     }
+
     /**
      * 注文を返品する
      */
@@ -422,6 +395,7 @@ export class MongoRepository {
             throw new factory.errors.NotFound('Order');
         }
     }
+
     /**
      * 注文番号から注文を取得する
      */
@@ -441,6 +415,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     public async count(params: factory.order.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
@@ -448,6 +423,7 @@ export class MongoRepository {
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
+
     /**
      * 注文を検索する
      */
@@ -480,38 +456,5 @@ export class MongoRepository {
         return query.setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
-    }
-
-    /**
-     * イベント場所と予約番号から検索する
-     */
-    public async findByLocationBranchCodeAndReservationNumber(params: {
-        theaterCode: string;
-        reservationNumber: number;
-        telephone: string;
-    }): Promise<factory.order.IOrder> {
-        const doc = await this.orderModel.findOne(
-            {
-                'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': {
-                    $exists: true,
-                    $eq: params.theaterCode
-                },
-                'acceptedOffers.itemOffered.reservationNumber': {
-                    $exists: true,
-                    $eq: params.reservationNumber.toString()
-                },
-                'customer.telephone': {
-                    $exists: true,
-                    $eq: params.telephone
-                }
-            }
-        )
-            .exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('Order');
-        }
-
-        return doc.toObject();
     }
 }
