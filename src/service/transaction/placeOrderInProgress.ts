@@ -1127,19 +1127,19 @@ export async function createPotentialActionsFromTransaction(params: {
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket);
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket)
+            // PaymentDueステータスのアクションのみ、着券アクションをセット
+            // 着券済の場合は、PaymentCompleteステータス
+            .filter((a) => {
+                const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+
+                return result.paymentStatus === factory.paymentStatusType.PaymentDue;
+            });
     const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
     if (authorizeMovieTicketActions.length > 0) {
         payMovieTicketActions.push({
             typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
             object: authorizeMovieTicketActions
-                // PaymentDueステータスのアクションのみ、着券アクションをセット
-                // 着券済の場合は、PaymentCompleteステータス
-                .filter((a) => {
-                    const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
-
-                    return result.paymentStatus === factory.paymentStatusType.PaymentDue;
-                })
                 .map((a) => {
                     const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
 
