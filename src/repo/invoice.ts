@@ -154,7 +154,7 @@ export class MongoRepository {
         /* istanbul ignore else */
         if (Array.isArray(params.paymentStatuses)) {
             andConditions.push({
-                paymentStatuse: {
+                paymentStatus: {
                     $exists: true,
                     $in: params.paymentStatuses
                 }
