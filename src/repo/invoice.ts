@@ -22,6 +22,22 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.createdFrom instanceof Date) {
+            andConditions.push({
+                createdAt: { $gte: params.createdFrom }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.createdThrough instanceof Date) {
+            andConditions.push({
+                createdAt: { $lte: params.createdThrough }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (Array.isArray(params.accountIds)) {
             andConditions.push({
                 accountId: {
@@ -45,12 +61,16 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.customer !== undefined) {
-            andConditions.push({
-                'customer.typeOf': {
-                    $exists: true,
-                    $eq: params.customer.typeOf
-                }
-            });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.customer.typeOf !== undefined) {
+                andConditions.push({
+                    'customer.typeOf': {
+                        $exists: true,
+                        $eq: params.customer.typeOf
+                    }
+                });
+            }
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(params.customer.ids)) {
@@ -71,16 +91,18 @@ export class MongoRepository {
                     }
                 });
             }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(params.customer.membershipNumbers)) {
+            if (params.customer.email !== undefined) {
                 andConditions.push({
-                    'customer.memberOf.membershipNumber': {
+                    'customer.email': {
                         $exists: true,
-                        $in: params.customer.membershipNumbers
+                        $regex: new RegExp(params.customer.email, 'i')
                     }
                 });
             }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (params.customer.telephone !== undefined) {
@@ -90,6 +112,19 @@ export class MongoRepository {
                         $regex: new RegExp(params.customer.telephone, 'i')
                     }
                 });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.customer.memberOf !== undefined) {
+                if (Array.isArray(params.customer.memberOf.membershipNumbers)) {
+                    andConditions.push({
+                        'customer.memberOf.membershipNumber': {
+                            $exists: true,
+                            $in: params.customer.memberOf.membershipNumbers
+                        }
+                    });
+                }
             }
         }
 

@@ -99,8 +99,8 @@ const schema = new mongoose.Schema(
 );
 
 schema.index(
-    { createdAt: 1 },
-    { name: 'searchByCreatedAt' }
+    { createdAt: -1 },
+    { name: 'searchByCreatedAt-v2' }
 );
 schema.index(
     { updatedAt: 1 },
@@ -205,6 +205,19 @@ schema.index(
         name: 'searchByCustomerMemberOfMemberhipNumber',
         partialFilterExpression: {
             'customer.memberOf.membershipNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    {
+        'customer.email': 1,
+        createdAt: -1
+    },
+    {
+        name: 'searchByCustomerEmail',
+        partialFilterExpression: {
+            'customer.email': { $exists: true }
         }
     }
 );
