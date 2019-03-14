@@ -106,101 +106,116 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
 schema.index(
-    { 'referencesOrder.orderNumber': 1 },
+    { 'referencesOrder.orderNumber': 1, createdAt: -1 },
     {
-        name: 'searchByReferenceOrderNumber',
+        name: 'searchByReferenceOrderNumber-v2',
         partialFilterExpression: {
             'referencesOrder.orderNumber': { $exists: true }
         }
     }
 );
+
 schema.index(
-    { paymentMethod: 1 },
+    { paymentMethod: 1, createdAt: -1 },
     {
-        name: 'searchByPaymentMethod',
+        name: 'searchByPaymentMethod-v2',
         partialFilterExpression: {
             paymentMethod: { $exists: true }
         }
     }
 );
+
 schema.index(
-    { paymentMethodId: 1 },
+    { paymentMethodId: 1, createdAt: -1 },
     {
-        name: 'searchByPaymentMethodId',
+        name: 'searchByPaymentMethodId-v2',
         partialFilterExpression: {
             paymentMethodId: { $exists: true }
         }
     }
 );
+
 schema.index(
-    { paymentStatus: 1 },
+    { paymentStatus: 1, createdAt: -1 },
     {
-        name: 'searchByPaymentStatus',
+        name: 'searchByPaymentStatus-v2',
         partialFilterExpression: {
             paymentStatus: { $exists: true }
         }
     }
 );
+
 schema.index(
-    { accountId: 1 },
+    { accountId: 1, createdAt: -1 },
     {
-        name: 'searchByAccountId',
+        name: 'searchByAccountId-v2',
         partialFilterExpression: {
             accountId: { $exists: true }
         }
     }
 );
+
 schema.index(
     {
-        'customer.typeOf': 1
+        'customer.typeOf': 1,
+        createdAt: -1
     },
     {
-        name: 'searchByCustomerTypeOf',
+        name: 'searchByCustomerTypeOf-v2',
         partialFilterExpression: {
             'customer.typeOf': { $exists: true }
         }
     }
 );
+
 schema.index(
     {
-        'customer.id': 1
+        'customer.id': 1,
+        createdAt: -1
     },
     {
-        name: 'searchByCustomerId',
+        name: 'searchByCustomerId-v2',
         partialFilterExpression: {
             'customer.id': { $exists: true }
         }
     }
 );
+
 schema.index(
     {
-        'customer.identifier': 1
+        'customer.identifier': 1,
+        createdAt: -1
     },
     {
-        name: 'searchByCustomerIdentifier',
+        name: 'searchByCustomerIdentifier-v2',
         partialFilterExpression: {
             'customer.identifier': { $exists: true }
         }
     }
 );
+
 schema.index(
     {
-        'customer.memberOf.membershipNumber': 1
+        'customer.memberOf.membershipNumber': 1,
+        createdAt: -1
     },
     {
-        name: 'searchByCustomerMemberhipNumber',
+        name: 'searchByCustomerMemberOfMemberhipNumber',
         partialFilterExpression: {
             'customer.memberOf.membershipNumber': { $exists: true }
         }
     }
 );
+
 schema.index(
     {
-        'customer.telephone': 1
+        'customer.telephone': 1,
+        createdAt: -1
     },
     {
-        name: 'searchByCustomerTelephone',
+        name: 'searchByCustomerTelephone-v2',
         partialFilterExpression: {
             'customer.telephone': { $exists: true }
         }

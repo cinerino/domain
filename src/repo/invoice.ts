@@ -7,7 +7,7 @@ import { modelName } from './mongoose/model/invoice';
 const debug = createDebug('cinerino-domain:repository');
 
 /**
- * 請求書リポジトリー
+ * インボイスリポジトリー
  */
 export class MongoRepository {
     public readonly invoiceModel: typeof Model;
@@ -18,8 +18,8 @@ export class MongoRepository {
 
     // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.invoice.ISearchConditions) {
-        const andConditions: any[] = [
-        ];
+        const andConditions: any[] = [];
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.accountIds)) {
@@ -30,6 +30,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.confirmationNumbers)) {
@@ -40,6 +41,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.customer !== undefined) {
@@ -90,6 +92,7 @@ export class MongoRepository {
                 });
             }
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.paymentMethodIds)) {
@@ -100,6 +103,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.paymentMethods)) {
@@ -110,6 +114,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.paymentStatuses)) {
@@ -120,6 +125,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.referencesOrder !== undefined) {
@@ -193,12 +199,14 @@ export class MongoRepository {
                 updatedAt: 0
             }
         );
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
             query.limit(params.limit)
                 .skip(params.limit * (params.page - 1));
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.sort !== undefined) {
