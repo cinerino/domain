@@ -344,6 +344,7 @@ export function importMovieTheater(theaterCode: string) {
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
+// tslint:disable-next-line:max-func-body-length
 export function createScreeningEventFromCOA(params: {
     performanceFromCOA: COA.services.master.IScheduleResult;
     screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
@@ -388,6 +389,12 @@ export function createScreeningEventFromCOA(params: {
             .toDate();
     }
 
+    const validFrom = moment(`${params.performanceFromCOA.rsvStartDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ')
+        .toDate();
+    const validThrough = moment(`${params.performanceFromCOA.rsvEndDate} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ')
+        .add(1, 'day')
+        .toDate();
+
     const coaInfo: factory.chevre.event.screeningEvent.ICOAInfo = {
         theaterCode: params.superEvent.location.branchCode,
         dateJouei: params.performanceFromCOA.dateJouei,
@@ -406,6 +413,40 @@ export function createScreeningEventFromCOA(params: {
         flgEarlyBooking: params.performanceFromCOA.flgEarlyBooking
     };
 
+    // const acceptedPaymentMethod: factory.paymentMethodType[] | undefined =
+    //     (params.screeningEventSeries.offers !== undefined) ? params.screeningEventSeries.offers.acceptedPaymentMethod : undefined;
+
+    const offers: factory.event.screeningEvent.IOffer = {
+        id: '',
+        name: {
+            ja: '',
+            en: ''
+        },
+        typeOf: 'Offer',
+        priceCurrency: factory.priceCurrency.JPY,
+        // acceptedPaymentMethod: acceptedPaymentMethod,
+        availabilityEnds: validThrough,
+        availabilityStarts: validFrom,
+        validFrom: validFrom,
+        validThrough: validThrough,
+        eligibleQuantity: {
+            maxValue: params.performanceFromCOA.availableNum,
+            unitCode: factory.chevre.unitCode.C62,
+            typeOf: 'QuantitativeValue'
+        },
+        itemOffered: {
+            serviceType: {
+                typeOf: 'ServiceType',
+                id: '',
+                name: ''
+            }
+        },
+        offeredThrough: {
+            typeOf: 'WebAPI',
+            identifier: factory.service.webAPI.Identifier.COA
+        }
+    };
+
     return {
         typeOf: factory.chevre.eventType.ScreeningEvent,
         id: id,
@@ -422,7 +463,7 @@ export function createScreeningEventFromCOA(params: {
         startDate: startDate,
         superEvent: params.superEvent,
         coaInfo: coaInfo,
-        offers: <any>{},
+        offers: offers,
         checkInCount: 0,
         attendeeCount: 0,
         maximumAttendeeCapacity: params.screenRoom.maximumAttendeeCapacity,
@@ -434,7 +475,7 @@ export function createScreeningEventFromCOA(params: {
             },
             {
                 name: 'coaInfo',
-                value: coaInfo
+                value: JSON.stringify(coaInfo)
             }
         ]
     };
@@ -470,7 +511,30 @@ export function createScreeningEventSeriesFromCOA(params: {
         titleBranchNum: params.filmFromCOA.titleBranchNum
     });
 
+    const coaInfo: factory.event.screeningEventSeries.ICOAInfo = {
+        titleBranchNum: params.filmFromCOA.titleBranchNum,
+        kbnEirin: params.eirinKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnEirin)[0],
+        kbnEizou: params.eizouKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnEizou)[0],
+        kbnJoueihousiki: params.joueihousikiKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnJoueihousiki)[0],
+        kbnJimakufukikae: params.jimakufukikaeKubuns.filter((k) => k.kubunCode === params.filmFromCOA.kbnJimakufukikae)[0],
+        flgMvtkUse: params.filmFromCOA.flgMvtkUse,
+        dateMvtkBegin: params.filmFromCOA.dateMvtkBegin
+    };
+
+    const acceptedPaymentMethod: factory.paymentMethodType[] = [
+        factory.paymentMethodType.Account,
+        factory.paymentMethodType.Cash,
+        factory.paymentMethodType.CreditCard,
+        factory.paymentMethodType.EMoney
+    ];
+
+    if (coaInfo.flgMvtkUse === '1') {
+        acceptedPaymentMethod.push(factory.paymentMethodType.MovieTicket);
+    }
+
     return {
+        typeOf: factory.chevre.eventType.ScreeningEventSeries,
+        eventStatus: factory.chevre.eventStatusType.EventScheduled,
         id: id,
         identifier: id,
         name: {
@@ -505,15 +569,22 @@ export function createScreeningEventSeriesFromCOA(params: {
             .toISOString(),
         endDate: endDate,
         startDate: startDate,
-        coaInfo: {
-            titleBranchNum: params.filmFromCOA.titleBranchNum,
-            kbnJoueihousiki: params.joueihousikiKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnJoueihousiki)[0],
-            kbnJimakufukikae: params.jimakufukikaeKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnJimakufukikae)[0],
-            flgMvtkUse: params.filmFromCOA.flgMvtkUse,
-            dateMvtkBegin: params.filmFromCOA.dateMvtkBegin
+        coaInfo: coaInfo,
+        offers: {
+            typeOf: 'Offer',
+            priceCurrency: factory.chevre.priceCurrency.JPY,
+            acceptedPaymentMethod: acceptedPaymentMethod
         },
-        eventStatus: factory.chevre.eventStatusType.EventScheduled,
-        typeOf: factory.chevre.eventType.ScreeningEventSeries
+        additionalProperty: [
+            {
+                name: 'COA_ENDPOINT',
+                value: process.env.COA_ENDPOINT
+            },
+            {
+                name: 'coaInfo',
+                value: JSON.stringify(coaInfo)
+            }
+        ]
     };
 }
 

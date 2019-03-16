@@ -204,7 +204,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 let eventCOAInfo: any;
                 if (Array.isArray(screeningEvent.additionalProperty)) {
                     const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                    eventCOAInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                    eventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                 }
                 skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
             }

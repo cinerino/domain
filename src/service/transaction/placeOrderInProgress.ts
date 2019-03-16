@@ -679,7 +679,7 @@ export function createOrderFromTransaction(params: {
                             if (Array.isArray(screeningEvent.additionalProperty)) {
                                 // const coaEndpointProperty = event.additionalProperty.find((p) => p.name === 'COA_ENDPOINT');
                                 const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                                coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                                coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                             }
                         }
 
@@ -995,7 +995,7 @@ export async function createPotentialActionsFromTransaction(params: {
                                         throw new factory.errors.NotFound('coaInfo');
                                     }
 
-                                    coaTicketInfo = coaInfoProperty.value;
+                                    coaTicketInfo = JSON.parse(coaInfoProperty.value);
                                 }
 
                                 if (coaTicketInfo === undefined) {

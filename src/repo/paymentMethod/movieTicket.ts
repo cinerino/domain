@@ -60,7 +60,7 @@ export class MvtkRepository {
             let eventCOAInfo: any;
             if (Array.isArray(params.screeningEvent.additionalProperty)) {
                 const coaInfoProperty = params.screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                eventCOAInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                eventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
             }
             skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
         }

@@ -10,7 +10,6 @@ import * as COA from '../coa';
 import * as factory from '../factory';
 
 import * as MasterSync from './masterSync';
-import * as StockService from './stock';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -54,13 +53,13 @@ export function searchScreeningEventOffers(params: {
                 let coaInfo: any;
                 if (Array.isArray(event.additionalProperty)) {
                     const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
-                    coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                    coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                 }
 
                 // イベント提供者がCOAであればCOAへ空席状況確認
                 const stateReserveSeatResult = await COA.services.reserve.stateReserveSeat(coaInfo);
 
-                const movieTheater = StockService.createMovieTheaterFromCOA(
+                const movieTheater = MasterSync.createMovieTheaterFromCOA(
                     await COA.services.master.theater(coaInfo),
                     await COA.services.master.screen(coaInfo)
                 );
@@ -146,13 +145,13 @@ export function searchScreeningEventTicketOffers(params: {
                 let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;
                 if (Array.isArray(event.additionalProperty)) {
                     const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
-                    coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                    coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                 }
 
                 let superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo | undefined;
                 if (Array.isArray(event.superEvent.additionalProperty)) {
                     const coaInfoProperty = event.superEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                    superEventCOAInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                    superEventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                 }
 
                 if (coaInfo === undefined || superEventCOAInfo === undefined) {

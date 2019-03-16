@@ -110,7 +110,7 @@ export function create(params: {
                     if (Array.isArray(event.additionalProperty)) {
                         // const coaEndpointProperty = event.additionalProperty.find((p) => p.name === 'COA_ENDPOINT');
                         const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
-                        coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                        coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                     }
 
                     // COAにて仮予約
@@ -335,7 +335,7 @@ function validateAcceptedOffers(params: {
                         let eventCOAInfo: any;
                         if (Array.isArray(params.event.additionalProperty)) {
                             const coaInfoProperty = params.event.additionalProperty.find((p) => p.name === 'coaInfo');
-                            eventCOAInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                            eventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                         }
 
                         // ムビチケ認証結果を使ってCOA券種に変換
@@ -443,7 +443,7 @@ function validateAcceptedOffers(params: {
                         }
 
                         coaInfo = {
-                            ...coaInfoProperty.value,
+                            ...JSON.parse(coaInfoProperty.value),
                             disPrice: 0,
                             addGlasses: 0,
                             mvtkAppPrice: 0,
@@ -472,7 +472,7 @@ function validateAcceptedOffers(params: {
                     acceptedOffer.additionalProperty = acceptedOffer.additionalProperty.filter((p) => p.name !== 'coaInfo');
                     acceptedOffer.additionalProperty.push({
                         name: 'coaInfo',
-                        value: coaInfo
+                        value: JSON.stringify(coaInfo)
                     });
 
                     break;
@@ -541,7 +541,7 @@ export function cancel(params: {
                     let coaInfo: any;
                     if (Array.isArray(event.additionalProperty)) {
                         const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
-                        coaInfo = (coaInfoProperty !== undefined) ? coaInfoProperty.value : undefined;
+                        coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                     }
 
                     await COA.services.reserve.delTmpReserve({
