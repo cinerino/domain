@@ -15,7 +15,7 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('searchIndividualScreeningEvents()', () => {
+describe('searchScreeningEvents4cinemasunshine()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -34,9 +34,15 @@ describe('searchIndividualScreeningEvents()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const itemAvailabilityRepo = new domain.repository.itemAvailability.ScreeningEvent(<any>{});
 
-        sandbox.mock(eventRepo).expects('searchIndividualScreeningEvents').once().resolves(events);
-        // tslint:disable-next-line:no-magic-numbers
-        sandbox.mock(itemAvailabilityRepo).expects('findOne').exactly(events.length).resolves(100);
+        sandbox.mock(eventRepo)
+            .expects('searchScreeningEvents')
+            .once()
+            .resolves(events);
+        sandbox.mock(itemAvailabilityRepo)
+            .expects('findOne')
+            .exactly(events.length)
+            // tslint:disable-next-line:no-magic-numbers
+            .resolves(100);
 
         const result = await OfferService.searchScreeningEvents4cinemasunshine(<any>searchConditions)({
             event: eventRepo,
@@ -48,7 +54,7 @@ describe('searchIndividualScreeningEvents()', () => {
     });
 });
 
-describe('findIndividualScreeningEventByIdentifier()', () => {
+describe('findScreeningEventById4cinemasunshine()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -63,9 +69,15 @@ describe('findIndividualScreeningEventByIdentifier()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const itemAvailabilityRepo = new domain.repository.itemAvailability.ScreeningEvent(<any>{});
 
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        // tslint:disable-next-line:no-magic-numbers
-        sandbox.mock(itemAvailabilityRepo).expects('findOne').once().resolves(100);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(itemAvailabilityRepo)
+            .expects('findOne')
+            .once()
+            // tslint:disable-next-line:no-magic-numbers
+            .resolves(100);
 
         const result = await OfferService.findScreeningEventById4cinemasunshine(
             event.identifier
@@ -112,9 +124,14 @@ describe('updateScreeningEventItemAvailability()', () => {
             0
         );
 
-        sandbox.mock(domain.COA.services.reserve).expects('countFreeSeat').once()
-            .withArgs(sinon.match({ theaterCode: theaterCode })).resolves(countFreeSeatResult);
-        sandbox.mock(itemAvailabilityRepo).expects('updateOne').exactly(numberOfEvents)
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('countFreeSeat')
+            .once()
+            .withArgs(sinon.match({ theaterCode: theaterCode }))
+            .resolves(countFreeSeatResult);
+        sandbox.mock(itemAvailabilityRepo)
+            .expects('updateOne')
+            .exactly(numberOfEvents)
             .resolves();
 
         const result = await domain.service.offer.updateScreeningEventItemAvailability(

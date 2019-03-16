@@ -490,7 +490,7 @@ export function searchScreeningEvents4cinemasunshine(
         itemAvailability?: ScreeningEventItemAvailabilityRepo;
     }) => {
         debug('finding screeningEvents...', searchConditions);
-        const events = await repos.event.searchIndividualScreeningEvents(searchConditions);
+        const events = await repos.event.searchScreeningEvents(searchConditions);
 
         return Promise.all(events.map(async (event) => {
             // 必ず定義されている前提

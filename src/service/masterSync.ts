@@ -255,7 +255,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             debug(`${screeningEvents.length} screeningEvents stored.`);
 
             // COAから削除されたイベントをキャンセル済ステータスへ変更
-            const ids = await repos.event.searchIndividualScreeningEvents({
+            const ids = await repos.event.searchScreeningEvents({
                 typeOf: factory.chevre.eventType.ScreeningEvent,
                 superEvent: {
                     locationBranchCodes: [params.locationBranchCode]
@@ -269,7 +269,10 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             debug(`cancelling ${cancelledIds.length} events...`);
             await Promise.all(cancelledIds.map(async (id) => {
                 try {
-                    await repos.event.cancelIndividualScreeningEvent(id);
+                    await repos.event.cancel({
+                        typeOf: factory.chevre.eventType.ScreeningEvent,
+                        id: id
+                    });
                 } catch (error) {
                     // tslint:disable-next-line:no-single-line-block-comment
                     /* istanbul ignore next */

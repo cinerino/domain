@@ -40,7 +40,7 @@ describe('save()', () => {
     });
 });
 
-describe('searchIndividualScreeningEvents()', () => {
+describe('searchScreeningEvents()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -76,19 +76,22 @@ describe('searchIndividualScreeningEvents()', () => {
             .chain('exec')
             .resolves(docs);
 
-        const result = await repository.searchIndividualScreeningEvents(<any>conditions);
+        const result = await repository.searchScreeningEvents(<any>conditions);
         assert(Array.isArray(result));
         sandbox.verify();
     });
 });
 
-describe('cancelIndividualScreeningEvent()', () => {
+describe('cancel()', () => {
     afterEach(() => {
         sandbox.restore();
     });
 
     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
-        const identifier = 'identifier';
+        const event = {
+            typeOf: domain.factory.chevre.eventType.ScreeningEvent,
+            id: 'id'
+        };
 
         const repository = new domain.repository.Event(mongoose.connection);
         const doc = new repository.eventModel();
@@ -99,7 +102,7 @@ describe('cancelIndividualScreeningEvent()', () => {
             .chain('exec')
             .resolves(doc);
 
-        const result = await repository.cancelIndividualScreeningEvent(identifier);
+        const result = await repository.cancel(event);
 
         assert.equal(result, undefined);
         sandbox.verify();

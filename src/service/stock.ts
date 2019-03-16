@@ -493,7 +493,7 @@ export function createScreeningRoomFromCOA(
 }
 
 /**
- * create individualScreeningEvent from COA performance
+ * create ScreeningEvent from COA performance
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
