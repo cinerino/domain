@@ -3,6 +3,8 @@
  */
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
+import * as moment from 'moment-timezone';
+import * as util from 'util';
 
 import * as factory from '../../../../../../factory';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
@@ -11,15 +13,21 @@ import { MongoRepository as TransactionRepo } from '../../../../../../repo/trans
 
 const debug = createDebug('cinerino-domain:service');
 
+export import IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
+export import IUncheckedCardTokenized = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
+export import IUnauthorizedCardOfMember = factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember;
+
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
 /**
  * クレジットカードオーソリ取得
  */
 export function create(params: {
+    project: { id: string };
     object: factory.action.authorize.paymentMethod.creditCard.IObject;
     agent: { id: string };
     transaction: { id: string };
@@ -58,6 +66,7 @@ export function create(params: {
         const action = await repos.action.start(actionAttributes);
 
         // GMOオーソリ取得
+        let orderId: string;
         let entryTranArgs: GMO.services.credit.IEntryTranArgs;
         let entryTranResult: GMO.services.credit.IEntryTranResult;
         let execTranArgs: GMO.services.credit.IExecTranArgs;
@@ -78,31 +87,38 @@ export function create(params: {
             if (creditCardPaymentAccepted.gmoInfo.shopPass === undefined) {
                 throw new factory.errors.Argument('transaction', 'Credit card payment settings not enough');
             }
+
+            // GMOオーダーIDはカスタム指定可能
+            orderId = (params.object.orderId !== undefined) ? params.object.orderId : generateOrderId(params);
+
             entryTranArgs = {
                 shopId: creditCardPaymentAccepted.gmoInfo.shopId,
                 shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
-                orderId: params.object.orderId,
+                orderId: orderId,
                 jobCd: GMO.utils.util.JobCd.Auth,
                 amount: params.object.amount
             };
+
             entryTranResult = await GMO.services.credit.entryTran(entryTranArgs);
             debug('entryTranResult:', entryTranResult);
 
+            const creditCard = params.object.creditCard;
             execTranArgs = {
                 accessId: entryTranResult.accessId,
                 accessPass: entryTranResult.accessPass,
-                orderId: params.object.orderId,
+                orderId: orderId,
                 method: params.object.method,
                 siteId: <string>process.env.GMO_SITE_ID,
                 sitePass: <string>process.env.GMO_SITE_PASS,
-                cardNo: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.object.creditCard).cardNo,
-                cardPass: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.object.creditCard).cardPass,
-                expire: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>params.object.creditCard).expire,
-                token: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized>params.object.creditCard).token,
-                memberId: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>params.object.creditCard).memberId,
-                cardSeq: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>params.object.creditCard).cardSeq,
+                cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
+                cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
+                expire: (<IUncheckedCardRaw>creditCard).expire,
+                token: (<IUncheckedCardTokenized>creditCard).token,
+                memberId: (<IUnauthorizedCardOfMember>creditCard).memberId,
+                cardSeq: (<IUnauthorizedCardOfMember>creditCard).cardSeq,
                 seqMode: GMO.utils.util.SeqMode.Physics
             };
+
             execTranResult = await GMO.services.credit.execTran(execTranArgs);
             debug('execTranResult:', execTranResult);
         } catch (error) {
@@ -144,7 +160,7 @@ export function create(params: {
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: params.object.orderId,
+            paymentMethodId: orderId,
             name: factory.paymentMethodType.CreditCard,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
@@ -161,6 +177,30 @@ export function create(params: {
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
+
+/**
+ * GMOオーダーIDを生成する
+ */
+export function generateOrderId(params: {
+    project: { id: string };
+    transaction: { id: string };
+}) {
+    // tslint:disable-next-line:no-magic-numbers
+    const projectId = `${params.project.id}---`.slice(0, 3);
+    const dateTime = moment()
+        .tz('Asia/Tokyo')
+        .format('YYMMDDhhmmssSSS');
+    // tslint:disable-next-line:no-magic-numbers
+    const transactionId = params.transaction.id.slice(-6);
+
+    return util.format(
+        '%s%s%s',
+        projectId, // プロジェクトIDの頭数文字
+        dateTime,
+        transactionId
+    );
+}
+
 export function cancel(params: {
     /**
      * 承認アクションID

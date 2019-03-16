@@ -6,7 +6,6 @@ import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
-import * as util from 'util';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
@@ -587,23 +586,12 @@ function processPlaceOrder(params: {
         }
         debug('creditCard found.', creditCard.cardSeq);
 
-        // クレジットカードオーソリ
-        // GMOオーダーIDは27バイト制限。十分ユニークになるようにとりあえず22バイトで作成。
-        const orderId = util.format(
-            'PM-%s-%s', // ProgramMembershipのオーダー
-            // tslint:disable-next-line:no-magic-numbers
-            `${customer.memberOf.membershipNumber}------`.slice(0, 6)
-                .toUpperCase(), // ユーザーネームの頭数文字
-            moment()
-                .tz('Asia/Tokyo')
-                .format('YYMMDDhhmmss') // 秒
-        );
         await PlaceOrderService.action.authorize.paymentMethod.creditCard.create({
+            project: { id: <string>process.env.PROJECT_ID },
             agent: params.registerActionAttributes.agent,
             transaction: transaction,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,
-                orderId: orderId,
                 amount: <number>acceptedOffer.price,
                 method: GMO.utils.util.Method.Lump,
                 creditCard: {
