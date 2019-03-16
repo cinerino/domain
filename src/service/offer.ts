@@ -42,7 +42,7 @@ export function searchScreeningEventOffers(params: {
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: params.event.id
         });
-        const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
+        const eventOffers = event.offers;
 
         if (eventOffers.offeredThrough === undefined) {
             eventOffers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
@@ -134,7 +134,7 @@ export function searchScreeningEventTicketOffers(params: {
         });
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[];
-        const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
+        const eventOffers = event.offers;
 
         if (eventOffers.offeredThrough === undefined) {
             eventOffers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
@@ -215,7 +215,7 @@ async function searchTicketOffersFromCOA(params: {
     superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo;
 }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     const offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
-    const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.event.offers;
+    const eventOffers = params.event.offers;
 
     // 供給情報が適切かどうか確認
     const availableSalesTickets: COA.services.reserve.ISalesTicketResult[] = [];
@@ -429,7 +429,7 @@ function coaSalesTicket2offer(params: {
     // tslint:disable-next-line:no-suspicious-comment
     // TODO メガネ単価を変換
 
-    const eventOffers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.event.offers;
+    const eventOffers = params.event.offers;
     const offer: factory.chevre.event.screeningEvent.ITicketOffer = {
         typeOf: 'Offer',
         priceCurrency: factory.priceCurrency.JPY,
@@ -496,21 +496,22 @@ export function searchScreeningEvents4cinemasunshine(
             const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
 
             // 空席状況情報を追加
-            const offer: factory.chevre.event.screeningEvent.IOffer4cinemasunshine = {
-                typeOf: 'Offer',
-                availability: null,
-                url: ''
+            const offers = {
+                ...event.offers,
+                availability: <any>null // 互換性維持のためnull
             };
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (repos.itemAvailability !== undefined) {
-                offer.availability = await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
+                // nullになりうるが、互換性維持のため、あえてそのまま
+                offers.availability = <number>await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
             }
 
             return {
                 ...event,
-                offer: offer, //  本来不要だが、互換性維持のため
-                offers: offer
+                offer: offers, //  本来不要だが、互換性維持のため
+                offers: offers
             };
         }));
     };
@@ -535,15 +536,15 @@ export function findScreeningEventById4cinemasunshine(
         const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
 
         // add item availability info
-        const offer: factory.chevre.event.screeningEvent.IOffer4cinemasunshine = {
-            typeOf: 'Offer',
-            availability: null,
-            url: ''
+        const offer = {
+            ...event.offers,
+            availability: <any>null // 互換性維持のためnull
         };
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (repos.itemAvailability !== undefined) {
-            offer.availability = await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
+            offer.availability = <number>await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
         }
 
         return {

@@ -64,7 +64,7 @@ export function create(params: {
             id: params.object.event.id
         });
 
-        const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
+        const offers = event.offers;
 
         let offeredThrough = offers.offeredThrough;
         if (offeredThrough === undefined) {
@@ -256,7 +256,7 @@ function validateAcceptedOffers(params: {
                 ...offer
             };
 
-            const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>params.event.offers;
+            const offers = params.event.offers;
 
             let offeredThrough = offers.offeredThrough;
             if (offeredThrough === undefined) {
@@ -523,7 +523,7 @@ export function cancel(params: {
             const actionResult = action.result;
             let responseBody = actionResult.responseBody;
             const event = action.object.event;
-            const offers = <factory.event.IOffer<factory.chevre.eventType.ScreeningEvent>>event.offers;
+            const offers = event.offers;
 
             if (offers.offeredThrough === undefined) {
                 offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
