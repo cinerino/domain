@@ -1,4 +1,6 @@
 import { Connection, Model } from 'mongoose';
+import * as uuid from 'uuid';
+
 import { modelName } from './mongoose/model/ownershipInfo';
 
 import * as factory from '../factory';
@@ -146,7 +148,10 @@ export class MongoRepository {
      * 所有権情報を保管する
      */
     public async save(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
-        await this.ownershipInfoModel.create({ ...ownershipInfo, _id: ownershipInfo.id });
+        // 所有権ID発行
+        const id = uuid.v4();
+
+        await this.ownershipInfoModel.create({ ...ownershipInfo, _id: id });
     }
 
     /**
@@ -155,7 +160,10 @@ export class MongoRepository {
     public async saveByIdentifier(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
         await this.ownershipInfoModel.findOneAndUpdate(
             { identifier: ownershipInfo.identifier },
-            ownershipInfo,
+            {
+                $set: ownershipInfo,
+                $setOnInsert: { _id: uuid.v4() } // 新規作成時は所有権ID発行
+            },
             { upsert: true }
         )
             .exec();

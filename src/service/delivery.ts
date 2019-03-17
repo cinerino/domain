@@ -10,7 +10,6 @@ import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as util from 'util';
-import * as uuid from 'uuid';
 
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -118,7 +117,6 @@ export function createOwnershipInfosFromOrder(params: {
             telephone: seller.telephone,
             url: seller.url
         };
-        const id = uuid.v4();
         const identifier = util.format(
             '%s-%s-%s-%s',
             params.order.customer.id,
@@ -142,7 +140,7 @@ export function createOwnershipInfosFromOrder(params: {
                     .add(eligibleDuration.value, 'seconds')
                     .toDate();
                 ownershipInfo = {
-                    id: id,
+                    id: '',
                     typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
                     identifier: identifier,
                     ownedBy: params.order.customer,
@@ -184,7 +182,7 @@ export function createOwnershipInfosFromOrder(params: {
                 } else {
                     ownershipInfo = {
                         typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                        id: id,
+                        id: '',
                         identifier: identifier,
                         ownedBy: params.order.customer,
                         acquiredFrom: acquiredFrom,
