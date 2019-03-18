@@ -218,6 +218,15 @@ schema.index(
     }
 );
 schema.index(
+    { 'paymentMethods.accountId': 1, orderDate: -1 },
+    {
+        name: 'searchByPaymentMethodsAccountId',
+        partialFilterExpression: {
+            'paymentMethods.accountId': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'paymentMethods.typeOf': 1, orderDate: -1 },
     {
         name: 'searchByPaymentMethodTypeAndOrderDate',

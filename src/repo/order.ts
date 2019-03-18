@@ -307,9 +307,21 @@ export class MongoRepository {
                 }
             }
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.paymentMethods !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.paymentMethods.accountIds)) {
+                andConditions.push({
+                    'paymentMethods.accountId': {
+                        $exists: true,
+                        $in: params.paymentMethods.accountIds
+                    }
+                });
+            }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(params.paymentMethods.typeOfs)) {
@@ -320,6 +332,7 @@ export class MongoRepository {
                     }
                 });
             }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(params.paymentMethods.paymentMethodIds)) {

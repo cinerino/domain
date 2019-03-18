@@ -81,7 +81,7 @@ export function create(params: {
         let entryTranResult: GMO.services.credit.IEntryTranResult;
         let execTranArgs: GMO.services.credit.IExecTranArgs;
         let execTranResult: GMO.services.credit.IExecTranResult;
-        let searchCardDetailResult: GMO.services.credit.ISearchCardDetailResult | undefined;
+        let searchTradeResult: GMO.services.credit.ISearchTradeResult | undefined;
 
         if (movieTheater.paymentAccepted === undefined) {
             throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
@@ -166,7 +166,7 @@ export function create(params: {
 
         try {
             // ベストエフォートでクレジットカード詳細情報を取得
-            searchCardDetailResult = await GMO.services.credit.searchCardDetail({
+            searchTradeResult = await GMO.services.credit.searchTrade({
                 shopId: creditCardPaymentAccepted.gmoInfo.shopId,
                 shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
                 orderId: orderId
@@ -179,7 +179,7 @@ export function create(params: {
         debug('ending authorize action...');
 
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
-            accountId: (searchCardDetailResult !== undefined) ? searchCardDetailResult.cardNo : '',
+            accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,

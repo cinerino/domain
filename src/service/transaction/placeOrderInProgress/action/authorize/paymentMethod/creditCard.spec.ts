@@ -74,7 +74,7 @@ describe('action.authorize.creditCard.create()', () => {
             .once()
             .resolves(execTranResult);
         sandbox.mock(domain.GMO.services.credit)
-            .expects('searchCardDetail')
+            .expects('searchTrade')
             .once()
             .resolves({});
         sandbox.mock(actionRepo)

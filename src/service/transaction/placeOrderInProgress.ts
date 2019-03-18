@@ -840,11 +840,12 @@ export function createOrderFromTransaction(params: {
                 .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
                     const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
                     paymentMethods.push({
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
                         name: result.name,
-                        typeOf: paymentMethodType,
                         paymentMethodId: result.paymentMethodId,
                         totalPaymentDue: result.totalPaymentDue,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+                        typeOf: paymentMethodType
                     });
                 });
         });
