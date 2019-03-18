@@ -73,6 +73,10 @@ describe('action.authorize.creditCard.create()', () => {
             .expects('execTran')
             .once()
             .resolves(execTranResult);
+        sandbox.mock(domain.GMO.services.credit)
+            .expects('searchCardDetail')
+            .once()
+            .resolves({});
         sandbox.mock(actionRepo)
             .expects('complete')
             .once()
@@ -99,58 +103,6 @@ describe('action.authorize.creditCard.create()', () => {
         assert.deepEqual(result, action);
         sandbox.verify();
     });
-
-    // it('所有者の取引でなければ、Forbiddenエラーが投げられるはず', async () => {
-    //     const agent = {
-    //         id: 'agentId'
-    //     };
-    //     const seller = {
-    //         id: 'sellerId',
-    //         name: { ja: 'ja', en: 'ne' },
-    //         gmoInfo: {
-    //             shopId: 'shopId',
-    //             shopPass: 'shopPass'
-    //         }
-    //     };
-    //     const transaction = {
-    //         id: 'transactionId',
-    //         agent: {
-    //             id: 'anotherAgentId'
-    //         },
-    //         seller: seller
-    //     };
-    //     const orderId = 'orderId';
-    //     const amount = 1234;
-    //     const creditCard = <any>{};
-
-    //     const actionRepo = new domain.repository.Action(mongoose.connection);
-    //     const organizationRepo = new domain.repository.Seller(mongoose.connection);
-    //     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-
-    //     sandbox.mock(transactionRepo).expects('findInProgressById').once()
-    //         .withExactArgs(transaction.id).resolves(transaction);
-    //     sandbox.mock(actionRepo).expects('start').never();
-    //     sandbox.mock(organizationRepo).expects('findById').never();
-    //     sandbox.mock(domain.GMO.services.credit).expects('entryTran').never();
-    //     sandbox.mock(domain.GMO.services.credit).expects('execTran').never();
-
-    //     const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create(
-    //         agent.id,
-    //         transaction.id,
-    //         orderId,
-    //         amount,
-    //         domain.GMO.utils.util.Method.Lump,
-    //         creditCard
-    //     )({
-    //         action: actionRepo,
-    //         transaction: transactionRepo,
-    //         seller: organizationRepo
-    //     })
-    //         .catch((err) => err);
-
-    //     assert(result instanceof domain.factory.errors.Forbidden);
-    //     sandbox.verify();
-    // });
 
     it('GMOでエラーが発生すれば、承認アクションを諦めて、エラーとなるはず', async () => {
         const agent = {

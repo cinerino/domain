@@ -75,28 +75,31 @@ export function create(params: {
         const action = await repos.action.start(actionAttributes);
 
         // GMOオーソリ取得
+        let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>;
         let orderId: string;
         let entryTranArgs: GMO.services.credit.IEntryTranArgs;
         let entryTranResult: GMO.services.credit.IEntryTranResult;
         let execTranArgs: GMO.services.credit.IExecTranArgs;
         let execTranResult: GMO.services.credit.IExecTranResult;
-        try {
-            if (movieTheater.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
-            }
-            const creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
-                movieTheater.paymentAccepted.find(
-                    (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
-                );
-            if (creditCardPaymentAccepted === undefined) {
-                throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            if (creditCardPaymentAccepted.gmoInfo.shopPass === undefined) {
-                throw new factory.errors.Argument('transaction', 'Credit card payment settings not enough');
-            }
+        let searchCardDetailResult: GMO.services.credit.ISearchCardDetailResult | undefined;
 
+        if (movieTheater.paymentAccepted === undefined) {
+            throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
+        }
+        creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
+            movieTheater.paymentAccepted.find(
+                (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
+            );
+        if (creditCardPaymentAccepted === undefined) {
+            throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (creditCardPaymentAccepted.gmoInfo.shopPass === undefined) {
+            throw new factory.errors.Argument('transaction', 'Credit card payment settings not enough');
+        }
+
+        try {
             // GMOオーダーIDはカスタム指定可能
             orderId = (params.object.orderId !== undefined) ? params.object.orderId : generateOrderId(params);
 
@@ -161,11 +164,22 @@ export function create(params: {
             throw error;
         }
 
+        try {
+            // ベストエフォートでクレジットカード詳細情報を取得
+            searchCardDetailResult = await GMO.services.credit.searchCardDetail({
+                shopId: creditCardPaymentAccepted.gmoInfo.shopId,
+                shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
+                orderId: orderId
+            });
+        } catch (error) {
+            // no op
+        }
+
         // アクションを完了
         debug('ending authorize action...');
 
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
-            accountId: '',
+            accountId: (searchCardDetailResult !== undefined) ? searchCardDetailResult.cardNo : '',
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
