@@ -10,7 +10,6 @@ import * as NotificationService from './service/notification';
 import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PaymentService from './service/payment';
-import * as PersonCreditCardService from './service/person/creditCard';
 import * as ProgramMembershipService from './service/programMembership';
 import * as ReportService from './service/report';
 import * as ReservationService from './service/reservation';
@@ -29,7 +28,6 @@ export import notification = NotificationService;
 export import offer = OfferService;
 export import order = OrderService;
 export namespace person {
-    export import creditCard = PersonCreditCardService;
 }
 export import programMembership = ProgramMembershipService;
 export import report = ReportService;

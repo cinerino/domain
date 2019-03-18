@@ -11,13 +11,13 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
+import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as ProgramMembershipRepo } from '../repo/programMembership';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-import * as PersonCreditCardService from './person/creditCard';
 import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
 import { handlePecorinoError } from '../errorHandler';
@@ -37,6 +37,7 @@ export type ICreateUnRegisterTaskOperation<T> = (repos: {
 
 export type IRegisterOperation<T> = (repos: {
     action: ActionRepo;
+    creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
@@ -178,6 +179,7 @@ export function register(
 ): IRegisterOperation<void> {
     return async (repos: {
         action: ActionRepo;
+        creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
@@ -430,6 +432,7 @@ function processPlaceOrder(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         programMembership: ProgramMembershipRepo;
@@ -576,7 +579,7 @@ function processPlaceOrder(params: {
 
         // 会員クレジットカード検索
         // 事前にクレジットカードを登録しているはず
-        const creditCards = await PersonCreditCardService.find(customer.memberOf.membershipNumber)();
+        const creditCards = await repos.creditCard.search({ personId: customer.memberOf.membershipNumber });
         // tslint:disable-next-line:no-suspicious-comment
         // TODO 絞る
         // creditCards = creditCards.filter((c) => c.defaultFlag === '1');
@@ -587,7 +590,13 @@ function processPlaceOrder(params: {
         debug('creditCard found.', creditCard.cardSeq);
 
         await PlaceOrderService.action.authorize.paymentMethod.creditCard.create({
-            project: { id: <string>process.env.PROJECT_ID },
+            project: {
+                id: <string>process.env.PROJECT_ID,
+                gmoInfo: {
+                    siteId: repos.creditCard.options.siteId,
+                    sitePass: repos.creditCard.options.sitePass
+                }
+            },
             agent: params.registerActionAttributes.agent,
             transaction: transaction,
             object: {

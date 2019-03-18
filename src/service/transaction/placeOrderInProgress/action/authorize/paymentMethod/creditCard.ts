@@ -27,7 +27,16 @@ export type ICreateOperation<T> = (repos: {
  * クレジットカードオーソリ取得
  */
 export function create(params: {
-    project: { id: string };
+    project: {
+        id: string;
+        /**
+         * GMO決済情報
+         */
+        gmoInfo: {
+            siteId: string;
+            sitePass: string;
+        };
+    };
     object: factory.action.authorize.paymentMethod.creditCard.IObject;
     agent: { id: string };
     transaction: { id: string };
@@ -108,8 +117,8 @@ export function create(params: {
                 accessPass: entryTranResult.accessPass,
                 orderId: orderId,
                 method: params.object.method,
-                siteId: <string>process.env.GMO_SITE_ID,
-                sitePass: <string>process.env.GMO_SITE_PASS,
+                siteId: params.project.gmoInfo.siteId,
+                sitePass: params.project.gmoInfo.sitePass,
                 cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
                 cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
                 expire: (<IUncheckedCardRaw>creditCard).expire,

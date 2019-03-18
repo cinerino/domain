@@ -19,10 +19,10 @@ import * as service from './service';
  * Redis Cacheクライアント
  * @example
  * const client = domain.redis.createClient({
- *      host: process.env.REDIS_HOST,
- *      port: process.env.REDIS_PORT,
- *      password: process.env.REDIS_KEY,
- *      tls: { servername: process.env.TEST_REDIS_HOST }
+ *      host: 'xxxx',
+ *      port: 1234
+ *      password: 'xxxx',
+ *      tls: { servername: 'xxxx' }
  * });
  */
 export import redis = redis;

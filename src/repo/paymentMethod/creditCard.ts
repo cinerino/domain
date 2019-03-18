@@ -1,36 +1,60 @@
-/**
- * 会員クレジットカードサービス
- */
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
 import * as factory from '../../factory';
 
-const debug = createDebug('cinerino-domain:service');
+const debug = createDebug('cinerino-domain:repository');
 
-export type IOperation<T> = () => Promise<T>;
 export type IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
 export type IUncheckedCardTokenized = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
+export type ISearchCardResult = GMO.factory.card.ISearchCardResult;
+
+export interface IOptions {
+    /**
+     * GMOサイトID
+     */
+    siteId: string;
+    /**
+     * GMOサイトパス
+     */
+    sitePass: string;
+    /**
+     * GMOクレジットカードサービス
+     */
+    cardService: GMO.service.Card;
+}
 
 /**
- * クレジットカード追加
+ * クレジットカードリポジトリ
  */
-export function save(
-    personId: string,
-    creditCard: IUncheckedCardRaw | IUncheckedCardTokenized,
-    defaultFlag?: boolean
-): IOperation<GMO.services.card.ISearchCardResult> {
-    return async () => {
+export class GMORepository {
+    public readonly options: IOptions;
+
+    constructor(options: IOptions) {
+        this.options = options;
+    }
+
+    /**
+     * クレジットカード追加
+     */
+    public async save(params: {
+        /**
+         * 会員ID
+         */
+        personId: string;
+        creditCard: IUncheckedCardRaw | IUncheckedCardTokenized;
+        defaultFlag?: boolean;
+    }): Promise<ISearchCardResult> {
         // GMOカード登録
-        let addedCreditCard: GMO.services.card.ISearchCardResult;
+        let addedCreditCard: ISearchCardResult;
         try {
             // まずGMO会員登録
-            const memberId = personId;
-            const memberName = personId;
+            const memberId = params.personId;
+            const memberName = params.personId;
             try {
-                await GMO.services.card.searchMember({
-                    siteId: <string>process.env.GMO_SITE_ID,
-                    sitePass: <string>process.env.GMO_SITE_PASS,
+                await this.options.cardService.searchMember({
+                    siteId: this.options.siteId,
+                    sitePass: this.options.sitePass,
                     memberId: memberId
                 });
             } catch (searchMemberError) {
@@ -38,9 +62,9 @@ export function save(
                 if (Array.isArray(searchMemberError.errors) &&
                     searchMemberError.errors.length === 1 &&
                     searchMemberError.errors[0].info === 'E01390002') {
-                    const saveMemberResult = await GMO.services.card.saveMember({
-                        siteId: <string>process.env.GMO_SITE_ID,
-                        sitePass: <string>process.env.GMO_SITE_PASS,
+                    const saveMemberResult = await this.options.cardService.saveMember({
+                        siteId: this.options.siteId,
+                        sitePass: this.options.sitePass,
                         memberId: memberId,
                         memberName: memberName
                     });
@@ -51,24 +75,24 @@ export function save(
             }
 
             debug('saving a card to GMO...');
-            const saveCardResult = await GMO.services.card.saveCard({
-                siteId: <string>process.env.GMO_SITE_ID,
-                sitePass: <string>process.env.GMO_SITE_PASS,
+            const saveCardResult = await this.options.cardService.saveCard({
+                siteId: this.options.siteId,
+                sitePass: this.options.sitePass,
                 memberId: memberId,
                 seqMode: GMO.utils.util.SeqMode.Physics,
-                cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
-                cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
-                expire: (<IUncheckedCardRaw>creditCard).expire,
-                holderName: (<IUncheckedCardRaw>creditCard).holderName,
-                token: (<IUncheckedCardTokenized>creditCard).token,
+                cardNo: (<IUncheckedCardRaw>params.creditCard).cardNo,
+                cardPass: (<IUncheckedCardRaw>params.creditCard).cardPass,
+                expire: (<IUncheckedCardRaw>params.creditCard).expire,
+                holderName: (<IUncheckedCardRaw>params.creditCard).holderName,
+                token: (<IUncheckedCardTokenized>params.creditCard).token,
                 // tslint:disable-next-line:no-single-line-block-comment
-                defaultFlag: (defaultFlag === true) ? /* istanbul ignore next */ '1' : '0'
+                defaultFlag: (params.defaultFlag === true) ? /* istanbul ignore next */ '1' : '0'
             });
             debug('card saved', saveCardResult);
 
-            const searchCardResults = await GMO.services.card.searchCard({
-                siteId: <string>process.env.GMO_SITE_ID,
-                sitePass: <string>process.env.GMO_SITE_PASS,
+            const searchCardResults = await this.options.cardService.searchCard({
+                siteId: this.options.siteId,
+                sitePass: this.options.sitePass,
                 memberId: memberId,
                 seqMode: GMO.utils.util.SeqMode.Physics,
                 cardSeq: saveCardResult.cardSeq
@@ -84,23 +108,27 @@ export function save(
         }
 
         return addedCreditCard;
-    };
-}
+    }
 
-/**
- * クレジットカード削除
- */
-export function unsubscribe(personId: string, cardSeq: string): IOperation<void> {
-    return async () => {
+    /**
+     * クレジットカード削除
+     */
+    public async remove(params: {
+        /**
+         * 会員ID
+         */
+        personId: string;
+        cardSeq: string;
+    }): Promise<void> {
         try {
             // GMOからカード削除
-            const memberId = personId;
-            const deleteCardResult = await GMO.services.card.deleteCard({
-                siteId: <string>process.env.GMO_SITE_ID,
-                sitePass: <string>process.env.GMO_SITE_PASS,
+            const memberId = params.personId;
+            const deleteCardResult = await this.options.cardService.deleteCard({
+                siteId: this.options.siteId,
+                sitePass: this.options.sitePass,
                 memberId: memberId,
                 seqMode: GMO.utils.util.SeqMode.Physics,
-                cardSeq: cardSeq
+                cardSeq: params.cardSeq
             });
             debug('credit card deleted', deleteCardResult);
         } catch (error) {
@@ -110,25 +138,26 @@ export function unsubscribe(personId: string, cardSeq: string): IOperation<void>
                 throw error;
             }
         }
-    };
-}
+    }
 
-/**
- * クレジットカード検索
- */
-export function find(
-    personId: string
-): IOperation<GMO.services.card.ISearchCardResult[]> {
-    return async () => {
-        let creditCards: GMO.services.card.ISearchCardResult[] = [];
+    /**
+     * クレジットカード検索
+     */
+    public async search(params: {
+        /**
+         * 会員ID
+         */
+        personId: string;
+    }): Promise<ISearchCardResult[]> {
+        let creditCards: ISearchCardResult[] = [];
         try {
             // まずGMO会員登録
-            const memberId = personId;
-            const memberName = personId;
+            const memberId = params.personId;
+            const memberName = params.personId;
             try {
-                await GMO.services.card.searchMember({
-                    siteId: <string>process.env.GMO_SITE_ID,
-                    sitePass: <string>process.env.GMO_SITE_PASS,
+                await this.options.cardService.searchMember({
+                    siteId: this.options.siteId,
+                    sitePass: this.options.sitePass,
                     memberId: memberId
                 });
             } catch (searchMemberError) {
@@ -136,9 +165,9 @@ export function find(
                 if (Array.isArray(searchMemberError.errors) &&
                     searchMemberError.errors.length === 1 &&
                     searchMemberError.errors[0].info === 'E01390002') {
-                    const saveMemberResult = await GMO.services.card.saveMember({
-                        siteId: <string>process.env.GMO_SITE_ID,
-                        sitePass: <string>process.env.GMO_SITE_PASS,
+                    const saveMemberResult = await this.options.cardService.saveMember({
+                        siteId: this.options.siteId,
+                        sitePass: this.options.sitePass,
                         memberId: memberId,
                         memberName: memberName
                     });
@@ -148,9 +177,9 @@ export function find(
                 }
             }
 
-            creditCards = await GMO.services.card.searchCard({
-                siteId: <string>process.env.GMO_SITE_ID,
-                sitePass: <string>process.env.GMO_SITE_PASS,
+            creditCards = await this.options.cardService.searchCard({
+                siteId: this.options.siteId,
+                sitePass: this.options.sitePass,
                 memberId: memberId,
                 seqMode: GMO.utils.util.SeqMode.Physics
                 // 未削除のものに絞り込む
@@ -177,5 +206,5 @@ export function find(
         }
 
         return creditCards;
-    };
+    }
 }

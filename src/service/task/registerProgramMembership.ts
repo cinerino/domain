@@ -1,3 +1,4 @@
+import * as GMO from '@motionpicture/gmo-service';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 
 import { IConnectionSettings, IOperation } from '../task';
@@ -8,6 +9,7 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
+import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProgramMembershipRepo } from '../../repo/programMembership';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
@@ -40,14 +42,26 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         if (settings.pecorinoAuthClient === undefined) {
             throw new Error('settings.pecorinoAuthClient undefined.');
         }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (settings.gmo === undefined) {
+            throw new Error('settings.gmo undefined.');
+        }
 
         const depositService = new pecorinoapi.service.transaction.Deposit({
             endpoint: settings.pecorinoEndpoint,
             auth: settings.pecorinoAuthClient
         });
 
+        const creditCardRepo = new CreditCardRepo({
+            siteId: settings.gmo.siteId,
+            sitePass: settings.gmo.sitePass,
+            cardService: new GMO.service.Card({ endpoint: settings.gmo.endpoint })
+        });
+
         await ProgramMembershipService.register(data)({
             action: new ActionRepo(settings.connection),
+            creditCard: creditCardRepo,
             orderNumber: new OrderNumberRepo(settings.redisClient),
             seller: new SellerRepo(settings.connection),
             ownershipInfo: new OwnershipInfoRepo(settings.connection),

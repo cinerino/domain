@@ -79,7 +79,7 @@ describe('action.authorize.creditCard.create()', () => {
             .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            project: { id: 'projectId' },
+            project: { id: 'projectId', gmoInfo: { siteId: '', sitePass: '' } },
             agent: agent,
             transaction: transaction,
             object: {
@@ -215,7 +215,13 @@ describe('action.authorize.creditCard.create()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            project: { id: 'projectId' },
+            project: {
+                id: 'projectId',
+                gmoInfo: {
+                    siteId: 'siteId',
+                    sitePass: 'sitePass'
+                }
+            },
             agent: agent,
             transaction: transaction,
             object: {
@@ -300,7 +306,13 @@ describe('action.authorize.creditCard.create()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            project: { id: 'projectId' },
+            project: {
+                id: 'projectId',
+                gmoInfo: {
+                    siteId: 'siteId',
+                    sitePass: 'sitePass'
+                }
+            },
             agent: agent,
             transaction: transaction,
             object: {
@@ -388,7 +400,13 @@ describe('action.authorize.creditCard.create()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            project: { id: 'projectId' },
+            project: {
+                id: 'projectId',
+                gmoInfo: {
+                    siteId: 'siteId',
+                    sitePass: 'sitePass'
+                }
+            },
             agent: agent,
             transaction: transaction,
             object: {
@@ -477,7 +495,13 @@ describe('action.authorize.creditCard.create()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            project: { id: 'projectId' },
+            project: {
+                id: 'projectId',
+                gmoInfo: {
+                    siteId: 'siteId',
+                    sitePass: 'sitePass'
+                }
+            },
             agent: agent,
             transaction: transaction,
             object: {
@@ -566,7 +590,13 @@ describe('action.authorize.creditCard.create()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard.create({
-            project: { id: 'projectId' },
+            project: {
+                id: 'projectId',
+                gmoInfo: {
+                    siteId: 'siteId',
+                    sitePass: 'sitePass'
+                }
+            },
             agent: agent,
             transaction: transaction,
             object: {

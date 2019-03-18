@@ -53,6 +53,23 @@ export interface IConnectionSettings {
      * ムビチケ着券API認証クライアント
      */
     mvtkReserveAuthClient?: mvtkapi.auth.ClientCredentials;
+    /**
+     * GMO設定
+     */
+    gmo?: {
+        /**
+         * APIエンドポイント
+         */
+        endpoint: string;
+        /**
+         * サイトID
+         */
+        siteId: string;
+        /**
+         * サイトパス
+         */
+        sitePass: string;
+    };
 }
 export interface ISettings extends IConnectionSettings {
     /**
