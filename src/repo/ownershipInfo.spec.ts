@@ -17,13 +17,13 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('OwnershipInfoRepo.saveByIdentifier()', () => {
+describe('識別子で所有権を保管する', () => {
     afterEach(() => {
         sandbox.restore();
     });
 
     it('MongoDBの状態が正常であれば、保管できるはず', async () => {
-        const ownershipInfo = {};
+        const ownershipInfo = { identifier: 'identifier' };
 
         const repository = new OwnershipInfoRepo(mongoose.connection);
 
@@ -31,11 +31,11 @@ describe('OwnershipInfoRepo.saveByIdentifier()', () => {
             .expects('findOneAndUpdate')
             .once()
             .chain('exec')
-            .resolves(new repository.ownershipInfoModel());
+            .resolves(new repository.ownershipInfoModel(ownershipInfo));
 
         const result = await repository.saveByIdentifier(<any>ownershipInfo);
 
-        assert.equal(result, undefined);
+        assert.equal(result.identifier, ownershipInfo.identifier);
         sandbox.verify();
     });
 });

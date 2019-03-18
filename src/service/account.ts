@@ -77,12 +77,7 @@ export function open<T extends factory.accountType>(params: {
                     .toDate() // 十分に無期限
             };
 
-            // Cinemasunshine対応
-            if (process.env.OWNERSHIP_INFO_UUID_DISABLED === '1') {
-                await repos.ownershipInfo.saveByIdentifier(ownershipInfo);
-            } else {
-                await repos.ownershipInfo.save(ownershipInfo);
-            }
+            await repos.ownershipInfo.save(ownershipInfo);
 
             ownershipInfoWithDetail = { ...ownershipInfo, typeOfGood: account };
         } catch (error) {

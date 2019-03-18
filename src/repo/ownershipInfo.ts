@@ -147,26 +147,32 @@ export class MongoRepository {
     /**
      * 所有権情報を保管する
      */
-    public async save(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
+    public async save(
+        ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>
+    ): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
         // 所有権ID発行
         const id = uuid.v4();
 
-        await this.ownershipInfoModel.create({ ...ownershipInfo, _id: id });
+        return this.ownershipInfoModel.create({ ...ownershipInfo, _id: id })
+            .then((doc) => doc.toObject());
     }
 
     /**
      * 所有権情報を保管する
      */
-    public async saveByIdentifier(ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>) {
-        await this.ownershipInfoModel.findOneAndUpdate(
+    public async saveByIdentifier(
+        ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>
+    ): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
+        return this.ownershipInfoModel.findOneAndUpdate(
             { identifier: ownershipInfo.identifier },
             {
                 $set: ownershipInfo,
                 $setOnInsert: { _id: uuid.v4() } // 新規作成時は所有権ID発行
             },
-            { upsert: true }
+            { new: true, upsert: true }
         )
-            .exec();
+            .exec()
+            .then((doc) => doc.toObject());
     }
 
     public async findById(params: { id: string }): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {

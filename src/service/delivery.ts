@@ -45,12 +45,8 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         try {
             // 所有権作成
             ownershipInfos = createOwnershipInfosFromOrder({ order });
-            await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
-                if (process.env.OWNERSHIP_INFO_UUID_DISABLED === '1') {
-                    await repos.ownershipInfo.saveByIdentifier(ownershipInfo);
-                } else {
-                    await repos.ownershipInfo.save(ownershipInfo);
-                }
+            ownershipInfos = await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
+                return repos.ownershipInfo.saveByIdentifier(ownershipInfo);
             }));
 
             // 注文ステータス変更
