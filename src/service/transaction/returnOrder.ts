@@ -215,80 +215,126 @@ export function confirm(params: {
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
-        const emailMessage = await emailMessageBuilder.createRefundMessage({ order });
-        const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
-            typeOf: factory.actionType.SendAction,
-            object: emailMessage,
-            agent: {
-                typeOf: seller.typeOf,
-                id: seller.id,
-                name: seller.name,
-                url: seller.url
-            },
-            recipient: order.customer,
-            potentialActions: {},
-            purpose: order
-        };
         // クレジットカード返金アクション
-        const refundCreditCardActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
-            .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
-            .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard> => {
-                return {
-                    typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
-                    object: a,
-                    agent: {
-                        typeOf: seller.typeOf,
-                        id: seller.id,
-                        name: seller.name,
-                        url: seller.url
-                    },
-                    recipient: order.customer,
-                    purpose: order,
-                    potentialActions: {
-                        sendEmailMessage: sendEmailMessageActionAttributes
-                    }
-                };
-            });
+        const refundCreditCardActions =
+            await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
+                .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
+                .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
+                    const emailMessage = await emailMessageBuilder.createRefundMessage({
+                        order,
+                        paymentMethods: a.object.map((o) => o.paymentMethod)
+                    });
+                    const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                        typeOf: factory.actionType.SendAction,
+                        object: emailMessage,
+                        agent: {
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        potentialActions: {},
+                        purpose: order
+                    };
+
+                    return {
+                        typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+                        object: a,
+                        agent: {
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        purpose: order,
+                        potentialActions: {
+                            sendEmailMessage: sendEmailMessageActionAttributes
+                        }
+                    };
+                }));
+
         // 口座返金アクション
-        const refundAccountActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
-            .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.Account)
-            .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account> => {
-                return {
-                    typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
-                    object: a,
-                    agent: {
-                        typeOf: seller.typeOf,
-                        id: seller.id,
-                        name: seller.name,
-                        url: seller.url
-                    },
-                    recipient: order.customer,
-                    purpose: order,
-                    potentialActions: {
-                        sendEmailMessage: sendEmailMessageActionAttributes
-                    }
-                };
-            });
+        const refundAccountActions =
+            await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
+                .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.Account)
+                .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account>> => {
+                    const emailMessage = await emailMessageBuilder.createRefundMessage({
+                        order,
+                        paymentMethods: a.object.map((o) => o.paymentMethod)
+                    });
+                    const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                        typeOf: factory.actionType.SendAction,
+                        object: emailMessage,
+                        agent: {
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        potentialActions: {},
+                        purpose: order
+                    };
+
+                    return {
+                        typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+                        object: a,
+                        agent: {
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        purpose: order,
+                        potentialActions: {
+                            sendEmailMessage: sendEmailMessageActionAttributes
+                        }
+                    };
+                }));
+
         // ムビチケ着券返金アクション
-        const refundMovieTicketActions = (<factory.action.trade.pay.IAction<factory.paymentMethodType.MovieTicket>[]>payActions)
-            .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.MovieTicket)
-            .map((a): factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket> => {
-                return {
-                    typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
-                    object: a,
-                    agent: {
-                        typeOf: seller.typeOf,
-                        id: seller.id,
-                        name: seller.name,
-                        url: seller.url
-                    },
-                    recipient: order.customer,
-                    purpose: order,
-                    potentialActions: {
-                        sendEmailMessage: sendEmailMessageActionAttributes
-                    }
-                };
-            });
+        const refundMovieTicketActions =
+            await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.MovieTicket>[]>payActions)
+                .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.MovieTicket)
+                .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>> => {
+                    const emailMessage = await emailMessageBuilder.createRefundMessage({
+                        order,
+                        paymentMethods: a.object.map((o) => o.paymentMethod)
+                    });
+                    const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                        typeOf: factory.actionType.SendAction,
+                        object: emailMessage,
+                        agent: {
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        potentialActions: {},
+                        purpose: order
+                    };
+
+                    return {
+                        typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+                        object: a,
+                        agent: {
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        purpose: order,
+                        potentialActions: {
+                            sendEmailMessage: sendEmailMessageActionAttributes
+                        }
+                    };
+                }));
+
         // ポイントインセンティブの数だけ、返却アクションを作成
         const givePointActions = <factory.action.transfer.give.pointAward.IAction[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.GiveAction)

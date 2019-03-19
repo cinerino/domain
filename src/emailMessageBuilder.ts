@@ -182,6 +182,7 @@ export async function createSendOrderMessage(params: {
  */
 export async function createRefundMessage(params: {
     order: factory.order.IOrder;
+    paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[];
 }): Promise<factory.creativeWork.message.email.ICreativeWork> {
     return new Promise<factory.creativeWork.message.email.ICreativeWork>((resolve, reject) => {
         pug.renderFile(
@@ -205,7 +206,16 @@ export async function createRefundMessage(params: {
                 pug.renderFile(
                     `${templateDirectory}/refundOrder/subject.pug`,
                     {
-                        sellerName: params.order.seller.name
+                        sellerName: params.order.seller.name,
+                        paymentMethods: params.paymentMethods.map((p) => {
+                            return util.format(
+                                '%s\n%s\n%s\n',
+                                p.typeOf,
+                                (p.accountId !== undefined) ? p.accountId : '',
+                                (p.totalPaymentDue !== undefined) ? `${p.totalPaymentDue.value} ${p.totalPaymentDue.currency}` : ''
+                            );
+                        })
+                            .join('\n')
                     },
                     (renderSubjectErr, subject) => {
                         if (renderSubjectErr instanceof Error) {
