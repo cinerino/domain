@@ -135,16 +135,24 @@ export function confirm<T extends factory.accountType>(params: {
         transaction.object.authorizeActions = authorizeActions;
 
         // まずは一承認アクションのみ対応
-        if (authorizeActions.length !== 1) {
+        const completedAuthorizeActions = authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+        if (completedAuthorizeActions.length !== 1) {
             throw new factory.errors.Argument('Transaction', 'Number of authorize actions must be 1');
         }
 
+        // 取引で指定された転送先口座への転送取引承認金額が合致しているかどうか確認
         type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType>;
         const authorizeAccountPaymentActions =
             (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-                .filter((a) => (<IFromAccount>a.object.fromAccount).accountType === transaction.object.toLocation.accountType);
+                .filter((a) => (<IFromAccount>a.object.fromAccount).accountType === transaction.object.toLocation.accountType)
+                .filter((a) => {
+                    return a.object.toAccount !== undefined
+                        && a.object.toAccount.accountType === transaction.object.toLocation.accountType
+                        && a.object.toAccount.accountNumber === transaction.object.toLocation.accountNumber;
+                });
         const authorizedAmount = authorizeAccountPaymentActions.reduce((a, b) => a + b.object.amount, 0);
 
         if (authorizedAmount !== transaction.object.amount) {
