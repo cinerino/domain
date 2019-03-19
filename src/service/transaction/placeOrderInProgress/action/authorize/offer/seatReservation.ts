@@ -251,9 +251,13 @@ function validateAcceptedOffers(params: {
             }
 
             const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
-                additionalProperty: [],
                 ...offerWithoutDetail,
-                ...offer
+                ...offer,
+                // 追加属性をマージ
+                additionalProperty: [
+                    ...(Array.isArray(offerWithoutDetail.additionalProperty)) ? offerWithoutDetail.additionalProperty : [],
+                    ...(Array.isArray(offer.additionalProperty)) ? offer.additionalProperty : []
+                ]
             };
 
             const offers = params.event.offers;
