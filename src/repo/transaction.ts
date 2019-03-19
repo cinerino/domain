@@ -315,6 +315,58 @@ export class MongoRepository {
     }
 
     /**
+     * 取引を確定する
+     */
+    public async confirm<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+        authorizeActions: factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>[];
+        result: factory.transaction.IResult<T>;
+        potentialActions: factory.transaction.IPotentialActions<T>;
+    }): Promise<factory.transaction.ITransaction<T>> {
+        const doc = await this.transactionModel.findOneAndUpdate(
+            {
+                _id: params.id,
+                typeOf: params.typeOf,
+                status: factory.transactionStatusType.InProgress
+            },
+            {
+                status: factory.transactionStatusType.Confirmed, // ステータス変更
+                endDate: new Date(),
+                'object.authorizeActions': params.authorizeActions, // 承認アクションリストを更新
+                result: params.result, // resultを更新
+                potentialActions: params.potentialActions // resultを更新
+            },
+            { new: true }
+        )
+            .exec();
+        // NotFoundであれば取引状態確認
+        if (doc === null) {
+            const transaction = await this.findById({ typeOf: params.typeOf, id: params.id });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
+            if (transaction.status === factory.transactionStatusType.Confirmed) {
+                // すでに確定済の場合
+                return transaction;
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+            } else if (transaction.status === factory.transactionStatusType.Expired) {
+                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+            } else if (transaction.status === factory.transactionStatusType.Canceled) {
+                throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+            } else {
+                throw new factory.errors.NotFound(this.transactionModel.modelName);
+            }
+        }
+
+        return doc.toObject();
+    }
+
+    /**
      * 注文取引を確定する
      */
     public async confirmPlaceOrder(params: {

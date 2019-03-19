@@ -33,6 +33,15 @@ const agentSchema = new mongoose.Schema(
     }
 );
 
+const recipientSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 const sellerSchema = new mongoose.Schema(
     {},
     {
@@ -68,6 +77,7 @@ const schema = new mongoose.Schema(
         status: String,
         typeOf: String,
         agent: agentSchema,
+        recipient: recipientSchema,
         seller: sellerSchema,
         error: errorSchema,
         result: resultSchema,

@@ -9,8 +9,295 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as TaskRepo } from '../../repo/task';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
+
+import { handlePecorinoError } from '../../errorHandler';
 
 const debug = createDebug('cinerino-domain:service');
+
+export type ICreateOperation<T> = (repos: {
+    action: ActionRepo;
+    transaction: TransactionRepo;
+    withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
+    transferTransactionService?: pecorinoapi.service.transaction.Transfer;
+}) => Promise<T>;
+
+/**
+ * 口座残高差し押さえ
+ * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
+ */
+export function startTransaction<T extends factory.accountType>(params: {
+    object: factory.action.authorize.paymentMethod.account.IObject<T> & {
+        fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
+        currency?: string;
+    };
+    agent: { id: string };
+    purpose: {
+        typeOf: factory.transactionType;
+        id: string;
+    };
+}): ICreateOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: ActionRepo;
+        transaction: TransactionRepo;
+        /**
+         * 出金取引サービス
+         */
+        withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
+        /**
+         * 転送取引サービス
+         */
+        transferTransactionService?: pecorinoapi.service.transaction.Transfer;
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
+        });
+
+        let recipient = transaction.recipient;
+        if (transaction.typeOf === factory.transactionType.PlaceOrder) {
+            recipient = transaction.seller;
+        } else if (transaction.typeOf === factory.transactionType.MoneyTransfer) {
+            recipient = transaction.recipient;
+        } else {
+            // `現時点で、他取引タイプは未想定
+            throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
+        }
+
+        const recipientName = (recipient.typeOf === factory.personType.Person) ? recipient.id : recipient.name.ja;
+        const agentName = `${transaction.typeOf} Transaction ${transaction.id}`;
+        // 最大1ヵ月のオーソリ
+        const accountTransactionExpires = moment()
+            .add(1, 'month')
+            .toDate();
+
+        // 承認アクションを開始する
+        const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
+            typeOf: factory.actionType.AuthorizeAction,
+            object: params.object,
+            agent: transaction.agent,
+            recipient: recipient,
+            purpose: { typeOf: transaction.typeOf, id: transaction.id }
+        };
+        const action = await repos.action.start(actionAttributes);
+
+        // Pecorino取引開始
+        let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction<T>;
+
+        try {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else *//* istanbul ignore next */
+            if (repos.withdrawTransactionService !== undefined) {
+                debug('starting pecorino pay transaction...', params.object.amount);
+                pendingTransaction = await repos.withdrawTransactionService.start({
+                    expires: accountTransactionExpires,
+                    agent: {
+                        typeOf: transaction.agent.typeOf,
+                        id: transaction.agent.id,
+                        name: agentName,
+                        url: transaction.agent.url
+                    },
+                    recipient: {
+                        typeOf: recipient.typeOf,
+                        id: recipient.id,
+                        name: recipientName,
+                        url: recipient.url
+                    },
+                    amount: params.object.amount,
+                    notes: (params.object.notes !== undefined)
+                        ? params.object.notes
+                        : agentName,
+                    accountType: params.object.fromAccount.accountType,
+                    fromAccountNumber: params.object.fromAccount.accountNumber
+                });
+                debug('pecorinoTransaction started.', pendingTransaction.id);
+            } else if (repos.transferTransactionService !== undefined) {
+                debug('starting pecorino pay transaction...', params.object.amount);
+                if (params.object.toAccount === undefined) {
+                    throw new factory.errors.ArgumentNull('To Account');
+                }
+
+                pendingTransaction = await repos.transferTransactionService.start({
+                    expires: accountTransactionExpires,
+                    agent: {
+                        typeOf: transaction.agent.typeOf,
+                        id: transaction.agent.id,
+                        name: agentName,
+                        url: transaction.agent.url
+                    },
+                    recipient: {
+                        typeOf: recipient.typeOf,
+                        id: recipient.id,
+                        name: recipientName,
+                        url: recipient.url
+                    },
+                    amount: params.object.amount,
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    notes: (params.object.notes !== undefined)
+                        ? /* istanbul ignore next */ params.object.notes
+                        : agentName,
+                    accountType: params.object.fromAccount.accountType,
+                    fromAccountNumber: params.object.fromAccount.accountNumber,
+                    toAccountNumber: params.object.toAccount.accountNumber
+                });
+                debug('pecorinoTransaction started.', pendingTransaction.id);
+            } else {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+                throw new factory.errors.Argument('repos', 'withdrawTransactionService or transferTransactionService required.');
+            }
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                const actionError = { ...error, name: error.name, message: error.message };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            // PecorinoAPIのエラーｗｐハンドリング
+            error = handlePecorinoError(error);
+            throw error;
+        }
+
+        // アクションを完了
+        debug('ending authorize action...');
+        const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
+            accountId: params.object.fromAccount.accountNumber,
+            amount: params.object.amount,
+            paymentMethod: factory.paymentMethodType.Account,
+            paymentStatus: factory.paymentStatusType.PaymentDue,
+            paymentMethodId: params.object.fromAccount.accountNumber,
+            name: params.object.fromAccount.accountType,
+            fromAccount: params.object.fromAccount,
+            toAccount: params.object.toAccount,
+            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
+            pendingTransaction: pendingTransaction,
+            totalPaymentDue: {
+                typeOf: 'MonetaryAmount',
+                currency: (params.object.currency !== undefined) ? params.object.currency : factory.priceCurrency.JPY,
+                value: params.object.amount
+            }
+        };
+
+        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+    };
+}
+
+/**
+ * 口座承認取消
+ */
+export function voidTransaction(params: {
+    /**
+     * 承認アクションID
+     */
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    purpose: {
+        typeOf: factory.transactionType;
+        id: string;
+    };
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        transaction: TransactionRepo;
+        withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
+        transferTransactionService?: pecorinoapi.service.transaction.Transfer;
+    }) => {
+        // 進行中取引存在確認
+        debug('canceling pecorino authorize action...');
+        await repos.transaction.findInProgressById({
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
+        });
+
+        // まずアクションをキャンセル
+        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>action.result;
+
+        // Pecorinoで取消中止実行
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else *//* istanbul ignore next */
+        if (repos.withdrawTransactionService !== undefined) {
+            await repos.withdrawTransactionService.cancel({
+                transactionId: actionResult.pendingTransaction.id
+            });
+        } else if (repos.transferTransactionService !== undefined) {
+            await repos.transferTransactionService.cancel({
+                transactionId: actionResult.pendingTransaction.id
+            });
+        } else {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
+            throw new factory.errors.Argument('resos', 'withdrawTransactionService or transferTransactionService required.');
+        }
+    };
+}
+
+/**
+ * 口座取引決済
+ */
+export function settleTransaction(params: factory.task.IData<factory.taskName.MoneyTransfer>) {
+    return async (repos: {
+        action: ActionRepo;
+        withdrawService: pecorinoapi.service.transaction.Withdraw;
+        transferService: pecorinoapi.service.transaction.Transfer;
+    }) => {
+        // アクション開始
+        const action = await repos.action.start(params);
+
+        try {
+            const pendingTransaction = params.object.pendingTransaction;
+
+            switch (pendingTransaction.typeOf) {
+                case pecorinoapi.factory.transactionType.Withdraw:
+                    // 支払取引の場合確定
+                    await repos.withdrawService.confirm({
+                        transactionId: pendingTransaction.id
+                    });
+                    break;
+
+                case pecorinoapi.factory.transactionType.Transfer:
+                    // 転送取引の場合確定
+                    await repos.transferService.confirm({
+                        transactionId: pendingTransaction.id
+                    });
+                    break;
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+                default:
+                    throw new factory.errors.NotImplemented(
+                        `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
+                    );
+            }
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        // アクション完了
+        debug('ending action...');
+        const actionResult: factory.action.transfer.moneyTransfer.IResult = {};
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+    };
+}
 
 /**
  * 口座支払実行

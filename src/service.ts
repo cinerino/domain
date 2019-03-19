@@ -15,6 +15,7 @@ import * as ReportService from './service/report';
 import * as ReservationService from './service/reservation';
 import * as StockService from './service/stock';
 import * as TaskService from './service/task';
+import * as MoneyTransferTransactionService from './service/transaction/moneyTransfer';
 import * as PlaceOrderTransactionService from './service/transaction/placeOrder';
 import * as PlaceOrderInProgressTransactionService from './service/transaction/placeOrderInProgress';
 import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
@@ -36,6 +37,7 @@ export import payment = PaymentService;
 export import stock = StockService;
 export import task = TaskService;
 export namespace transaction {
+    export import moneyTransfer = MoneyTransferTransactionService;
     export import placeOrder = PlaceOrderTransactionService;
     export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
     export import returnOrder = ReturnOrderTransactionService;
