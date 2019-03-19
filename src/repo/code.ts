@@ -9,7 +9,7 @@ const REDIS_KEY_PREFIX = 'cinerino:code';
 export type IData = any;
 export type ICode = string;
 /**
- * コードリポジトリー
+ * コードリポジトリ
  */
 export class RedisRepository {
     public readonly redisClient: RedisClient;

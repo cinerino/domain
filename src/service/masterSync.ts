@@ -3,13 +3,12 @@
  */
 import * as COA from '@motionpicture/coa-service';
 import * as createDebug from 'debug';
-import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
+// import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 // @ts-ignore
 import * as difference from 'lodash.difference';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
-import { MongoRepository as PlaceRepo } from '../repo/place';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as factory from '../factory';
@@ -288,56 +287,56 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 /**
  * 劇場インポート
  */
-export function importMovieTheater(theaterCode: string) {
-    return async (repos: {
-        place: PlaceRepo;
-        seller: SellerRepo;
-    }): Promise<void> => {
-        const movieTheater = createMovieTheaterFromCOA(
-            await COA.services.master.theater({ theaterCode: theaterCode }),
-            await COA.services.master.screen({ theaterCode: theaterCode })
-        );
+// export function importMovieTheater(theaterCode: string) {
+//     return async (repos: {
+//         place: PlaceRepo;
+//         seller: SellerRepo;
+//     }): Promise<void> => {
+//         const movieTheater = createMovieTheaterFromCOA(
+//             await COA.services.master.theater({ theaterCode: theaterCode }),
+//             await COA.services.master.screen({ theaterCode: theaterCode })
+//         );
 
-        // 場所を保管
-        debug('storing movieTheater...', movieTheater);
-        await repos.place.saveMovieTheater(movieTheater);
-        debug('movieTheater stored.');
+//         // 場所を保管
+//         debug('storing movieTheater...', movieTheater);
+//         await repos.place.saveMovieTheater(movieTheater);
+//         debug('movieTheater stored.');
 
-        // 日本語フォーマットで電話番号が提供される想定なので変換
-        let formatedPhoneNumber: string;
-        try {
-            const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(movieTheater.telephone, 'JP');
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (!phoneUtil.isValidNumber(phoneNumber)) {
-                throw new Error('Invalid phone number format.');
-            }
+//         // 日本語フォーマットで電話番号が提供される想定なので変換
+//         let formatedPhoneNumber: string;
+//         try {
+//             const phoneUtil = PhoneNumberUtil.getInstance();
+//             const phoneNumber = phoneUtil.parse(movieTheater.telephone, 'JP');
+//             // tslint:disable-next-line:no-single-line-block-comment
+//             /* istanbul ignore if */
+//             if (!phoneUtil.isValidNumber(phoneNumber)) {
+//                 throw new Error('Invalid phone number format.');
+//             }
 
-            formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
-        } catch (error) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            throw new Error(`電話番号フォーマット時に問題が発生しました:${error.message}`);
-        }
+//             formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
+//         } catch (error) {
+//             // tslint:disable-next-line:no-single-line-block-comment
+//             /* istanbul ignore next */
+//             throw new Error(`電話番号フォーマット時に問題が発生しました:${error.message}`);
+//         }
 
-        // 組織の属性を更新
-        await repos.seller.organizationModel.findOneAndUpdate(
-            {
-                typeOf: factory.organizationType.MovieTheater,
-                'location.branchCode': movieTheater.branchCode
-            },
-            {
-                'name.ja': movieTheater.name.ja,
-                'name.en': movieTheater.name.en,
-                'location.name.ja': movieTheater.name.ja,
-                'location.name.en': movieTheater.name.en,
-                telephone: formatedPhoneNumber
-            }
-        )
-            .exec();
-    };
-}
+//         // 組織の属性を更新
+//         await repos.seller.organizationModel.findOneAndUpdate(
+//             {
+//                 typeOf: factory.organizationType.MovieTheater,
+//                 'location.branchCode': movieTheater.branchCode
+//             },
+//             {
+//                 'name.ja': movieTheater.name.ja,
+//                 'name.en': movieTheater.name.en,
+//                 'location.name.ja': movieTheater.name.ja,
+//                 'location.name.en': movieTheater.name.en,
+//                 telephone: formatedPhoneNumber
+//             }
+//         )
+//             .exec();
+//     };
+// }
 
 /**
  * コアデータから上映イベントを作成する

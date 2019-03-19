@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 注文リポジトリーテスト
+ * 注文リポジトリテスト
  */
 import { } from 'mocha';
 import * as mongoose from 'mongoose';

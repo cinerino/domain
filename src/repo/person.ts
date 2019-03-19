@@ -7,7 +7,7 @@ export type AttributeListType = AWS.CognitoIdentityServiceProvider.AttributeList
 export type IPerson = factory.person.IProfile & factory.person.IPerson;
 
 /**
- * 会員リポジトリー
+ * 会員リポジトリ
  * 会員情報の保管先は基本的にAmazon Cognitoです。
  */
 export class CognitoRepository {

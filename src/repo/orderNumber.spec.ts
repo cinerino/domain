@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 注文番号リポジトリーテスト
+ * 注文番号リポジトリテスト
  */
 import { } from 'mocha';
 import * as assert from 'power-assert';

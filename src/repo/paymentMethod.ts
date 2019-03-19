@@ -4,7 +4,7 @@ import * as factory from '../factory';
 import { modelName } from './mongoose/model/paymentMethod';
 
 /**
- * 決済方法リポジトリー
+ * 決済方法リポジトリ
  */
 export class MongoRepository {
     public readonly paymentMethodModel: typeof Model;

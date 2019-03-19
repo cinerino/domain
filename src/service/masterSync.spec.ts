@@ -537,35 +537,35 @@ describe('importScreeningEvents()', () => {
     });
 });
 
-describe('importMovieTheater()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
+// describe('importMovieTheater()', () => {
+//     afterEach(() => {
+//         sandbox.restore();
+//     });
 
-    it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
-        // const movieTheater = { branchCode: '', name: {} };
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
-        const placeRepo = new domain.repository.Place(mongoose.connection);
+//     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
+//         // const movieTheater = { branchCode: '', name: {} };
+//         const sellerRepo = new domain.repository.Seller(mongoose.connection);
+//         const placeRepo = new domain.repository.Place(mongoose.connection);
 
-        sandbox.stub(COA.services.master, 'theater')
-            .returns({ theaterTelNum: '0312345678' });
-        sandbox.stub(COA.services.master, 'screen')
-            .returns([{ listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] }]);
-        sandbox.mock(placeRepo)
-            .expects('saveMovieTheater')
-            .once();
-        sandbox.mock(sellerRepo.organizationModel)
-            .expects('findOneAndUpdate')
-            .once()
-            .chain('exec')
-            .resolves();
+//         sandbox.stub(COA.services.master, 'theater')
+//             .returns({ theaterTelNum: '0312345678' });
+//         sandbox.stub(COA.services.master, 'screen')
+//             .returns([{ listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] }]);
+//         sandbox.mock(placeRepo)
+//             .expects('saveMovieTheater')
+//             .once();
+//         sandbox.mock(sellerRepo.organizationModel)
+//             .expects('findOneAndUpdate')
+//             .once()
+//             .chain('exec')
+//             .resolves();
 
-        const result = await MasterSyncService.importMovieTheater('123')({
-            seller: sellerRepo,
-            place: placeRepo
-        });
+//         const result = await MasterSyncService.importMovieTheater('123')({
+//             seller: sellerRepo,
+//             place: placeRepo
+//         });
 
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
+//         assert.equal(result, undefined);
+//         sandbox.verify();
+//     });
+// });

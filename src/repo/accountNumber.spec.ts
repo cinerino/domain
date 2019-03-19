@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 口座番号リポジトリーテスト
+ * 口座番号リポジトリテスト
  */
 import { } from 'mocha';
 import * as assert from 'power-assert';

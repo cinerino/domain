@@ -17,7 +17,7 @@ export interface ICheckResult {
 }
 
 /**
- * ムビチケリポジトリー
+ * ムビチケリポジトリ
  */
 export class MvtkRepository {
     public readonly options: IOptions;

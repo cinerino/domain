@@ -4,7 +4,7 @@ import * as factory from '../factory';
 import { modelName } from './mongoose/model/programMembership';
 
 /**
- * 会員プログラムリポジトリー
+ * 会員プログラムリポジトリ
  */
 export class MongoRepository {
     public readonly programMembershipModel: typeof Model;

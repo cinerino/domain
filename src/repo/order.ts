@@ -7,7 +7,7 @@ import { modelName } from './mongoose/model/order';
 const debug = createDebug('cinerino-domain:repository');
 
 /**
- * 注文リポジトリー
+ * 注文リポジトリ
  */
 export class MongoRepository {
     public readonly orderModel: typeof Model;

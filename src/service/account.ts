@@ -31,7 +31,7 @@ export function open<T extends factory.accountType>(params: {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
         /**
-         * 口座番号リポジトリー
+         * 口座番号リポジトリ
          */
         accountNumber: AccountNumberRepo;
         /**

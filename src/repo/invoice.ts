@@ -7,7 +7,7 @@ import { modelName } from './mongoose/model/invoice';
 const debug = createDebug('cinerino-domain:repository');
 
 /**
- * インボイスリポジトリー
+ * インボイスリポジトリ
  */
 export class MongoRepository {
     public readonly invoiceModel: typeof Model;

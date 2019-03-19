@@ -33,15 +33,6 @@ const openingHoursSpecificationSchema = new mongoose.Schema(
     }
 );
 
-const coaInfoSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 場所スキーマ
  */
@@ -65,7 +56,7 @@ const schema = new mongoose.Schema(
         sameAs: String,
         url: String,
         kanaName: String,
-        coaInfo: coaInfoSchema
+        additionalProperty: [mongoose.SchemaTypes.Mixed]
     },
     {
         collection: 'places',

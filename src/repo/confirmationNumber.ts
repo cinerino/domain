@@ -7,7 +7,7 @@ import * as factory from '../factory';
 
 const debug = createDebug('cinerino-domain:repository');
 /**
- * 注文確認番号リポジトリー
+ * 注文確認番号リポジトリ
  */
 export class RedisRepository {
     public static REDIS_KEY_PREFIX: string = 'cinerino:confirmationNumber';
