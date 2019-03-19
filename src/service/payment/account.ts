@@ -26,7 +26,7 @@ export type ICreateOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
-export function startTransaction<T extends factory.accountType>(params: {
+export function authorize<T extends factory.accountType>(params: {
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
         fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
         currency?: string;
@@ -65,8 +65,13 @@ export function startTransaction<T extends factory.accountType>(params: {
             throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
         }
 
-        const recipientName = (recipient.typeOf === factory.personType.Person) ? recipient.id : recipient.name.ja;
+        let recipientName = (recipient.typeOf === factory.personType.Person) ? recipient.name : recipient.name.ja;
+        recipientName = (recipientName === undefined) ? recipient.id : recipientName;
+
         const agentName = `${transaction.typeOf} Transaction ${transaction.id}`;
+
+        const notes = (params.object.notes !== undefined) ? params.object.notes : agentName;
+
         // 最大1ヵ月のオーソリ
         const accountTransactionExpires = moment()
             .add(1, 'month')
@@ -88,7 +93,12 @@ export function startTransaction<T extends factory.accountType>(params: {
         try {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else *//* istanbul ignore next */
-            if (repos.withdrawTransactionService !== undefined) {
+            if (params.object.toAccount === undefined) {
+                // 転送先口座が指定されていない場合は、出金取引
+                if (repos.withdrawTransactionService === undefined) {
+                    throw new Error('withdrawTransactionService required');
+                }
+
                 debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.withdrawTransactionService.start({
                     expires: accountTransactionExpires,
@@ -105,19 +115,17 @@ export function startTransaction<T extends factory.accountType>(params: {
                         url: recipient.url
                     },
                     amount: params.object.amount,
-                    notes: (params.object.notes !== undefined)
-                        ? params.object.notes
-                        : agentName,
+                    notes: notes,
                     accountType: params.object.fromAccount.accountType,
                     fromAccountNumber: params.object.fromAccount.accountNumber
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
-            } else if (repos.transferTransactionService !== undefined) {
-                debug('starting pecorino pay transaction...', params.object.amount);
-                if (params.object.toAccount === undefined) {
-                    throw new factory.errors.ArgumentNull('To Account');
+            } else {
+                if (repos.transferTransactionService === undefined) {
+                    throw new Error('transferTransactionService required');
                 }
 
+                debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.transferTransactionService.start({
                     expires: accountTransactionExpires,
                     agent: {
@@ -133,19 +141,12 @@ export function startTransaction<T extends factory.accountType>(params: {
                         url: recipient.url
                     },
                     amount: params.object.amount,
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    notes: (params.object.notes !== undefined)
-                        ? /* istanbul ignore next */ params.object.notes
-                        : agentName,
+                    notes: notes,
                     accountType: params.object.fromAccount.accountType,
                     fromAccountNumber: params.object.fromAccount.accountNumber,
                     toAccountNumber: params.object.toAccount.accountNumber
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
-            } else {
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                throw new factory.errors.Argument('repos', 'withdrawTransactionService or transferTransactionService required.');
             }
         } catch (error) {
             // actionにエラー結果を追加
@@ -222,22 +223,27 @@ export function voidTransaction(params: {
         // まずアクションをキャンセル
         const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>action.result;
+        const pendingTransaction = actionResult.pendingTransaction;
 
         // Pecorinoで取消中止実行
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else *//* istanbul ignore next */
-        if (repos.withdrawTransactionService !== undefined) {
+        if (pendingTransaction.typeOf === factory.pecorino.transactionType.Withdraw) {
+            if (repos.withdrawTransactionService === undefined) {
+                throw new Error('withdrawTransactionService required');
+            }
+
             await repos.withdrawTransactionService.cancel({
-                transactionId: actionResult.pendingTransaction.id
+                transactionId: pendingTransaction.id
             });
-        } else if (repos.transferTransactionService !== undefined) {
+        } else if (pendingTransaction.typeOf === factory.pecorino.transactionType.Transfer) {
+            if (repos.transferTransactionService === undefined) {
+                throw new Error('transferTransactionService required');
+            }
+
             await repos.transferTransactionService.cancel({
-                transactionId: actionResult.pendingTransaction.id
+                transactionId: pendingTransaction.id
             });
-        } else {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            throw new factory.errors.Argument('resos', 'withdrawTransactionService or transferTransactionService required.');
         }
     };
 }
