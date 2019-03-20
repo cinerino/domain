@@ -1076,11 +1076,12 @@ export async function createPotentialActionsFromTransaction(params: {
                 object: [{
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
                         name: result.name,
-                        typeOf: <factory.paymentMethodType.CreditCard>result.paymentMethod,
                         paymentMethodId: result.paymentMethodId,
                         totalPaymentDue: result.totalPaymentDue,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+                        typeOf: <factory.paymentMethodType.CreditCard>result.paymentMethod
                     },
                     price: result.amount,
                     priceCurrency: factory.priceCurrency.JPY,
@@ -1108,11 +1109,12 @@ export async function createPotentialActionsFromTransaction(params: {
                 object: [{
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                     paymentMethod: {
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
                         name: result.name,
-                        typeOf: <factory.paymentMethodType.Account>result.paymentMethod,
                         paymentMethodId: result.paymentMethodId,
                         totalPaymentDue: result.totalPaymentDue,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+                        typeOf: <factory.paymentMethodType.Account>result.paymentMethod
                     },
                     pendingTransaction:
                         (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
@@ -1147,11 +1149,12 @@ export async function createPotentialActionsFromTransaction(params: {
                     return {
                         typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
                         paymentMethod: {
+                            accountId: result.accountId,
+                            additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
                             name: result.name,
-                            typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod,
                             paymentMethodId: result.paymentMethodId,
                             totalPaymentDue: result.totalPaymentDue,
-                            additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : []
+                            typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod
                         },
                         movieTickets: a.object.movieTickets
                     };
