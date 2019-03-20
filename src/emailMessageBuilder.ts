@@ -193,7 +193,16 @@ export async function createRefundMessage(params: {
                 confirmationNumber: params.order.confirmationNumber,
                 price: params.order.price,
                 sellerName: params.order.seller.name,
-                sellerTelephone: params.order.seller.telephone
+                sellerTelephone: params.order.seller.telephone,
+                paymentMethods: params.paymentMethods.map((p) => {
+                    return util.format(
+                        '%s\n%s\n%s\n',
+                        p.typeOf,
+                        (p.accountId !== undefined) ? p.accountId : '',
+                        (p.totalPaymentDue !== undefined) ? `${p.totalPaymentDue.value} ${p.totalPaymentDue.currency}` : ''
+                    );
+                })
+                    .join('\n')
             },
             (renderMessageErr, message) => {
                 if (renderMessageErr instanceof Error) {
@@ -206,16 +215,7 @@ export async function createRefundMessage(params: {
                 pug.renderFile(
                     `${templateDirectory}/refundOrder/subject.pug`,
                     {
-                        sellerName: params.order.seller.name,
-                        paymentMethods: params.paymentMethods.map((p) => {
-                            return util.format(
-                                '%s\n%s\n%s\n',
-                                p.typeOf,
-                                (p.accountId !== undefined) ? p.accountId : '',
-                                (p.totalPaymentDue !== undefined) ? `${p.totalPaymentDue.value} ${p.totalPaymentDue.currency}` : ''
-                            );
-                        })
-                            .join('\n')
+                        sellerName: params.order.seller.name
                     },
                     (renderSubjectErr, subject) => {
                         if (renderSubjectErr instanceof Error) {
