@@ -18,6 +18,7 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
+import * as CreditCardPaymentService from './payment/creditCard';
 import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
 import { handlePecorinoError } from '../errorHandler';
@@ -589,7 +590,7 @@ function processPlaceOrder(params: {
         }
         debug('creditCard found.', creditCard.cardSeq);
 
-        await PlaceOrderService.action.authorize.paymentMethod.creditCard.create({
+        await CreditCardPaymentService.authorize({
             project: {
                 id: <string>process.env.PROJECT_ID,
                 gmoInfo: {
@@ -598,7 +599,6 @@ function processPlaceOrder(params: {
                 }
             },
             agent: params.registerActionAttributes.agent,
-            transaction: transaction,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,
                 amount: <number>acceptedOffer.price,
@@ -607,7 +607,8 @@ function processPlaceOrder(params: {
                     memberId: customer.memberOf.membershipNumber,
                     cardSeq: parseInt(creditCard.cardSeq, 10)
                 }
-            }
+            },
+            purpose: transaction
         })(repos);
         debug('creditCard authorization created.');
 

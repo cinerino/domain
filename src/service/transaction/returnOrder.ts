@@ -20,6 +20,7 @@ export type IStartOperation<T> = (repos: {
     action: ActionRepo;
     invoice: InvoiceRepo;
     order: OrderRepo;
+    seller: SellerRepo;
     transaction: TransactionRepo;
     cancelReservationService: chevre.service.transaction.CancelReservation;
 }) => Promise<T>;
@@ -41,9 +42,12 @@ export function start(
         action: ActionRepo;
         invoice: InvoiceRepo;
         order: OrderRepo;
+        seller: SellerRepo;
         transaction: TransactionRepo;
         cancelReservationService: chevre.service.transaction.CancelReservation;
     }) => {
+        const seller = await repos.seller.findById({ id: params.seller.id });
+
         // 返品対象の取引取得
         const order = await repos.order.findByOrderNumber({ orderNumber: params.object.order.orderNumber });
 
@@ -82,6 +86,15 @@ export function start(
         const returnOrderAttributes: factory.transaction.IStartParams<factory.transactionType.ReturnOrder> = {
             typeOf: factory.transactionType.ReturnOrder,
             agent: params.agent,
+            seller: {
+                id: seller.id,
+                typeOf: seller.typeOf,
+                name: seller.name,
+                location: seller.location,
+                telephone: seller.telephone,
+                url: seller.url,
+                image: seller.image
+            },
             object: {
                 clientUser: params.object.clientUser,
                 order: order,

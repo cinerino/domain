@@ -104,8 +104,8 @@ describe('会員プログラムに登録する', () => {
             .expects('create')
             .once()
             .returns(async () => Promise.resolve({}));
-        sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard)
-            .expects('create')
+        sandbox.mock(domain.service.payment.creditCard)
+            .expects('authorize')
             .once()
             .returns(async () => Promise.resolve({}));
         sandbox.mock(personRepo)
@@ -167,26 +167,56 @@ describe('会員プログラムに登録する', () => {
             agent: {}
         };
 
-        sandbox.mock(ownershipInfoRepo).expects('search').twice().resolves(fakeOwnershipInfo).onFirstCall().resolves([]);
-        sandbox.mock(actionRepo).expects('start').twice().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('lock').once().resolves(1);
-        sandbox.mock(actionRepo).expects('complete').twice().resolves({});
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('start').once()
+        sandbox.mock(ownershipInfoRepo)
+            .expects('search')
+            .twice()
+            .resolves(fakeOwnershipInfo)
+            .onFirstCall()
+            .resolves([]);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .twice()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('lock')
+            .once()
+            .resolves(1);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .twice()
+            .resolves({});
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('start')
+            .once()
             .returns(async () => Promise.resolve(fakeTransaction));
         sandbox.mock(creditCardRepo)
             .expects('search')
             .once()
             .resolves([creditCard]);
         sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership)
-            .expects('create').once().returns(async () => Promise.resolve({}));
-        sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard)
-            .expects('create').once().returns(async () => Promise.resolve({}));
-        sandbox.mock(personRepo).expects('getUserAttributes').once().resolves({});
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('setCustomerContact').once()
+            .expects('create')
+            .once()
             .returns(async () => Promise.resolve({}));
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('confirm').once()
+        sandbox.mock(domain.service.payment.creditCard)
+            .expects('authorize')
+            .once()
             .returns(async () => Promise.resolve({}));
-        sandbox.mock(depositService).expects('start').once().resolves({});
+        sandbox.mock(personRepo)
+            .expects('getUserAttributes')
+            .once()
+            .resolves({});
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('setCustomerContact')
+            .once()
+            .returns(async () => Promise.resolve({}));
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('confirm')
+            .once()
+            .returns(async () => Promise.resolve({}));
+        sandbox.mock(depositService)
+            .expects('start')
+            .once()
+            .resolves({});
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {
@@ -232,24 +262,51 @@ describe('会員プログラムに登録する', () => {
             agent: {}
         };
 
-        sandbox.mock(ownershipInfoRepo).expects('search').twice().resolves([]);
-        sandbox.mock(actionRepo).expects('start').once().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('lock').once().resolves(1);
-        sandbox.mock(actionRepo).expects('giveUp').once().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('unlock').once().resolves();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('start').once()
+        sandbox.mock(ownershipInfoRepo)
+            .expects('search')
+            .twice()
+            .resolves([]);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('lock')
+            .once()
+            .resolves(1);
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('unlock')
+            .once()
+            .resolves();
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('start')
+            .once()
             .returns(async () => Promise.resolve(fakeTransaction));
         sandbox.mock(creditCardRepo)
             .expects('search')
             .never();
         sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership)
-            .expects('create').never();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard)
-            .expects('create').never();
-        sandbox.mock(personRepo).expects('getUserAttributes').never();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('setCustomerContact').never();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('confirm').never();
-        sandbox.mock(depositService).expects('start').never();
+            .expects('create')
+            .never();
+        sandbox.mock(domain.service.payment.creditCard)
+            .expects('authorize')
+            .never();
+        sandbox.mock(personRepo)
+            .expects('getUserAttributes')
+            .never();
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('setCustomerContact')
+            .never();
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('confirm')
+            .never();
+        sandbox.mock(depositService)
+            .expects('start')
+            .never();
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {
@@ -299,24 +356,54 @@ describe('会員プログラムに登録する', () => {
             agent: {}
         };
 
-        sandbox.mock(ownershipInfoRepo).expects('search').twice().resolves(fakeOwnershipInfo).onFirstCall().resolves([]);
-        sandbox.mock(actionRepo).expects('start').twice().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('lock').once().resolves(1);
-        sandbox.mock(actionRepo).expects('giveUp').twice().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('unlock').once().resolves();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('start').once()
+        sandbox.mock(ownershipInfoRepo)
+            .expects('search')
+            .twice()
+            .resolves(fakeOwnershipInfo)
+            .onFirstCall()
+            .resolves([]);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .twice()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('lock')
+            .once()
+            .resolves(1);
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .twice()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('unlock')
+            .once()
+            .resolves();
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('start')
+            .once()
             .returns(async () => Promise.resolve(fakeTransaction));
         sandbox.mock(creditCardRepo)
             .expects('search')
             .never();
         sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership)
-            .expects('create').never();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.creditCard)
-            .expects('create').never();
-        sandbox.mock(personRepo).expects('getUserAttributes').never();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('setCustomerContact').never();
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('confirm').never();
-        sandbox.mock(depositService).expects('start').once().rejects('fake error');
+            .expects('create')
+            .never();
+        sandbox.mock(domain.service.payment.creditCard)
+            .expects('authorize')
+            .never();
+        sandbox.mock(personRepo)
+            .expects('getUserAttributes')
+            .never();
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('setCustomerContact')
+            .never();
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('confirm')
+            .never();
+        sandbox.mock(depositService)
+            .expects('start')
+            .once()
+            .rejects('fake error');
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {
@@ -359,8 +446,13 @@ describe('会員プログラムに登録する', () => {
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        sandbox.mock(ownershipInfoRepo).expects('search').once().resolves([ownershipInfo]);
-        sandbox.mock(actionRepo).expects('start').never();
+        sandbox.mock(ownershipInfoRepo)
+            .expects('search')
+            .once()
+            .resolves([ownershipInfo]);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {
@@ -399,14 +491,33 @@ describe('会員プログラムに登録する', () => {
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        sandbox.mock(ownershipInfoRepo).expects('search').once().resolves([]);
-        sandbox.mock(actionRepo).expects('start').once().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('lock').once().resolves(1);
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('start').once()
+        sandbox.mock(ownershipInfoRepo)
+            .expects('search')
+            .once()
+            .resolves([]);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('lock')
+            .once()
+            .resolves(1);
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('start')
+            .once()
             .returns(async () => Promise.reject(startPlaceOrderError));
-        sandbox.mock(registerActionInProgressRepoRepo).expects('unlock').once().resolves();
-        sandbox.mock(actionRepo).expects('complete').never();
-        sandbox.mock(actionRepo).expects('giveUp').once().resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('unlock')
+            .once()
+            .resolves();
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves({});
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {
@@ -445,19 +556,41 @@ describe('会員プログラムに登録する', () => {
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        sandbox.mock(ownershipInfoRepo).expects('search').once().resolves([]);
-        sandbox.mock(actionRepo).expects('start').once().resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo).expects('lock').once().resolves(1);
-        sandbox.mock(domain.service.transaction.placeOrderInProgress).expects('start').once().returns(async () => Promise.resolve({}));
+        sandbox.mock(ownershipInfoRepo)
+            .expects('search')
+            .once()
+            .resolves([]);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('lock')
+            .once()
+            .resolves(1);
+        sandbox.mock(domain.service.transaction.placeOrderInProgress)
+            .expects('start')
+            .once()
+            .returns(async () => Promise.resolve({}));
         sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership)
-            .expects('create').once().returns(async () => Promise.resolve({}));
+            .expects('create')
+            .once()
+            .returns(async () => Promise.resolve({}));
         sandbox.mock(creditCardRepo)
             .expects('search')
             .once()
             .resolves([]);
-        sandbox.mock(registerActionInProgressRepoRepo).expects('unlock').once().resolves(1);
-        sandbox.mock(actionRepo).expects('complete').never();
-        sandbox.mock(actionRepo).expects('giveUp').once().resolves({});
+        sandbox.mock(registerActionInProgressRepoRepo)
+            .expects('unlock')
+            .once()
+            .resolves(1);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves({});
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {

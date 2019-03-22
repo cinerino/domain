@@ -3,26 +3,28 @@
  */
 import * as createDebug from 'debug';
 
-import * as factory from '../../../../../../factory';
-import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
-import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+import * as factory from '../../factory';
+
+import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
-export type ICreateOperation<T> = (repos: {
+export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
 /**
  * 承認アクション
  */
-export function create<T extends factory.paymentMethodType>(params: {
-    object: factory.action.authorize.paymentMethod.any.IObject<T>;
+export function authorize<T extends factory.paymentMethodType>(params: {
     agent: { id: string };
-    transaction: { id: string };
-}): ICreateOperation<factory.action.authorize.paymentMethod.any.IAction<T>> {
+    object: factory.action.authorize.paymentMethod.any.IObject<T>;
+    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction<T>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -30,8 +32,8 @@ export function create<T extends factory.paymentMethodType>(params: {
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transaction.id
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
         });
 
         // 他者口座による決済も可能にするためにコメントアウト
@@ -102,27 +104,19 @@ export function create<T extends factory.paymentMethodType>(params: {
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
-export function cancel(params: {
-    /**
-     * 承認アクションID
-     */
-    id: string;
-    /**
-     * 取引進行者
-     */
+
+export function voidTransaction(params: {
     agent: { id: string };
-    /**
-     * 取引
-     */
-    transaction: { id: string };
+    id: string;
+    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transaction.id
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
         });
 
         if (transaction.agent.id !== params.agent.id) {

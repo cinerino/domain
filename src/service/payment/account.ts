@@ -15,7 +15,7 @@ import { handlePecorinoError } from '../../errorHandler';
 
 const debug = createDebug('cinerino-domain:service');
 
-export type ICreateOperation<T> = (repos: {
+export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     transaction: TransactionRepo;
     withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
@@ -27,16 +27,13 @@ export type ICreateOperation<T> = (repos: {
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
 export function authorize<T extends factory.accountType>(params: {
+    agent: { id: string };
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
         fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
         currency?: string;
     };
-    agent: { id: string };
-    purpose: {
-        typeOf: factory.transactionType;
-        id: string;
-    };
-}): ICreateOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
+    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -191,21 +188,9 @@ export function authorize<T extends factory.accountType>(params: {
  * 口座承認取消
  */
 export function voidTransaction(params: {
-    /**
-     * 承認アクションID
-     */
-    id: string;
-    /**
-     * 取引進行者
-     */
     agent: { id: string };
-    /**
-     * 取引
-     */
-    purpose: {
-        typeOf: factory.transactionType;
-        id: string;
-    };
+    id: string;
+    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }) {
     return async (repos: {
         action: ActionRepo;

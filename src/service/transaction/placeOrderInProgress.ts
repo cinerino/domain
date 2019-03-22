@@ -21,10 +21,6 @@ import * as AuthorizeMvtkDiscountActionService from './placeOrderInProgress/acti
 import * as ProgramMembershipAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/programMembership';
 import * as AuthorizeSeatReservationActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
 import * as AuthorizeSeatReservation4coaActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4coa';
-import * as AuthorizeAccountPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/account';
-import * as AuthorizeAnyPaymentActionService from './placeOrderInProgress/action/authorize/paymentMethod/any';
-import * as AuthorizeCreditCardActionService from './placeOrderInProgress/action/authorize/paymentMethod/creditCard';
-import * as AuthorizeMovieTicketActionService from './placeOrderInProgress/action/authorize/paymentMethod/movieTicket';
 
 const debug = createDebug('cinerino-domain:service');
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
@@ -163,24 +159,6 @@ export namespace action {
              * 座席予約承認アクションサービス(連携先がCOA限定)
              */
             export import seatReservation4coa = AuthorizeSeatReservation4coaActionService;
-        }
-        export namespace paymentMethod {
-            /**
-             * 口座承認アクションサービス
-             */
-            export import account = AuthorizeAccountPaymentActionService;
-            /**
-             * 汎用決済承認アクションサービス
-             */
-            export import any = AuthorizeAnyPaymentActionService;
-            /**
-             * クレジットカード承認アクションサービス
-             */
-            export import creditCard = AuthorizeCreditCardActionService;
-            /**
-             * ムビチケ承認アクションサービス
-             */
-            export import movieTicket = AuthorizeMovieTicketActionService;
         }
     }
 }

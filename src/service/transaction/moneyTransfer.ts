@@ -8,6 +8,7 @@ import * as moment from 'moment';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -15,6 +16,7 @@ const debug = createDebug('cinerino-domain:service');
 
 export type IStartOperation<T> = (repos: {
     accountService: pecorino.service.Account;
+    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 export type ITaskAndTransactionOperation<T> = (repos: {
@@ -30,13 +32,16 @@ export type IConfirmOperation<T> = (repos: {
  * 取引開始
  */
 export function start(
-    params: factory.transaction.IStartParams<factory.transactionType.MoneyTransfer>
+    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<factory.accountType>
 ): IStartOperation<factory.transaction.moneyTransfer.ITransaction<factory.accountType>> {
     return async (repos: {
         accountService: pecorino.service.Account;
+        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         debug(`${params.agent.id} is starting transfer transaction... amount:${params.object.amount}`);
+
+        const seller = await repos.seller.findById({ id: params.seller.id });
 
         // 口座存在確認
         const searchAccountsResult = await repos.accountService.searchWithTotalCount<factory.accountType>({
@@ -55,6 +60,15 @@ export function start(
             typeOf: factory.transactionType.MoneyTransfer,
             agent: params.agent,
             recipient: params.recipient,
+            seller: {
+                id: seller.id,
+                typeOf: seller.typeOf,
+                name: seller.name,
+                location: seller.location,
+                telephone: seller.telephone,
+                url: seller.url,
+                image: seller.image
+            },
             object: {
                 clientUser: params.object.clientUser,
                 amount: params.object.amount,

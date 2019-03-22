@@ -5,7 +5,7 @@
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
-import * as domain from '../../../../../../index';
+import * as domain from '../../index';
 
 let sandbox: sinon.SinonSandbox;
 
@@ -30,6 +30,7 @@ describe('action.authorize.any.create()', () => {
             }]
         };
         const transaction = {
+            typeOf: domain.factory.transactionType.PlaceOrder,
             id: 'transactionId',
             agent: agent,
             seller: seller
@@ -66,9 +67,9 @@ describe('action.authorize.any.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.create({
+        const result = await domain.service.payment.any.authorize({
             agent: agent,
-            transaction: transaction,
+            purpose: transaction,
             object: {
                 typeOf: domain.factory.paymentMethodType.Cash,
                 amount: amount,
@@ -114,6 +115,7 @@ describe('action.authorize.any.cancel()', () => {
             }
         };
         const transaction = {
+            typeOf: domain.factory.transactionType.PlaceOrder,
             id: 'transactionId',
             agent: agent,
             seller: seller
@@ -131,9 +133,9 @@ describe('action.authorize.any.cancel()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.cancel({
+        const result = await domain.service.payment.any.voidTransaction({
             agent: agent,
-            transaction: transaction,
+            purpose: transaction,
             id: action.id
         })({
             action: actionRepo,
@@ -161,6 +163,7 @@ describe('action.authorize.any.cancel()', () => {
         };
         const actionId = 'actionId';
         const transaction = {
+            typeOf: domain.factory.transactionType.PlaceOrder,
             id: 'transactionId',
             agent: {
                 id: 'anotherAgentId'
@@ -179,9 +182,9 @@ describe('action.authorize.any.cancel()', () => {
             .expects('cancel')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.paymentMethod.any.cancel({
+        const result = await domain.service.payment.any.voidTransaction({
             agent: agent,
-            transaction: transaction,
+            purpose: transaction,
             id: actionId
         })({
             action: actionRepo,
