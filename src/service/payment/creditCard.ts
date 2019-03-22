@@ -214,7 +214,8 @@ export function generateOrderId(params: {
     transaction: { id: string };
 }) {
     // tslint:disable-next-line:no-magic-numbers
-    const projectId = `${params.project.id}---`.slice(0, 3);
+    const projectId = `${params.project.id}---`.slice(0, 3)
+        .toUpperCase();
     const dateTime = moment()
         .tz('Asia/Tokyo')
         .format('YYMMDDhhmmssSSS');

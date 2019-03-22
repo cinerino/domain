@@ -185,7 +185,7 @@ export function searchScreeningEventTicketOffers(params: {
                     debug('store is', store);
                     // 販売者の店舗に登録されていなければNotFound
                     if (store === undefined) {
-                        throw new factory.errors.NotFound('Seller');
+                        throw new factory.errors.NotFound('Store', 'Store not found in a seller\'s served area');
                     }
 
                     // 店舗タイプによって、利用可能なオファーを絞る
