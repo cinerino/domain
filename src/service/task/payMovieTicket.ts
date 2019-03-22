@@ -33,7 +33,7 @@ export function call(data: factory.task.IData<factory.taskName.PayMovieTicket>):
             endpoint: settings.mvtkReserveEndpoint,
             auth: settings.mvtkReserveAuthClient
         });
-        await PaymentService.movietTicket.payMovieTicket(data)({
+        await PaymentService.movieTicket.payMovieTicket(data)({
             action: actionRepo,
             event: eventRepo,
             invoice: invoiceRepo,

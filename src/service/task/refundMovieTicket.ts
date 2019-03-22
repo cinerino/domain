@@ -33,7 +33,7 @@ export function call(data: factory.task.IData<factory.taskName.RefundMovieTicket
             endpoint: settings.mvtkReserveEndpoint,
             auth: settings.mvtkReserveAuthClient
         });
-        await PaymentService.movietTicket.refundMovieTicket(data)({
+        await PaymentService.movieTicket.refundMovieTicket(data)({
             action: actionRepo,
             event: eventRepo,
             invoice: invoiceRepo,

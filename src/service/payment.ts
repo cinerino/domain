@@ -24,4 +24,4 @@ export import creditCard = CreditCardPaymentService;
 /**
  * ムビチケ決済
  */
-export import movietTicket = MovieTicketPaymentService;
+export import movieTicket = MovieTicketPaymentService;
