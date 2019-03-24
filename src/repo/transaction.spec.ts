@@ -82,7 +82,7 @@ describe('updateCustomerProfile()', () => {
     });
 });
 
-describe('confirmPlaceOrder()', () => {
+describe('confirm()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -100,7 +100,8 @@ describe('confirmPlaceOrder()', () => {
             .chain('exec')
             .resolves(doc);
 
-        const result = await repository.confirmPlaceOrder({
+        const result = await repository.confirm({
+            typeOf: domain.factory.transactionType.PlaceOrder,
             id: transactionId,
             authorizeActions: authorizeActions,
             result: <any>transactionResult,
@@ -167,33 +168,6 @@ describe('makeExpired()', () => {
 
         const result = await repository.makeExpired();
         assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('confirmReturnOrder()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('取引が存在すれば、エラーにならないはず', async () => {
-        const transactionId = 'transactionId';
-        const transactionResult = {};
-        const potentialActions = {};
-        const repository = new domain.repository.Transaction(mongoose.connection);
-        const doc = new repository.transactionModel();
-        sandbox.mock(repository.transactionModel)
-            .expects('findOneAndUpdate')
-            .once()
-            .chain('exec')
-            .resolves(doc);
-
-        const result = await repository.confirmReturnOrder({
-            id: transactionId,
-            result: <any>transactionResult,
-            potentialActions: <any>potentialActions
-        });
-        assert.equal(typeof result, 'object');
         sandbox.verify();
     });
 });
@@ -363,7 +337,11 @@ describe('取引を検索する', () => {
             agent: {
                 typeOf: '',
                 ids: [],
-                identifiers: []
+                identifiers: [],
+                givenName: '',
+                familyName: '',
+                telephone: '',
+                email: ''
             },
             startFrom: new Date(),
             startThrough: new Date(),
@@ -373,14 +351,7 @@ describe('取引を検索する', () => {
                 typeOf: '',
                 ids: []
             },
-            object: {
-                customerContact: {
-                    givenName: '',
-                    familyName: '',
-                    telephone: '',
-                    email: ''
-                }
-            },
+            object: {},
             result: {
                 order: {
                     orderNumbers: []

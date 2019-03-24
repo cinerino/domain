@@ -245,6 +245,42 @@ schema.index(
     }
 );
 schema.index(
+    { 'agent.familyName': 1, startDate: -1 },
+    {
+        name: 'searchByAgentFamilyName',
+        partialFilterExpression: {
+            'agent.familyName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.givenName': 1, startDate: -1 },
+    {
+        name: 'searchByAgentGivenName',
+        partialFilterExpression: {
+            'agent.givenName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.email': 1, startDate: -1 },
+    {
+        name: 'searchByAgentEmail',
+        partialFilterExpression: {
+            'agent.email': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.telephone': 1, startDate: -1 },
+    {
+        name: 'searchByAgentTelephone',
+        partialFilterExpression: {
+            'agent.telephone': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'seller.typeOf': 1, startDate: -1 },
     {
         name: 'searchBySellerTypeOfAndStartDate',
@@ -259,42 +295,6 @@ schema.index(
         name: 'searchBySellerIdAndStartDate',
         partialFilterExpression: {
             'seller.id': { $exists: true }
-        }
-    }
-);
-schema.index(
-    { 'object.customerContact.familyName': 1, startDate: -1 },
-    {
-        name: 'searchByObjectCustomerContactFamilyNameAndStartDate',
-        partialFilterExpression: {
-            'object.customerContact.familyName': { $exists: true }
-        }
-    }
-);
-schema.index(
-    { 'object.customerContact.givenName': 1, startDate: -1 },
-    {
-        name: 'searchByObjectCustomerContactGivenNameAndStartDate',
-        partialFilterExpression: {
-            'object.customerContact.givenName': { $exists: true }
-        }
-    }
-);
-schema.index(
-    { 'object.customerContact.email': 1, startDate: -1 },
-    {
-        name: 'searchByObjectCustomerContactEmailAndStartDate',
-        partialFilterExpression: {
-            'object.customerContact.email': { $exists: true }
-        }
-    }
-);
-schema.index(
-    { 'object.customerContact.telephone': 1, startDate: -1 },
-    {
-        name: 'searchByObjectCustomerContactTelephoneAndStartDate',
-        partialFilterExpression: {
-            'object.customerContact.telephone': { $exists: true }
         }
     }
 );

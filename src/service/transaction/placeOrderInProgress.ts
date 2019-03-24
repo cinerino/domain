@@ -369,8 +369,9 @@ export function confirm(params: IConfirmParams) {
 
         // ステータス変更
         debug('finally confirming transaction...');
-        transaction = await repos.transaction.confirmPlaceOrder({
-            id: params.id,
+        transaction = await repos.transaction.confirm({
+            typeOf: transaction.typeOf,
+            id: transaction.id,
             authorizeActions: authorizeActions,
             result: result,
             potentialActions: potentialActions

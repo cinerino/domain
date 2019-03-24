@@ -24,6 +24,7 @@ export class MongoRepository {
                 typeOf: params.typeOf
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.startFrom !== undefined) {
@@ -31,6 +32,7 @@ export class MongoRepository {
                 startDate: { $gt: params.startFrom }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.startThrough !== undefined) {
@@ -38,6 +40,7 @@ export class MongoRepository {
                 startDate: { $lt: params.startThrough }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.endFrom !== undefined) {
@@ -48,6 +51,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.endThrough !== undefined) {
@@ -58,6 +62,7 @@ export class MongoRepository {
                 }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.ids)) {
@@ -65,6 +70,7 @@ export class MongoRepository {
                 _id: { $in: params.ids }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.statuses)) {
@@ -72,6 +78,7 @@ export class MongoRepository {
                 status: { $in: params.statuses }
             });
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.agent !== undefined) {
@@ -105,7 +112,48 @@ export class MongoRepository {
                     }
                 });
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.familyName !== undefined) {
+                andConditions.push({
+                    'agent.familyName': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.familyName, 'i')
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.givenName !== undefined) {
+                andConditions.push({
+                    'agent.givenName': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.givenName, 'i')
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.email !== undefined) {
+                andConditions.push({
+                    'agent.email': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.email, 'i')
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.telephone !== undefined) {
+                andConditions.push({
+                    'agent.telephone': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.telephone, 'i')
+                    }
+                });
+            }
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.tasksExportationStatuses)) {
@@ -140,54 +188,7 @@ export class MongoRepository {
                         });
                     }
                 }
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (params.object !== undefined) {
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (params.object.customerContact !== undefined) {
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.familyName !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.familyName': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.familyName, 'i')
-                                }
-                            });
-                        }
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.givenName !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.givenName': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.givenName, 'i')
-                                }
-                            });
-                        }
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.email !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.email': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.email, 'i')
-                                }
-                            });
-                        }
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.telephone !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.telephone': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.telephone, 'i')
-                                }
-                            });
-                        }
-                    }
-                }
+
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (params.result !== undefined) {
@@ -207,6 +208,7 @@ export class MongoRepository {
                     }
                 }
                 break;
+
             case factory.transactionType.ReturnOrder:
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
@@ -227,8 +229,8 @@ export class MongoRepository {
                     }
                 }
                 break;
-            default:
 
+            default:
         }
 
         return andConditions;
@@ -264,7 +266,7 @@ export class MongoRepository {
         })
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Transaction');
+            throw new factory.errors.NotFound(this.transactionModel.modelName);
         }
 
         return doc.toObject();
@@ -284,7 +286,7 @@ export class MongoRepository {
         })
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Transaction');
+            throw new factory.errors.NotFound(this.transactionModel.modelName);
         }
 
         return doc.toObject();
@@ -309,12 +311,12 @@ export class MongoRepository {
                 'agent.familyName': params.agent.familyName,
                 'agent.givenName': params.agent.givenName,
                 'agent.telephone': params.agent.telephone,
-                'object.customerContact': params.agent
+                'object.customerContact': params.agent // agentでの情報保持である程度運用したら削除する
             }
         )
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Transaction');
+            throw new factory.errors.NotFound(this.transactionModel.modelName);
         }
     }
 
@@ -344,6 +346,7 @@ export class MongoRepository {
             { new: true }
         )
             .exec();
+
         // NotFoundであれば取引状態確認
         if (doc === null) {
             const transaction = await this.findById({ typeOf: params.typeOf, id: params.id });
@@ -355,107 +358,13 @@ export class MongoRepository {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
             } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
+                throw new factory.errors.Argument('Transaction id', 'Already expired');
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
             } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
+                throw new factory.errors.Argument('Transaction id', 'Already canceled');
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore next */
-            } else {
-                throw new factory.errors.NotFound(this.transactionModel.modelName);
-            }
-        }
-
-        return doc.toObject();
-    }
-
-    /**
-     * 注文取引を確定する
-     */
-    public async confirmPlaceOrder(params: {
-        id: string;
-        authorizeActions: factory.action.authorize.IAction<factory.action.authorize.IAttributes<any, any>>[];
-        result: factory.transaction.placeOrder.IResult;
-        potentialActions: factory.transaction.placeOrder.IPotentialActions;
-    }): Promise<factory.transaction.placeOrder.ITransaction> {
-        const doc = await this.transactionModel.findOneAndUpdate(
-            {
-                _id: params.id,
-                typeOf: factory.transactionType.PlaceOrder,
-                status: factory.transactionStatusType.InProgress
-            },
-            {
-                status: factory.transactionStatusType.Confirmed, // ステータス変更
-                endDate: new Date(),
-                'object.authorizeActions': params.authorizeActions, // 認可アクションリストを更新
-                result: params.result, // resultを更新
-                potentialActions: params.potentialActions // resultを更新
-            },
-            { new: true }
-        )
-            .exec();
-        // NotFoundであれば取引状態確認
-        if (doc === null) {
-            const transaction = await this.findById({ typeOf: factory.transactionType.PlaceOrder, id: params.id });
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            if (transaction.status === factory.transactionStatusType.Confirmed) {
-                // すでに確定済の場合
-                return transaction;
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-            } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-            } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-            } else {
-                throw new factory.errors.NotFound(this.transactionModel.modelName);
-            }
-        }
-
-        return doc.toObject();
-    }
-
-    /**
-     * 注文返品取引を確定する
-     */
-    public async confirmReturnOrder(params: {
-        id: string;
-        result: factory.transaction.returnOrder.IResult;
-        potentialActions: factory.transaction.returnOrder.IPotentialActions;
-    }): Promise<factory.transaction.returnOrder.ITransaction> {
-        const doc = await this.transactionModel.findOneAndUpdate(
-            {
-                _id: params.id,
-                typeOf: factory.transactionType.ReturnOrder,
-                status: factory.transactionStatusType.InProgress
-            },
-            {
-                status: factory.transactionStatusType.Confirmed, // ステータス変更
-                endDate: new Date(),
-                result: params.result,
-                potentialActions: params.potentialActions
-            },
-            { new: true }
-        )
-            .exec();
-        // NotFoundであれば取引状態確認
-        if (doc === null) {
-            const transaction = await this.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            if (transaction.status === factory.transactionStatusType.Confirmed) {
-                // すでに確定済の場合
-                return transaction;
-            } else if (transaction.status === factory.transactionStatusType.Expired) {
-                throw new factory.errors.Argument('Transaction id', 'Transaction already expired');
-            } else if (transaction.status === factory.transactionStatusType.Canceled) {
-                throw new factory.errors.Argument('Transaction id', 'Transaction already canceled');
             } else {
                 throw new factory.errors.NotFound(this.transactionModel.modelName);
             }

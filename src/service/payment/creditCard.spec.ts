@@ -17,7 +17,6 @@ before(() => {
         agent: { typeOf: 'Person' },
         seller: { typeOf: domain.factory.organizationType.MovieTheater },
         object: {
-            customerContact: {},
             authorizeActions: [
                 {
                     id: 'actionId',

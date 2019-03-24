@@ -389,8 +389,10 @@ export function confirm(params: {
 
         // ステータス変更
         debug('updating transaction...');
-        transaction = await repos.transaction.confirmReturnOrder({
-            id: params.id,
+        transaction = await repos.transaction.confirm({
+            typeOf: transaction.typeOf,
+            id: transaction.id,
+            authorizeActions: [],
             result: result,
             potentialActions: potentialActions
         });
