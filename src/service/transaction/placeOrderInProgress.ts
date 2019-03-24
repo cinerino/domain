@@ -164,20 +164,17 @@ export namespace action {
 }
 
 /**
- * 取引中の購入者情報を変更する
+ * 顧客プロフィール更新
  */
-export function setCustomerContact(params: {
+export function updateCustomerProfile(params: {
     id: string;
-    agent: { id: string };
-    object: {
-        customerContact: factory.transaction.placeOrder.ICustomerContact;
-    };
-}): ITransactionOperation<factory.transaction.placeOrder.ICustomerContact> {
+    agent: factory.transaction.placeOrder.ICustomerProfile & { id: string };
+}): ITransactionOperation<factory.transaction.placeOrder.ICustomerProfile> {
     return async (repos: { transaction: TransactionRepo }) => {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(params.object.customerContact.telephone);
+            const phoneNumber = phoneUtil.parse(params.agent.telephone);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
                 throw new Error('Invalid phone number');
             }
@@ -186,26 +183,30 @@ export function setCustomerContact(params: {
             throw new factory.errors.Argument('contact.telephone', error.message);
         }
 
-        // 連絡先を生成
-        const customerContact: factory.transaction.placeOrder.ICustomerContact = {
-            familyName: params.object.customerContact.familyName,
-            givenName: params.object.customerContact.givenName,
-            email: params.object.customerContact.email,
+        // プロフィール作成
+        const profile: factory.transaction.placeOrder.ICustomerProfile = {
+            familyName: params.agent.familyName,
+            givenName: params.agent.givenName,
+            email: params.agent.email,
             telephone: formattedTelephone
         };
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.id
         });
+
         if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours');
         }
-        await repos.transaction.setCustomerContactOnPlaceOrderInProgress({
+
+        await repos.transaction.updateCustomerProfile({
+            typeOf: factory.transactionType.PlaceOrder,
             id: params.id,
-            contact: customerContact
+            agent: profile
         });
 
-        return customerContact;
+        return profile;
     };
 }
 
@@ -384,11 +385,15 @@ export function confirm(params: IConfirmParams) {
  */
 export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
+    const profile = transaction.agent;
     let priceByAgent = 0;
     let priceBySeller = 0;
 
-    if (transaction.object.customerContact === undefined) {
-        throw new factory.errors.Argument('Transaction', 'Customer Contact Required');
+    if (profile.email === undefined
+        || profile.familyName === undefined
+        || profile.givenName === undefined
+        || profile.telephone === undefined) {
+        throw new factory.errors.Argument('Transaction', 'Customer Profile Required');
     }
 
     // 決済承認を確認
@@ -571,10 +576,7 @@ export function createOrderFromTransaction(params: {
     }
     const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
 
-    const cutomerContact = params.transaction.object.customerContact;
-    if (cutomerContact === undefined) {
-        throw new factory.errors.Argument('Transaction', 'Customer contact does not exist');
-    }
+    const profile = params.transaction.agent;
 
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
@@ -589,12 +591,12 @@ export function createOrderFromTransaction(params: {
     // 購入者を識別する情報をまとめる
     const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
+        ...profile,
         id: params.transaction.agent.id,
         typeOf: params.transaction.agent.typeOf,
-        name: `${cutomerContact.familyName} ${cutomerContact.givenName}`,
+        name: `${profile.familyName} ${profile.givenName}`,
         url: '',
-        identifier: customerIdentifier,
-        ...cutomerContact
+        identifier: customerIdentifier
     };
     if (params.transaction.agent.memberOf !== undefined) {
         customer.memberOf = params.transaction.agent.memberOf;
@@ -719,7 +721,7 @@ export function createOrderFromTransaction(params: {
                                 ticketToken: ticketToken,
                                 underName: {
                                     typeOf: factory.personType.Person,
-                                    name: customer.name
+                                    name: String(customer.name)
                                 },
                                 ticketType: {
                                     typeOf: 'Offer',
@@ -734,7 +736,7 @@ export function createOrderFromTransaction(params: {
                             },
                             underName: {
                                 typeOf: factory.personType.Person,
-                                name: customer.name
+                                name: String(customer.name)
                             }
                         };
 
@@ -852,12 +854,6 @@ export function createOrderFromTransaction(params: {
         process.env.ORDER_INQUIRY_ENDPOINT,
         params.confirmationNumber
     );
-    // const url = (reservationNumber !== undefined) ? util.format(
-    //     '%s/inquiry/login?theater=%s&reserve=%s',
-    //     process.env.ORDER_INQUIRY_ENDPOINT,
-    //     params.seller.location.branchCode,
-    //     reservationNumber
-    // ) : '';
 
     // 決済方法から注文金額の計算
     let price = 0;
@@ -941,6 +937,11 @@ export async function createPotentialActionsFromTransaction(params: {
                     // COAでは数字のみ受け付けるので数字以外を除去
                     telNum = telNum.replace(/[^\d]/g, '');
 
+                    const mailAddr = params.order.customer.email;
+                    if (mailAddr === undefined) {
+                        throw new factory.errors.Argument('order', 'order.customer.email undefined');
+                    }
+
                     const updReserveArgs: factory.action.interact.confirm.reservation.IObject4COA = {
                         theaterCode: updTmpReserveSeatArgs.theaterCode,
                         dateJouei: updTmpReserveSeatArgs.dateJouei,
@@ -953,7 +954,7 @@ export async function createPotentialActionsFromTransaction(params: {
                         // tslint:disable-next-line:no-irregular-whitespace
                         reserveNameJkana: `${params.order.customer.familyName}　${params.order.customer.givenName}`,
                         telNum: telNum,
-                        mailAddr: params.order.customer.email,
+                        mailAddr: mailAddr,
                         reserveAmount: params.order.price, // デフォルトのpriceCurrencyがJPYなのでこれでよし
                         listTicket: params.order.acceptedOffers.map(
                             // tslint:disable-next-line:max-line-length
@@ -1018,7 +1019,7 @@ export async function createPotentialActionsFromTransaction(params: {
                                         },
                                         underName: {
                                             typeOf: params.order.customer.typeOf,
-                                            name: params.order.customer.name,
+                                            name: String(params.order.customer.name),
                                             familyName: params.order.customer.familyName,
                                             givenName: params.order.customer.givenName,
                                             email: params.order.customer.email,

@@ -385,7 +385,7 @@ describe('start()', () => {
     });
 });
 
-describe('setCustomerContact()', () => {
+describe('updateCustomerProfile()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -419,16 +419,13 @@ describe('setCustomerContact()', () => {
             .once()
             .resolves(transaction);
         sandbox.mock(transactionRepo)
-            .expects('setCustomerContactOnPlaceOrderInProgress')
+            .expects('updateCustomerProfile')
             .once()
             .resolves();
 
-        const result = await domain.service.transaction.placeOrderInProgress.setCustomerContact({
-            agent: agent,
-            id: transaction.id,
-            object: {
-                customerContact: <any>contact
-            }
+        const result = await domain.service.transaction.placeOrderInProgress.updateCustomerProfile({
+            agent: { ...agent, ...contact },
+            id: transaction.id
         })({ transaction: transactionRepo });
 
         assert.equal(typeof result, 'object');
@@ -464,15 +461,12 @@ describe('setCustomerContact()', () => {
             .once()
             .resolves(transaction);
         sandbox.mock(transactionRepo)
-            .expects('setCustomerContactOnPlaceOrderInProgress')
+            .expects('updateCustomerProfile')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.setCustomerContact({
-            agent: agent,
-            id: transaction.id,
-            object: {
-                customerContact: <any>contact
-            }
+        const result = await domain.service.transaction.placeOrderInProgress.updateCustomerProfile({
+            agent: { ...agent, ...contact },
+            id: transaction.id
         })({ transaction: transactionRepo })
             .catch((err) => err);
 
@@ -509,15 +503,12 @@ describe('setCustomerContact()', () => {
             .never()
             .resolves(transaction);
         sandbox.mock(transactionRepo)
-            .expects('setCustomerContactOnPlaceOrderInProgress')
+            .expects('updateCustomerProfile')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.setCustomerContact({
-            agent: agent,
-            id: transaction.id,
-            object: {
-                customerContact: <any>contact
-            }
+        const result = await domain.service.transaction.placeOrderInProgress.updateCustomerProfile({
+            agent: { ...agent, ...contact },
+            id: transaction.id
         })({ transaction: transactionRepo })
             .catch((err) => err);
         assert(result instanceof domain.factory.errors.Argument);

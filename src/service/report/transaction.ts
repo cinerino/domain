@@ -267,9 +267,9 @@ export function transaction2report(params: {
             customer: {
                 typeOf: order.customer.typeOf,
                 id: order.customer.id,
-                name: order.customer.name,
-                email: order.customer.email,
-                telephone: order.customer.telephone,
+                name: String(order.customer.name),
+                email: String(order.customer.email),
+                telephone: String(order.customer.telephone),
                 memberOf: order.customer.memberOf,
                 tokenIssuer: (params.transaction.object.clientUser !== undefined) ? params.transaction.object.clientUser.iss : '',
                 clientId: (params.transaction.object.clientUser !== undefined) ? params.transaction.object.clientUser.client_id : ''
@@ -286,7 +286,7 @@ export function transaction2report(params: {
             discountPrices: order.discounts.map((discount) => `${discount.discount} ${discount.discountCurrency}`)
         };
     } else {
-        const customerContact = params.transaction.object.customerContact;
+        const profile = params.transaction.agent;
 
         return {
             id: params.transaction.id,
@@ -304,9 +304,9 @@ export function transaction2report(params: {
             customer: {
                 typeOf: params.transaction.agent.typeOf,
                 id: params.transaction.agent.id,
-                name: (customerContact !== undefined) ? `${customerContact.familyName} ${customerContact.givenName}` : '',
-                email: (customerContact !== undefined) ? customerContact.email : '',
-                telephone: (customerContact !== undefined) ? customerContact.telephone : '',
+                name: `${profile.familyName} ${profile.givenName}`,
+                email: String(profile.email),
+                telephone: String(profile.telephone),
                 memberOf: {
                     membershipNumber: (params.transaction.agent.memberOf !== undefined) ?
                         params.transaction.agent.memberOf.membershipNumber :

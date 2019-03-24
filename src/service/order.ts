@@ -379,7 +379,7 @@ export function returnOrder(params: { orderNumber: string }) {
                                 agent: {
                                     typeOf: returnOrderTransaction.agent.typeOf,
                                     id: returnOrderTransaction.agent.id,
-                                    name: order.customer.name
+                                    name: String(order.customer.name)
                                 },
                                 object: {
                                     transaction: {

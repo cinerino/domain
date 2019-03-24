@@ -326,7 +326,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,
-                    name: order.customer.name,
+                    name: String(order.customer.name),
                     url: params.agent.url
                 },
                 recipient: {

@@ -153,6 +153,13 @@ export async function createSendOrderMessage(params: {
 
                     debug('subject:', subject);
 
+                    const toRecipientEmail = params.order.customer.email;
+                    if (toRecipientEmail === undefined) {
+                        reject(new factory.errors.Argument('order', 'order.customer.email undefined'));
+
+                        return;
+                    }
+
                     const email: factory.creativeWork.message.email.ICreativeWork = {
                         typeOf: factory.creativeWorkType.EmailMessage,
                         identifier: `SendOrder-${params.order.orderNumber}`,
@@ -165,7 +172,7 @@ export async function createSendOrderMessage(params: {
                         toRecipient: {
                             typeOf: params.order.customer.typeOf,
                             name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-                            email: params.order.customer.email
+                            email: toRecipientEmail
                         },
                         about: subject,
                         text: emailMessageText
@@ -226,6 +233,13 @@ export async function createRefundMessage(params: {
 
                         debug('subject:', subject);
 
+                        const toRecipientEmail = params.order.customer.email;
+                        if (toRecipientEmail === undefined) {
+                            reject(new factory.errors.Argument('order', 'order.customer.email undefined'));
+
+                            return;
+                        }
+
                         const email: factory.creativeWork.message.email.ICreativeWork = {
                             typeOf: factory.creativeWorkType.EmailMessage,
                             identifier: `refundOrder-${params.order.orderNumber}`,
@@ -238,7 +252,7 @@ export async function createRefundMessage(params: {
                             toRecipient: {
                                 typeOf: params.order.customer.typeOf,
                                 name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-                                email: params.order.customer.email
+                                email: toRecipientEmail
                             },
                             about: subject,
                             text: message

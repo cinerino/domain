@@ -291,21 +291,25 @@ export class MongoRepository {
     }
 
     /**
-     * 取引中の所有者プロフィールを変更する
-     * 匿名所有者として開始した場合のみ想定(匿名か会員に変更可能)
+     * 取引の顧客プロフィールを更新
      */
-    public async setCustomerContactOnPlaceOrderInProgress(params: {
+    public async updateCustomerProfile<T extends factory.transactionType>(params: {
+        typeOf: T;
         id: string;
-        contact: factory.transaction.placeOrder.ICustomerContact;
+        agent: factory.transaction.placeOrder.ICustomerProfile;
     }): Promise<void> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
                 _id: params.id,
-                typeOf: factory.transactionType.PlaceOrder,
+                typeOf: params.typeOf,
                 status: factory.transactionStatusType.InProgress
             },
             {
-                'object.customerContact': params.contact
+                'agent.email': params.agent.email,
+                'agent.familyName': params.agent.familyName,
+                'agent.givenName': params.agent.givenName,
+                'agent.telephone': params.agent.telephone,
+                'object.customerContact': params.agent
             }
         )
             .exec();

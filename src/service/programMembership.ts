@@ -617,16 +617,13 @@ function processPlaceOrder(params: {
         if ((<factory.person.IPerson>params.registerActionAttributes.agent).memberOf === undefined) {
             throw new factory.errors.NotFound('params.agent.memberOf');
         }
-        const contact = await repos.person.getUserAttributes({
+        const profile = await repos.person.getUserAttributes({
             userPooId: <string>process.env.COGNITO_USER_POOL_ID,
             username: customer.memberOf.membershipNumber
         });
-        await PlaceOrderService.setCustomerContact({
+        await PlaceOrderService.updateCustomerProfile({
             id: transaction.id,
-            agent: { id: params.registerActionAttributes.agent.id },
-            object: {
-                customerContact: contact
-            }
+            agent: { id: params.registerActionAttributes.agent.id, ...profile }
         })(repos);
         debug('customer contact set.');
 

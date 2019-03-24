@@ -113,7 +113,7 @@ describe('会員プログラムに登録する', () => {
             .once()
             .resolves({});
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('setCustomerContact')
+            .expects('updateCustomerProfile')
             .once()
             .returns(async () => Promise.resolve({}));
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
@@ -206,7 +206,7 @@ describe('会員プログラムに登録する', () => {
             .once()
             .resolves({});
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('setCustomerContact')
+            .expects('updateCustomerProfile')
             .once()
             .returns(async () => Promise.resolve({}));
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
@@ -299,7 +299,7 @@ describe('会員プログラムに登録する', () => {
             .expects('getUserAttributes')
             .never();
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('setCustomerContact')
+            .expects('updateCustomerProfile')
             .never();
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
             .expects('confirm')
@@ -395,7 +395,7 @@ describe('会員プログラムに登録する', () => {
             .expects('getUserAttributes')
             .never();
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('setCustomerContact')
+            .expects('updateCustomerProfile')
             .never();
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
             .expects('confirm')

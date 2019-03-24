@@ -35,7 +35,7 @@ describe('start()', () => {
     });
 });
 
-describe('setCustomerContactOnPlaceOrderInProgress()', () => {
+describe('updateCustomerProfile()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -50,7 +50,11 @@ describe('setCustomerContactOnPlaceOrderInProgress()', () => {
             .chain('exec')
             .resolves(new repository.transactionModel());
 
-        const result = await repository.setCustomerContactOnPlaceOrderInProgress({ id: transactionId, contact: <any>contact });
+        const result = await repository.updateCustomerProfile({
+            typeOf: domain.factory.transactionType.PlaceOrder,
+            id: transactionId,
+            agent: <any>contact
+        });
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -67,9 +71,10 @@ describe('setCustomerContactOnPlaceOrderInProgress()', () => {
             .chain('exec')
             .resolves(null);
 
-        const result = await repository.setCustomerContactOnPlaceOrderInProgress({
+        const result = await repository.updateCustomerProfile({
+            typeOf: domain.factory.transactionType.PlaceOrder,
             id: transactionId,
-            contact: <any>contact
+            agent: <any>contact
         })
             .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
