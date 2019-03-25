@@ -695,14 +695,9 @@ export function createScreeningRoomFromCOA(
 }
 
 /**
- * イベント残席数を更新する
+ * イベント席数を更新する
  */
-export function updateEventRemainingAttendeeCapacities(params: {
-    locationBranchCode: string;
-    // offeredThrough?: IOfferedThrough;
-    importFrom: Date;
-    importThrough: Date;
-}) {
+export function updateEventAttendeeCapacity(params: factory.task.IData<factory.taskName.UpdateEventAttendeeCapacity>) {
     return async (repos: {
         attendeeCapacity: EventAttendeeCapacityRepo;
     }) => {

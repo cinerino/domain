@@ -268,14 +268,14 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
 /**
  * イベント残席数を更新する
  */
-export function updateEventRemainingAttendeeCapacities(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
+export function updateEventAttendeeCapacity(params: factory.task.IData<factory.taskName.UpdateEventAttendeeCapacity>) {
     return async (repos: {
         eventService: chevre.service.Event;
         attendeeCapacity: EventAttendeeCapacityRepo;
     }) => {
         // COAイベントの場合、masterSyncサービスを使用
         if (params.offeredThrough !== undefined && params.offeredThrough.identifier === WebAPIIdentifier.COA) {
-            await MasterSyncService.updateEventRemainingAttendeeCapacities(params)(repos);
+            await MasterSyncService.updateEventAttendeeCapacity(params)(repos);
 
             return;
         }
