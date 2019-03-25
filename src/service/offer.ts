@@ -2,6 +2,7 @@ import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
+import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
 import { RedisRepository as ScreeningEventItemAvailabilityRepo } from '../repo/itemAvailability/screeningEvent';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
@@ -17,15 +18,19 @@ export type ISearchScreeningEventOffersOperation<T> = (repos: {
     event: EventRepo;
     eventService: chevre.service.Event;
 }) => Promise<T>;
+
 export type ISearchScreeningEventTicketOffersOperation<T> = (repos: {
     event: EventRepo;
     seller: SellerRepo;
     eventService: chevre.service.Event;
 }) => Promise<T>;
+
 export type IEventOperation4cinemasunshine<T> = (repos: {
     event: EventRepo;
     itemAvailability?: ScreeningEventItemAvailabilityRepo;
+    attendeeCapacity?: EventAttendeeCapacityRepo;
 }) => Promise<T>;
+
 export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: ScreeningEventItemAvailabilityRepo }) => Promise<T>;
 
 /**
@@ -487,11 +492,12 @@ export function searchScreeningEvents4cinemasunshine(
     return async (repos: {
         event: EventRepo;
         itemAvailability?: ScreeningEventItemAvailabilityRepo;
+        attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         debug('finding screeningEvents...', searchConditions);
-        const events = await repos.event.searchScreeningEvents(searchConditions);
+        let events = await repos.event.searchScreeningEvents(searchConditions);
 
-        return Promise.all(events.map(async (event) => {
+        events = await Promise.all(events.map(async (event) => {
             // 必ず定義されている前提
             const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
 
@@ -514,6 +520,21 @@ export function searchScreeningEvents4cinemasunshine(
                 offers: offers
             };
         }));
+
+        let capacities: IEventCapacity[] = [];
+        if (repos.attendeeCapacity !== undefined) {
+            const eventIds = events.map((e) => e.id);
+            capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
+        }
+
+        return events.map((e) => {
+            const capacity = capacities.find((c) => c.id === e.id);
+
+            return {
+                ...e,
+                ...capacity
+            };
+        });
     };
 }
 
@@ -526,6 +547,7 @@ export function findScreeningEventById4cinemasunshine(
     return async (repos: {
         event: EventRepo;
         itemAvailability?: ScreeningEventItemAvailabilityRepo;
+        attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         const event = await repos.event.findById({
             typeOf: factory.chevre.eventType.ScreeningEvent,

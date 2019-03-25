@@ -10,8 +10,10 @@ import * as moment from 'moment';
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
+
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
+import { RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as MasterSyncService from './masterSync';
@@ -260,5 +262,22 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
                 await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
         }));
+    };
+}
+
+/**
+ * イベント残席数を更新する
+ */
+export function updateEventRemainingAttendeeCapacities(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
+    return async (repos: {
+        eventService: chevre.service.Event;
+        attendeeCapacity: EventAttendeeCapacityRepo;
+    }) => {
+        // COAイベントの場合、masterSyncサービスを使用
+        if (params.offeredThrough !== undefined && params.offeredThrough.identifier === WebAPIIdentifier.COA) {
+            await MasterSyncService.updateEventRemainingAttendeeCapacities(params)(repos);
+
+            return;
+        }
     };
 }

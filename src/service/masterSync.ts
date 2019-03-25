@@ -9,6 +9,7 @@ import * as difference from 'lodash.difference';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
+import { IEvent as IEventCapcity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as factory from '../factory';
@@ -690,5 +691,52 @@ export function createScreeningRoomFromCOA(
         },
         typeOf: factory.chevre.placeType.ScreeningRoom,
         maximumAttendeeCapacity: sections[0].containsPlace.length
+    };
+}
+
+/**
+ * イベント残席数を更新する
+ */
+export function updateEventRemainingAttendeeCapacities(params: {
+    locationBranchCode: string;
+    // offeredThrough?: IOfferedThrough;
+    importFrom: Date;
+    importThrough: Date;
+}) {
+    return async (repos: {
+        attendeeCapacity: EventAttendeeCapacityRepo;
+    }) => {
+        // COAから空席状況取得
+        const countFreeSeatResult = await COA.services.reserve.countFreeSeat({
+            theaterCode: params.locationBranchCode,
+            begin: moment(params.importFrom)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD'), // COAは日本時間で判断
+            end: moment(params.importThrough)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD') // COAは日本時間で判断
+        });
+
+        const capacities: IEventCapcity[] = [];
+
+        countFreeSeatResult.listDate.forEach((countFreeSeatDate) => {
+            countFreeSeatDate.listPerformance.forEach((countFreeSeatPerformance) => {
+                const eventId = createScreeningEventIdFromCOA({
+                    theaterCode: countFreeSeatResult.theaterCode,
+                    titleCode: countFreeSeatPerformance.titleCode,
+                    titleBranchNum: countFreeSeatPerformance.titleBranchNum,
+                    dateJouei: countFreeSeatDate.dateJouei,
+                    screenCode: countFreeSeatPerformance.screenCode,
+                    timeBegin: countFreeSeatPerformance.timeBegin
+                });
+
+                capacities.push({
+                    id: eventId,
+                    remainingAttendeeCapacity: Math.max(0, Number(countFreeSeatPerformance.cntReserveFree))
+                });
+            });
+        });
+
+        await repos.attendeeCapacity.updateByEventIds(capacities);
     };
 }
