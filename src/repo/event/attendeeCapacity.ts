@@ -38,6 +38,10 @@ export class RedisRepository {
      * イベントIDで検索する
      */
     public async findByEventIds(params: string[]): Promise<IEvent[]> {
+        if (params.length === 0) {
+            return [];
+        }
+
         const key = RedisRepository.CREATE_REDIS_KEY();
 
         return new Promise<IEvent[]>((resolve, reject) => {
@@ -70,6 +74,10 @@ export class RedisRepository {
      * 残席数を更新する
      */
     public async updateByEventIds(params: IEvent[]): Promise<void> {
+        if (params.length === 0) {
+            return;
+        }
+
         const key = RedisRepository.CREATE_REDIS_KEY();
 
         const args: string[] = [];

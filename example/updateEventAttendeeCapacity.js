@@ -1,4 +1,5 @@
 const domain = require('../lib');
+const moment = require('moment');
 
 async function main() {
     const redisClient = await domain.redis.createClient({
@@ -8,18 +9,16 @@ async function main() {
         tls: { servername: process.env.REDIS_TLS_SERVERNAME }
     });;
 
-    const params = [...Array(100)].map((_, i) => {
-        console.log(i);
-        return {
-            id: i.toString(),
-            remainingAttendeeCapacity: i
-        }
-    });
     const capacityRepo = new domain.repository.event.AttendeeCapacityRepo(redisClient);
-    await capacityRepo.updateByEventIds(params);
 
-    const capacities = await capacityRepo.findByEventIds(['1', '2', '100', '100', 'notfound']);
-    console.log('capacities:', capacities);
+    await domain.service.stock.updateEventAttendeeCapacity({
+        locationBranchCode: '118',
+        offeredThrough: { identifier: domain.factory.service.webAPI.Identifier.COA },
+        importFrom: moment().toDate(),
+        importThrough: moment().add(1, 'week').toDate()
+    })({
+        attendeeCapacity: capacityRepo
+    });
 }
 
 main().then(() => {
