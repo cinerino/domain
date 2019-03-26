@@ -48,7 +48,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         const limit = 100;
         let page = 0;
         let numData: number = limit;
-        const screeningEvents: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
+        const events: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
         while (numData === limit) {
             page += 1;
             const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
@@ -63,11 +63,11 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             });
             numData = searchScreeningEventsResult.data.length;
             debug('numData:', numData);
-            screeningEvents.push(...searchScreeningEventsResult.data);
+            events.push(...searchScreeningEventsResult.data);
         }
 
         // 各作品画像を検索
-        const movies = screeningEvents
+        const movies = events
             .map((e) => e.superEvent.workPerformed)
             .filter((movie, pos, arr) => arr.map((mapObj) => mapObj.identifier)
                 .indexOf(movie.identifier) === pos);
@@ -79,7 +79,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         }));
 
         // 上映イベントごとに永続化トライ
-        await Promise.all(screeningEvents.map(async (e) => {
+        await Promise.all(events.map(async (e) => {
             try {
                 // サムネイル画像があれば情報追加
                 const thumbnailOfMovie = thumbnailsByMovie.find(
@@ -130,7 +130,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 console.error(error);
             }
         }));
-        debug(`${screeningEvents.length} screeningEvents stored.`);
+        debug(`${events.length} events saved`);
     };
 }
 
@@ -279,5 +279,30 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
 
             return;
         }
+
+        // イベント検索
+        const limit = 100;
+        let page = 0;
+        let numData: number = limit;
+        const events: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
+        while (numData === limit) {
+            page += 1;
+            const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
+                limit: limit,
+                page: page,
+                typeOf: factory.chevre.eventType.ScreeningEvent,
+                inSessionFrom: params.importFrom,
+                inSessionThrough: params.importThrough,
+                superEvent: {
+                    locationBranchCodes: [params.locationBranchCode]
+                }
+            });
+            numData = searchScreeningEventsResult.data.length;
+            events.push(...searchScreeningEventsResult.data);
+        }
+
+        await repos.attendeeCapacity.updateByEventIds(events.map((e) => {
+            return { id: e.id, remainingAttendeeCapacity: e.remainingAttendeeCapacity };
+        }));
     };
 }
