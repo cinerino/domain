@@ -523,26 +523,32 @@ function processPlaceOrder(params: {
 
                 debug('starting pecorino pay transaction...', 1);
                 pointTransaction = await repos.depositService.start({
-                    // 最大1ヵ月のオーソリ
-                    expires: moment()
-                        .add(1, 'month')
-                        .toDate(),
+                    typeOf: factory.pecorino.transactionType.Deposit,
                     agent: {
                         typeOf: transaction.seller.typeOf,
                         id: transaction.seller.id,
                         name: transaction.seller.name.ja,
                         url: transaction.seller.url
                     },
+                    // 最大1ヵ月のオーソリ
+                    expires: moment()
+                        .add(1, 'month')
+                        .toDate(),
                     recipient: {
                         typeOf: transaction.agent.typeOf,
                         id: transaction.agent.id,
-                        name: `Cinerino Place Order Transaction ${transaction.id}`,
+                        name: `Place Order Transaction ${transaction.id}`,
                         url: transaction.agent.url
                     },
-                    amount: 1,
-                    notes: 'シネマサンシャイン 新規登録インセンティブ',
-                    accountType: factory.accountType.Point,
-                    toAccountNumber: accountOwnershipInfos[0].typeOfGood.accountNumber
+                    object: {
+                        amount: 1,
+                        description: '会員新規登録インセンティブ',
+                        toLocation: {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: factory.accountType.Point,
+                            accountNumber: accountOwnershipInfos[0].typeOfGood.accountNumber
+                        }
+                    }
                 });
                 debug('pointTransaction started.', pointTransaction.id);
             } catch (error) {

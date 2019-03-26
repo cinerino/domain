@@ -193,7 +193,8 @@ export function searchMoneyTransferActions<T extends factory.accountType>(
                 typeOfGood: {
                     typeOf: factory.ownershipInfo.AccountGoodType.Account,
                     accountType: params.conditions.accountType,
-                    accountNumbers: [params.conditions.accountNumber]
+                    accountNumber: params.conditions.accountNumber
+                    // accountNumbers: [params.conditions.accountNumber]
                 },
                 ownedBy: params.ownedBy,
                 ownedFrom: params.ownedFrom,
@@ -284,27 +285,34 @@ export function deposit(params: {
     }) => {
         try {
             const transaction = await repos.depositService.start({
-                accountType: factory.accountType.Point,
-                toAccountNumber: params.toAccountNumber,
-                expires: moment()
-                    .add(1, 'minutes')
-                    .toDate(),
+                typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
                     typeOf: factory.personType.Person,
                     id: params.agent.id,
                     name: params.agent.name,
                     url: params.agent.url
                 },
+                expires: moment()
+                    .add(1, 'minutes')
+                    .toDate(),
+                object: {
+                    amount: params.amount,
+                    toLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountType: factory.accountType.Point,
+                        accountNumber: params.toAccountNumber
+                    },
+                    description: params.notes
+                },
                 recipient: {
                     typeOf: factory.personType.Person,
                     id: params.recipient.id,
                     name: params.recipient.name,
                     url: params.recipient.url
-                },
-                amount: params.amount,
-                notes: params.notes
+                }
             });
-            await repos.depositService.confirm({ transactionId: transaction.id });
+
+            await repos.depositService.confirm(transaction);
         } catch (error) {
             error = handlePecorinoError(error);
             throw error;

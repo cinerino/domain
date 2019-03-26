@@ -277,7 +277,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 endpoint: params.object.pointAPIEndpoint,
                 auth: repos.pecorinoAuthClient
             });
-            await depositService.confirm({ transactionId: params.object.pointTransaction.id });
+            await depositService.confirm({ id: params.object.pointTransaction.id });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -319,28 +319,31 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 auth: repos.pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
-                expires: moment()
-                    // tslint:disable-next-line:no-magic-numbers
-                    .add(5, 'minutes')
-                    .toDate(),
+                typeOf: factory.pecorino.transactionType.Withdraw,
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,
                     name: String(order.customer.name),
                     url: params.agent.url
                 },
+                expires: moment()
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(5, 'minutes')
+                    .toDate(),
                 recipient: {
                     typeOf: params.recipient.typeOf,
                     id: params.recipient.id,
                     name: order.seller.name,
                     url: params.recipient.url
                 },
-                amount: authorizePointAwardAction.pointTransaction.object.amount,
-                notes: '注文返品によるポイントインセンティブ取消',
-                accountType: authorizePointAwardAction.pointTransaction.object.toLocation.accountType,
-                fromAccountNumber: authorizePointAwardAction.pointTransaction.object.toLocation.accountNumber
+                object: {
+                    amount: authorizePointAwardAction.pointTransaction.object.amount,
+                    fromLocation: authorizePointAwardAction.pointTransaction.object.toLocation,
+                    description: '注文返品によるポイントインセンティブ取消'
+                }
             });
-            await withdrawService.confirm({ transactionId: withdrawTransaction.id });
+
+            await withdrawService.confirm(withdrawTransaction);
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -393,9 +396,11 @@ export function cancelPointAward(params: {
                     endpoint: action.result.pointAPIEndpoint,
                     auth: repos.pecorinoAuthClient
                 });
+
                 await depositService.cancel({
-                    transactionId: action.result.pointTransaction.id
+                    id: action.result.pointTransaction.id
                 });
+
                 await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             }
         }));

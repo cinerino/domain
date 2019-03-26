@@ -98,23 +98,29 @@ export function authorize<T extends factory.accountType>(params: {
 
                 debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.withdrawTransactionService.start({
-                    expires: accountTransactionExpires,
+                    typeOf: factory.pecorino.transactionType.Withdraw,
                     agent: {
                         typeOf: transaction.agent.typeOf,
                         id: transaction.agent.id,
                         name: agentName,
                         url: transaction.agent.url
                     },
+                    expires: accountTransactionExpires,
                     recipient: {
                         typeOf: recipient.typeOf,
                         id: recipient.id,
                         name: recipientName,
                         url: recipient.url
                     },
-                    amount: params.object.amount,
-                    notes: notes,
-                    accountType: params.object.fromAccount.accountType,
-                    fromAccountNumber: params.object.fromAccount.accountNumber
+                    object: {
+                        amount: params.object.amount,
+                        description: notes,
+                        fromLocation: {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: params.object.fromAccount.accountType,
+                            accountNumber: params.object.fromAccount.accountNumber
+                        }
+                    }
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
             } else {
@@ -124,24 +130,34 @@ export function authorize<T extends factory.accountType>(params: {
 
                 debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await repos.transferTransactionService.start({
-                    expires: accountTransactionExpires,
+                    typeOf: factory.pecorino.transactionType.Transfer,
                     agent: {
                         typeOf: transaction.agent.typeOf,
                         id: transaction.agent.id,
                         name: agentName,
                         url: transaction.agent.url
                     },
+                    expires: accountTransactionExpires,
                     recipient: {
                         typeOf: recipient.typeOf,
                         id: recipient.id,
                         name: recipientName,
                         url: recipient.url
                     },
-                    amount: params.object.amount,
-                    notes: notes,
-                    accountType: params.object.fromAccount.accountType,
-                    fromAccountNumber: params.object.fromAccount.accountNumber,
-                    toAccountNumber: params.object.toAccount.accountNumber
+                    object: {
+                        amount: params.object.amount,
+                        description: notes,
+                        fromLocation: {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: params.object.fromAccount.accountType,
+                            accountNumber: params.object.fromAccount.accountNumber
+                        },
+                        toLocation: {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: params.object.toAccount.accountType,
+                            accountNumber: params.object.toAccount.accountNumber
+                        }
+                    }
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
             }
@@ -218,17 +234,13 @@ export function voidTransaction(params: {
                 throw new Error('withdrawTransactionService required');
             }
 
-            await repos.withdrawTransactionService.cancel({
-                transactionId: pendingTransaction.id
-            });
+            await repos.withdrawTransactionService.cancel(pendingTransaction);
         } else if (pendingTransaction.typeOf === factory.pecorino.transactionType.Transfer) {
             if (repos.transferTransactionService === undefined) {
                 throw new Error('transferTransactionService required');
             }
 
-            await repos.transferTransactionService.cancel({
-                transactionId: pendingTransaction.id
-            });
+            await repos.transferTransactionService.cancel(pendingTransaction);
         }
     };
 }
@@ -251,16 +263,14 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
             switch (pendingTransaction.typeOf) {
                 case pecorinoapi.factory.transactionType.Withdraw:
                     // 支払取引の場合確定
-                    await repos.withdrawService.confirm({
-                        transactionId: pendingTransaction.id
-                    });
+                    await repos.withdrawService.confirm(pendingTransaction);
+
                     break;
 
                 case pecorinoapi.factory.transactionType.Transfer:
                     // 転送取引の場合確定
-                    await repos.transferService.confirm({
-                        transactionId: pendingTransaction.id
-                    });
+                    await repos.transferService.confirm(pendingTransaction);
+
                     break;
 
                 // tslint:disable-next-line:no-single-line-block-comment
@@ -309,16 +319,14 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
                 switch (pendingTransaction.typeOf) {
                     case pecorinoapi.factory.transactionType.Withdraw:
                         // 支払取引の場合、確定
-                        await repos.withdrawService.confirm({
-                            transactionId: pendingTransaction.id
-                        });
+                        await repos.withdrawService.confirm(pendingTransaction);
+
                         break;
 
                     case pecorinoapi.factory.transactionType.Transfer:
                         // 転送取引の場合確定
-                        await repos.transferService.confirm({
-                            transactionId: pendingTransaction.id
-                        });
+                        await repos.transferService.confirm(pendingTransaction);
+
                         break;
 
                     // tslint:disable-next-line:no-single-line-block-comment
@@ -384,15 +392,13 @@ export function cancelAccountAuth(params: { transactionId: string }) {
                 // アクションステータスに関係なく取消処理実行
                 switch (action.result.pendingTransaction.typeOf) {
                     case pecorinoapi.factory.transactionType.Withdraw:
-                        await repos.withdrawService.cancel({
-                            transactionId: action.result.pendingTransaction.id
-                        });
+                        await repos.withdrawService.cancel(action.result.pendingTransaction);
+
                         break;
 
                     case pecorinoapi.factory.transactionType.Transfer:
-                        await repos.transferService.cancel({
-                            transactionId: action.result.pendingTransaction.id
-                        });
+                        await repos.transferService.cancel(action.result.pendingTransaction);
+
                         break;
 
                     // tslint:disable-next-line:no-single-line-block-comment
@@ -432,36 +438,42 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 switch (pendingTransaction.typeOf) {
                     case factory.pecorino.transactionType.Withdraw:
                         const depositTransaction = await repos.depositService.start({
-                            accountType: pendingTransaction.object.fromLocation.accountType,
-                            toAccountNumber: pendingTransaction.object.fromLocation.accountNumber,
+                            typeOf: factory.pecorino.transactionType.Deposit,
+                            agent: pendingTransaction.recipient,
                             expires: moment()
                                 // tslint:disable-next-line:no-magic-numbers
                                 .add(5, 'minutes')
                                 .toDate(),
-                            agent: pendingTransaction.recipient,
                             recipient: pendingTransaction.agent,
-                            amount: pendingTransaction.object.amount,
-                            notes: notes
+                            object: {
+                                amount: pendingTransaction.object.amount,
+                                description: notes,
+                                toLocation: pendingTransaction.object.fromLocation
+                            }
                         });
-                        await repos.depositService.confirm({ transactionId: depositTransaction.id });
+
+                        await repos.depositService.confirm(depositTransaction);
 
                         break;
 
                     case factory.pecorino.transactionType.Transfer:
                         const transferTransaction = await repos.transferService.start({
-                            accountType: pendingTransaction.object.fromLocation.accountType,
-                            toAccountNumber: pendingTransaction.object.fromLocation.accountNumber,
-                            fromAccountNumber: pendingTransaction.object.toLocation.accountNumber,
+                            typeOf: factory.pecorino.transactionType.Transfer,
+                            agent: pendingTransaction.recipient,
                             expires: moment()
                                 // tslint:disable-next-line:no-magic-numbers
                                 .add(5, 'minutes')
                                 .toDate(),
-                            agent: pendingTransaction.recipient,
                             recipient: pendingTransaction.agent,
-                            amount: pendingTransaction.object.amount,
-                            notes: notes
+                            object: {
+                                amount: pendingTransaction.object.amount,
+                                description: notes,
+                                fromLocation: pendingTransaction.object.toLocation,
+                                toLocation: pendingTransaction.object.fromLocation
+                            }
                         });
-                        await repos.transferService.confirm({ transactionId: transferTransaction.id });
+
+                        await repos.transferService.confirm(transferTransaction);
 
                         break;
 

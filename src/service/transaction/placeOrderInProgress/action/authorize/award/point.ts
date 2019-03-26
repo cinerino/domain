@@ -22,8 +22,7 @@ export type ICreateOperation<T> = (repos: {
 }) => Promise<T>;
 
 /**
- * ポイントインセンティブ承認を作成する
- * Pecorino入金取引を開始する
+ * ポイントインセンティブ承認
  */
 export function create(params: {
     transaction: { id: string };
@@ -111,27 +110,35 @@ export function create(params: {
 
             debug('starting pecorino pay transaction...', params.object.amount);
             pecorinoTransaction = await repos.depositTransactionService.start({
-                // 最大1ヵ月のオーソリ
-                expires: moment()
-                    .add(1, 'month')
-                    .toDate(),
+                typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
                     typeOf: transaction.seller.typeOf,
                     id: transaction.seller.id,
                     name: transaction.seller.name.ja,
                     url: transaction.seller.url
                 },
+                // 最大1ヵ月のオーソリ
+                expires: moment()
+                    .add(1, 'month')
+                    .toDate(),
                 recipient: {
                     typeOf: transaction.agent.typeOf,
                     id: transaction.agent.id,
                     name: `placeOrderTransaction-${transaction.id}`,
                     url: transaction.agent.url
                 },
-                amount: params.object.amount,
-                // tslint:disable-next-line:no-single-line-block-comment
-                notes: (params.object.notes !== undefined) ? /* istanbul ignore next */ params.object.notes : 'Cinerino 注文取引インセンティブ',
-                accountType: factory.accountType.Point,
-                toAccountNumber: params.object.toAccountNumber
+                object: {
+                    amount: params.object.amount,
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    description: (params.object.notes !== undefined)
+                        ? /* istanbul ignore next */ params.object.notes
+                        : '注文取引インセンティブ',
+                    toLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountType: factory.accountType.Point,
+                        accountNumber: params.object.toAccountNumber
+                    }
+                }
             });
             debug('pecorinoTransaction started.', pecorinoTransaction.id);
         } catch (error) {
@@ -199,9 +206,7 @@ export function cancel(params: {
         const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.award.point.IResult>action.result;
 
-        // Pecorinoで取消中止実行
-        await repos.depositTransactionService.cancel({
-            transactionId: actionResult.pointTransaction.id
-        });
+        // Pecorinoで取引中止実行
+        await repos.depositTransactionService.cancel(actionResult.pointTransaction);
     };
 }
