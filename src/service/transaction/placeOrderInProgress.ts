@@ -851,8 +851,7 @@ export function createOrderFromTransaction(params: {
         });
 
     const url = util.format(
-        '%s/inquiry/login?confirmationNumber=%s',
-        process.env.ORDER_INQUIRY_ENDPOINT,
+        '/inquiry/login?confirmationNumber=%s',
         params.confirmationNumber
     );
 

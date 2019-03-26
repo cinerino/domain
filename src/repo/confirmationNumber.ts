@@ -6,15 +6,19 @@ import * as util from 'util';
 import * as factory from '../factory';
 
 const debug = createDebug('cinerino-domain:repository');
+
 /**
  * 注文確認番号リポジトリ
  */
 export class RedisRepository {
     public static REDIS_KEY_PREFIX: string = 'cinerino:confirmationNumber';
+
     public readonly redisClient: redis.RedisClient;
+
     constructor(redisClient: redis.RedisClient) {
         this.redisClient = redisClient;
     }
+
     /**
      * 発行する
      */
@@ -27,6 +31,7 @@ export class RedisRepository {
                 .add(1, 'month')
                 .diff(moment(params.orderDate), 'seconds');
             debug(`TTL:${TTL} seconds`);
+
             const key = util.format(
                 '%s:%s',
                 RedisRepository.REDIS_KEY_PREFIX,
@@ -34,6 +39,7 @@ export class RedisRepository {
                     .tz('Asia/Tokyo')
                     .format('YYMM')
             );
+
             this.redisClient.multi()
                 .incr(key, debug)
                 .expire(key, TTL)
@@ -52,7 +58,7 @@ export class RedisRepository {
                             resolve(no);
                         } else {
                             // 基本的にありえないフロー
-                            reject(new factory.errors.ServiceUnavailable('Order number not published'));
+                            reject(new factory.errors.ServiceUnavailable('Confirmation number not published'));
                         }
                     }
                 });
