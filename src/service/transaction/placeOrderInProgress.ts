@@ -623,7 +623,7 @@ export function createOrderFromTransaction(params: {
                 };
             }
 
-            let screeningEvent: factory.chevre.event.screeningEvent.IEvent = authorizeSeatReservationAction.object.event;
+            let event: factory.chevre.event.screeningEvent.IEvent = authorizeSeatReservationAction.object.event;
 
             switch (authorizeSeatReservationAction.instrument.identifier) {
                 case factory.service.webAPI.Identifier.COA:
@@ -656,12 +656,12 @@ export function createOrderFromTransaction(params: {
                         }
 
                         let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;
-                        if (screeningEvent.coaInfo !== undefined) {
-                            coaInfo = screeningEvent.coaInfo;
+                        if (event.coaInfo !== undefined) {
+                            coaInfo = event.coaInfo;
                         } else {
-                            if (Array.isArray(screeningEvent.additionalProperty)) {
+                            if (Array.isArray(event.additionalProperty)) {
                                 // const coaEndpointProperty = event.additionalProperty.find((p) => p.name === 'COA_ENDPOINT');
-                                const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
+                                const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
                                 coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                             }
                         }
@@ -695,26 +695,38 @@ export function createOrderFromTransaction(params: {
                             additionalTicketText: '',
                             numSeats: 1,
                             reservationFor: {
-                                ...screeningEvent,
+                                ...event,
+                                additionalProperty: undefined,
                                 offers: undefined,
                                 remainingAttendeeCapacity: undefined,
                                 maximumAttendeeCapacity: undefined,
                                 attendeeCount: undefined,
                                 checkInCount: undefined,
                                 superEvent: {
-                                    ...screeningEvent.superEvent,
-                                    offers: undefined
-                                }
+                                    ...event.superEvent,
+                                    additionalProperty: undefined,
+                                    offers: undefined,
+                                    workPerformed: {
+                                        ...event.superEvent.workPerformed,
+                                        offers: undefined
+                                    }
+                                },
+                                workPerformed: (event.workPerformed !== undefined)
+                                    ? {
+                                        ...event.workPerformed,
+                                        offers: undefined
+                                    }
+                                    : undefined
                             },
                             reservationNumber: `${updTmpReserveSeatResult.tmpReserveNum}`,
                             reservedTicket: {
                                 typeOf: 'Ticket',
                                 coaTicketInfo: (<any>requestedOffer).ticketInfo,
                                 dateIssued: params.orderDate,
-                                issuedBy: {
-                                    typeOf: screeningEvent.location.typeOf,
-                                    name: screeningEvent.location.name.ja
-                                },
+                                // issuedBy: {
+                                //     typeOf: event.location.typeOf,
+                                //     name: event.location.name.ja
+                                // },
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
                                     seatingType: { typeOf: 'Default' },
@@ -742,8 +754,8 @@ export function createOrderFromTransaction(params: {
                             priceSpecification: requestedOffer.priceSpecification,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
-                                typeOf: params.seller.typeOf,
-                                name: screeningEvent.superEvent.location.name.ja
+                                typeOf: seller.typeOf,
+                                name: seller.name
                             }
                         };
                     }));
@@ -754,8 +766,8 @@ export function createOrderFromTransaction(params: {
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
-                    if (screeningEvent.name === undefined) {
-                        screeningEvent = responseBody.object.reservations[0].reservationFor;
+                    if (event.name === undefined) {
+                        event = responseBody.object.reservations[0].reservationFor;
                     }
 
                     // 座席仮予約からオファー情報を生成する
@@ -774,22 +786,35 @@ export function createOrderFromTransaction(params: {
                             underName: undefined,
                             reservationFor: {
                                 ...itemOffered.reservationFor,
+                                additionalProperty: undefined,
                                 maximumAttendeeCapacity: undefined,
                                 remainingAttendeeCapacity: undefined,
                                 checkInCount: undefined,
                                 attendeeCount: undefined,
                                 offers: undefined,
                                 superEvent: {
-                                    ...screeningEvent.superEvent,
+                                    ...event.superEvent,
+                                    additionalProperty: undefined,
                                     maximumAttendeeCapacity: undefined,
                                     remainingAttendeeCapacity: undefined,
                                     checkInCount: undefined,
                                     attendeeCount: undefined,
-                                    offers: undefined
-                                }
+                                    offers: undefined,
+                                    workPerformed: {
+                                        ...event.superEvent.workPerformed,
+                                        offers: undefined
+                                    }
+                                },
+                                workPerformed: (event.workPerformed !== undefined)
+                                    ? {
+                                        ...event.workPerformed,
+                                        offers: undefined
+                                    }
+                                    : undefined
                             },
                             reservedTicket: {
                                 ...itemOffered.reservedTicket,
+                                issuedBy: undefined,
                                 priceCurrency: undefined,
                                 totalPrice: undefined,
                                 underName: undefined,
@@ -819,8 +844,8 @@ export function createOrderFromTransaction(params: {
                             },
                             priceCurrency: (tmpReserve.priceCurrency !== undefined) ? tmpReserve.priceCurrency : factory.priceCurrency.JPY,
                             seller: {
-                                typeOf: params.seller.typeOf,
-                                name: screeningEvent.superEvent.location.name.ja
+                                typeOf: seller.typeOf,
+                                name: seller.name
                             }
                         };
                     }));
