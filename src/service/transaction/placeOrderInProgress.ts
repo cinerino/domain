@@ -47,6 +47,8 @@ export type IAuthorizeActionResultBySeller =
     IAuthorizeSeatReservationOfferResult |
     factory.action.authorize.award.point.IResult;
 
+export type IReservationPriceSpecification = factory.chevre.reservation.event.IPriceSpecification;
+
 /**
  * 取引開始
  */
@@ -690,17 +692,27 @@ export function createOrderFromTransaction(params: {
                         const eventReservation: factory.order.IReservation = {
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
-                            checkedIn: false,
-                            attended: false,
+                            // checkedIn: false,
+                            // attended: false,
                             additionalTicketText: '',
                             modifiedTime: params.orderDate,
                             numSeats: 1,
                             price: <number>requestedOffer.price,
                             // price: requestedOffer.priceSpecification,
                             priceCurrency: factory.priceCurrency.JPY,
-                            reservationFor: screeningEvent,
+                            reservationFor: {
+                                ...screeningEvent,
+                                offers: undefined,
+                                remainingAttendeeCapacity: undefined,
+                                maximumAttendeeCapacity: undefined,
+                                attendeeCount: undefined,
+                                checkInCount: undefined,
+                                superEvent: {
+                                    ...screeningEvent.superEvent,
+                                    offers: undefined
+                                }
+                            },
                             reservationNumber: `${updTmpReserveSeatResult.tmpReserveNum}`,
-                            reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed,
                             reservedTicket: {
                                 typeOf: 'Ticket',
                                 coaTicketInfo: (<any>requestedOffer).ticketInfo,
@@ -771,9 +783,46 @@ export function createOrderFromTransaction(params: {
 
                         return {
                             typeOf: <factory.offer.OfferType>'Offer',
-                            itemOffered: itemOffered,
+                            itemOffered: {
+                                ...itemOffered,
+                                checkedIn: undefined,
+                                attended: undefined,
+                                reservationFor: {
+                                    ...itemOffered.reservationFor,
+                                    maximumAttendeeCapacity: undefined,
+                                    remainingAttendeeCapacity: undefined,
+                                    checkInCount: undefined,
+                                    attendeeCount: undefined,
+                                    offers: undefined,
+                                    superEvent: {
+                                        ...screeningEvent.superEvent,
+                                        maximumAttendeeCapacity: undefined,
+                                        remainingAttendeeCapacity: undefined,
+                                        checkInCount: undefined,
+                                        attendeeCount: undefined,
+                                        offers: undefined
+                                    }
+                                },
+                                price: {
+                                    ...<IReservationPriceSpecification>itemOffered.price,
+                                    priceComponent: (<IReservationPriceSpecification>itemOffered.price).priceComponent.map((c) => {
+                                        return {
+                                            ...c,
+                                            accounting: undefined // accountingはorderに不要な情報
+                                        };
+                                    })
+                                }
+                            },
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-                            priceSpecification: <any>tmpReserve.price,
+                            priceSpecification: {
+                                ...<IReservationPriceSpecification>tmpReserve.price,
+                                priceComponent: (<IReservationPriceSpecification>tmpReserve.price).priceComponent.map((c) => {
+                                    return {
+                                        ...c,
+                                        accounting: undefined // accountingはorderに不要な情報
+                                    };
+                                })
+                            },
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
                                 typeOf: params.seller.typeOf,

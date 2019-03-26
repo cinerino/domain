@@ -81,13 +81,15 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         // 上映イベントごとに永続化トライ
         await Promise.all(events.map(async (e) => {
             try {
-                // サムネイル画像があれば情報追加
-                const thumbnailOfMovie = thumbnailsByMovie.find(
-                    (t) => t.identifier === e.superEvent.workPerformed.identifier
-                );
-                if (thumbnailOfMovie !== undefined && thumbnailOfMovie.thumbnail !== undefined) {
-                    e.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
-                    e.superEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
+                if (e.workPerformed !== undefined) {
+                    // サムネイル画像があれば情報追加
+                    const thumbnailOfMovie = thumbnailsByMovie.find(
+                        (t) => t.identifier === e.superEvent.workPerformed.identifier
+                    );
+                    if (thumbnailOfMovie !== undefined && thumbnailOfMovie.thumbnail !== undefined) {
+                        e.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
+                        e.superEvent.workPerformed.thumbnailUrl = thumbnailOfMovie.thumbnail;
+                    }
                 }
 
                 const superEvent: chevre.factory.event.screeningEventSeries.IEvent = {

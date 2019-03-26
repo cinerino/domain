@@ -71,7 +71,7 @@ export async function createSendOrderMessage(params: {
                         {
                             order: params.order,
                             eventStartDate: eventStartDate,
-                            workPerformedName: event.workPerformed.name,
+                            workPerformedName: (event.workPerformed !== undefined) ? event.workPerformed.name : event.name.ja,
                             screenName: screenName,
                             reservedSeats: params.order.acceptedOffers.map((o) => {
                                 const reservation = <factory.order.IReservation>o.itemOffered;
