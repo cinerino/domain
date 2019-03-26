@@ -82,9 +82,9 @@ export async function createSendOrderMessage(params: {
                                 }
                                 let priceStr = '';
 
-                                let reservationPriceSpec: ICompoundPriceSpecification;
+                                let reservationPriceSpec: ICompoundPriceSpecification | undefined;
 
-                                if (typeof reservation.price === 'number') {
+                                if (typeof o.priceSpecification === 'number') {
                                     // priceが数字の場合単価仕様を含む複合価格仕様に変換
                                     reservationPriceSpec = {
                                         typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
@@ -93,15 +93,15 @@ export async function createSendOrderMessage(params: {
                                         priceComponent: [
                                             {
                                                 typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-                                                price: reservation.price,
-                                                priceCurrency: factory.chevre.priceCurrency.JPY,
+                                                price: o.priceSpecification,
+                                                priceCurrency: o.priceCurrency,
                                                 valueAddedTaxIncluded: true
                                             }
                                         ]
 
                                     };
                                 } else {
-                                    reservationPriceSpec = reservation.price;
+                                    reservationPriceSpec = <ICompoundPriceSpecification>o.priceSpecification;
                                 }
 
                                 const unitPriceSpec = <IUnitPriceSpecification>
@@ -119,7 +119,7 @@ export async function createSendOrderMessage(params: {
                                         : '',
                                     reservation.reservedTicket.ticketType.name.ja,
                                     priceStr,
-                                    reservation.priceCurrency,
+                                    o.priceCurrency,
                                     option
                                 );
                             })

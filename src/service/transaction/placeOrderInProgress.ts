@@ -549,7 +549,7 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
 }
 
 /**
- * 取引オブジェクトから注文オブジェクトを生成する
+ * 注文オブジェクトを生成する
  */
 // tslint:disable-next-line:max-func-body-length
 export function createOrderFromTransaction(params: {
@@ -692,14 +692,9 @@ export function createOrderFromTransaction(params: {
                         const eventReservation: factory.order.IReservation = {
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
-                            // checkedIn: false,
-                            // attended: false,
                             additionalTicketText: '',
                             modifiedTime: params.orderDate,
                             numSeats: 1,
-                            price: <number>requestedOffer.price,
-                            // price: requestedOffer.priceSpecification,
-                            priceCurrency: factory.priceCurrency.JPY,
                             reservationFor: {
                                 ...screeningEvent,
                                 offers: undefined,
@@ -721,8 +716,6 @@ export function createOrderFromTransaction(params: {
                                     typeOf: screeningEvent.location.typeOf,
                                     name: screeningEvent.location.name.ja
                                 },
-                                totalPrice: <number>requestedOffer.price,
-                                priceCurrency: factory.priceCurrency.JPY,
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
                                     seatingType: { typeOf: 'Default' },
@@ -780,6 +773,7 @@ export function createOrderFromTransaction(params: {
                     // 座席仮予約からオファー情報を生成する
                     acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
                         const itemOffered: factory.order.IReservation = tmpReserve;
+                        const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
 
                         return {
                             typeOf: <factory.offer.OfferType>'Offer',
@@ -787,6 +781,9 @@ export function createOrderFromTransaction(params: {
                                 ...itemOffered,
                                 checkedIn: undefined,
                                 attended: undefined,
+                                reservationStatus: undefined,
+                                price: undefined,
+                                priceCurrency: undefined,
                                 reservationFor: {
                                     ...itemOffered.reservationFor,
                                     maximumAttendeeCapacity: undefined,
@@ -803,27 +800,23 @@ export function createOrderFromTransaction(params: {
                                         offers: undefined
                                     }
                                 },
-                                price: {
-                                    ...<IReservationPriceSpecification>itemOffered.price,
-                                    priceComponent: (<IReservationPriceSpecification>itemOffered.price).priceComponent.map((c) => {
-                                        return {
-                                            ...c,
-                                            accounting: undefined // accountingはorderに不要な情報
-                                        };
-                                    })
+                                reservedTicket: {
+                                    ...itemOffered.reservedTicket,
+                                    totalPrice: undefined,
+                                    priceCurrency: undefined
                                 }
                             },
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                             priceSpecification: {
-                                ...<IReservationPriceSpecification>tmpReserve.price,
-                                priceComponent: (<IReservationPriceSpecification>tmpReserve.price).priceComponent.map((c) => {
+                                ...priceSpecification,
+                                priceComponent: priceSpecification.priceComponent.map((c) => {
                                     return {
                                         ...c,
                                         accounting: undefined // accountingはorderに不要な情報
                                     };
                                 })
                             },
-                            priceCurrency: factory.priceCurrency.JPY,
+                            priceCurrency: (tmpReserve.priceCurrency !== undefined) ? tmpReserve.priceCurrency : factory.priceCurrency.JPY,
                             seller: {
                                 typeOf: params.seller.typeOf,
                                 name: screeningEvent.superEvent.location.name.ja
