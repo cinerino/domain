@@ -689,11 +689,10 @@ export function createOrderFromTransaction(params: {
                         //     throw new factory.errors.Argument('Accepted Offer', 'Unit price specification not found');
                         // }
 
-                        const eventReservation: factory.order.IReservation = {
+                        const reservation: factory.order.IReservation = {
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
                             additionalTicketText: '',
-                            modifiedTime: params.orderDate,
                             numSeats: 1,
                             reservationFor: {
                                 ...screeningEvent,
@@ -725,33 +724,22 @@ export function createOrderFromTransaction(params: {
                                 },
                                 ticketNumber: ticketToken,
                                 ticketToken: ticketToken,
-                                underName: {
-                                    typeOf: factory.personType.Person,
-                                    name: String(customer.name)
-                                },
                                 ticketType: {
-                                    typeOf: 'Offer',
+                                    typeOf: <'Offer'>'Offer',
                                     id: <string>requestedOffer.id,
                                     name: <factory.multilingualString>requestedOffer.name,
                                     description: <factory.multilingualString>requestedOffer.description,
-                                    availability: factory.chevre.itemAvailability.InStock,
-                                    priceSpecification: <any>undefined,
-                                    priceCurrency: requestedOffer.priceCurrency,
-                                    additionalProperty: requestedOffer.additionalProperty
+                                    additionalProperty: requestedOffer.additionalProperty,
+                                    priceCurrency: factory.priceCurrency.JPY
                                 }
-                            },
-                            underName: {
-                                typeOf: factory.personType.Person,
-                                name: String(customer.name)
                             }
                         };
 
                         return {
                             typeOf: <factory.offer.OfferType>'Offer',
-                            itemOffered: eventReservation,
+                            itemOffered: reservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
-                            price: <number>eventReservation.price,
-                            priceSpecification: <any>eventReservation.price,
+                            priceSpecification: requestedOffer.priceSpecification,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
                                 typeOf: params.seller.typeOf,
@@ -775,37 +763,50 @@ export function createOrderFromTransaction(params: {
                         const itemOffered: factory.order.IReservation = tmpReserve;
                         const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
 
-                        return {
-                            typeOf: <factory.offer.OfferType>'Offer',
-                            itemOffered: {
-                                ...itemOffered,
-                                checkedIn: undefined,
-                                attended: undefined,
-                                reservationStatus: undefined,
-                                price: undefined,
-                                priceCurrency: undefined,
-                                reservationFor: {
-                                    ...itemOffered.reservationFor,
+                        const reservation: factory.order.IReservation = {
+                            ...itemOffered,
+                            checkedIn: undefined,
+                            attended: undefined,
+                            modifiedTime: undefined,
+                            reservationStatus: undefined,
+                            price: undefined,
+                            priceCurrency: undefined,
+                            underName: undefined,
+                            reservationFor: {
+                                ...itemOffered.reservationFor,
+                                maximumAttendeeCapacity: undefined,
+                                remainingAttendeeCapacity: undefined,
+                                checkInCount: undefined,
+                                attendeeCount: undefined,
+                                offers: undefined,
+                                superEvent: {
+                                    ...screeningEvent.superEvent,
                                     maximumAttendeeCapacity: undefined,
                                     remainingAttendeeCapacity: undefined,
                                     checkInCount: undefined,
                                     attendeeCount: undefined,
-                                    offers: undefined,
-                                    superEvent: {
-                                        ...screeningEvent.superEvent,
-                                        maximumAttendeeCapacity: undefined,
-                                        remainingAttendeeCapacity: undefined,
-                                        checkInCount: undefined,
-                                        attendeeCount: undefined,
-                                        offers: undefined
-                                    }
-                                },
-                                reservedTicket: {
-                                    ...itemOffered.reservedTicket,
-                                    totalPrice: undefined,
-                                    priceCurrency: undefined
+                                    offers: undefined
                                 }
                             },
+                            reservedTicket: {
+                                ...itemOffered.reservedTicket,
+                                priceCurrency: undefined,
+                                totalPrice: undefined,
+                                underName: undefined,
+                                ticketType: {
+                                    typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                                    id: itemOffered.reservedTicket.ticketType.id,
+                                    name: itemOffered.reservedTicket.ticketType.name,
+                                    description: itemOffered.reservedTicket.ticketType.description,
+                                    additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                                    priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
+                                }
+                            }
+                        };
+
+                        return {
+                            typeOf: <factory.offer.OfferType>'Offer',
+                            itemOffered: reservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                             priceSpecification: {
                                 ...priceSpecification,
@@ -1061,6 +1062,7 @@ export async function createPotentialActionsFromTransaction(params: {
                                         },
                                         underName: {
                                             typeOf: params.order.customer.typeOf,
+                                            id: params.order.customer.id,
                                             name: String(params.order.customer.name),
                                             familyName: params.order.customer.familyName,
                                             givenName: params.order.customer.givenName,
