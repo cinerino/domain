@@ -1111,7 +1111,16 @@ export async function createPotentialActionsFromTransaction(params: {
                             }
                         },
                         agent: params.transaction.agent,
-                        purpose: params.order,
+                        purpose: {
+                            typeOf: params.order.typeOf,
+                            seller: params.order.seller,
+                            customer: params.order.customer,
+                            confirmationNumber: params.order.confirmationNumber,
+                            orderNumber: params.order.orderNumber,
+                            price: params.order.price,
+                            priceCurrency: params.order.priceCurrency,
+                            orderDate: params.order.orderDate
+                        },
                         instrument: a.instrument
                     });
             }

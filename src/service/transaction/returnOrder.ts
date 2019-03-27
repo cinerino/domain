@@ -248,7 +248,16 @@ export function confirm(params: {
                         },
                         recipient: order.customer,
                         potentialActions: {},
-                        purpose: order
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        }
                     };
 
                     return {
@@ -297,7 +306,16 @@ export function confirm(params: {
                         },
                         recipient: order.customer,
                         potentialActions: {},
-                        purpose: order
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        }
                     };
 
                     return {
@@ -346,7 +364,16 @@ export function confirm(params: {
                         },
                         recipient: order.customer,
                         potentialActions: {},
-                        purpose: order
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        }
                     };
 
                     return {
