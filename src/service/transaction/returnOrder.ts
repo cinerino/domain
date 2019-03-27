@@ -261,7 +261,16 @@ export function confirm(params: {
                             url: seller.url
                         },
                         recipient: order.customer,
-                        purpose: order,
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
                         potentialActions: {
                             sendEmailMessage: sendEmailMessageActionAttributes
                         }
@@ -301,7 +310,16 @@ export function confirm(params: {
                             url: seller.url
                         },
                         recipient: order.customer,
-                        purpose: order,
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
                         potentialActions: {
                             sendEmailMessage: sendEmailMessageActionAttributes
                         }
@@ -341,7 +359,16 @@ export function confirm(params: {
                             url: seller.url
                         },
                         recipient: order.customer,
-                        purpose: order,
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
                         potentialActions: {
                             sendEmailMessage: sendEmailMessageActionAttributes
                         }
@@ -371,7 +398,16 @@ export function confirm(params: {
         );
         const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
             typeOf: <factory.actionType.ReturnAction>factory.actionType.ReturnAction,
-            object: order,
+            object: {
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            },
             agent: order.customer,
             recipient: seller,
             potentialActions: {

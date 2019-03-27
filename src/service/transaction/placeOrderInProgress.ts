@@ -212,7 +212,7 @@ export function updateCustomerProfile(params: {
     };
 }
 
-export type IOrderConfirmationNumberGenerator = (order: factory.order.IOrder) => number;
+export type IOrderConfirmationNumberGenerator = (order: factory.order.IOrder) => string;
 export type IOrderURLGenerator = (order: factory.order.IOrder) => string;
 export interface IConfirmResultOrderParams {
     /**
@@ -222,7 +222,7 @@ export interface IConfirmResultOrderParams {
     /**
      * 確認番号のカスタム指定
      */
-    confirmationNumber?: number | IOrderConfirmationNumberGenerator;
+    confirmationNumber?: string | IOrderConfirmationNumberGenerator;
     /**
      * 注文確認URLのカスタム指定
      */
@@ -329,7 +329,7 @@ export function confirm(params: IConfirmParams) {
         const order = createOrderFromTransaction({
             transaction: transaction,
             orderNumber: orderNumber,
-            confirmationNumber: confirmationNumber,
+            confirmationNumber: confirmationNumber.toString(),
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
             isGift: false,
@@ -555,7 +555,7 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
 export function createOrderFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
-    confirmationNumber: number;
+    confirmationNumber: string;
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
@@ -1059,7 +1059,16 @@ export async function createPotentialActionsFromTransaction(params: {
                         typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
                         object: updReserveArgs,
                         agent: params.transaction.agent,
-                        purpose: params.order,
+                        purpose: {
+                            typeOf: params.order.typeOf,
+                            seller: params.order.seller,
+                            customer: params.order.customer,
+                            confirmationNumber: params.order.confirmationNumber,
+                            orderNumber: params.order.orderNumber,
+                            price: params.order.price,
+                            priceCurrency: params.order.priceCurrency,
+                            orderDate: params.order.orderDate
+                        },
                         instrument: a.instrument
                     });
 
@@ -1137,7 +1146,16 @@ export async function createPotentialActionsFromTransaction(params: {
                     execTranArgs: result.execTranArgs
                 }],
                 agent: params.transaction.agent,
-                purpose: params.order
+                purpose: {
+                    typeOf: params.order.typeOf,
+                    seller: params.order.seller,
+                    customer: params.order.customer,
+                    confirmationNumber: params.order.confirmationNumber,
+                    orderNumber: params.order.orderNumber,
+                    price: params.order.price,
+                    priceCurrency: params.order.priceCurrency,
+                    orderDate: params.order.orderDate
+                }
             });
         }
     });
@@ -1168,7 +1186,16 @@ export async function createPotentialActionsFromTransaction(params: {
                         (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
                 }],
                 agent: params.transaction.agent,
-                purpose: params.order
+                purpose: {
+                    typeOf: params.order.typeOf,
+                    seller: params.order.seller,
+                    customer: params.order.customer,
+                    confirmationNumber: params.order.confirmationNumber,
+                    orderNumber: params.order.orderNumber,
+                    price: params.order.price,
+                    priceCurrency: params.order.priceCurrency,
+                    orderDate: params.order.orderDate
+                }
             };
         });
 
@@ -1208,7 +1235,16 @@ export async function createPotentialActionsFromTransaction(params: {
                     };
                 }),
             agent: params.transaction.agent,
-            purpose: params.order
+            purpose: {
+                typeOf: params.order.typeOf,
+                seller: params.order.seller,
+                customer: params.order.customer,
+                confirmationNumber: params.order.confirmationNumber,
+                orderNumber: params.order.orderNumber,
+                price: params.order.price,
+                priceCurrency: params.order.priceCurrency,
+                orderDate: params.order.orderDate
+            }
         });
     }
 
@@ -1230,7 +1266,16 @@ export async function createPotentialActionsFromTransaction(params: {
                 pointTransaction: actionResult.pointTransaction,
                 pointAPIEndpoint: actionResult.pointAPIEndpoint
             },
-            purpose: params.order
+            purpose: {
+                typeOf: params.order.typeOf,
+                seller: params.order.seller,
+                customer: params.order.customer,
+                confirmationNumber: params.order.confirmationNumber,
+                orderNumber: params.order.orderNumber,
+                price: params.order.price,
+                priceCurrency: params.order.priceCurrency,
+                orderDate: params.order.orderDate
+            }
         };
     });
 
@@ -1247,7 +1292,16 @@ export async function createPotentialActionsFromTransaction(params: {
             agent: params.transaction.seller,
             recipient: params.transaction.agent,
             potentialActions: {},
-            purpose: params.order
+            purpose: {
+                typeOf: params.order.typeOf,
+                seller: params.order.seller,
+                customer: params.order.customer,
+                confirmationNumber: params.order.confirmationNumber,
+                orderNumber: params.order.orderNumber,
+                price: params.order.price,
+                priceCurrency: params.order.priceCurrency,
+                orderDate: params.order.orderDate
+            }
         };
     }
 
