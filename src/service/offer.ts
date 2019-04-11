@@ -204,7 +204,7 @@ export function searchScreeningEventTicketOffers(params: {
                             break;
                         default:
                     }
-                    offers = offers.filter((o) => availabilityAccepted.indexOf(o.availability) >= 0);
+                    offers = offers.filter((o) => availabilityAccepted.indexOf(<factory.chevre.itemAvailability>o.availability) >= 0);
                 }
         }
 
@@ -467,7 +467,7 @@ function coaSalesTicket2offer(params: {
         },
         additionalProperty: [{
             name: 'coaInfo',
-            value: coaInfo
+            value: JSON.stringify(coaInfo)
         }]
     };
 

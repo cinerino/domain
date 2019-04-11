@@ -101,7 +101,7 @@ export class MvtkRepository {
                                         reservedTicket: {
                                             ticketedSeat: {
                                                 typeOf: factory.chevre.placeType.Seat,
-                                                seatingType: { typeOf: '' }, // 情報空でよし
+                                                seatingType: { typeOf: <any>'Default' }, // 情報空でよし
                                                 seatNumber: '', // 情報空でよし
                                                 seatRow: '', // 情報空でよし
                                                 seatSection: '' // 情報空でよし
@@ -128,7 +128,7 @@ export class MvtkRepository {
                                         reservedTicket: {
                                             ticketedSeat: {
                                                 typeOf: factory.chevre.placeType.Seat,
-                                                seatingType: { typeOf: '' }, // 情報空でよし
+                                                seatingType: { typeOf: <any>'Default' }, // 情報空でよし
                                                 seatNumber: '', // 情報空でよし
                                                 seatRow: '', // 情報空でよし
                                                 seatSection: '' // 情報空でよし

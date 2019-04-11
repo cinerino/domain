@@ -10,7 +10,7 @@ import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 
-type IReservation = factory.chevre.reservation.event.IReservation<factory.chevre.event.screeningEvent.IEvent>;
+type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
 
 type IOwnershipInfoWithDetail =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType>>;
@@ -106,7 +106,8 @@ export function searchScreeningEventReservations(
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
-                const searchReservationsResult = await repos.reservationService.searchScreeningEventReservations({
+                const searchReservationsResult = await repos.reservationService.search({
+                    typeOf: factory.chevre.reservationType.EventReservation,
                     ids: reservationIds
                 });
                 chevreReservations = searchReservationsResult.data;

@@ -264,7 +264,7 @@ export function checkMovieTicket(
                         reservedTicket: {
                             ticketedSeat: {
                                 typeOf: factory.chevre.placeType.ScreeningRoom,
-                                seatingType: { typeOf: '' },
+                                seatingType: { typeOf: <any>'Default' },
                                 seatNumber: '',
                                 seatRow: '',
                                 seatSection: ''

@@ -47,7 +47,8 @@ export type IAuthorizeActionResultBySeller =
     IAuthorizeSeatReservationOfferResult |
     factory.action.authorize.award.point.IResult;
 
-export type IReservationPriceSpecification = factory.chevre.reservation.event.IPriceSpecification;
+export type IReservationPriceSpecification =
+    factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
 
 /**
  * 取引開始
@@ -729,7 +730,7 @@ export function createOrderFromTransaction(params: {
                                 // },
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
-                                    seatingType: { typeOf: 'Default' },
+                                    seatingType: { typeOf: <any>'Default' },
                                     seatNumber: tmpReserve.seatNum,
                                     seatRow: '',
                                     seatSection: tmpReserve.seatSection
@@ -748,7 +749,7 @@ export function createOrderFromTransaction(params: {
                         };
 
                         return {
-                            typeOf: <factory.offer.OfferType>'Offer',
+                            typeOf: <factory.chevre.offerType>'Offer',
                             itemOffered: reservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
                             priceSpecification: requestedOffer.priceSpecification,
@@ -830,7 +831,7 @@ export function createOrderFromTransaction(params: {
                         };
 
                         return {
-                            typeOf: <factory.offer.OfferType>'Offer',
+                            typeOf: <factory.chevre.offerType>'Offer',
                             itemOffered: reservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                             priceSpecification: {

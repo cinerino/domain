@@ -471,7 +471,7 @@ export function createScreeningEventFromCOA(params: {
         additionalProperty: [
             {
                 name: 'COA_ENDPOINT',
-                value: process.env.COA_ENDPOINT
+                value: <string>process.env.COA_ENDPOINT
             },
             {
                 name: 'coaInfo',
@@ -578,7 +578,7 @@ export function createScreeningEventSeriesFromCOA(params: {
         additionalProperty: [
             {
                 name: 'COA_ENDPOINT',
-                value: process.env.COA_ENDPOINT
+                value: <string>process.env.COA_ENDPOINT
             },
             {
                 name: 'coaInfo',
