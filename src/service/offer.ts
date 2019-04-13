@@ -14,12 +14,12 @@ import * as MasterSync from './masterSync';
 
 const debug = createDebug('cinerino-domain:service');
 
-export type ISearchScreeningEventOffersOperation<T> = (repos: {
+export type ISearchEventOffersOperation<T> = (repos: {
     event: EventRepo;
     eventService: chevre.service.Event;
 }) => Promise<T>;
 
-export type ISearchScreeningEventTicketOffersOperation<T> = (repos: {
+export type ISearchEventTicketOffersOperation<T> = (repos: {
     event: EventRepo;
     seller: SellerRepo;
     eventService: chevre.service.Event;
@@ -38,7 +38,7 @@ export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: Sc
  */
 export function searchScreeningEventOffers(params: {
     event: { id: string };
-}): ISearchScreeningEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+}): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
     return async (repos: {
         event: EventRepo;
         eventService: chevre.service.Event;
@@ -126,11 +126,13 @@ export function searchScreeningEventTicketOffers(params: {
      * どの決済方法に対して
      */
     paymentMethod?: IAcceptedPaymentMethod;
-}): ISearchScreeningEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
+}): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         seller: SellerRepo;
         eventService: chevre.service.Event;
+        offerService?: chevre.service.Offer;
     }) => {
         debug('searching screeninf event offers...', params);
         const event = await repos.event.findById({
@@ -163,11 +165,53 @@ export function searchScreeningEventTicketOffers(params: {
                     throw new factory.errors.NotFound('Event COA Info');
                 }
 
-                offers = await searchTicketOffersFromCOA({
-                    isMember: false,
-                    event: event,
-                    coaInfo: coaInfo,
-                    superEventCOAInfo: superEventCOAInfo
+                const theaterCode = coaInfo.theaterCode;
+
+                // COA販売可能券種検索
+                const salesTickets = await COA.services.reserve.salesTicket({
+                    ...coaInfo,
+                    flgMember: COA.services.reserve.FlgMember.Member
+                });
+
+                // Chevreオファーから該当券種を検索
+                if (repos.offerService === undefined) {
+                    throw new Error('OfferService Repository required');
+                }
+                const searchOffersResult = await repos.offerService.searchTicketTypes({
+                    limit: 100,
+                    ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
+                });
+
+                // ChevreオファーにCOA券種情報を付加して返却
+                offers = salesTickets.map((t) => {
+                    const offer = searchOffersResult.data.find((o) => o.id === `COA-${theaterCode}-${t.ticketCode}`);
+                    if (offer === undefined) {
+                        throw new factory.errors.NotFound(`Offer: COA-${theaterCode}-${t.ticketCode}`);
+                    }
+
+                    if (!Array.isArray(offer.additionalProperty)) {
+                        offer.additionalProperty = [];
+                    }
+
+                    // coaInfoを調整する
+                    let offerCoaInfo: any = {};
+                    const coaInfoStrProperty = offer.additionalProperty.find((p) => p.name === 'coaInfo');
+                    if (coaInfoStrProperty !== undefined) {
+                        offerCoaInfo = JSON.parse(coaInfoStrProperty.value);
+                    }
+
+                    offer.additionalProperty = offer.additionalProperty.filter((p) => p.name !== 'coaInfo');
+                    offer.additionalProperty.push({ name: 'coaInfo', value: JSON.stringify({ ...offerCoaInfo, ...t }) });
+
+                    return {
+                        ...offer,
+                        ...coaSalesTicket2offer({
+                            event: event,
+                            salesTicket: t,
+                            coaInfo: <factory.event.screeningEvent.ICOAInfo>coaInfo,
+                            superEventCOAInfo: <factory.event.screeningEventSeries.ICOAInfo>superEventCOAInfo
+                        })
+                    };
                 });
 
                 break;
@@ -212,101 +256,6 @@ export function searchScreeningEventTicketOffers(params: {
     };
 }
 
-// tslint:disable-next-line:max-func-body-length
-async function searchTicketOffersFromCOA(params: {
-    isMember: boolean;
-    event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    coaInfo: factory.event.screeningEvent.ICOAInfo;
-    superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo;
-}): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> {
-    const offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
-    const eventOffers = params.event.offers;
-
-    // 供給情報が適切かどうか確認
-    const availableSalesTickets: COA.services.reserve.ISalesTicketResult[] = [];
-
-    // COA券種取得(非会員)
-    const salesTickets4nonMember = await COA.services.reserve.salesTicket(params.coaInfo);
-    availableSalesTickets.push(...salesTickets4nonMember);
-
-    // COA券種取得(会員)
-    // if (isMember) {
-    //     const salesTickets4member = await COA.services.reserve.salesTicket({
-    //         ...coaInfo,
-    //         flgMember: COA.services.reserve.FlgMember.Member
-    //     });
-    //     availableSalesTickets.push(...salesTickets4member);
-    // }
-
-    debug('availableSalesTickets:', availableSalesTickets);
-
-    // COA券種をオファーへ変換
-    availableSalesTickets.forEach((availableSalesTicket) => {
-        const offer: factory.chevre.event.screeningEvent.ITicketOffer = coaSalesTicket2offer({
-            event: params.event,
-            salesTicket: availableSalesTicket,
-            coaInfo: params.coaInfo,
-            superEventCOAInfo: params.superEventCOAInfo
-        });
-
-        offers.push(offer);
-    });
-
-    // ムビチケ決済が許可されていればムビチケオファーを恣意的に追加
-    const movieTicketPaymentAccepted = eventOffers.acceptedPaymentMethod === undefined
-        || eventOffers.acceptedPaymentMethod.indexOf(factory.paymentMethodType.MovieTicket) >= 0;
-    if (movieTicketPaymentAccepted) {
-        const mvtkOffer: factory.chevre.event.screeningEvent.ITicketOffer = {
-            typeOf: 'Offer',
-            id: 'offer-by-movieTicket',
-            name: { ja: 'ムビチケ', en: 'Movie Ticket' },
-            description: { ja: '', en: '' },
-            availability: factory.chevre.itemAvailability.InStock,
-            availabilityStarts: eventOffers.availabilityStarts,
-            availabilityEnds: eventOffers.availabilityEnds,
-            validThrough: eventOffers.validThrough,
-            validFrom: eventOffers.validFrom,
-            priceCurrency: factory.chevre.priceCurrency.JPY,
-            priceSpecification: {
-                typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-                valueAddedTaxIncluded: true,
-                priceCurrency: factory.chevre.priceCurrency.JPY,
-                priceComponent: [
-                    {
-                        typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-                        price: 0,
-                        priceCurrency: factory.chevre.priceCurrency.JPY,
-                        valueAddedTaxIncluded: true,
-                        referenceQuantity: {
-                            typeOf: 'QuantitativeValue',
-                            unitCode: factory.chevre.unitCode.C62,
-                            value: 1
-                        }
-                    },
-                    {
-                        typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
-                        price: 0,
-                        priceCurrency: factory.chevre.priceCurrency.JPY,
-                        valueAddedTaxIncluded: true,
-                        appliesToVideoFormat: factory.chevre.videoFormatType['2D'],
-                        appliesToMovieTicketType: ''
-                    }
-                ]
-            },
-            eligibleQuantity: {
-                typeOf: 'QuantitativeValue',
-                unitCode: factory.chevre.unitCode.C62,
-                value: 1
-            },
-            itemOffered: eventOffers.itemOffered
-        };
-
-        offers.push(mvtkOffer);
-    }
-
-    return offers;
-}
-
 /**
  * COA販売券種をオファーへ変換する
  * COAの券種インターフェースをchevreのチケットオファーインターフェースへ変換します
@@ -318,27 +267,27 @@ function coaSalesTicket2offer(params: {
     coaInfo: factory.event.screeningEvent.ICOAInfo;
     superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo;
 }): factory.chevre.event.screeningEvent.ITicketOffer {
-    const coaInfo: factory.event.screeningEvent.ICOAOffer = {
-        ticketCode: params.salesTicket.ticketCode,
-        ticketName: params.salesTicket.ticketName,
-        ticketNameEng: params.salesTicket.ticketNameEng,
-        ticketNameKana: params.salesTicket.ticketNameKana,
-        stdPrice: params.salesTicket.stdPrice,
-        addPrice: params.salesTicket.addPrice,
-        disPrice: 0,
-        salePrice: params.salesTicket.salePrice,
-        addGlasses: 0,
-        mvtkAppPrice: 0,
-        ticketCount: 1,
-        seatNum: '',
-        kbnEisyahousiki: '00', // ムビチケを使用しない場合の初期値をセット
-        mvtkNum: '', // ムビチケを使用しない場合の初期値をセット
-        mvtkKbnDenshiken: '00', // ムビチケを使用しない場合の初期値をセット
-        mvtkKbnMaeuriken: '00', // ムビチケを使用しない場合の初期値をセット
-        mvtkKbnKensyu: '00', // ムビチケを使用しない場合の初期値をセット
-        mvtkSalesPrice: 0, // ムビチケを使用しない場合の初期値をセット
-        usePoint: 0
-    };
+    // const coaInfo: factory.event.screeningEvent.ICOAOffer = {
+    //     ticketCode: params.salesTicket.ticketCode,
+    //     ticketName: params.salesTicket.ticketName,
+    //     ticketNameEng: params.salesTicket.ticketNameEng,
+    //     ticketNameKana: params.salesTicket.ticketNameKana,
+    //     stdPrice: params.salesTicket.stdPrice,
+    //     addPrice: params.salesTicket.addPrice,
+    //     disPrice: 0,
+    //     salePrice: params.salesTicket.salePrice,
+    //     addGlasses: 0,
+    //     mvtkAppPrice: 0,
+    //     ticketCount: 1,
+    //     seatNum: '',
+    //     kbnEisyahousiki: '00', // ムビチケを使用しない場合の初期値をセット
+    //     mvtkNum: '', // ムビチケを使用しない場合の初期値をセット
+    //     mvtkKbnDenshiken: '00', // ムビチケを使用しない場合の初期値をセット
+    //     mvtkKbnMaeuriken: '00', // ムビチケを使用しない場合の初期値をセット
+    //     mvtkKbnKensyu: '00', // ムビチケを使用しない場合の初期値をセット
+    //     mvtkSalesPrice: 0, // ムビチケを使用しない場合の初期値をセット
+    //     usePoint: 0
+    // };
 
     const priceSpecification: factory.chevre.event.screeningEvent.ITicketPriceSpecification
         = {
@@ -378,67 +327,76 @@ function coaSalesTicket2offer(params: {
     priceSpecification.priceComponent.push(unitPriceSpec);
 
     // 加算単価を上映方式チャージ仕様へ変換
-    if (params.coaInfo.kbnAcoustic !== undefined) {
-        switch (params.coaInfo.kbnAcoustic.kubunCode) {
-            default:
-        }
-    }
+    // if (params.coaInfo.kbnAcoustic !== undefined) {
+    //     switch (params.coaInfo.kbnAcoustic.kubunCode) {
+    //         default:
+    //     }
+    // }
 
     // 映像区分変換
-    if (params.superEventCOAInfo.kbnEizou !== undefined) {
-        switch (params.superEventCOAInfo.kbnEizou.kubunCode) {
-            case '002':
-                priceSpecification.priceComponent.push({
-                    typeOf: factory.chevre.priceSpecificationType.VideoFormatChargeSpecification,
-                    price: params.superEventCOAInfo.kbnEizou.kubunAddPrice,
-                    priceCurrency: factory.chevre.priceCurrency.JPY,
-                    valueAddedTaxIncluded: true,
-                    appliesToVideoFormat: factory.chevre.videoFormatType['3D']
-                });
+    // if (params.superEventCOAInfo.kbnEizou !== undefined) {
+    //     switch (params.superEventCOAInfo.kbnEizou.kubunCode) {
+    //         case '002':
+    //             priceSpecification.priceComponent.push({
+    //                 typeOf: factory.chevre.priceSpecificationType.VideoFormatChargeSpecification,
+    //                 price: params.superEventCOAInfo.kbnEizou.kubunAddPrice,
+    //                 priceCurrency: factory.chevre.priceCurrency.JPY,
+    //                 valueAddedTaxIncluded: true,
+    //                 appliesToVideoFormat: factory.chevre.videoFormatType['3D']
+    //             });
 
-                break;
+    //             break;
 
-            default:
-        }
-    }
+    //         default:
+    //     }
+    // }
 
     // 上映方式区分変換
-    if (params.superEventCOAInfo.kbnJoueihousiki !== undefined) {
-        switch (params.superEventCOAInfo.kbnJoueihousiki.kubunCode) {
-            case '001':
-                priceSpecification.priceComponent.push({
-                    typeOf: factory.chevre.priceSpecificationType.VideoFormatChargeSpecification,
-                    price: params.superEventCOAInfo.kbnJoueihousiki.kubunAddPrice,
-                    priceCurrency: factory.chevre.priceCurrency.JPY,
-                    valueAddedTaxIncluded: true,
-                    appliesToVideoFormat: factory.chevre.videoFormatType.IMAX
-                });
+    // if (params.superEventCOAInfo.kbnJoueihousiki !== undefined) {
+    //     switch (params.superEventCOAInfo.kbnJoueihousiki.kubunCode) {
+    //         case '001':
+    //             priceSpecification.priceComponent.push({
+    //                 typeOf: factory.chevre.priceSpecificationType.VideoFormatChargeSpecification,
+    //                 price: params.superEventCOAInfo.kbnJoueihousiki.kubunAddPrice,
+    //                 priceCurrency: factory.chevre.priceCurrency.JPY,
+    //                 valueAddedTaxIncluded: true,
+    //                 appliesToVideoFormat: factory.chevre.videoFormatType.IMAX
+    //             });
 
-                break;
+    //             break;
 
-            case '002':
-                priceSpecification.priceComponent.push({
-                    typeOf: factory.chevre.priceSpecificationType.VideoFormatChargeSpecification,
-                    price: params.superEventCOAInfo.kbnJoueihousiki.kubunAddPrice,
-                    priceCurrency: factory.chevre.priceCurrency.JPY,
-                    valueAddedTaxIncluded: true,
-                    appliesToVideoFormat: factory.chevre.videoFormatType['4DX']
-                });
+    //         case '002':
+    //             priceSpecification.priceComponent.push({
+    //                 typeOf: factory.chevre.priceSpecificationType.VideoFormatChargeSpecification,
+    //                 price: params.superEventCOAInfo.kbnJoueihousiki.kubunAddPrice,
+    //                 priceCurrency: factory.chevre.priceCurrency.JPY,
+    //                 valueAddedTaxIncluded: true,
+    //                 appliesToVideoFormat: factory.chevre.videoFormatType['4DX']
+    //             });
 
-                break;
+    //             break;
 
-            default:
-        }
-    }
+    //         default:
+    //     }
+    // }
 
     // tslint:disable-next-line:no-suspicious-comment
     // TODO メガネ単価を変換
 
     const eventOffers = params.event.offers;
-    const offer: factory.chevre.event.screeningEvent.ITicketOffer = {
+
+    // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
+    // const includeGlasses = (params.salesTicket.addGlasses > 0);
+    // if (includeGlasses) {
+    //     offer.ticketInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
+    //     offer.ticketInfo.salePrice += availableSalesTicket.addGlasses;
+    //     offer.ticketInfo.addGlasses = availableSalesTicket.addGlasses;
+    // }
+
+    return {
         typeOf: 'Offer',
         priceCurrency: factory.priceCurrency.JPY,
-        id: params.salesTicket.ticketCode,
+        id: `COA-${params.coaInfo.theaterCode}-${params.salesTicket.ticketCode}`,
         name: {
             ja: params.salesTicket.ticketName,
             en: params.salesTicket.ticketNameEng
@@ -464,22 +422,8 @@ function coaSalesTicket2offer(params: {
                 id: '',
                 name: ''
             }
-        },
-        additionalProperty: [{
-            name: 'coaInfo',
-            value: JSON.stringify(coaInfo)
-        }]
+        }
     };
-
-    // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
-    const includeGlasses = (params.salesTicket.addGlasses > 0);
-    if (includeGlasses) {
-        // offer.ticketInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
-        // offer.ticketInfo.salePrice += availableSalesTicket.addGlasses;
-        // offer.ticketInfo.addGlasses = availableSalesTicket.addGlasses;
-    }
-
-    return offer;
 }
 
 /**
