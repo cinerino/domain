@@ -496,6 +496,7 @@ export class MongoRepository {
 
         return doc.toObject();
     }
+
     public async count<T extends factory.transactionType>(params: factory.transaction.ISearchConditions<T>): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
@@ -539,19 +540,20 @@ export class MongoRepository {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.transactionModel.find((conditions.length > 0) ? { $and: conditions } : {})
             .select({ __v: 0, createdAt: 0, updatedAt: 0 });
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
             query.limit(params.limit)
                 .skip(params.limit * (params.page - 1));
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.sort !== undefined) {
             query.sort(params.sort);
         }
 
-        // return query.cursor();
         return query.cursor();
     }
 }

@@ -1,7 +1,6 @@
 /**
  * 取引レポートサービス
  */
-// import * as createDebug from 'debug';
 import * as json2csv from 'json2csv';
 import * as moment from 'moment';
 import { Readable } from 'stream';
@@ -11,11 +10,11 @@ import * as factory from '../../factory';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-// const debug = createDebug('cinerino-domain:service');
 export type ITaskAndTransactionOperation<T> = (repos: {
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
 /**
  * 取引レポートインターフェース
  */
@@ -66,15 +65,17 @@ export interface ITransactionReport {
     discountCodes: string[];
     discountPrices: string[];
 }
+
 /**
- * フォーマット指定でダウンロード
+ * フォーマット指定でストリーミングダウンロード
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
-export function download(params: {
+export function stream(params: {
     conditions: factory.transaction.ISearchConditions<factory.transactionType.PlaceOrder>;
-    format: factory.encodingFormat.Text;
+    format: factory.encodingFormat.Application | factory.encodingFormat.Text;
 }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: { transaction: TransactionRepo }): Promise<Readable> => {
         // const transactionCount = await repos.transaction.count<factory.transactionType.PlaceOrder>(params.conditions);
         // debug('transactionCount:', transactionCount);
@@ -82,16 +83,23 @@ export function download(params: {
         //     throw new Error('Too many transactions');
         // }
 
-        const inputStream = repos.transaction.stream(params.conditions)
-            .map((doc) => {
-                return <any>JSON.stringify(transaction2report({
-                    transaction: doc.toObject()
-                }));
-            });
+        let inputStream = repos.transaction.stream(params.conditions);
         let processor: Readable;
 
         switch (params.format) {
+            case factory.encodingFormat.Application.json:
+                inputStream = inputStream.map((doc) => doc.toObject());
+
+                processor = inputStream;
+                break;
+
             case factory.encodingFormat.Text.csv:
+                inputStream = inputStream.map((doc) => {
+                    return <any>JSON.stringify(transaction2report({
+                        transaction: doc.toObject()
+                    }));
+                });
+
                 const fields: json2csv.json2csv.FieldInfo<any>[] = [
                     { label: '取引ID', default: '', value: 'id' },
                     { label: '取引ステータス', default: '', value: 'status' },
@@ -165,6 +173,7 @@ export function download(params: {
                 const transform = new json2csv.Transform(opts, transformOpts);
                 processor = inputStream.pipe(transform);
                 break;
+
             default:
                 throw new factory.errors.NotImplemented(`Unimplemented format: ${params.format}`);
         }
@@ -172,6 +181,7 @@ export function download(params: {
         return processor;
     };
 }
+
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 // tslint:disable-next-line:max-func-body-length
