@@ -88,9 +88,12 @@ export function stream(params: {
 
         switch (params.format) {
             case factory.encodingFormat.Application.json:
-                inputStream = inputStream.map((doc) => doc.toObject());
+                inputStream = inputStream.map((doc) => {
+                    return <any>JSON.stringify(doc.toObject());
+                });
 
                 processor = inputStream;
+
                 break;
 
             case factory.encodingFormat.Text.csv:
