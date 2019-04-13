@@ -73,7 +73,7 @@ export interface ITransactionReport {
 /* istanbul ignore next */
 export function stream(params: {
     conditions: factory.transaction.ISearchConditions<factory.transactionType.PlaceOrder>;
-    format: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: { transaction: TransactionRepo }): Promise<Readable> => {
@@ -178,7 +178,12 @@ export function stream(params: {
                 break;
 
             default:
-                throw new factory.errors.NotImplemented(`Unimplemented format: ${params.format}`);
+                inputStream = inputStream.map((doc) => {
+                    return doc.toObject();
+                });
+
+                processor = inputStream;
+
         }
 
         return processor;
