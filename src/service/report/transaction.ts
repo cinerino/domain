@@ -2,8 +2,10 @@
  * 取引レポートサービス
  */
 import * as json2csv from 'json2csv';
+// @ts-ignore
+import * as JSONStream from 'JSONStream';
 import * as moment from 'moment';
-import { Readable } from 'stream';
+import { Stream } from 'stream';
 import * as util from 'util';
 
 import * as factory from '../../factory';
@@ -76,7 +78,7 @@ export function stream(params: {
     format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
 }) {
     // tslint:disable-next-line:max-func-body-length
-    return async (repos: { transaction: TransactionRepo }): Promise<Readable> => {
+    return async (repos: { transaction: TransactionRepo }): Promise<Stream> => {
         // const transactionCount = await repos.transaction.count<factory.transactionType.PlaceOrder>(params.conditions);
         // debug('transactionCount:', transactionCount);
         // if (transactionCount >= 0) {
@@ -84,15 +86,15 @@ export function stream(params: {
         // }
 
         let inputStream = repos.transaction.stream(params.conditions);
-        let processor: Readable;
+        let processor: Stream;
 
         switch (params.format) {
             case factory.encodingFormat.Application.json:
                 inputStream = inputStream.map((doc) => {
-                    return <any>JSON.stringify(doc.toObject());
+                    return doc.toObject();
                 });
 
-                processor = inputStream;
+                processor = inputStream.pipe(JSONStream.stringify());
 
                 break;
 
@@ -175,6 +177,7 @@ export function stream(params: {
                 };
                 const transform = new json2csv.Transform(opts, transformOpts);
                 processor = inputStream.pipe(transform);
+
                 break;
 
             default:
@@ -183,7 +186,6 @@ export function stream(params: {
                 });
 
                 processor = inputStream;
-
         }
 
         return processor;
