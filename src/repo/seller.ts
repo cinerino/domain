@@ -101,23 +101,27 @@ export class MongoRepository {
     /**
      * 特定販売者検索
      */
-    public async findById(params: {
-        id: string;
-    }): Promise<ISeller> {
+    public async findById(
+        conditions: {
+            id: string;
+        },
+        projection?: any
+    ): Promise<ISeller> {
         const doc = await this.organizationModel.findOne(
             {
                 paymentAccepted: { $exists: true },
-                _id: params.id
+                _id: conditions.id
             },
             {
                 __v: 0,
                 createdAt: 0,
-                updatedAt: 0
+                updatedAt: 0,
+                ...projection
             }
         )
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Organization');
+            throw new factory.errors.NotFound(this.organizationModel.modelName);
         }
 
         return doc.toObject();
@@ -145,7 +149,7 @@ export class MongoRepository {
             )
                 .exec();
             if (doc === null) {
-                throw new factory.errors.NotFound('Organization');
+                throw new factory.errors.NotFound(this.organizationModel.modelName);
             }
             organization = doc.toObject();
         }
@@ -165,29 +169,32 @@ export class MongoRepository {
      * 販売者検索
      */
     public async search(
-        params: factory.seller.ISearchConditions
+        conditions: factory.seller.ISearchConditions,
+        projection?: any
     ): Promise<ISeller[]> {
-        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+        const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(conditions);
+
         const query = this.organizationModel.find(
-            (conditions.length > 0) ? { $and: conditions } : {},
+            (andConditions.length > 0) ? { $and: andConditions } : {},
             {
                 __v: 0,
                 createdAt: 0,
                 updatedAt: 0,
-                // GMOのセキュアな情報を公開しないように注意
-                'paymentAccepted.gmoInfo.shopPass': 0
+                ...projection
             }
         );
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit)
-                .skip(params.limit * (params.page - 1));
+        if (conditions.limit !== undefined && conditions.page !== undefined) {
+            query.limit(conditions.limit)
+                .skip(conditions.limit * (conditions.page - 1));
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.sort !== undefined) {
-            query.sort(params.sort);
+        if (conditions.sort !== undefined) {
+            query.sort(conditions.sort);
         }
 
         return query.setOptions({ maxTimeMS: 10000 })
