@@ -59,7 +59,7 @@ export class Invoice extends InvoiceRepo { }
 
 export namespace itemAvailability {
     /**
-     * 上映イベント在庫状況リポジトリ
+     * イベント在庫状況リポジトリ
      */
     export class ScreeningEvent extends ScreeningEventItemAvailabilityRepo { }
 }

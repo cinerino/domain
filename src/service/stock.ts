@@ -27,7 +27,7 @@ export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
     factory.action.authorize.offer.seatReservation.IResponseBody<T>;
 
 /**
- * 上映イベントをインポートする
+ * イベントをインポートする
  */
 export function importScreeningEvents(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
     // tslint:disable-next-line:max-func-body-length
@@ -78,7 +78,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             };
         }));
 
-        // 上映イベントごとに永続化トライ
+        // イベントごとに永続化トライ
         await Promise.all(events.map(async (e) => {
             try {
                 if (e.workPerformed !== undefined) {

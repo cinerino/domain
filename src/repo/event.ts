@@ -269,7 +269,7 @@ export class MongoRepository {
     }
 
     /**
-     * 上映イベントを検索する
+     * イベントを検索する
      */
     public async searchScreeningEvents(
         params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>

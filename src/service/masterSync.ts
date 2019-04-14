@@ -70,7 +70,7 @@ export function matchWithXML(
 }
 
 /**
- * COAから上映イベントをインポートする
+ * COAからイベントをインポートする
  */
 export function importScreeningEvents(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
     // tslint:disable-next-line:max-func-body-length
@@ -118,7 +118,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             .add(1, 'day');
         debug('importing screening events...', targetImportFrom, targetImportThrough);
 
-        // COAから上映イベント取得
+        // COAからイベント取得
         debug(
             'finding schedules from COA...',
             moment(targetImportFrom)
@@ -199,7 +199,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 return screeningEventSeries;
             }));
 
-            // 上映イベントごとに永続化トライ
+            // イベントごとに永続化トライ
             const screeningEvents: factory.event.screeningEvent.IEvent[] = [];
             schedulesFromCOA.forEach((scheduleFromCOA) => {
                 if (xmlEndPoint === undefined || matchWithXML(schedulesFromXML, scheduleFromCOA)) {
@@ -220,7 +220,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                         return;
                     }
 
-                    // 上映イベントシリーズ取得
+                    // イベントシリーズ取得
                     const screeningEventSeries = screeningEventSerieses.find((e) => e.id === screeningEventSeriesId);
                     if (screeningEventSeries === undefined) {
                         // tslint:disable-next-line:no-console
@@ -340,7 +340,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 // }
 
 /**
- * コアデータから上映イベントを作成する
+ * コアデータからイベントを作成する
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
@@ -589,7 +589,7 @@ export function createScreeningEventSeriesFromCOA(params: {
 }
 
 /**
- * COA情報から上映イベントIDを作成する
+ * COA情報からイベントIDを作成する
  */
 export function createScreeningEventIdFromCOA(params: {
     theaterCode: string;
@@ -608,7 +608,7 @@ export function createScreeningEventIdFromCOA(params: {
 }
 
 /**
- * COA情報から上映イベント識別子を作成する
+ * COA情報からイベント識別子を作成する
  */
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */

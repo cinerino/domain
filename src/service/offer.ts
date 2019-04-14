@@ -14,6 +14,11 @@ import * as MasterSync from './masterSync';
 
 const debug = createDebug('cinerino-domain:service');
 
+export type ISearchEventsOperation<T> = (repos: {
+    event: EventRepo;
+    attendeeCapacity?: EventAttendeeCapacityRepo;
+}) => Promise<T>;
+
 export type ISearchEventOffersOperation<T> = (repos: {
     event: EventRepo;
     eventService: chevre.service.Event;
@@ -34,7 +39,36 @@ export type IEventOperation4cinemasunshine<T> = (repos: {
 export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: EventItemAvailabilityRepo }) => Promise<T>;
 
 /**
- * 上映イベントに対する座席オファーを検索する
+ * 残席数情報も含めてイベントを検索する
+ */
+export function searchEvents(
+    searchConditions: factory.event.screeningEvent.ISearchConditions
+): ISearchEventsOperation<factory.event.screeningEvent.IEvent[]> {
+    return async (repos: {
+        event: EventRepo;
+        attendeeCapacity?: EventAttendeeCapacityRepo;
+    }) => {
+        const events = await repos.event.searchScreeningEvents(searchConditions);
+
+        let capacities: IEventCapacity[] = [];
+        if (repos.attendeeCapacity !== undefined) {
+            const eventIds = events.map((e) => e.id);
+            capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
+        }
+
+        return events.map((e) => {
+            const capacity = capacities.find((c) => c.id === e.id);
+
+            return {
+                ...e,
+                ...capacity
+            };
+        });
+    };
+}
+
+/**
+ * イベントに対する座席オファーを検索する
  */
 export function searchEventOffers(params: {
     event: { id: string };
@@ -107,7 +141,7 @@ export function searchEventOffers(params: {
 export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTicket.IMovieTicket;
 
 /**
- * 上映イベントに対する券種オファーを検索する
+ * イベントに対する券種オファーを検索する
  */
 export function searchEventTicketOffers(params: {
     /**
@@ -427,7 +461,7 @@ function coaSalesTicket2offer(params: {
 }
 
 /**
- * 個々の上映イベントを検索する
+ * 個々のイベントを検索する
  * 在庫状況リポジトリをパラメーターとして渡せば、在庫状況も取得してくれる
  */
 export function searchEvents4cinemasunshine(
@@ -499,7 +533,7 @@ export function searchEvents4cinemasunshine(
 }
 
 /**
- * 個々の上映イベントを識別子で取得する
+ * 個々のイベントを識別子で取得する
  */
 export function findEventById4cinemasunshine(
     id: string
@@ -545,7 +579,7 @@ export function findEventById4cinemasunshine(
 }
 
 /**
- * 劇場IDと上映日範囲から上映イベント在庫状況を更新する
+ * 劇場IDと上映日範囲からイベント在庫状況を更新する
  */
 export function updateEventItemAvailability(locationBranchCode: string, startFrom: Date, startThrough: Date):
     IUpdateItemAvailabilityOperation<void> {
@@ -564,7 +598,7 @@ export function updateEventItemAvailability(locationBranchCode: string, startFro
         // 上映日ごとに
         await Promise.all(countFreeSeatResult.listDate.map(async (countFreeSeatDate) => {
             debug('saving screeningEvent item availability... day:', countFreeSeatDate.dateJouei);
-            // 上映イベントごとに空席状況を生成して保管
+            // イベントごとに空席状況を生成して保管
             await Promise.all(
                 countFreeSeatDate.listPerformance.map(async (countFreeSeatPerformance) => {
                     const eventId = MasterSync.createScreeningEventIdFromCOA({

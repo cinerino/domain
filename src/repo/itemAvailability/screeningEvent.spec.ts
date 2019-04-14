@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 上映イベント在庫状況リポジトリテスト
+ * イベント在庫状況リポジトリテスト
  */
 import { } from 'mocha';
 import * as assert from 'power-assert';

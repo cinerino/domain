@@ -331,7 +331,7 @@ export function create(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // 上映イベントを取得
+        // イベントを取得
         const screeningEvent = await repos.event.findById({
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: params.object.event.id
@@ -525,7 +525,7 @@ export function changeOffers(params: {
             throw new factory.errors.NotFound('authorizeAction.object.event');
         }
 
-        // 上映イベントが一致しているかどうか
+        // イベントが一致しているかどうか
         if (authorizeAction.object.event.id !== params.object.event.id) {
             throw new factory.errors.Argument('Event', 'Event ID not matched.');
         }
@@ -538,7 +538,7 @@ export function changeOffers(params: {
             throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
         }
 
-        // 上映イベントを取得
+        // イベントを取得
         const screeningEvent = await repos.event.findById({
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: params.object.event.id

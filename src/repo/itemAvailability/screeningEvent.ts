@@ -4,12 +4,12 @@ import * as redis from 'redis';
 const debug = createDebug('cinerino-domain:repository');
 const REDIS_KEY_PREFIX = 'cinerino:itemAvailability:screeningEvent';
 /**
- * 上映イベント在庫状況のRedisで有効期間
+ * イベント在庫状況のRedisで有効期間
  */
 const TIMEOUT_IN_SECONDS = 864000;
 
 /**
- * 上映イベント在庫状況リポジトリ
+ * イベント在庫状況リポジトリ
  */
 export class RedisRepository {
     public readonly redisClient: redis.RedisClient;
@@ -19,7 +19,7 @@ export class RedisRepository {
     }
 
     /**
-     * 上映イベントの上映日からredisキーを生成する
+     * イベントの上映日からredisキーを生成する
      */
     public static CREATE_REDIS_KEY(screeningDay: string): string {
         return `${REDIS_KEY_PREFIX}:${screeningDay}`;
@@ -33,7 +33,7 @@ export class RedisRepository {
         const key = RedisRepository.CREATE_REDIS_KEY(screeningDay);
 
         return new Promise<number | null>((resolve, reject) => {
-            // 上映イベント在庫状況を取得
+            // イベント在庫状況を取得
             this.redisClient.hget(key, eventId, (err, res) => {
                 debug('hget processed.', err, res);
                 if (err instanceof Error) {

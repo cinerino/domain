@@ -82,7 +82,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 }
 
 /**
- * 上映イベント予約検索
+ * イベント予約検索
  */
 export function searchScreeningEventReservations(
     params: factory.ownershipInfo.ISearchConditions<factory.chevre.reservationType.EventReservation>
