@@ -3,7 +3,7 @@ import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
 import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
-import { RedisRepository as ScreeningEventItemAvailabilityRepo } from '../repo/itemAvailability/screeningEvent';
+import { RedisRepository as EventItemAvailabilityRepo } from '../repo/itemAvailability/screeningEvent';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as chevre from '../chevre';
@@ -27,16 +27,16 @@ export type ISearchEventTicketOffersOperation<T> = (repos: {
 
 export type IEventOperation4cinemasunshine<T> = (repos: {
     event: EventRepo;
-    itemAvailability?: ScreeningEventItemAvailabilityRepo;
+    itemAvailability?: EventItemAvailabilityRepo;
     attendeeCapacity?: EventAttendeeCapacityRepo;
 }) => Promise<T>;
 
-export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: ScreeningEventItemAvailabilityRepo }) => Promise<T>;
+export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: EventItemAvailabilityRepo }) => Promise<T>;
 
 /**
  * 上映イベントに対する座席オファーを検索する
  */
-export function searchScreeningEventOffers(params: {
+export function searchEventOffers(params: {
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
     return async (repos: {
@@ -109,7 +109,7 @@ export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTick
 /**
  * 上映イベントに対する券種オファーを検索する
  */
-export function searchScreeningEventTicketOffers(params: {
+export function searchEventTicketOffers(params: {
     /**
      * どのイベントに対して
      */
@@ -430,12 +430,12 @@ function coaSalesTicket2offer(params: {
  * 個々の上映イベントを検索する
  * 在庫状況リポジトリをパラメーターとして渡せば、在庫状況も取得してくれる
  */
-export function searchScreeningEvents4cinemasunshine(
+export function searchEvents4cinemasunshine(
     searchConditions: factory.event.screeningEvent.ISearchConditions
 ): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent[]> {
     return async (repos: {
         event: EventRepo;
-        itemAvailability?: ScreeningEventItemAvailabilityRepo;
+        itemAvailability?: EventItemAvailabilityRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         debug('finding screeningEvents...', searchConditions);
@@ -448,7 +448,7 @@ export function searchScreeningEvents4cinemasunshine(
             // 空席状況情報を追加
             const offers = {
                 ...event.offers,
-                availability: <any>null // 互換性維持のためnull
+                availability: 100
             };
 
             // tslint:disable-next-line:no-single-line-block-comment
@@ -474,9 +474,25 @@ export function searchScreeningEvents4cinemasunshine(
         return events.map((e) => {
             const capacity = capacities.find((c) => c.id === e.id);
 
+            // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
+            const offers = {
+                ...e.offers,
+                // tslint:disable-next-line:no-magic-numbers
+                availability: (e.offers.availability !== undefined) ? e.offers.availability : 100
+            };
+
+            if (capacity !== undefined
+                && capacity.remainingAttendeeCapacity !== undefined
+                && e.maximumAttendeeCapacity !== undefined) {
+                // tslint:disable-next-line:no-magic-numbers
+                offers.availability = Math.floor(Number(capacity.remainingAttendeeCapacity) / Number(e.maximumAttendeeCapacity) * 100);
+            }
+
             return {
                 ...e,
-                ...capacity
+                ...capacity,
+                offer: offers, // 本来不要だが、互換性維持のため
+                offers: offers
             };
         });
     };
@@ -485,12 +501,12 @@ export function searchScreeningEvents4cinemasunshine(
 /**
  * 個々の上映イベントを識別子で取得する
  */
-export function findScreeningEventById4cinemasunshine(
+export function findEventById4cinemasunshine(
     id: string
 ): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
     return async (repos: {
         event: EventRepo;
-        itemAvailability?: ScreeningEventItemAvailabilityRepo;
+        itemAvailability?: EventItemAvailabilityRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         const event = await repos.event.findById({
@@ -498,25 +514,32 @@ export function findScreeningEventById4cinemasunshine(
             id: id
         });
 
-        // 必ず定義されている前提
-        const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
+        let capacities: IEventCapacity[] = [];
+        if (repos.attendeeCapacity !== undefined) {
+            const eventIds = [event.id];
+            capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
+        }
 
-        // add item availability info
-        const offer = {
+        const capacity = capacities.find((c) => c.id === event.id);
+
+        // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
+        const offers = {
             ...event.offers,
-            availability: <any>null // 互換性維持のためnull
+            availability: 100
         };
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (repos.itemAvailability !== undefined) {
-            offer.availability = <number>await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
+        if (capacity !== undefined
+            && capacity.remainingAttendeeCapacity !== undefined
+            && event.maximumAttendeeCapacity !== undefined) {
+            // tslint:disable-next-line:no-magic-numbers
+            offers.availability = Math.floor(Number(capacity.remainingAttendeeCapacity) / Number(event.maximumAttendeeCapacity) * 100);
         }
 
         return {
             ...event,
-            offer: offer, //  本来不要だが、互換性維持のため
-            offers: offer
+            ...capacity,
+            offer: offers, // 本来不要だが、互換性維持のため
+            offers: offers
         };
     };
 }
@@ -524,9 +547,9 @@ export function findScreeningEventById4cinemasunshine(
 /**
  * 劇場IDと上映日範囲から上映イベント在庫状況を更新する
  */
-export function updateScreeningEventItemAvailability(locationBranchCode: string, startFrom: Date, startThrough: Date):
+export function updateEventItemAvailability(locationBranchCode: string, startFrom: Date, startThrough: Date):
     IUpdateItemAvailabilityOperation<void> {
-    return async (repos: { itemAvailability: ScreeningEventItemAvailabilityRepo }) => {
+    return async (repos: { itemAvailability: EventItemAvailabilityRepo }) => {
         // COAから空席状況取得
         const countFreeSeatResult = await COA.services.reserve.countFreeSeat({
             theaterCode: locationBranchCode,

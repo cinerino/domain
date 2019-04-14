@@ -234,7 +234,7 @@ function validateAcceptedOffers(params: {
         seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
-        const availableTicketOffers = await OfferService.searchScreeningEventTicketOffers({
+        const availableTicketOffers = await OfferService.searchEventTicketOffers({
             event: params.object.event,
             seller: params.seller
         })(repos);

@@ -15,7 +15,7 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('searchScreeningEvents4cinemasunshine()', () => {
+describe('searchEvents4cinemasunshine()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -44,7 +44,7 @@ describe('searchScreeningEvents4cinemasunshine()', () => {
             // tslint:disable-next-line:no-magic-numbers
             .resolves(100);
 
-        const result = await OfferService.searchScreeningEvents4cinemasunshine(<any>searchConditions)({
+        const result = await OfferService.searchEvents4cinemasunshine(<any>searchConditions)({
             event: eventRepo,
             itemAvailability: itemAvailabilityRepo
         });
@@ -54,7 +54,7 @@ describe('searchScreeningEvents4cinemasunshine()', () => {
     });
 });
 
-describe('findScreeningEventById4cinemasunshine()', () => {
+describe('findEventById4cinemasunshine()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -73,13 +73,8 @@ describe('findScreeningEventById4cinemasunshine()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(itemAvailabilityRepo)
-            .expects('findOne')
-            .once()
-            // tslint:disable-next-line:no-magic-numbers
-            .resolves(100);
 
-        const result = await OfferService.findScreeningEventById4cinemasunshine(
+        const result = await OfferService.findEventById4cinemasunshine(
             event.identifier
         )({
             event: eventRepo,
@@ -91,7 +86,7 @@ describe('findScreeningEventById4cinemasunshine()', () => {
     });
 });
 
-describe('updateScreeningEventItemAvailability()', () => {
+describe('updateEventItemAvailability()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -134,7 +129,7 @@ describe('updateScreeningEventItemAvailability()', () => {
             .exactly(numberOfEvents)
             .resolves();
 
-        const result = await domain.service.offer.updateScreeningEventItemAvailability(
+        const result = await domain.service.offer.updateEventItemAvailability(
             theaterCode,
             startFrom,
             startThrough
