@@ -6,7 +6,7 @@ import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
-import * as util from 'util';
+import { format } from 'util';
 
 import * as emailMessageBuilder from '../../emailMessageBuilder';
 import * as factory from '../../factory';
@@ -228,6 +228,13 @@ export interface IConfirmResultOrderParams {
      * 注文確認URLのカスタム指定
      */
     url?: string | IOrderURLGenerator;
+    /**
+     * 注文アイテム数
+     */
+    numItems?: {
+        maxValue?: number;
+        minValue?: number;
+    };
 }
 export interface IConfirmParams {
     /**
@@ -312,35 +319,56 @@ export function confirm(params: IConfirmParams) {
             validateMovieTicket(transaction);
         }
 
-        // 注文番号を発行
-        const orderNumber = await repos.orderNumber.publish({
-            orderDate: params.result.order.orderDate,
-            sellerType: seller.typeOf,
-            sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined) ? seller.location.branchCode : ''
-        });
-
-        let confirmationNumber = 0;
-        if (repos.confirmationNumber !== undefined) {
-            confirmationNumber = await repos.confirmationNumber.publish({
-                orderDate: params.result.order.orderDate
-            });
-        }
-
         // 注文作成
         const order = createOrderFromTransaction({
             transaction: transaction,
-            orderNumber: orderNumber,
-            confirmationNumber: confirmationNumber.toString(),
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
             isGift: false,
             seller: seller
         });
 
+        // 注文アイテム数制限確認
+        if (params.result.order.numItems !== undefined) {
+            if (typeof params.result.order.numItems.maxValue === 'number') {
+                if (order.acceptedOffers.length > params.result.order.numItems.maxValue) {
+                    throw new factory.errors.Argument(
+                        'Transaction',
+                        format('Number of order items must be less than or equal to %s', params.result.order.numItems.maxValue)
+                    );
+                }
+            }
+
+            if (typeof params.result.order.numItems.minValue === 'number') {
+                if (order.acceptedOffers.length < params.result.order.numItems.minValue) {
+                    throw new factory.errors.Argument(
+                        'Transaction',
+                        format('Number of order items must be more than equal to %s', params.result.order.numItems.minValue)
+                    );
+                }
+            }
+        }
+
+        // 注文番号を発行
+        order.orderNumber = await repos.orderNumber.publish({
+            orderDate: params.result.order.orderDate,
+            sellerType: seller.typeOf,
+            sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined) ? seller.location.branchCode : ''
+        });
+
+        // 確認番号を発行
+        let confirmationNumber = 0;
+        if (repos.confirmationNumber !== undefined) {
+            confirmationNumber = await repos.confirmationNumber.publish({
+                orderDate: params.result.order.orderDate
+            });
+        }
+        order.confirmationNumber = confirmationNumber.toString();
+
         // 確認番号の指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (typeof params.result.order.confirmationNumber === 'number') {
+        if (typeof params.result.order.confirmationNumber === 'string') {
             order.confirmationNumber = params.result.order.confirmationNumber;
         } else /* istanbul ignore next */ if (typeof params.result.order.confirmationNumber === 'function') {
             // tslint:disable-next-line:no-single-line-block-comment
@@ -555,8 +583,6 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
 // tslint:disable-next-line:max-func-body-length
 export function createOrderFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
-    orderNumber: string;
-    confirmationNumber: string;
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
@@ -919,10 +945,7 @@ export function createOrderFromTransaction(params: {
             ));
         });
 
-    const url = util.format(
-        '/inquiry/login?confirmationNumber=%s',
-        params.confirmationNumber
-    );
+    const url = '';
 
     // 決済方法から注文金額の計算
     let price = 0;
@@ -948,8 +971,8 @@ export function createOrderFromTransaction(params: {
         priceCurrency: factory.priceCurrency.JPY,
         paymentMethods: paymentMethods,
         discounts: discounts,
-        confirmationNumber: params.confirmationNumber,
-        orderNumber: params.orderNumber,
+        confirmationNumber: '',
+        orderNumber: '',
         acceptedOffers: acceptedOffers,
         url: url,
         orderStatus: params.orderStatus,
