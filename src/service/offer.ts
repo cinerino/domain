@@ -1,9 +1,7 @@
 import * as createDebug from 'debug';
-import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
 import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
-import { RedisRepository as EventItemAvailabilityRepo } from '../repo/itemAvailability/screeningEvent';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as chevre from '../chevre';
@@ -32,11 +30,8 @@ export type ISearchEventTicketOffersOperation<T> = (repos: {
 
 export type IEventOperation4cinemasunshine<T> = (repos: {
     event: EventRepo;
-    itemAvailability?: EventItemAvailabilityRepo;
     attendeeCapacity?: EventAttendeeCapacityRepo;
 }) => Promise<T>;
-
-export type IUpdateItemAvailabilityOperation<T> = (repos: { itemAvailability: EventItemAvailabilityRepo }) => Promise<T>;
 
 /**
  * 残席数情報も含めてイベントを検索する
@@ -469,35 +464,10 @@ export function searchEvents4cinemasunshine(
 ): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent[]> {
     return async (repos: {
         event: EventRepo;
-        itemAvailability?: EventItemAvailabilityRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         debug('finding screeningEvents...', searchConditions);
-        let events = await repos.event.searchScreeningEvents(searchConditions);
-
-        events = await Promise.all(events.map(async (event) => {
-            // 必ず定義されている前提
-            const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
-
-            // 空席状況情報を追加
-            const offers = {
-                ...event.offers,
-                availability: 100
-            };
-
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (repos.itemAvailability !== undefined) {
-                // nullになりうるが、互換性維持のため、あえてそのまま
-                offers.availability = <number>await repos.itemAvailability.findOne(coaInfo.dateJouei, event.identifier);
-            }
-
-            return {
-                ...event,
-                offer: offers, //  本来不要だが、互換性維持のため
-                offers: offers
-            };
-        }));
+        const events = await repos.event.searchScreeningEvents(searchConditions);
 
         let capacities: IEventCapacity[] = [];
         if (repos.attendeeCapacity !== undefined) {
@@ -512,7 +482,7 @@ export function searchEvents4cinemasunshine(
             const offers = {
                 ...e.offers,
                 // tslint:disable-next-line:no-magic-numbers
-                availability: (e.offers.availability !== undefined) ? e.offers.availability : 100
+                availability: (e.offers !== undefined && e.offers.availability !== undefined) ? e.offers.availability : 100
             };
 
             if (capacity !== undefined
@@ -540,7 +510,6 @@ export function findEventById4cinemasunshine(
 ): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
     return async (repos: {
         event: EventRepo;
-        itemAvailability?: EventItemAvailabilityRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         const event = await repos.event.findById({
@@ -576,73 +545,4 @@ export function findEventById4cinemasunshine(
             offers: offers
         };
     };
-}
-
-/**
- * 劇場IDと上映日範囲からイベント在庫状況を更新する
- */
-export function updateEventItemAvailability(locationBranchCode: string, startFrom: Date, startThrough: Date):
-    IUpdateItemAvailabilityOperation<void> {
-    return async (repos: { itemAvailability: EventItemAvailabilityRepo }) => {
-        // COAから空席状況取得
-        const countFreeSeatResult = await COA.services.reserve.countFreeSeat({
-            theaterCode: locationBranchCode,
-            begin: moment(startFrom)
-                .tz('Asia/Tokyo')
-                .format('YYYYMMDD'), // COAは日本時間で判断
-            end: moment(startThrough)
-                .tz('Asia/Tokyo')
-                .format('YYYYMMDD') // COAは日本時間で判断
-        });
-
-        // 上映日ごとに
-        await Promise.all(countFreeSeatResult.listDate.map(async (countFreeSeatDate) => {
-            debug('saving screeningEvent item availability... day:', countFreeSeatDate.dateJouei);
-            // イベントごとに空席状況を生成して保管
-            await Promise.all(
-                countFreeSeatDate.listPerformance.map(async (countFreeSeatPerformance) => {
-                    const eventId = MasterSync.createScreeningEventIdFromCOA({
-                        theaterCode: countFreeSeatResult.theaterCode,
-                        titleCode: countFreeSeatPerformance.titleCode,
-                        titleBranchNum: countFreeSeatPerformance.titleBranchNum,
-                        dateJouei: countFreeSeatDate.dateJouei,
-                        screenCode: countFreeSeatPerformance.screenCode,
-                        timeBegin: countFreeSeatPerformance.timeBegin
-                    });
-
-                    const itemAvailability = createItemAvailability(
-                        // COAからのレスポンスが負の値の場合があるので調整
-                        Math.max(0, countFreeSeatPerformance.cntReserveFree),
-                        Math.max(0, countFreeSeatPerformance.cntReserveMax)
-                    );
-
-                    // 永続化
-                    debug('saving item availability... identifier:', eventId);
-                    await repos.itemAvailability.updateOne(
-                        countFreeSeatDate.dateJouei,
-                        eventId,
-                        itemAvailability
-                    );
-                    debug('item availability saved');
-                })
-            );
-        }));
-    };
-}
-
-/**
- * 座席数から在庫状況表現を生成する
- */
-// tslint:disable-next-line:no-single-line-block-comment
-/* istanbul ignore next */
-export function createItemAvailability(
-    numberOfAvailableSeats: number, numberOfAllSeats: number
-): number {
-    if (numberOfAllSeats === 0) {
-        return 0;
-    }
-
-    // 残席数より空席率を算出
-    // tslint:disable-next-line:no-magic-numbers
-    return Math.floor(numberOfAvailableSeats / numberOfAllSeats * 100);
 }

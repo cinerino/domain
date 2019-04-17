@@ -10,7 +10,6 @@ import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNu
 import { MongoRepository as EventRepo } from './repo/event';
 import { RedisRepository as EventAttendeeCapacityRepo } from './repo/event/attendeeCapacity';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
-import { RedisRepository as ScreeningEventItemAvailabilityRepo } from './repo/itemAvailability/screeningEvent';
 import { InMemoryRepository as OfferRepo } from './repo/offer';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
@@ -56,13 +55,6 @@ export class Event extends EventRepo { }
  * 請求書リポジトリ
  */
 export class Invoice extends InvoiceRepo { }
-
-export namespace itemAvailability {
-    /**
-     * イベント在庫状況リポジトリ
-     */
-    export class ScreeningEvent extends ScreeningEventItemAvailabilityRepo { }
-}
 
 /**
  * オファーリポジトリ

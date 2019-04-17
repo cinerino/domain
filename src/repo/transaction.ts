@@ -310,8 +310,7 @@ export class MongoRepository {
                 'agent.email': params.agent.email,
                 'agent.familyName': params.agent.familyName,
                 'agent.givenName': params.agent.givenName,
-                'agent.telephone': params.agent.telephone,
-                'object.customerContact': params.agent // agentでの情報保持である程度運用したら削除する
+                'agent.telephone': params.agent.telephone
             }
         )
             .exec();
