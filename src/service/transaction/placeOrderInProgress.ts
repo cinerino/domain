@@ -50,6 +50,9 @@ export type IAuthorizeActionResultBySeller =
 export type IReservationPriceSpecification =
     factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
 
+export type IUnitPriceSpecification =
+    factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
+
 /**
  * 取引開始
  */
@@ -326,6 +329,11 @@ export function confirm(params: IConfirmParams) {
             orderStatus: factory.orderStatus.OrderProcessing,
             isGift: false,
             seller: seller
+        });
+
+        validateEventOffers({
+            transaction: transaction,
+            order: order
         });
 
         // 注文アイテム数制限確認
@@ -979,6 +987,49 @@ export function createOrderFromTransaction(params: {
         orderDate: params.orderDate,
         isGift: params.isGift
     };
+}
+
+/**
+ * イベントオファー適用条件確認
+ */
+export function validateEventOffers(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+    order: factory.order.IOrder;
+}) {
+    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+
+    seatReservationAuthorizeActions.forEach((a) => {
+        const acceptedOffers = (<IAuthorizeSeatReservationOfferObject>a.object).acceptedOffer;
+
+        // オファーIDごとにオファー適用条件を確認
+        const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
+        offerIds.forEach((offerId) => {
+            const acceptedOffersByOfferId = acceptedOffers.filter((o) => o.id === offerId);
+            const unitPriceSpec = <IUnitPriceSpecification>acceptedOffersByOfferId[0].priceSpecification.priceComponent.find(
+                (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+            );
+
+            // 適用金額要件を満たしていなければエラー
+            if (unitPriceSpec.eligibleTransactionVolume !== undefined) {
+                if (typeof unitPriceSpec.eligibleTransactionVolume.price === 'number') {
+                    if (params.order.price < unitPriceSpec.eligibleTransactionVolume.price) {
+                        throw new factory.errors.Argument(
+                            'Transaction',
+                            format(
+                                'Transaction volume must be more than or equal to %s %s for offer:%s',
+                                unitPriceSpec.eligibleTransactionVolume.price,
+                                unitPriceSpec.eligibleTransactionVolume.priceCurrency,
+                                offerId
+                            )
+                        );
+                    }
+                }
+            }
+        });
+    });
 }
 
 /**
