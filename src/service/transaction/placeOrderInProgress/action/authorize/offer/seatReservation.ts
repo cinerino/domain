@@ -193,13 +193,6 @@ export function create(params: {
             if (unitPriceSpec !== undefined && unitPriceSpec.referenceQuantity.value !== undefined) {
                 referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
             }
-            // アイテム数が要件を満たしていなければエラー
-            if (acceptedOffersByOfferId.length % referenceQuantityValue !== 0) {
-                throw new factory.errors.Argument(
-                    'acceptedOffers',
-                    `Offer ${offerId} requires eligible quantity value '${referenceQuantityValue}'`
-                );
-            }
 
             amount -= unitPriceSpec.price * (referenceQuantityValue - 1) * (acceptedOffersByOfferId.length / referenceQuantityValue);
         });
@@ -239,12 +232,12 @@ function validateAcceptedOffers(params: {
             seller: params.seller
         })(repos);
 
-        const acceptedOffers = params.object.acceptedOffer;
+        const acceptedOffersWithoutDetail = params.object.acceptedOffer;
 
         // 利用可能なチケットオファーであれば受け入れる
         // tslint:disable-next-line:max-func-body-length
         // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-        return Promise.all(acceptedOffers.map(async (offerWithoutDetail) => {
+        const acceptedOffers = await Promise.all(acceptedOffersWithoutDetail.map(async (offerWithoutDetail) => {
             const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
             if (offer === undefined) {
                 throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
@@ -487,6 +480,52 @@ function validateAcceptedOffers(params: {
 
             return acceptedOffer;
         }));
+
+        // オファーIDごとにオファー適用条件を確認
+        const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
+        offerIds.forEach((offerId) => {
+            const acceptedOffersByOfferId = acceptedOffers.filter((o) => o.id === offerId);
+            let referenceQuantityValue = 1;
+            const unitPriceSpec = <IUnitPriceSpecification>acceptedOffersByOfferId[0].priceSpecification.priceComponent.find(
+                (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+            );
+            if (unitPriceSpec !== undefined && unitPriceSpec.referenceQuantity.value !== undefined) {
+                referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
+            }
+
+            // アイテム数が適用単位要件を満たしていなければエラー
+            if (acceptedOffersByOfferId.length % referenceQuantityValue !== 0) {
+                throw new factory.errors.Argument(
+                    'acceptedOffers',
+                    `Offer ${offerId} requires reference quantity value ${referenceQuantityValue}`
+                );
+            }
+
+            // 適用アイテム数要件を満たしていなければエラー
+            if (unitPriceSpec.eligibleQuantity !== undefined) {
+                const maxValue = unitPriceSpec.eligibleQuantity.maxValue;
+                if (typeof maxValue === 'number') {
+                    if (acceptedOffersByOfferId.length > maxValue) {
+                        throw new factory.errors.Argument(
+                            'acceptedOffers',
+                            `Number of offer:${offerId} must be less than or equal to ${maxValue}`
+                        );
+                    }
+                }
+
+                const minValue = unitPriceSpec.eligibleQuantity.minValue;
+                if (typeof minValue === 'number') {
+                    if (acceptedOffersByOfferId.length < minValue) {
+                        throw new factory.errors.Argument(
+                            'acceptedOffers',
+                            `Number of offer:${offerId} must be more than or equal to ${minValue}`
+                        );
+                    }
+                }
+            }
+        });
+
+        return acceptedOffers;
     };
 }
 
