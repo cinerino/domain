@@ -190,76 +190,100 @@ export async function createSendOrderMessage(params: {
 export async function createRefundMessage(params: {
     order: factory.order.IOrder;
     paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[];
+    emailTemplate?: string;
 }): Promise<factory.creativeWork.message.email.ICreativeWork> {
-    return new Promise<factory.creativeWork.message.email.ICreativeWork>((resolve, reject) => {
+    // tslint:disable-next-line:max-func-body-length
+    return new Promise<factory.creativeWork.message.email.ICreativeWork>(async (resolve, reject) => {
+        // テンプレートからEメールメッセージを作成
+        const emailTemplate = params.emailTemplate;
+        let emailMessageText: string;
+        if (emailTemplate !== undefined) {
+            emailMessageText = await new Promise<string>((resolveRender) => {
+                pug.render(
+                    emailTemplate,
+                    {
+                        order: params.order
+                    },
+                    (renderMessageErr, message) => {
+                        if (renderMessageErr instanceof Error) {
+                            reject(new factory.errors.Argument('emailTemplate', renderMessageErr.message));
+
+                            return;
+                        }
+
+                        resolveRender(message);
+                    }
+                );
+            });
+        } else {
+            emailMessageText = await new Promise<string>((resolveRender) => {
+                pug.renderFile(
+                    `${templateDirectory}/refundOrder/text.pug`,
+                    {
+                        order: params.order,
+                        paymentMethods: params.paymentMethods.map((p) => {
+                            return util.format(
+                                '%s\n%s\n%s\n',
+                                p.typeOf,
+                                (p.accountId !== undefined) ? p.accountId : '',
+                                (p.totalPaymentDue !== undefined) ? `${p.totalPaymentDue.value} ${p.totalPaymentDue.currency}` : ''
+                            );
+                        })
+                            .join('\n')
+                    },
+                    (renderMessageErr, message) => {
+                        if (renderMessageErr instanceof Error) {
+                            reject(renderMessageErr);
+
+                            return;
+                        }
+
+                        debug('message:', message);
+                        resolveRender(message);
+                    }
+                );
+            });
+        }
+
         pug.renderFile(
-            `${templateDirectory}/refundOrder/text.pug`,
+            `${templateDirectory}/refundOrder/subject.pug`,
             {
-                familyName: params.order.customer.familyName,
-                givenName: params.order.customer.givenName,
-                confirmationNumber: params.order.confirmationNumber,
-                price: params.order.price,
-                sellerName: params.order.seller.name,
-                sellerTelephone: params.order.seller.telephone,
-                paymentMethods: params.paymentMethods.map((p) => {
-                    return util.format(
-                        '%s\n%s\n%s\n',
-                        p.typeOf,
-                        (p.accountId !== undefined) ? p.accountId : '',
-                        (p.totalPaymentDue !== undefined) ? `${p.totalPaymentDue.value} ${p.totalPaymentDue.currency}` : ''
-                    );
-                })
-                    .join('\n')
+                sellerName: params.order.seller.name
             },
-            (renderMessageErr, message) => {
-                if (renderMessageErr instanceof Error) {
-                    reject(renderMessageErr);
+            (renderSubjectErr, subject) => {
+                if (renderSubjectErr instanceof Error) {
+                    reject(renderSubjectErr);
 
                     return;
                 }
 
-                debug('message:', message);
-                pug.renderFile(
-                    `${templateDirectory}/refundOrder/subject.pug`,
-                    {
-                        sellerName: params.order.seller.name
+                debug('subject:', subject);
+
+                const toRecipientEmail = params.order.customer.email;
+                if (toRecipientEmail === undefined) {
+                    reject(new factory.errors.Argument('order', 'order.customer.email undefined'));
+
+                    return;
+                }
+
+                const email: factory.creativeWork.message.email.ICreativeWork = {
+                    typeOf: factory.creativeWorkType.EmailMessage,
+                    identifier: `refundOrder-${params.order.orderNumber}`,
+                    name: `refundOrder-${params.order.orderNumber}`,
+                    sender: {
+                        typeOf: params.order.seller.typeOf,
+                        name: params.order.seller.name,
+                        email: 'noreply@example.com'
                     },
-                    (renderSubjectErr, subject) => {
-                        if (renderSubjectErr instanceof Error) {
-                            reject(renderSubjectErr);
-
-                            return;
-                        }
-
-                        debug('subject:', subject);
-
-                        const toRecipientEmail = params.order.customer.email;
-                        if (toRecipientEmail === undefined) {
-                            reject(new factory.errors.Argument('order', 'order.customer.email undefined'));
-
-                            return;
-                        }
-
-                        const email: factory.creativeWork.message.email.ICreativeWork = {
-                            typeOf: factory.creativeWorkType.EmailMessage,
-                            identifier: `refundOrder-${params.order.orderNumber}`,
-                            name: `refundOrder-${params.order.orderNumber}`,
-                            sender: {
-                                typeOf: params.order.seller.typeOf,
-                                name: params.order.seller.name,
-                                email: 'noreply@example.com'
-                            },
-                            toRecipient: {
-                                typeOf: params.order.customer.typeOf,
-                                name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-                                email: toRecipientEmail
-                            },
-                            about: subject,
-                            text: message
-                        };
-                        resolve(email);
-                    }
-                );
+                    toRecipient: {
+                        typeOf: params.order.customer.typeOf,
+                        name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
+                        email: toRecipientEmail
+                    },
+                    about: subject,
+                    text: emailMessageText
+                };
+                resolve(email);
             }
         );
     });

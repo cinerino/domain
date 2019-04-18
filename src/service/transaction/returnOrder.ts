@@ -197,6 +197,32 @@ export function start(
 export function confirm(params: {
     id: string;
     agent: { id: string };
+    potentialActions?: {
+        returnOrder?: {
+            potentialActions?: {
+                /**
+                 * クレジットカード返金アクションについてカスタマイズする場合に指定
+                 */
+                refundCreditCard?: {
+                    object: {
+                        object: {
+                            paymentMethod: { paymentMethodId: string };
+                        }[];
+                    };
+                    potentialActions?: {
+                        sendEmailMessage?: {
+                            object?: {
+                                emailTemplate?: string;
+                            };
+                        };
+                    };
+                }[];
+                // refundAccount?: refundAccountActions,
+                // refundMovieTicket?: refundMovieTicketActions,
+                // returnPointAward?: returnPointAwardActions
+            };
+        };
+    };
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -233,9 +259,35 @@ export function confirm(params: {
             await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
                 .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
                 .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
+                    // カスタムメールテンプレートの指定を確認
+                    let emailTemplate: string | undefined;
+                    const refundCreditCardActionParams = (params.potentialActions !== undefined
+                        && params.potentialActions.returnOrder !== undefined
+                        && params.potentialActions.returnOrder.potentialActions !== undefined
+                        && params.potentialActions.returnOrder.potentialActions.refundCreditCard !== undefined)
+                        ? params.potentialActions.returnOrder.potentialActions.refundCreditCard
+                        : undefined;
+                    if (refundCreditCardActionParams !== undefined) {
+                        const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
+                            const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
+                                return paymentMethod.paymentMethod.paymentMethodId === a.object[0].paymentMethod.paymentMethodId;
+                            });
+
+                            return assignedPaymentMethod !== undefined;
+                        });
+
+                        if (assignedRefundCreditCardAction !== undefined
+                            && assignedRefundCreditCardAction.potentialActions !== undefined
+                            && assignedRefundCreditCardAction.potentialActions.sendEmailMessage !== undefined
+                            && assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object !== undefined) {
+                            emailTemplate = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object.emailTemplate;
+                        }
+                    }
+
                     const emailMessage = await emailMessageBuilder.createRefundMessage({
                         order,
-                        paymentMethods: a.object.map((o) => o.paymentMethod)
+                        paymentMethods: a.object.map((o) => o.paymentMethod),
+                        emailTemplate: emailTemplate
                     });
                     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
                         typeOf: factory.actionType.SendAction,
