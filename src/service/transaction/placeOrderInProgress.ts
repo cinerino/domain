@@ -358,10 +358,16 @@ export function confirm(params: IConfirmParams) {
         }
 
         // 注文番号を発行
-        order.orderNumber = await repos.orderNumber.publish({
-            orderDate: params.result.order.orderDate,
-            sellerType: seller.typeOf,
-            sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined) ? seller.location.branchCode : ''
+        // order.orderNumber = await repos.orderNumber.publish({
+        //     orderDate: params.result.order.orderDate,
+        //     sellerType: seller.typeOf,
+        //     sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined)
+        //         ? seller.location.branchCode
+        //         : ''
+        // });
+        order.orderNumber = await repos.orderNumber.publishByTimestamp({
+            project: { id: <string>process.env.PROJECT_ID },
+            orderDate: params.result.order.orderDate
         });
 
         // 確認番号を発行
