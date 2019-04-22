@@ -47,12 +47,16 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             id: params.id
         });
 
+        const project: factory.project.IProject = (transaction.project !== undefined)
+            ? transaction.project
+            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
         // ウェブフックタスクを追加
         const webhookUrl =
             // tslint:disable-next-line:max-line-length
-            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/analyzePlaceOrder`;
+            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${project.id}/tasks/analyzePlaceOrder`;
         const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
             name: factory.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,

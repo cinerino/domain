@@ -68,6 +68,7 @@ const instrumentSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         actionStatus: String,
         typeOf: String,
         agent: agentSchema,

@@ -107,6 +107,7 @@ export function searchScreeningEventReservations(
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
                 const searchReservationsResult = await repos.reservationService.search({
+                    project: { ids: [<string>process.env.PROJECT_ID] },
                     typeOf: factory.chevre.reservationType.EventReservation,
                     ids: reservationIds
                 });

@@ -240,6 +240,7 @@ export interface IConfirmResultOrderParams {
     };
 }
 export interface IConfirmParams {
+    project: factory.chevre.project.IProject;
     /**
      * 取引ID
      */
@@ -299,6 +300,10 @@ export function confirm(params: IConfirmParams) {
             throw new factory.errors.Forbidden('A specified transaction is not yours');
         }
 
+        const project: factory.project.IProject = (transaction.project !== undefined)
+            ? transaction.project
+            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
         const seller = await repos.seller.findById({ id: transaction.seller.id });
         debug('seller found.', seller.id);
 
@@ -324,6 +329,7 @@ export function confirm(params: IConfirmParams) {
 
         // 注文作成
         const order = createOrderFromTransaction({
+            project: params.project,
             transaction: transaction,
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
@@ -366,7 +372,7 @@ export function confirm(params: IConfirmParams) {
         //         : ''
         // });
         order.orderNumber = await repos.orderNumber.publishByTimestamp({
-            project: { id: <string>process.env.PROJECT_ID },
+            project: project,
             orderDate: params.result.order.orderDate
         });
 
@@ -596,6 +602,7 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
  */
 // tslint:disable-next-line:max-func-body-length
 export function createOrderFromTransaction(params: {
+    project: factory.chevre.project.IProject;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderDate: Date;
     orderStatus: factory.orderStatus;
@@ -731,6 +738,7 @@ export function createOrderFromTransaction(params: {
                         // }
 
                         const reservation: factory.order.IReservation = {
+                            project: params.project,
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
                             additionalTicketText: '',
@@ -778,8 +786,10 @@ export function createOrderFromTransaction(params: {
                                 ticketNumber: ticketToken,
                                 ticketToken: ticketToken,
                                 ticketType: {
+                                    project: params.project,
                                     typeOf: <'Offer'>'Offer',
                                     id: <string>requestedOffer.id,
+                                    identifier: <string>requestedOffer.identifier,
                                     name: <factory.multilingualString>requestedOffer.name,
                                     description: <factory.multilingualString>requestedOffer.description,
                                     additionalProperty: requestedOffer.additionalProperty,
@@ -860,8 +870,10 @@ export function createOrderFromTransaction(params: {
                                 totalPrice: undefined,
                                 underName: undefined,
                                 ticketType: {
+                                    project: params.project,
                                     typeOf: itemOffered.reservedTicket.ticketType.typeOf,
                                     id: itemOffered.reservedTicket.ticketType.id,
+                                    identifier: itemOffered.reservedTicket.ticketType.identifier,
                                     name: itemOffered.reservedTicket.ticketType.name,
                                     description: itemOffered.reservedTicket.ticketType.description,
                                     additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
@@ -1049,6 +1061,10 @@ export async function createPotentialActionsFromTransaction(params: {
     sendEmailMessage?: boolean;
     emailTemplate?: string;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
+    const project: factory.project.IProject = (params.transaction.project !== undefined)
+        ? params.transaction.project
+        : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
     // 予約確定アクション
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         params.transaction.object.authorizeActions
@@ -1373,6 +1389,7 @@ export async function createPotentialActionsFromTransaction(params: {
     let sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes | null = null;
     if (params.sendEmailMessage === true) {
         const emailMessage = await emailMessageBuilder.createSendOrderMessage({
+            project: project,
             order: params.order,
             emailTemplate: params.emailTemplate
         });

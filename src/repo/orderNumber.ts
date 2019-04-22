@@ -107,7 +107,7 @@ export class RedisRepository {
     }): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             // tslint:disable-next-line:no-magic-numbers
-            const projectPrefix = params.project.id.slice(0, 2)
+            const projectPrefix = params.project.id.slice(0, 3)
                 .toUpperCase();
             const timestamp = moment(params.orderDate)
                 .valueOf()

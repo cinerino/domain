@@ -27,6 +27,7 @@ const offerSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         typeOf: {
             type: String,
             required: true

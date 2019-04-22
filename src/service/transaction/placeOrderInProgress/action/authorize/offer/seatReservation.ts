@@ -34,6 +34,7 @@ export type IMovieTicketTypeChargeSpecification =
  * 座席予約承認
  */
 export function create(params: {
+    project: factory.chevre.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     agent: { id: string };
     transaction: { id: string };
@@ -72,6 +73,7 @@ export function create(params: {
         }
 
         const acceptedOffers = await validateAcceptedOffers({
+            project: params.project,
             object: params.object,
             event: event,
             seller: seller
@@ -140,6 +142,7 @@ export function create(params: {
                     debug('starting reserve transaction...');
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
                         await repos.reserveService.start({
+                            project: params.project,
                             typeOf: chevre.factory.transactionType.Reserve,
                             agent: {
                                 typeOf: transaction.agent.typeOf,
@@ -215,6 +218,7 @@ export function create(params: {
  * 受け入れらたオファーの内容を検証
  */
 function validateAcceptedOffers(params: {
+    project: factory.chevre.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     seller: { typeOf: factory.organizationType; id: string };
@@ -228,6 +232,7 @@ function validateAcceptedOffers(params: {
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = await OfferService.searchEventTicketOffers({
+            project: params.project,
             event: params.object.event,
             seller: params.seller
         })(repos);
@@ -405,6 +410,7 @@ function validateAcceptedOffers(params: {
                         // ムビチケ情報が確定して初めて価格仕様が決定する
                         acceptedOffer.priceSpecification.priceComponent = [
                             {
+                                project: params.project,
                                 typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
                                 price: 0,
                                 priceCurrency: factory.chevre.priceCurrency.JPY,
@@ -416,6 +422,7 @@ function validateAcceptedOffers(params: {
                                 }
                             },
                             {
+                                project: params.project,
                                 typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
                                 price: 0,
                                 priceCurrency: factory.chevre.priceCurrency.JPY,

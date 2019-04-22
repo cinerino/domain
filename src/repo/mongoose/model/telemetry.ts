@@ -49,6 +49,7 @@ const errorSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         result: resultSchema,
         error: errorSchema,
         object: objectSchema,

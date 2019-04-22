@@ -42,6 +42,7 @@ const alternativeHeadlineSchema = mongoose.SchemaTypes.Mixed;
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         _id: String,
         typeOf: {
             type: String,

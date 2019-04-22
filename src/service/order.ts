@@ -273,6 +273,11 @@ export function returnOrder(params: { orderNumber: string }) {
         if (returnOrderTransaction === undefined) {
             throw new factory.errors.NotFound('Return order transaction');
         }
+
+        const project: factory.project.IProject = (returnOrderTransaction.project !== undefined)
+            ? returnOrderTransaction.project
+            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
         const potentialActions = returnOrderTransaction.potentialActions;
         if (potentialActions === undefined) {
             throw new factory.errors.NotFound('PotentialActions of return order transaction');
@@ -375,6 +380,7 @@ export function returnOrder(params: { orderNumber: string }) {
 
                         if (cancelReservationService !== undefined) {
                             const cancelReservationTransaction = await cancelReservationService.start({
+                                project: project,
                                 typeOf: factory.chevre.transactionType.CancelReservation,
                                 agent: {
                                     typeOf: returnOrderTransaction.agent.typeOf,

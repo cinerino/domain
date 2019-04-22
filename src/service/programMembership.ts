@@ -442,6 +442,10 @@ function processPlaceOrder(params: {
         depositService?: pecorinoapi.service.transaction.Deposit;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
+        const project: factory.project.IProject = (params.registerActionAttributes.project !== undefined)
+            ? params.registerActionAttributes.project
+            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
         const programMembership = params.registerActionAttributes.object.itemOffered;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -598,7 +602,7 @@ function processPlaceOrder(params: {
 
         await CreditCardPaymentService.authorize({
             project: {
-                id: <string>process.env.PROJECT_ID,
+                id: project.id,
                 gmoInfo: {
                     siteId: repos.creditCard.options.siteId,
                     sitePass: repos.creditCard.options.sitePass
@@ -637,6 +641,7 @@ function processPlaceOrder(params: {
         debug('confirming transaction...', transaction.id);
 
         return PlaceOrderService.confirm({
+            project: project,
             id: transaction.id,
             agent: { id: params.registerActionAttributes.agent.id },
             result: {

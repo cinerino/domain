@@ -78,8 +78,13 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         event: EventRepo;
         seller: SellerRepo;
     }) => {
+        const project: factory.project.IProject = (params.project !== undefined)
+            ? params.project
+            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
         // 劇場取得
         const movieTheater = createMovieTheaterFromCOA(
+            project,
             await COA.services.master.theater({ theaterCode: params.locationBranchCode }),
             await COA.services.master.screen({ theaterCode: params.locationBranchCode })
         );
@@ -186,6 +191,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             // 永続化
             const screeningEventSerieses = await Promise.all(filmsFromCOA.map(async (filmFromCOA) => {
                 const screeningEventSeries = createScreeningEventSeriesFromCOA({
+                    project: project,
                     filmFromCOA: filmFromCOA,
                     movieTheater: movieTheater,
                     eirinKubuns: eirinKubuns,
@@ -231,6 +237,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 
                     // 永続化
                     const screeningEvent = createScreeningEventFromCOA({
+                        project: project,
                         performanceFromCOA: scheduleFromCOA,
                         screenRoom: screenRoom,
                         superEvent: screeningEventSeries,
@@ -346,6 +353,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 /* istanbul ignore next */
 // tslint:disable-next-line:max-func-body-length
 export function createScreeningEventFromCOA(params: {
+    project: factory.project.IProject;
     performanceFromCOA: COA.services.master.IScheduleResult;
     screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
     superEvent: factory.event.screeningEventSeries.IEvent;
@@ -418,6 +426,7 @@ export function createScreeningEventFromCOA(params: {
 
     const offers: factory.event.screeningEvent.IOffer = {
         id: '',
+        identifier: '',
         name: {
             ja: '',
             en: ''
@@ -436,8 +445,10 @@ export function createScreeningEventFromCOA(params: {
         },
         itemOffered: {
             serviceType: {
+                project: params.project,
                 typeOf: 'ServiceType',
                 id: '',
+                identifier: '',
                 name: ''
             }
         },
@@ -448,6 +459,7 @@ export function createScreeningEventFromCOA(params: {
     };
 
     return {
+        project: params.project,
         typeOf: factory.chevre.eventType.ScreeningEvent,
         id: id,
         identifier: id,
@@ -455,6 +467,7 @@ export function createScreeningEventFromCOA(params: {
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         workPerformed: params.superEvent.workPerformed,
         location: {
+            project: params.project,
             typeOf: <factory.chevre.placeType.ScreeningRoom>params.screenRoom.typeOf,
             branchCode: params.screenRoom.branchCode,
             name: params.screenRoom.name
@@ -487,6 +500,7 @@ export function createScreeningEventFromCOA(params: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createScreeningEventSeriesFromCOA(params: {
+    project: factory.project.IProject;
     filmFromCOA: COA.services.master.ITitleResult;
     movieTheater: factory.chevre.place.movieTheater.IPlace;
     eirinKubuns: COA.services.master.IKubunNameResult[];
@@ -533,6 +547,7 @@ export function createScreeningEventSeriesFromCOA(params: {
     }
 
     return {
+        project: params.project,
         typeOf: factory.chevre.eventType.ScreeningEventSeries,
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         id: id,
@@ -544,6 +559,7 @@ export function createScreeningEventSeriesFromCOA(params: {
         kanaName: params.filmFromCOA.titleNameKana,
         alternativeHeadline: params.filmFromCOA.titleNameShort,
         location: {
+            project: params.project,
             id: (params.movieTheater.id !== undefined) ? params.movieTheater.id : '',
             branchCode: params.movieTheater.branchCode,
             name: params.movieTheater.name,
@@ -558,6 +574,8 @@ export function createScreeningEventSeriesFromCOA(params: {
         videoFormat: params.eizouKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnEizou)[0],
         soundFormat: [],
         workPerformed: {
+            project: params.project,
+            id: `${params.movieTheater.branchCode}-${params.filmFromCOA.titleCode}`,
             identifier: params.filmFromCOA.titleCode,
             name: params.filmFromCOA.titleNameOrig,
             duration: moment.duration(params.filmFromCOA.showTime, 'm')
@@ -630,12 +648,14 @@ export function createScreeningEventSeriesId(params: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createMovieTheaterFromCOA(
+    project: factory.project.IProject,
     theaterFromCOA: COA.services.master.ITheaterResult,
     screensFromCOA: COA.services.master.IScreenResult[]
 ): factory.chevre.place.movieTheater.IPlace {
     const id = `MovieTheater-${theaterFromCOA.theaterCode}`;
 
     return {
+        project: project,
         id: id,
         screenCount: screensFromCOA.length,
         branchCode: theaterFromCOA.theaterCode,
@@ -645,7 +665,7 @@ export function createMovieTheaterFromCOA(
         },
         kanaName: theaterFromCOA.theaterNameKana,
         containsPlace: screensFromCOA.map((screenFromCOA) => {
-            return createScreeningRoomFromCOA(screenFromCOA);
+            return createScreeningRoomFromCOA(project, screenFromCOA);
         }),
         typeOf: factory.chevre.placeType.MovieTheater,
         telephone: theaterFromCOA.theaterTelNum
@@ -658,6 +678,7 @@ export function createMovieTheaterFromCOA(
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createScreeningRoomFromCOA(
+    project: factory.project.IProject,
     screenFromCOA: COA.services.master.IScreenResult
 ): factory.chevre.place.movieTheater.IScreeningRoom {
     const sections: factory.chevre.place.movieTheater.IScreeningRoomSection[] = [];
@@ -666,6 +687,7 @@ export function createScreeningRoomFromCOA(
         if (sectionCodes.indexOf(seat.seatSection) < 0) {
             sectionCodes.push(seat.seatSection);
             sections.push({
+                project: project,
                 branchCode: seat.seatSection,
                 name: {
                     ja: `セクション${seat.seatSection}`,
@@ -677,12 +699,14 @@ export function createScreeningRoomFromCOA(
         }
 
         sections[sectionCodes.indexOf(seat.seatSection)].containsPlace.push({
+            project: project,
             branchCode: seat.seatNum,
             typeOf: factory.chevre.placeType.Seat
         });
     });
 
     return {
+        project: project,
         containsPlace: sections,
         branchCode: screenFromCOA.screenCode,
         name: {

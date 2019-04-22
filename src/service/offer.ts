@@ -66,6 +66,7 @@ export function searchEvents(
  * イベントに対する座席オファーを検索する
  */
 export function searchEventOffers(params: {
+    project: factory.project.IProject;
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
     return async (repos: {
@@ -94,6 +95,7 @@ export function searchEventOffers(params: {
                 const stateReserveSeatResult = await COA.services.reserve.stateReserveSeat(coaInfo);
 
                 const movieTheater = MasterSync.createMovieTheaterFromCOA(
+                    params.project,
                     await COA.services.master.theater(coaInfo),
                     await COA.services.master.screen(coaInfo)
                 );
@@ -139,6 +141,7 @@ export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTick
  * イベントに対する券種オファーを検索する
  */
 export function searchEventTicketOffers(params: {
+    project: factory.project.IProject;
     /**
      * どのイベントに対して
      */
@@ -208,6 +211,7 @@ export function searchEventTicketOffers(params: {
                 }
                 const searchOffersResult = await repos.offerService.searchTicketTypes({
                     limit: 100,
+                    project: { ids: [params.project.id] },
                     ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
                 });
 
@@ -235,6 +239,7 @@ export function searchEventTicketOffers(params: {
                     return {
                         ...offer,
                         ...coaSalesTicket2offer({
+                            project: params.project,
                             event: event,
                             salesTicket: t,
                             coaInfo: <factory.event.screeningEvent.ICOAInfo>coaInfo,
@@ -291,6 +296,7 @@ export function searchEventTicketOffers(params: {
  */
 // tslint:disable-next-line:max-func-body-length
 function coaSalesTicket2offer(params: {
+    project: factory.project.IProject;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     salesTicket: COA.services.reserve.ISalesTicketResult;
     coaInfo: factory.event.screeningEvent.ICOAInfo;
@@ -320,6 +326,7 @@ function coaSalesTicket2offer(params: {
 
     const priceSpecification: factory.chevre.event.screeningEvent.ITicketPriceSpecification
         = {
+        project: params.project,
         typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
         valueAddedTaxIncluded: true,
         priceCurrency: factory.chevre.priceCurrency.JPY,
@@ -329,6 +336,7 @@ function coaSalesTicket2offer(params: {
     // 人数制限仕様を単価仕様へ変換
     const unitPriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>
         = {
+        project: params.project,
         typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
         price: params.salesTicket.stdPrice,
         priceCurrency: factory.chevre.priceCurrency.JPY,
@@ -426,6 +434,7 @@ function coaSalesTicket2offer(params: {
         typeOf: 'Offer',
         priceCurrency: factory.priceCurrency.JPY,
         id: `COA-${params.coaInfo.theaterCode}-${params.salesTicket.ticketCode}`,
+        identifier: params.salesTicket.ticketCode,
         name: {
             ja: params.salesTicket.ticketName,
             en: params.salesTicket.ticketNameEng
@@ -447,8 +456,10 @@ function coaSalesTicket2offer(params: {
         },
         itemOffered: {
             serviceType: {
+                project: params.project,
                 typeOf: 'ServiceType',
                 id: '',
+                identifier: '',
                 name: ''
             }
         }

@@ -54,6 +54,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
                 limit: limit,
                 page: page,
+                project: { ids: [<string>process.env.PROJECT_ID] },
                 typeOf: factory.chevre.eventType.ScreeningEvent,
                 inSessionFrom: params.importFrom,
                 inSessionThrough: params.importThrough,
@@ -292,6 +293,7 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
             const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
                 limit: limit,
                 page: page,
+                project: { ids: [<string>process.env.PROJECT_ID] },
                 typeOf: factory.chevre.eventType.ScreeningEvent,
                 inSessionFrom: params.importFrom,
                 inSessionThrough: params.importThrough,

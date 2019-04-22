@@ -19,6 +19,7 @@ export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecificat
  * 注文配送メッセージを作成する
  */
 export async function createSendOrderMessage(params: {
+    project: factory.project.IProject;
     order: factory.order.IOrder;
     emailTemplate?: string;
 }): Promise<factory.creativeWork.message.email.ICreativeWork> {
@@ -87,11 +88,13 @@ export async function createSendOrderMessage(params: {
                                 if (typeof o.priceSpecification === 'number') {
                                     // priceが数字の場合単価仕様を含む複合価格仕様に変換
                                     reservationPriceSpec = {
+                                        project: params.project,
                                         typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
                                         priceCurrency: factory.chevre.priceCurrency.JPY,
                                         valueAddedTaxIncluded: true,
                                         priceComponent: [
                                             {
+                                                project: params.project,
                                                 typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
                                                 price: o.priceSpecification,
                                                 priceCurrency: o.priceCurrency,
