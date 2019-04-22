@@ -154,11 +154,11 @@ export class RedisRepository {
                             orderNumber = `${projectPrefix}${cd}${orderNumber}`;
                             orderNumber = `${[
                                 // tslint:disable-next-line:no-magic-numbers
-                                orderNumber.slice(0, 3),
+                                orderNumber.slice(0, 4),
                                 // tslint:disable-next-line:no-magic-numbers
-                                orderNumber.slice(3, 10),
+                                orderNumber.slice(4, 11),
                                 // tslint:disable-next-line:no-magic-numbers
-                                orderNumber.slice(10)
+                                orderNumber.slice(11)
                             ].join('-')}`;
 
                             resolve(orderNumber);
