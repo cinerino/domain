@@ -990,6 +990,7 @@ export function createOrderFromTransaction(params: {
         });
 
     return {
+        project: params.project,
         typeOf: 'Order',
         seller: seller,
         customer: customer,

@@ -22,6 +22,7 @@ export type ICreateOperation<T> = (repos: {
  * add the result of using a mvtk card
  */
 export function create(params: {
+    project?: factory.project.IProject;
     agentId: string;
     transactionId: string;
     authorizeObject: factory.action.authorize.discount.mvtk.IObject;
@@ -61,6 +62,7 @@ export function create(params: {
             // 一度認証されたムビチケをDBに記録する(後で検索しやすいように)
             await Promise.all(params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.map(async (knyknrNoInfo) => {
                 const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
+                    project: params.project,
                     typeOf: factory.paymentMethodType.MovieTicket,
                     identifier: knyknrNoInfo.knyknrNo,
                     accessCode: knyknrNoInfo.pinCd,
@@ -111,6 +113,7 @@ export function create(params: {
  * 着券済ムビチケ決済承認アクション
  */
 export function createMovieTicketPaymentAuthorization(params: {
+    project?: factory.project.IProject;
     agentId: string;
     transactionId: string;
     authorizeObject: factory.action.authorize.discount.mvtk.IObject;
@@ -155,6 +158,7 @@ export function createMovieTicketPaymentAuthorization(params: {
                 // 一度認証されたムビチケをDBに記録する(後で検索しやすいように)
                 await Promise.all(params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.map(async (knyknrNoInfo) => {
                     const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
+                        project: params.project,
                         typeOf: factory.paymentMethodType.MovieTicket,
                         identifier: knyknrNoInfo.knyknrNo,
                         accessCode: knyknrNoInfo.pinCd,

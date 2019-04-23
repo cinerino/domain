@@ -136,6 +136,7 @@ export function createOwnershipInfosFromOrder(params: {
                     .add(eligibleDuration.value, 'seconds')
                     .toDate();
                 ownershipInfo = {
+                    project: params.order.project,
                     id: '',
                     typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
                     identifier: identifier,
@@ -166,6 +167,7 @@ export function createOwnershipInfosFromOrder(params: {
                 if (bookingService.identifier === factory.service.webAPI.Identifier.COA) {
                     // COA予約の場合、typeOfGoodにはアイテムをそのまま挿入する
                     ownershipInfo = {
+                        project: params.order.project,
                         id: '',
                         typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
                         identifier: identifier,
@@ -177,6 +179,7 @@ export function createOwnershipInfosFromOrder(params: {
                     };
                 } else {
                     ownershipInfo = {
+                        project: params.order.project,
                         typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
                         id: '',
                         identifier: identifier,

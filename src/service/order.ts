@@ -69,6 +69,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
 
                             if (existingInvoiceIndex < 0) {
                                 invoices.push({
+                                    project: order.project,
                                     typeOf: 'Invoice',
                                     accountId: result.accountId,
                                     confirmationNumber: order.confirmationNumber.toString(),
