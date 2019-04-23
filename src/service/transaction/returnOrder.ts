@@ -558,6 +558,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             case factory.transactionStatusType.Confirmed:
                 // 注文返品タスク
                 const returnOrderTask: factory.task.IAttributes<factory.taskName.ReturnOrder> = {
+                    project: transaction.project,
                     name: factory.taskName.ReturnOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行

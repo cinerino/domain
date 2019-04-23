@@ -58,6 +58,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             // tslint:disable-next-line:max-line-length
             `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${project.id}/tasks/analyzePlaceOrder`;
         const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
+            project: project,
             name: factory.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
@@ -81,6 +82,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                 }
                 const orderActionAttributes = potentialActions.order;
                 const placeOrderTaskAttributes: factory.task.IAttributes<factory.taskName.PlaceOrder> = {
+                    project: project,
                     name: factory.taskName.PlaceOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -98,6 +100,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
                 const cancelSeatReservationTaskAttributes: factory.task.IAttributes<factory.taskName.CancelSeatReservation> = {
+                    project: project,
                     name: factory.taskName.CancelSeatReservation,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -109,6 +112,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     }
                 };
                 const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
+                    project: project,
                     name: factory.taskName.CancelCreditCard,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -120,6 +124,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     }
                 };
                 const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
+                    project: project,
                     name: factory.taskName.CancelAccount,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
@@ -131,6 +136,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     }
                 };
                 const cancelPointAwardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPointAward> = {
+                    project: project,
                     name: factory.taskName.CancelPointAward,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行

@@ -266,6 +266,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     if (potentialActions.moneyTransfer !== undefined) {
                         taskAttributes.push(...potentialActions.moneyTransfer.map((a) => {
                             return {
+                                project: transaction.project,
                                 name: <factory.taskName.MoneyTransfer>factory.taskName.MoneyTransfer,
                                 status: factory.taskStatus.Ready,
                                 runsAt: new Date(), // なるはやで実行
