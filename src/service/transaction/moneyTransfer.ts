@@ -57,6 +57,7 @@ export function start(
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const startParams: factory.transaction.IStartParams<factory.transactionType.MoneyTransfer> = {
+            project: params.project,
             typeOf: factory.transactionType.MoneyTransfer,
             agent: params.agent,
             recipient: params.recipient,

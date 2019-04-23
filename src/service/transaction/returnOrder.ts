@@ -84,6 +84,7 @@ export function start(
         // }
 
         const returnOrderAttributes: factory.transaction.IStartParams<factory.transactionType.ReturnOrder> = {
+            project: params.project,
             typeOf: factory.transactionType.ReturnOrder,
             agent: params.agent,
             seller: {
