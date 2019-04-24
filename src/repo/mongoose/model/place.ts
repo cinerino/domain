@@ -75,6 +75,16 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { 'project.id': 1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
 // 劇場検索に使用
 schema.index(
     { branchCode: 1, typeOf: 1 }

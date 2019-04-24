@@ -73,6 +73,16 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { 'project.id': 1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
 // 測定データ参照時に使用
 schema.index(
     { 'object.measuredAt': 1 },

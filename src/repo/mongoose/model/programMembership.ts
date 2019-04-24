@@ -75,6 +75,16 @@ schema.index(
     { name: 'searchByUpdatedAt' }
 );
 
+schema.index(
+    { 'project.id': 1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
 mongoose.model(modelName, schema)
     .on(
         'index',

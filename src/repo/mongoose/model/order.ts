@@ -108,6 +108,17 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
+schema.index(
+    { 'project.id': 1, orderDate: -1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
 // 注文番号はユニークなはず
 schema.index(
     { orderNumber: 1 },

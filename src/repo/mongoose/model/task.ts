@@ -74,6 +74,16 @@ schema.index(
 );
 
 schema.index(
+    { 'project.id': 1, runsAt: -1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { name: 1, runsAt: -1 },
     { name: 'searchByName-v2' }
 );

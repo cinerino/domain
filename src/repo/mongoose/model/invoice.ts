@@ -109,6 +109,16 @@ schema.index(
 );
 
 schema.index(
+    { 'project.id': 1, createdAt: -1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'referencesOrder.orderNumber': 1, createdAt: -1 },
     {
         name: 'searchByReferenceOrderNumber-v2',

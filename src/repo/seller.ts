@@ -25,6 +25,19 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.project !== undefined) {
+            if (Array.isArray(params.project.ids)) {
+                andConditions.push({
+                    'project.id': {
+                        $exists: true,
+                        $in: params.project.ids
+                    }
+                });
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (Array.isArray(params.typeOfs)) {
             andConditions.push({
                 typeOf: { $in: params.typeOfs }

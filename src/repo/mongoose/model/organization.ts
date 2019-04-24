@@ -119,6 +119,17 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
+schema.index(
+    { 'project.id': 1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
 // 組織取得に使用
 schema.index(
     { typeOf: 1, _id: 1 }
