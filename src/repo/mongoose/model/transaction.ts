@@ -310,6 +310,7 @@ schema.index(
         }
     }
 );
+
 schema.index(
     { typeOf: 1, status: 1, tasksExportationStatus: 1 },
     {
@@ -317,15 +318,44 @@ schema.index(
     }
 );
 schema.index(
+    { 'project.id': 1, typeOf: 1, status: 1, tasksExportationStatus: 1 },
+    {
+        name: 'startExportTasks-v2',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { tasksExportationStatus: 1, updatedAt: 1 },
     {
         name: 'reexportTasks'
     }
 );
 schema.index(
+    { 'project.id': 1, tasksExportationStatus: 1, updatedAt: 1 },
+    {
+        name: 'reexportTasks-v2',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { status: 1, expires: 1 },
     {
         name: 'makeExpired'
+    }
+);
+schema.index(
+    { 'project.id': 1, status: 1, expires: 1 },
+    {
+        name: 'makeExpired-v2',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
     }
 );
 

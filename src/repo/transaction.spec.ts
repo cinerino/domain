@@ -166,7 +166,7 @@ describe('makeExpired()', () => {
             .chain('exec')
             .resolves();
 
-        const result = await repository.makeExpired();
+        const result = await repository.makeExpired({});
         assert.equal(result, undefined);
         sandbox.verify();
     });

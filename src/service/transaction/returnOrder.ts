@@ -527,12 +527,19 @@ export function validateRequest() {
 /**
  * 返品取引のタスクをエクスポートする
  */
-export function exportTasks(status: factory.transactionStatusType) {
+export function exportTasks(params: {
+    project?: factory.project.IProject;
+    status: factory.transactionStatusType;
+}) {
     return async (repos: {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.startExportTasks({ typeOf: factory.transactionType.ReturnOrder, status: status });
+        const transaction = await repos.transaction.startExportTasks({
+            project: params.project,
+            typeOf: factory.transactionType.ReturnOrder,
+            status: params.status
+        });
         if (transaction === null) {
             return;
         }

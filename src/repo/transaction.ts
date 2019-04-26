@@ -389,11 +389,19 @@ export class MongoRepository {
      * タスク未エクスポートの取引をひとつ取得してエクスポートを開始する
      */
     public async startExportTasks<T extends factory.transactionType>(params: {
+        project?: { id: string };
         typeOf: T;
         status: factory.transactionStatusType;
     }): Promise<factory.transaction.ITransaction<T> | null> {
         return this.transactionModel.findOneAndUpdate(
             {
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
                 typeOf: params.typeOf,
                 status: params.status,
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
@@ -410,9 +418,19 @@ export class MongoRepository {
      * タスクエクスポートリトライ
      * TODO updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
      */
-    public async reexportTasks(params: { intervalInMinutes: number }): Promise<void> {
+    public async reexportTasks(params: {
+        project?: { id: string };
+        intervalInMinutes: number;
+    }): Promise<void> {
         await this.transactionModel.findOneAndUpdate(
             {
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Exporting,
                 updatedAt: {
                     $lt: moment()
@@ -446,13 +464,22 @@ export class MongoRepository {
     /**
      * 取引を期限切れにする
      */
-    public async makeExpired(): Promise<void> {
+    public async makeExpired(params: {
+        project?: { id: string };
+    }): Promise<void> {
         const endDate = moment()
             .toDate();
 
         // ステータスと期限を見て更新
         await this.transactionModel.update(
             {
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
                 status: factory.transactionStatusType.InProgress,
                 expires: { $lt: endDate }
             },
