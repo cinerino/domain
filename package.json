@@ -110,7 +110,7 @@
     "build": "tsc",
     "check": "npm run tslint",
     "clean": "rimraf ./lib \"npm-debug.log*\" ./doc ./coverage ./.nyc_output",
-    "doc": "jsdoc -c jsdoc.json",
+    "doc": "echo \"implementing...\" && exit 0",
     "mocha": "mocha",
     "nyc": "nyc mocha \"src/**/*.spec.ts\"",
     "coverage": "npm run nyc && nyc report --reporter=text-lcov | coveralls",
