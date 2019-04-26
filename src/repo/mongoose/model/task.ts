@@ -121,10 +121,42 @@ schema.index(
 );
 
 schema.index(
+    {
+        'project.id': 1,
+        status: 1,
+        name: 1,
+        numberOfTried: 1,
+        runsAt: 1
+    },
+    {
+        name: 'executeOneByName-v2',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { status: 1, remainingNumberOfTries: 1, lastTriedAt: 1 },
     {
         name: 'retry',
         partialFilterExpression: {
+            lastTriedAt: { $type: 'date' }
+        }
+    }
+);
+
+schema.index(
+    {
+        'project.id': 1,
+        status: 1,
+        remainingNumberOfTries: 1,
+        lastTriedAt: 1
+    },
+    {
+        name: 'retry-v2',
+        partialFilterExpression: {
+            'project.id': { $exists: true },
             lastTriedAt: { $type: 'date' }
         }
     }

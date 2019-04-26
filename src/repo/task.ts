@@ -99,12 +99,19 @@ export class MongoRepository {
             );
     }
 
-    public async executeOneByName<T extends factory.taskName>(taskName: T): Promise<factory.task.ITask<T> | null> {
+    public async executeOneByName<T extends factory.taskName>(params: {
+        project: { id: string };
+        name: T;
+    }): Promise<factory.task.ITask<T> | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
+                'project.id': {
+                    $exists: true,
+                    $eq: params.project.id
+                },
                 status: factory.taskStatus.Ready,
                 runsAt: { $lt: new Date() },
-                name: taskName
+                name: params.name
             },
             {
                 status: factory.taskStatus.Running, // 実行中に変更
@@ -125,12 +132,20 @@ export class MongoRepository {
         return doc.toObject();
     }
 
-    public async retry(intervalInMinutes: number) {
+    public async retry(params: {
+        project: { id: string };
+        intervalInMinutes: number;
+    }) {
         const lastTriedAtShoudBeLessThan = moment()
-            .add(-intervalInMinutes, 'minutes')
+            .add(-params.intervalInMinutes, 'minutes')
             .toDate();
+
         await this.taskModel.update(
             {
+                'project.id': {
+                    $exists: true,
+                    $eq: params.project.id
+                },
                 status: factory.taskStatus.Running,
                 lastTriedAt: {
                     $type: 'date',
@@ -146,12 +161,20 @@ export class MongoRepository {
             .exec();
     }
 
-    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask<any> | null> {
+    public async abortOne(params: {
+        project: { id: string };
+        intervalInMinutes: number;
+    }): Promise<factory.task.ITask<any> | null> {
         const lastTriedAtShoudBeLessThan = moment()
-            .add(-intervalInMinutes, 'minutes')
+            .add(-params.intervalInMinutes, 'minutes')
             .toDate();
+
         const doc = await this.taskModel.findOneAndUpdate(
             {
+                'project.id': {
+                    $exists: true,
+                    $eq: params.project.id
+                },
                 status: factory.taskStatus.Running,
                 lastTriedAt: {
                     $type: 'date',

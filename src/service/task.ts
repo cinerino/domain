@@ -16,6 +16,7 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 import * as NotificationService from './notification';
 
 const debug = createDebug('cinerino-domain:service');
+
 export interface IConnectionSettings {
     /**
      * MongoDBコネクション
@@ -71,27 +72,32 @@ export interface IConnectionSettings {
         sitePass: string;
     };
 }
+
 export interface ISettings extends IConnectionSettings {
     /**
      * タスクリポジトリ
      */
     taskRepo: TaskRepo;
 }
+
 export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
 export type IExecuteOperation<T> = (settings: ISettings) => Promise<T>;
 export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
+
 export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
+
 /**
- * execute a task by taskName
  * タスク名でタスクをひとつ実行する
- * @param taskName タスク名
  */
-export function executeByName<T extends factory.taskName>(taskName: T): IExecuteOperation<void> {
+export function executeByName<T extends factory.taskName>(params: {
+    project: factory.project.IProject;
+    name: T;
+}): IExecuteOperation<void> {
     return async (settings: ISettings) => {
         // 未実行のタスクを取得
         let task: factory.task.ITask<T> | null = null;
         try {
-            task = await settings.taskRepo.executeOneByName(taskName);
+            task = await settings.taskRepo.executeOneByName(params);
             debug('task found', task);
         } catch (error) {
             // tslint:disable-next-line:no-single-line-block-comment
@@ -105,10 +111,9 @@ export function executeByName<T extends factory.taskName>(taskName: T): IExecute
         }
     };
 }
+
 /**
- * execute a task
  * タスクを実行する
- * @param task タスクオブジェクト
  */
 export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOperation<void> {
     debug('executing a task...', task);
@@ -135,24 +140,30 @@ export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOpe
         }
     };
 }
+
 /**
- * retry tasks in running status
  * 実行中ステータスのままになっているタスクをリトライする
- * @param intervalInMinutes 最終トライ日時から何分経過したタスクをリトライするか
  */
-export function retry(intervalInMinutes: number): TaskOperation<void> {
+export function retry(params: {
+    project: factory.project.IProject;
+    intervalInMinutes: number;
+}): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
-        await repos.task.retry(intervalInMinutes);
+        await repos.task.retry(params);
     };
 }
+
 /**
- * abort a task
  * トライ可能回数が0に達したタスクを実行中止する
  * @param intervalInMinutes 最終トライ日時から何分経過したタスクを中止するか
  */
-export function abort(intervalInMinutes: number): TaskOperation<void> {
+export function abort(params: {
+    project: factory.project.IProject;
+    intervalInMinutes: number;
+}): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
-        const abortedTask = await repos.task.abortOne(intervalInMinutes);
+        const abortedTask = await repos.task.abortOne(params);
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (abortedTask === null) {
@@ -169,7 +180,8 @@ export function abort(intervalInMinutes: number): TaskOperation<void> {
 
         await NotificationService.report2developers(
             ABORT_REPORT_SUBJECT,
-            `id:${abortedTask.id}
+            `project:${params.project.id}
+id:${abortedTask.id}
 name:${abortedTask.name}
 runsAt:${moment(abortedTask.runsAt)
                 .toISOString()}

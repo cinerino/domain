@@ -10,6 +10,7 @@ import * as domain from '../index';
 import * as PlaceOrderTask from './task/placeOrder';
 
 let sandbox: sinon.SinonSandbox;
+const project = { typeOf: <'Project'>'Project', id: 'projectId' };
 
 before(() => {
     sandbox = sinon.createSandbox();
@@ -22,6 +23,7 @@ describe('executeByName()', () => {
 
     it('未実行タスクが存在すれば、実行されるはず', async () => {
         const task = {
+            project: project,
             id: 'id',
             name: domain.factory.taskName.PlaceOrder,
             data: { datakey: 'dataValue' },
@@ -29,11 +31,22 @@ describe('executeByName()', () => {
         };
         const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
-        sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(task.name).resolves(task);
-        sandbox.mock(PlaceOrderTask).expects('call').once().withArgs(task.data).returns(async () => Promise.resolve());
-        sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, domain.factory.taskStatus.Executed).resolves();
+        sandbox.mock(taskRepo)
+            .expects('executeOneByName')
+            .once()
+            .resolves(task);
+        sandbox.mock(PlaceOrderTask)
+            .expects('call')
+            .once()
+            .withArgs(task.data)
+            .returns(async () => Promise.resolve());
+        sandbox.mock(taskRepo)
+            .expects('pushExecutionResultById')
+            .once()
+            .withArgs(task.id, domain.factory.taskStatus.Executed)
+            .resolves();
 
-        const result = await domain.service.task.executeByName(task.name)({
+        const result = await domain.service.task.executeByName(task)({
             taskRepo: taskRepo,
             connection: mongoose.connection,
             pecorinoAuthClient: authClient
@@ -48,10 +61,15 @@ describe('executeByName()', () => {
         const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
-        sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(taskName).resolves(null);
-        sandbox.mock(domain.service.task).expects('execute').never();
+        sandbox.mock(taskRepo)
+            .expects('executeOneByName')
+            .once()
+            .resolves(null);
+        sandbox.mock(domain.service.task)
+            .expects('execute')
+            .never();
 
-        const result = await domain.service.task.executeByName(taskName)({
+        const result = await domain.service.task.executeByName({ project: project, name: taskName })({
             taskRepo: taskRepo,
             connection: mongoose.connection,
             pecorinoAuthClient: authClient
@@ -71,10 +89,12 @@ describe('retry()', () => {
         const INTERVAL = 10;
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(taskRepo).expects('retry').once()
-            .withArgs(INTERVAL).resolves();
+        sandbox.mock(taskRepo)
+            .expects('retry')
+            .once()
+            .resolves();
 
-        const result = await domain.service.task.retry(INTERVAL)({ task: taskRepo });
+        const result = await domain.service.task.retry({ project: project, intervalInMinutes: INTERVAL })({ task: taskRepo });
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -94,11 +114,17 @@ describe('abort()', () => {
         };
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(taskRepo).expects('abortOne').once().withArgs(INTERVAL).resolves(task);
-        sandbox.mock(domain.service.notification).expects('report2developers').once()
-            .withArgs(domain.service.task.ABORT_REPORT_SUBJECT).returns(async () => Promise.resolve());
+        sandbox.mock(taskRepo)
+            .expects('abortOne')
+            .once()
+            .resolves(task);
+        sandbox.mock(domain.service.notification)
+            .expects('report2developers')
+            .once()
+            .withArgs(domain.service.task.ABORT_REPORT_SUBJECT)
+            .returns(async () => Promise.resolve());
 
-        const result = await domain.service.task.abort(INTERVAL)({ task: taskRepo });
+        const result = await domain.service.task.abort({ project: project, intervalInMinutes: INTERVAL })({ task: taskRepo });
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -120,8 +146,16 @@ describe('execute()', () => {
         const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
-        sandbox.mock(PlaceOrderTask).expects('call').once().withArgs(task.data).returns(async () => Promise.resolve());
-        sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, domain.factory.taskStatus.Executed).resolves();
+        sandbox.mock(PlaceOrderTask)
+            .expects('call')
+            .once()
+            .withArgs(task.data)
+            .returns(async () => Promise.resolve());
+        sandbox.mock(taskRepo)
+            .expects('pushExecutionResultById')
+            .once()
+            .withArgs(task.id, domain.factory.taskStatus.Executed)
+            .resolves();
 
         const result = await domain.service.task.execute(<any>task)({
             taskRepo: taskRepo,
@@ -143,7 +177,11 @@ describe('execute()', () => {
         const taskRepo = new domain.repository.Task(mongoose.connection);
         const authClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
 
-        sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, task.status).resolves();
+        sandbox.mock(taskRepo)
+            .expects('pushExecutionResultById')
+            .once()
+            .withArgs(task.id, task.status)
+            .resolves();
 
         const result = await domain.service.task.execute(<any>task)({
             taskRepo: taskRepo,

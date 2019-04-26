@@ -25,7 +25,9 @@ describe('save()', () => {
         const ownershipInfo = {};
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('create').once()
+        sandbox.mock(repository.taskModel)
+            .expects('create')
+            .once()
             .resolves(new repository.taskModel());
 
         const result = await repository.save(<any>ownershipInfo);
@@ -43,10 +45,13 @@ describe('executeOneByName()', () => {
         const taskName = domain.factory.taskName.PlaceOrder;
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(new repository.taskModel());
+        sandbox.mock(repository.taskModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(new repository.taskModel());
 
-        const result = await repository.executeOneByName(taskName);
+        const result = await repository.executeOneByName({ project: { id: 'projectId' }, name: taskName });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -55,9 +60,13 @@ describe('executeOneByName()', () => {
         const taskName = domain.factory.taskName.PlaceOrder;
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
+        sandbox.mock(repository.taskModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
-        const result = await repository.executeOneByName(taskName);
+        const result = await repository.executeOneByName({ project: { id: 'projectId' }, name: taskName });
         assert(result === null);
         sandbox.verify();
     });
@@ -72,10 +81,13 @@ describe('retry()', () => {
         const intervalInMinutes = 10;
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('update').once()
-            .chain('exec').resolves();
+        sandbox.mock(repository.taskModel)
+            .expects('update')
+            .once()
+            .chain('exec')
+            .resolves();
 
-        const result = await repository.retry(intervalInMinutes);
+        const result = await repository.retry({ project: { id: 'projectId' }, intervalInMinutes: intervalInMinutes });
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -90,10 +102,13 @@ describe('abortOne()', () => {
         const intervalInMinutes = 10;
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(new repository.taskModel());
+        sandbox.mock(repository.taskModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(new repository.taskModel());
 
-        const result = await repository.abortOne(intervalInMinutes);
+        const result = await repository.abortOne({ project: { id: 'projectId' }, intervalInMinutes: intervalInMinutes });
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -102,9 +117,13 @@ describe('abortOne()', () => {
         const intervalInMinutes = 10;
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
+        sandbox.mock(repository.taskModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
-        const result = await repository.abortOne(intervalInMinutes);
+        const result = await repository.abortOne({ project: { id: 'projectId' }, intervalInMinutes: intervalInMinutes });
         assert(result === null);
         sandbox.verify();
     });
@@ -121,8 +140,11 @@ describe('pushExecutionResultById()', () => {
         const executionResult = {};
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('findByIdAndUpdate').once()
-            .chain('exec').resolves(new repository.taskModel());
+        sandbox.mock(repository.taskModel)
+            .expects('findByIdAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(new repository.taskModel());
 
         const result = await repository.pushExecutionResultById(taskId, status, <any>executionResult);
         assert.equal(result, undefined);
@@ -137,7 +159,9 @@ describe('IDでタスク検索', () => {
 
     it('MongoDBの状態が正常であれば、オブジェクトが返るはず', async () => {
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('findOne').once()
+        sandbox.mock(repository.taskModel)
+            .expects('findOne')
+            .once()
             .chain('exec')
             .resolves(new repository.taskModel());
 
@@ -169,7 +193,9 @@ describe('タスク検索', () => {
         };
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('find').once()
+        sandbox.mock(repository.taskModel)
+            .expects('find')
+            .once()
             .chain('exec')
             .resolves([new repository.taskModel()]);
 
@@ -198,7 +224,9 @@ describe('タスクカウント', () => {
         };
 
         const repository = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(repository.taskModel).expects('countDocuments').once()
+        sandbox.mock(repository.taskModel)
+            .expects('countDocuments')
+            .once()
             .chain('exec')
             .resolves(1);
 
