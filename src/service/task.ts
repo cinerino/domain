@@ -155,10 +155,12 @@ export function retry(params: {
 
 /**
  * トライ可能回数が0に達したタスクを実行中止する
- * @param intervalInMinutes 最終トライ日時から何分経過したタスクを中止するか
  */
 export function abort(params: {
     project?: factory.project.IProject;
+    /**
+     * 最終トライ日時から何分経過したタスクを中止するか
+     */
     intervalInMinutes: number;
 }): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
