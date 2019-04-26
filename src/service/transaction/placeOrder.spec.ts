@@ -48,9 +48,7 @@ describe('exportTasks()', () => {
             .once()
             .resolves();
 
-        const result = await domain.service.transaction.placeOrder.exportTasks(
-            status
-        )({
+        const result = await domain.service.transaction.placeOrder.exportTasks({ status: status })({
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -74,9 +72,7 @@ describe('exportTasks()', () => {
             .expects('setTasksExportedById')
             .never();
 
-        const result = await domain.service.transaction.placeOrder.exportTasks(
-            status
-        )({
+        const result = await domain.service.transaction.placeOrder.exportTasks({ status: status })({
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -171,8 +167,14 @@ describe('sendEmail', () => {
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').once().resolves(task);
+        sandbox.mock(transactionRepo)
+            .expects('findById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(taskRepo)
+            .expects('save')
+            .once()
+            .resolves(task);
 
         const result = await domain.service.transaction.placeOrder.sendEmail(
             transaction.id,
@@ -203,8 +205,13 @@ describe('sendEmail', () => {
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findById').once().resolves(transaction);
-        sandbox.mock(taskRepo).expects('save').never();
+        sandbox.mock(transactionRepo)
+            .expects('findById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(taskRepo)
+            .expects('save')
+            .never();
 
         const result = await domain.service.transaction.placeOrder.sendEmail(
             transaction.id,
@@ -212,7 +219,8 @@ describe('sendEmail', () => {
         )({
             task: taskRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
