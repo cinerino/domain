@@ -90,7 +90,7 @@ export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
  * タスク名でタスクをひとつ実行する
  */
 export function executeByName<T extends factory.taskName>(params: {
-    project: factory.project.IProject;
+    project?: factory.project.IProject;
     name: T;
 }): IExecuteOperation<void> {
     return async (settings: ISettings) => {
@@ -145,7 +145,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOpe
  * 実行中ステータスのままになっているタスクをリトライする
  */
 export function retry(params: {
-    project: factory.project.IProject;
+    project?: factory.project.IProject;
     intervalInMinutes: number;
 }): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
@@ -158,7 +158,7 @@ export function retry(params: {
  * @param intervalInMinutes 最終トライ日時から何分経過したタスクを中止するか
  */
 export function abort(params: {
-    project: factory.project.IProject;
+    project?: factory.project.IProject;
     intervalInMinutes: number;
 }): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
@@ -180,7 +180,7 @@ export function abort(params: {
 
         await NotificationService.report2developers(
             ABORT_REPORT_SUBJECT,
-            `project:${params.project.id}
+            `project:${(params.project !== undefined) ? params.project.id : ''}
 id:${abortedTask.id}
 name:${abortedTask.name}
 runsAt:${moment(abortedTask.runsAt)

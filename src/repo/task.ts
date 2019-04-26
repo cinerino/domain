@@ -100,15 +100,18 @@ export class MongoRepository {
     }
 
     public async executeOneByName<T extends factory.taskName>(params: {
-        project: { id: string };
+        project?: { id: string };
         name: T;
     }): Promise<factory.task.ITask<T> | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
-                'project.id': {
-                    $exists: true,
-                    $eq: params.project.id
-                },
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
                 status: factory.taskStatus.Ready,
                 runsAt: { $lt: new Date() },
                 name: params.name
@@ -133,7 +136,7 @@ export class MongoRepository {
     }
 
     public async retry(params: {
-        project: { id: string };
+        project?: { id: string };
         intervalInMinutes: number;
     }) {
         const lastTriedAtShoudBeLessThan = moment()
@@ -142,10 +145,13 @@ export class MongoRepository {
 
         await this.taskModel.update(
             {
-                'project.id': {
-                    $exists: true,
-                    $eq: params.project.id
-                },
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
                 status: factory.taskStatus.Running,
                 lastTriedAt: {
                     $type: 'date',
@@ -162,7 +168,7 @@ export class MongoRepository {
     }
 
     public async abortOne(params: {
-        project: { id: string };
+        project?: { id: string };
         intervalInMinutes: number;
     }): Promise<factory.task.ITask<any> | null> {
         const lastTriedAtShoudBeLessThan = moment()
@@ -171,10 +177,13 @@ export class MongoRepository {
 
         const doc = await this.taskModel.findOneAndUpdate(
             {
-                'project.id': {
-                    $exists: true,
-                    $eq: params.project.id
-                },
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
                 status: factory.taskStatus.Running,
                 lastTriedAt: {
                     $type: 'date',
