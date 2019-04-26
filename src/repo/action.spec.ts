@@ -276,7 +276,7 @@ describe('ActionRepo.printTicket()', () => {
             .once()
             .resolves(doc);
 
-        const result = await printActionRepo.printTicket(agentId, <any>ticket);
+        const result = await printActionRepo.printTicket(agentId, <any>ticket, <any>{});
         assert(typeof result, 'object');
         sandbox.verify();
     });
