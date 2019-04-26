@@ -43,6 +43,7 @@ export function getToken(params: {
     };
 }
 export function verifyToken<T>(params: {
+    project: factory.project.IProject;
     agent: factory.action.check.token.IAgent;
     token: string;
     secret: string;
@@ -52,6 +53,7 @@ export function verifyToken<T>(params: {
         action: ActionRepo;
     }): Promise<T> => {
         const actionAttributes: factory.action.check.token.IAttributes = {
+            project: params.project,
             typeOf: factory.actionType.CheckAction,
             agent: params.agent,
             object: {

@@ -68,6 +68,7 @@ export function authorize(params: {
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
+            project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: params.object,
             agent: transaction.agent,

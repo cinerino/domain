@@ -183,6 +183,7 @@ export function confirm<T extends factory.accountType>(params: {
                 const actionResult = <factory.action.authorize.paymentMethod.account.IResult<T>>a.result;
 
                 return {
+                    project: transaction.project,
                     typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
                     description: transaction.object.description,
                     result: {},

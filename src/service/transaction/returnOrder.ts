@@ -291,6 +291,7 @@ export function confirm(params: {
                         emailTemplate: emailTemplate
                     });
                     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                        project: transaction.project,
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
@@ -314,6 +315,7 @@ export function confirm(params: {
                     };
 
                     return {
+                        project: transaction.project,
                         typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                         object: a,
                         agent: {
@@ -349,6 +351,7 @@ export function confirm(params: {
                         paymentMethods: a.object.map((o) => o.paymentMethod)
                     });
                     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                        project: transaction.project,
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
@@ -372,6 +375,7 @@ export function confirm(params: {
                     };
 
                     return {
+                        project: transaction.project,
                         typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                         object: a,
                         agent: {
@@ -407,6 +411,7 @@ export function confirm(params: {
                         paymentMethods: a.object.map((o) => o.paymentMethod)
                     });
                     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                        project: transaction.project,
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
@@ -430,6 +435,7 @@ export function confirm(params: {
                     };
 
                     return {
+                        project: transaction.project,
                         typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                         object: a,
                         agent: {
@@ -463,6 +469,7 @@ export function confirm(params: {
         const returnPointAwardActions = givePointActions.map(
             (a): factory.action.transfer.returnAction.pointAward.IAttributes => {
                 return {
+                    project: transaction.project,
                     typeOf: factory.actionType.ReturnAction,
                     object: a,
                     agent: order.customer,
@@ -477,6 +484,7 @@ export function confirm(params: {
             }
         );
         const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
+            project: transaction.project,
             typeOf: <factory.actionType.ReturnAction>factory.actionType.ReturnAction,
             object: {
                 typeOf: order.typeOf,

@@ -81,6 +81,7 @@ export function create(params: {
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes<typeof offeredThrough.identifier> = {
+            project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,

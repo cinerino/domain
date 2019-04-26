@@ -151,6 +151,7 @@ export function createRegisterTask(params: {
         };
         // 登録アクション属性を作成
         const registerActionAttributes: factory.action.interact.register.programMembership.IAttributes = {
+            project: programMembership.project,
             typeOf: factory.actionType.RegisterAction,
             agent: params.agent,
             object: acceptedOffer
@@ -328,6 +329,7 @@ export function createUnRegisterTask(params: {
 
         // 所有が確認できれば、会員プログラム登録解除タスクを作成する
         const unRegisterActionAttributes: factory.action.interact.unRegister.programMembership.IAttributes = {
+            project: ownershipInfo.project,
             typeOf: factory.actionType.UnRegisterAction,
             agent: params.agent,
             object: ownershipInfo
@@ -474,6 +476,7 @@ function processPlaceOrder(params: {
         // 会員プログラム注文取引進行
         // 会員プログラム更新タスク作成は、注文後のアクションに定義すればよいか
         const transaction = await PlaceOrderService.start({
+            project: params.registerActionAttributes.project,
             expires: moment()
                 // tslint:disable-next-line:no-magic-numbers
                 .add(5, 'minutes')
@@ -505,6 +508,7 @@ function processPlaceOrder(params: {
 
             // 承認アクションを開始する
             const actionAttributes: factory.action.authorize.award.point.IAttributes = {
+                project: transaction.project,
                 typeOf: factory.actionType.AuthorizeAction,
                 object: {
                     typeOf: factory.action.authorize.award.point.ObjectType.PointAward,

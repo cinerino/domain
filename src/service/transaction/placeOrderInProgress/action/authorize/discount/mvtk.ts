@@ -52,6 +52,7 @@ export function createMovieTicketPaymentAuthorization(params: {
         return Promise.all(authorizeActionObjects.map(async (authorizeActionObject) => {
             // 承認アクションを開始する
             const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
+                project: transaction.project,
                 typeOf: factory.actionType.AuthorizeAction,
                 object: authorizeActionObject,
                 agent: transaction.agent,

@@ -84,6 +84,7 @@ export function authorize(params: {
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
+            project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.paymentMethodType.MovieTicket,
@@ -220,6 +221,7 @@ export function checkMovieTicket(
         paymentMethod: PaymentMethodRepo;
     }) => {
         const actionAttributes: factory.action.check.paymentMethod.movieTicket.IAttributes = {
+            project: params.project,
             typeOf: factory.actionType.CheckAction,
             agent: params.agent,
             object: params.object

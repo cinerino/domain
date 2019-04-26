@@ -204,10 +204,12 @@ export class MongoRepository {
 
     public async printTicket(
         agentId: string,
-        ticket: factory.action.transfer.print.ticket.ITicket
+        ticket: factory.action.transfer.print.ticket.ITicket,
+        project: factory.project.IProject
     ): Promise<factory.action.transfer.print.ticket.IAction> {
         const now = new Date();
         const action: factory.action.transfer.print.ticket.IAction = {
+            project: project,
             id: '',
             typeOf: factory.actionType.PrintAction,
             actionStatus: factory.actionStatusType.CompletedActionStatus,

@@ -50,6 +50,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
+            project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: params.object.typeOf,

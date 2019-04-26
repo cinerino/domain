@@ -72,6 +72,7 @@ export function create(params: {
         // 承認アクションを開始
         debug('starting authorize action of programMembership...');
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
+            project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: params.acceptedOffer,
             agent: transaction.seller,

@@ -1155,6 +1155,7 @@ export async function createPotentialActionsFromTransaction(params: {
                     };
 
                     confirmReservationActions.push({
+                        project: params.transaction.project,
                         typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
                         object: updReserveArgs,
                         agent: params.transaction.agent,
@@ -1178,6 +1179,7 @@ export async function createPotentialActionsFromTransaction(params: {
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                     confirmReservationActions.push({
+                        project: params.transaction.project,
                         typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
                         object: {
                             typeOf: factory.chevre.transactionType.Reserve,
@@ -1237,6 +1239,7 @@ export async function createPotentialActionsFromTransaction(params: {
         const result = <factory.action.authorize.paymentMethod.creditCard.IResult>a.result;
         if (result.paymentStatus === factory.paymentStatusType.PaymentDue) {
             payCreditCardActions.push({
+                project: params.transaction.project,
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: [{
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
@@ -1279,6 +1282,7 @@ export async function createPotentialActionsFromTransaction(params: {
             const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
 
             return {
+                project: params.transaction.project,
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: [{
                     typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
@@ -1324,6 +1328,7 @@ export async function createPotentialActionsFromTransaction(params: {
     const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
     if (authorizeMovieTicketActions.length > 0) {
         payMovieTicketActions.push({
+            project: params.transaction.project,
             typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
             object: authorizeMovieTicketActions
                 .map((a) => {
@@ -1366,6 +1371,7 @@ export async function createPotentialActionsFromTransaction(params: {
         const actionResult = <factory.action.authorize.award.point.IResult>a.result;
 
         return {
+            project: params.transaction.project,
             typeOf: <factory.actionType.GiveAction>factory.actionType.GiveAction,
             agent: params.transaction.seller,
             recipient: params.transaction.agent,
@@ -1396,6 +1402,7 @@ export async function createPotentialActionsFromTransaction(params: {
             emailTemplate: params.emailTemplate
         });
         sendEmailMessageActionAttributes = {
+            project: params.transaction.project,
             typeOf: factory.actionType.SendAction,
             object: emailMessage,
             agent: params.transaction.seller,
@@ -1425,6 +1432,7 @@ export async function createPotentialActionsFromTransaction(params: {
     if (programMembershipOffers.length > 0) {
         registerProgramMembershipTaskAttributes.push(...programMembershipOffers.map((o) => {
             const actionAttributes: factory.action.interact.register.programMembership.IAttributes = {
+                project: params.transaction.project,
                 typeOf: factory.actionType.RegisterAction,
                 agent: params.transaction.agent,
                 object: o
@@ -1457,6 +1465,7 @@ export async function createPotentialActionsFromTransaction(params: {
     }
 
     const sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes = {
+        project: params.transaction.project,
         typeOf: factory.actionType.SendAction,
         object: params.order,
         agent: params.transaction.seller,
@@ -1469,6 +1478,7 @@ export async function createPotentialActionsFromTransaction(params: {
 
     return {
         order: {
+            project: params.transaction.project,
             typeOf: factory.actionType.OrderAction,
             object: params.order,
             agent: params.transaction.agent,

@@ -217,6 +217,7 @@ export function sendEmail(
             text: emailMessageAttributes.text
         };
         const actionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+            project: transaction.project,
             typeOf: factory.actionType.SendAction,
             object: emailMessage,
             agent: transaction.seller,
