@@ -159,6 +159,7 @@ export function createRegisterTask(params: {
         };
         // 会員プログラム登録タスクを作成する
         const taskAttributes: factory.task.IAttributes<factory.taskName.RegisterProgramMembership> = {
+            project: registerActionAttributes.project,
             name: factory.taskName.RegisterProgramMembership,
             status: factory.taskStatus.Ready,
             runsAt: now,
@@ -335,6 +336,7 @@ export function createUnRegisterTask(params: {
             object: ownershipInfo
         };
         const taskAttributes: factory.task.IAttributes<factory.taskName.UnRegisterProgramMembership> = {
+            project: unRegisterActionAttributes.project,
             name: factory.taskName.UnRegisterProgramMembership,
             status: factory.taskStatus.Ready,
             runsAt: now,

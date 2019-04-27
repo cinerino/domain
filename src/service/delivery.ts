@@ -235,6 +235,7 @@ export function onSend(sendOrderActionAttributes: factory.action.transfer.send.o
                 /* istanbul ignore else */
                 if (sendEmailMessageTaskDoc === null) {
                     const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                        project: potentialActions.sendEmailMessage.project,
                         name: factory.taskName.SendEmailMessage,
                         status: factory.taskStatus.Ready,
                         runsAt: now, // なるはやで実行

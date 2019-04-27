@@ -1453,6 +1453,7 @@ export async function createPotentialActionsFromTransaction(params: {
                 .toDate();
 
             return {
+                project: actionAttributes.project,
                 name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
                 status: factory.taskStatus.Ready,
                 runsAt: runsAt,

@@ -228,6 +228,7 @@ export function sendEmail(
 
         // その場で送信ではなく、DBにタスクを登録
         const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+            project: actionAttributes.project,
             name: factory.taskName.SendEmailMessage,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行

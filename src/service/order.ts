@@ -139,6 +139,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             /* istanbul ignore else */
             if (orderPotentialActions.sendOrder !== undefined) {
                 const sendOrderTask: factory.task.IAttributes<factory.taskName.SendOrder> = {
+                    project: orderPotentialActions.sendOrder.project,
                     name: factory.taskName.SendOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
@@ -157,6 +158,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(...orderPotentialActions.confirmReservation.map(
                     (a): factory.task.IAttributes<factory.taskName.ConfirmReservation> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.ConfirmReservation,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -175,6 +177,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(...orderPotentialActions.payCreditCard.map(
                     (a): factory.task.IAttributes<factory.taskName.PayCreditCard> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.PayCreditCard,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -193,6 +196,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(...orderPotentialActions.payAccount.map(
                     (a): factory.task.IAttributes<factory.taskName.PayAccount> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.PayAccount,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -211,6 +215,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(...orderPotentialActions.payMovieTicket.map(
                     (a): factory.task.IAttributes<factory.taskName.PayMovieTicket> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.PayMovieTicket,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -229,6 +234,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(...orderPotentialActions.givePointAward.map(
                     (a): factory.task.IAttributes<factory.taskName.GivePointAward> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.GivePointAward,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -460,6 +466,7 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
                 taskAttributes.push(...returnActionAttributes.potentialActions.refundCreditCard.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundCreditCard> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.RefundCreditCard,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -479,6 +486,7 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
                 taskAttributes.push(...returnActionAttributes.potentialActions.refundAccount.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundAccount> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.RefundAccount,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -498,6 +506,7 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
                 taskAttributes.push(...returnActionAttributes.potentialActions.refundMovieTicket.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundMovieTicket> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.RefundMovieTicket,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
@@ -517,6 +526,7 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
                 taskAttributes.push(...returnActionAttributes.potentialActions.returnPointAward.map(
                     (a): factory.task.IAttributes<factory.taskName.ReturnPointAward> => {
                         return {
+                            project: a.project,
                             name: factory.taskName.ReturnPointAward,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行

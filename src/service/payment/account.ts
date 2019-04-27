@@ -523,6 +523,7 @@ function onRefund(refundActionAttributes: factory.action.trade.refund.IAttribute
             /* istanbul ignore else */
             if (potentialActions.sendEmailMessage !== undefined) {
                 const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                    project: potentialActions.sendEmailMessage.project,
                     name: factory.taskName.SendEmailMessage,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
