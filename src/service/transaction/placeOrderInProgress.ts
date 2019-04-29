@@ -37,11 +37,11 @@ export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDet
 };
 
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
-export type IAuthorizeSeatReservationOfferObject =
-    factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
+
 export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType.Point>;
+
 export type IAuthorizeActionResultBySeller =
     // factory.action.authorize.offer.programMembership.IResult |
     IAuthorizeSeatReservationOfferResult |
@@ -529,7 +529,8 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
     // ムビチケオファーを受け付けた座席予約を検索する
     const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     seatReservationAuthorizeActions.forEach((a) => {
-        const acceptedOffer = (<IAuthorizeSeatReservationOfferObject>a.object).acceptedOffer;
+        const acceptedOffer =
+            (<factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>>a.object).acceptedOffer;
         acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
             const offeredTicketedSeat = offer.ticketedSeat;
             if (offeredTicketedSeat !== undefined) {
@@ -1022,29 +1023,38 @@ export function validateEventOffers(params: {
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
 
     seatReservationAuthorizeActions.forEach((a) => {
-        const acceptedOffers = (<IAuthorizeSeatReservationOfferObject>a.object).acceptedOffer;
+        const acceptedOffers = a.object.acceptedOffer;
 
         // オファーIDごとにオファー適用条件を確認
         const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
         offerIds.forEach((offerId) => {
             const acceptedOffersByOfferId = acceptedOffers.filter((o) => o.id === offerId);
-            const unitPriceSpec = <IUnitPriceSpecification>acceptedOffersByOfferId[0].priceSpecification.priceComponent.find(
-                (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
-            );
+            let acceptedOffer = acceptedOffersByOfferId[0];
+
+            let unitPriceSpec: IUnitPriceSpecification | undefined;
+            if (acceptedOffer.priceSpecification !== undefined) {
+                // Chevre予約の場合、priceSpecificationに複合価格仕様が含まれるので、そこから単価仕様を取り出す
+                acceptedOffer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4chevre>acceptedOffer;
+                unitPriceSpec = <IUnitPriceSpecification>acceptedOffer.priceSpecification.priceComponent.find(
+                    (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+                );
+            }
 
             // 適用金額要件を満たしていなければエラー
-            if (unitPriceSpec.eligibleTransactionVolume !== undefined) {
-                if (typeof unitPriceSpec.eligibleTransactionVolume.price === 'number') {
-                    if (params.order.price < unitPriceSpec.eligibleTransactionVolume.price) {
-                        throw new factory.errors.Argument(
-                            'Transaction',
-                            format(
-                                'Transaction volume must be more than or equal to %s %s for offer:%s',
-                                unitPriceSpec.eligibleTransactionVolume.price,
-                                unitPriceSpec.eligibleTransactionVolume.priceCurrency,
-                                offerId
-                            )
-                        );
+            if (unitPriceSpec !== undefined) {
+                if (unitPriceSpec.eligibleTransactionVolume !== undefined) {
+                    if (typeof unitPriceSpec.eligibleTransactionVolume.price === 'number') {
+                        if (params.order.price < unitPriceSpec.eligibleTransactionVolume.price) {
+                            throw new factory.errors.Argument(
+                                'Transaction',
+                                format(
+                                    'Transaction volume must be more than or equal to %s %s for offer:%s',
+                                    unitPriceSpec.eligibleTransactionVolume.price,
+                                    unitPriceSpec.eligibleTransactionVolume.priceCurrency,
+                                    offerId
+                                )
+                            );
+                        }
                     }
                 }
             }
