@@ -2,7 +2,10 @@ import * as createDebug from 'debug';
 
 import { MongoRepository as EventRepo } from '../repo/event';
 import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
+
+import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
 import * as COA from '../coa';
@@ -19,13 +22,13 @@ export type ISearchEventsOperation<T> = (repos: {
 
 export type ISearchEventOffersOperation<T> = (repos: {
     event: EventRepo;
-    eventService: chevre.service.Event;
+    project: ProjectRepo;
 }) => Promise<T>;
 
 export type ISearchEventTicketOffersOperation<T> = (repos: {
     event: EventRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
-    eventService: chevre.service.Event;
 }) => Promise<T>;
 
 export type IEventOperation4cinemasunshine<T> = (repos: {
@@ -71,8 +74,10 @@ export function searchEventOffers(params: {
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
     return async (repos: {
         event: EventRepo;
-        eventService: chevre.service.Event;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         const event = await repos.event.findById({
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: params.event.id
@@ -129,8 +134,21 @@ export function searchEventOffers(params: {
                 return screeningRoomSections;
 
             default:
+                const chevreAuthClient = new chevre.auth.ClientCredentials({
+                    domain: credentials.chevre.authorizeServerDomain,
+                    clientId: credentials.chevre.clientId,
+                    clientSecret: credentials.chevre.clientSecret,
+                    scopes: [],
+                    state: ''
+                });
+
+                const eventService = new chevre.service.Event({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
                 // 基本的にはCHEVREへ空席確認
-                return repos.eventService.searchOffers({ id: params.event.id });
+                return eventService.searchOffers({ id: params.event.id });
         }
     };
 }
@@ -162,10 +180,28 @@ export function searchEventTicketOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
-        eventService: chevre.service.Event;
-        offerService?: chevre.service.Offer;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const offerService = new chevre.service.Offer({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         debug('searching screeninf event offers...', params);
         const event = await repos.event.findById({
             typeOf: factory.chevre.eventType.ScreeningEvent,
@@ -205,11 +241,7 @@ export function searchEventTicketOffers(params: {
                     flgMember: COA.services.reserve.FlgMember.Member
                 });
 
-                // Chevreオファーから該当券種を検索
-                if (repos.offerService === undefined) {
-                    throw new Error('OfferService Repository required');
-                }
-                const searchOffersResult = await repos.offerService.searchTicketTypes({
+                const searchOffersResult = await offerService.searchTicketTypes({
                     limit: 100,
                     project: { ids: [params.project.id] },
                     ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
@@ -252,7 +284,7 @@ export function searchEventTicketOffers(params: {
 
             default:
                 // Chevreで券種オファーを検索
-                offers = await repos.eventService.searchTicketOffers({ id: params.event.id });
+                offers = await eventService.searchTicketOffers({ id: params.event.id });
 
                 // 店舗条件によって対象を絞る
                 if (params.seller.typeOf !== factory.organizationType.MovieTheater) {

@@ -1,8 +1,9 @@
 import { IConnectionSettings, IOperation } from '../task';
 
-import * as chevre from '../../chevre';
 import * as factory from '../../factory';
+
 import { RedisRepository as EventAttendeeCapacityRepo } from '../../repo/event/attendeeCapacity';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 import * as StockService from '../stock';
 
@@ -16,22 +17,13 @@ export function call(data: factory.task.IData<factory.taskName.UpdateEventAttend
         if (settings.redisClient === undefined) {
             throw new Error('settings.redisClient undefined.');
         }
-        if (settings.chevreEndpoint === undefined) {
-            throw new Error('settings.chevreEndpoint undefined.');
-        }
-        if (settings.chevreAuthClient === undefined) {
-            throw new Error('settings.chevreAuthClient undefined.');
-        }
 
         const attendeeCapacityRepo = new EventAttendeeCapacityRepo(settings.redisClient);
-        const eventService = new chevre.service.Event({
-            endpoint: settings.chevreEndpoint,
-            auth: settings.chevreAuthClient
-        });
+        const projectRepo = new ProjectRepo(settings.connection);
 
         await StockService.updateEventAttendeeCapacity(data)({
             attendeeCapacity: attendeeCapacityRepo,
-            eventService: eventService
+            project: projectRepo
         });
     };
 }

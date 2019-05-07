@@ -7,6 +7,8 @@ import { google } from 'googleapis';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
+import { credentials } from '../credentials';
+
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
@@ -14,6 +16,7 @@ import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
 import { RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as MasterSyncService from './masterSync';
@@ -33,8 +36,8 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
-        eventService: chevre.service.Event;
     }) => {
         // COAイベントの場合、masterSyncサービスを使用
         if (params.offeredThrough !== undefined && params.offeredThrough.identifier === WebAPIIdentifier.COA) {
@@ -44,6 +47,20 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             return;
         }
 
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         // 上映スケジュール取得
         const limit = 100;
         let page = 0;
@@ -51,10 +68,10 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         const events: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
         while (numData === limit) {
             page += 1;
-            const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
+            const searchScreeningEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
                 limit: limit,
                 page: page,
-                project: { ids: [<string>process.env.PROJECT_ID] },
+                project: { ids: [project.id] },
                 typeOf: factory.chevre.eventType.ScreeningEvent,
                 inSessionFrom: params.importFrom,
                 inSessionThrough: params.importThrough,
@@ -180,11 +197,14 @@ export async function findMovieImage(params: {
 /**
  * 座席仮予約キャンセル
  */
+// tslint:disable-next-line:max-func-body-length
 export function cancelSeatReservationAuth(params: { transactionId: string }) {
     return async (repos: {
         action: ActionRepo;
-        reserveService?: chevre.service.transaction.Reserve;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             await repos.action.searchByPurpose({
@@ -252,14 +272,24 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
                         break;
 
                     default:
+                        const chevreAuthClient = new chevre.auth.ClientCredentials({
+                            domain: credentials.chevre.authorizeServerDomain,
+                            clientId: credentials.chevre.clientId,
+                            clientSecret: credentials.chevre.clientSecret,
+                            scopes: [],
+                            state: ''
+                        });
+                        const reserveService = new chevre.service.transaction.Reserve({
+                            endpoint: project.settings.chevre.endpoint,
+                            auth: chevreAuthClient
+                        });
+
                         // tslint:disable-next-line:max-line-length
                         responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.Chevre>>responseBody;
 
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
                         debug('calling reserve transaction...');
-                        if (repos.reserveService !== undefined) {
-                            await repos.reserveService.cancel({ id: responseBody.id });
-                        }
+                        await reserveService.cancel({ id: responseBody.id });
                 }
 
                 await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
@@ -273,8 +303,8 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
  */
 export function updateEventAttendeeCapacity(params: factory.task.IData<factory.taskName.UpdateEventAttendeeCapacity>) {
     return async (repos: {
-        eventService: chevre.service.Event;
         attendeeCapacity: EventAttendeeCapacityRepo;
+        project: ProjectRepo;
     }) => {
         // COAイベントの場合、masterSyncサービスを使用
         if (params.offeredThrough !== undefined && params.offeredThrough.identifier === WebAPIIdentifier.COA) {
@@ -283,6 +313,20 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
             return;
         }
 
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         // イベント検索
         const limit = 100;
         let page = 0;
@@ -290,10 +334,10 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
         const events: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
         while (numData === limit) {
             page += 1;
-            const searchScreeningEventsResult = await repos.eventService.search<factory.chevre.eventType.ScreeningEvent>({
+            const searchScreeningEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
                 limit: limit,
                 page: page,
-                project: { ids: [<string>process.env.PROJECT_ID] },
+                project: { ids: [project.id] },
                 typeOf: factory.chevre.eventType.ScreeningEvent,
                 inSessionFrom: params.importFrom,
                 inSessionThrough: params.importThrough,

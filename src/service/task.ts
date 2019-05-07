@@ -1,7 +1,6 @@
 /**
  * タスクサービス
  */
-import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
 import * as createDebug from 'debug';
@@ -9,7 +8,6 @@ import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import * as chevre from '../chevre';
 import * as factory from '../factory';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
@@ -38,22 +36,6 @@ export interface IConnectionSettings {
      * Cognitoサービスプロバイダー
      */
     cognitoIdentityServiceProvider?: AWS.CognitoIdentityServiceProvider;
-    /**
-     * ChevreAPIエンドポイント
-     */
-    chevreEndpoint?: string;
-    /**
-     * Chevre認証クライアント
-     */
-    chevreAuthClient?: chevre.auth.ClientCredentials;
-    /**
-     * ムビチケ着券APIエンドポイント
-     */
-    mvtkReserveEndpoint?: string;
-    /**
-     * ムビチケ着券API認証クライアント
-     */
-    mvtkReserveAuthClient?: mvtkapi.auth.ClientCredentials;
     /**
      * GMO設定
      */

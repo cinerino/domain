@@ -3,12 +3,16 @@ import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
+import { credentials } from '../../../../../../credentials';
+
 import * as chevre from '../../../../../../chevre';
 import * as COA from '../../../../../../coa';
 import * as factory from '../../../../../../factory';
+
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
 import { MvtkRepository as MovieTicketRepo } from '../../../../../../repo/paymentMethod/movieTicket';
+import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
 import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
@@ -18,11 +22,10 @@ const debug = createDebug('cinerino-domain:service');
 
 export type ICreateOperation<T> = (repos: {
     event: EventRepo;
-    eventService: chevre.service.Event;
     action: ActionRepo;
     movieTicket: MovieTicketRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
-    reserveService: chevre.service.transaction.Reserve;
     transaction: TransactionRepo;
 }) => Promise<T>;
 export type IUnitPriceSpecification =
@@ -42,13 +45,14 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
-        eventService: chevre.service.Event;
         action: ActionRepo;
         movieTicket: MovieTicketRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
-        reserveService: chevre.service.transaction.Reserve;
         transaction: TransactionRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         debug('creating authorize action...', params);
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -140,9 +144,21 @@ export function create(params: {
 
                 default:
                     // 基本的にCHEVREにて予約取引開始
+                    const chevreAuthClient = new chevre.auth.ClientCredentials({
+                        domain: credentials.chevre.authorizeServerDomain,
+                        clientId: credentials.chevre.clientId,
+                        clientSecret: credentials.chevre.clientSecret,
+                        scopes: [],
+                        state: ''
+                    });
+                    const reserveService = new chevre.service.transaction.Reserve({
+                        endpoint: project.settings.chevre.endpoint,
+                        auth: chevreAuthClient
+                    });
+
                     debug('starting reserve transaction...');
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
-                        await repos.reserveService.start({
+                        await reserveService.start({
                             project: params.project,
                             typeOf: chevre.factory.transactionType.Reserve,
                             agent: {
@@ -227,8 +243,8 @@ function validateAcceptedOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
-        eventService: chevre.service.Event;
         movieTicket: MovieTicketRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
@@ -541,6 +557,7 @@ function validateAcceptedOffers(params: {
  * 座席予約承認アクションをキャンセルする
  */
 export function cancel(params: {
+    project: factory.chevre.project.IProject;
     /**
      * 承認アクションID
      */
@@ -556,9 +573,11 @@ export function cancel(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
-        reserveService: chevre.service.transaction.Reserve;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transaction.id
@@ -606,8 +625,20 @@ export function cancel(params: {
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
+                    const chevreAuthClient = new chevre.auth.ClientCredentials({
+                        domain: credentials.chevre.authorizeServerDomain,
+                        clientId: credentials.chevre.clientId,
+                        clientSecret: credentials.chevre.clientSecret,
+                        scopes: [],
+                        state: ''
+                    });
+                    const reserveService = new chevre.service.transaction.Reserve({
+                        endpoint: project.settings.chevre.endpoint,
+                        auth: chevreAuthClient
+                    });
+
                     // 座席予約キャンセル
-                    await repos.reserveService.cancel({ id: responseBody.id });
+                    await reserveService.cancel({ id: responseBody.id });
             }
         }
     };

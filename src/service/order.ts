@@ -5,12 +5,16 @@ import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
 
+import { credentials } from '../credentials';
+
 import * as chevre from '../chevre';
 import * as factory from '../factory';
+
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -263,9 +267,9 @@ export function returnOrder(params: { orderNumber: string }) {
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
-        cancelReservationService?: chevre.service.transaction.CancelReservation;
     }) => {
         // 確定済の注文返品取引がひとつあるはず
         const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
@@ -281,9 +285,10 @@ export function returnOrder(params: { orderNumber: string }) {
             throw new factory.errors.NotFound('Return order transaction');
         }
 
-        const project: factory.project.IProject = (returnOrderTransaction.project !== undefined)
-            ? returnOrderTransaction.project
-            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+        const projectId: string = (returnOrderTransaction.project !== undefined)
+            ? returnOrderTransaction.project.id
+            : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
 
         const potentialActions = returnOrderTransaction.potentialActions;
         if (potentialActions === undefined) {
@@ -302,7 +307,18 @@ export function returnOrder(params: { orderNumber: string }) {
         }
 
         // アクション開始
-        const cancelReservationService = repos.cancelReservationService;
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+        const cancelReservationService = new chevre.service.transaction.CancelReservation({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         const returnOrderActionAttributes = potentialActions.returnOrder;
         const action = await repos.action.start(returnOrderActionAttributes);
         try {

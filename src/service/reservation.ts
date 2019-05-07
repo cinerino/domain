@@ -2,6 +2,8 @@
  * 予約サービス
  * 予約の保管先はChevre | COAです
  */
+import { credentials } from '../credentials';
+
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
@@ -9,15 +11,16 @@ import * as factory from '../factory';
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 
 type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
 
 type IOwnershipInfoWithDetail =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType>>;
 
-export type ISearchScreeningEventReservationsOperation<T> = (repos: {
+export type ISearchEventReservationsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
-    reservationService: chevre.service.Reservation;
+    project: ProjectRepo;
 }) => Promise<T>;
 
 /**
@@ -26,8 +29,10 @@ export type ISearchScreeningEventReservationsOperation<T> = (repos: {
 export function confirmReservation(params: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>) {
     return async (repos: {
         action: ActionRepo;
-        reserveService: chevre.service.transaction.Reserve;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
         // アクション開始
         const confirmActionAttributes = params;
         const action = await repos.action.start(confirmActionAttributes);
@@ -59,8 +64,20 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                 default:
                     // 座席予約確定
+                    const chevreAuthClient = new chevre.auth.ClientCredentials({
+                        domain: credentials.chevre.authorizeServerDomain,
+                        clientId: credentials.chevre.clientId,
+                        clientSecret: credentials.chevre.clientSecret,
+                        scopes: [],
+                        state: ''
+                    });
+                    const reserveService = new chevre.service.transaction.Reserve({
+                        endpoint: project.settings.chevre.endpoint,
+                        auth: chevreAuthClient
+                    });
+
                     object = <factory.action.interact.confirm.reservation.IObject4Chevre>object;
-                    await repos.reserveService.confirm(object);
+                    await reserveService.confirm(object);
             }
         } catch (error) {
             // actionにエラー結果を追加
@@ -86,11 +103,13 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
  */
 export function searchScreeningEventReservations(
     params: factory.ownershipInfo.ISearchConditions<factory.chevre.reservationType.EventReservation>
-): ISearchScreeningEventReservationsOperation<IOwnershipInfoWithDetail[]> {
+): ISearchEventReservationsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
-        reservationService: chevre.service.Reservation;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 所有権検索
@@ -106,8 +125,20 @@ export function searchScreeningEventReservations(
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
-                const searchReservationsResult = await repos.reservationService.search({
-                    project: { ids: [<string>process.env.PROJECT_ID] },
+                const chevreAuthClient = new chevre.auth.ClientCredentials({
+                    domain: credentials.chevre.authorizeServerDomain,
+                    clientId: credentials.chevre.clientId,
+                    clientSecret: credentials.chevre.clientSecret,
+                    scopes: [],
+                    state: ''
+                });
+                const reservationService = new chevre.service.Reservation({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
+                const searchReservationsResult = await reservationService.search({
+                    project: { ids: [project.id] },
                     typeOf: factory.chevre.reservationType.EventReservation,
                     ids: reservationIds
                 });

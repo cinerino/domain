@@ -16,11 +16,22 @@ before(() => {
 });
 
 describe('returnOrder()', () => {
+    beforeEach(() => {
+        process.env.CHEVRE_AUTHORIZE_SERVER_DOMAIN = 'https://example.com';
+        process.env.CHEVRE_CLIENT_ID = 'xxx';
+        process.env.CHEVRE_CLIENT_SECRET = 'xxx';
+    });
+
     afterEach(() => {
+        delete process.env.CHEVRE_AUTHORIZE_SERVER_DOMAIN;
+        delete process.env.CHEVRE_CLIENT_ID;
+        delete process.env.CHEVRE_CLIENT_SECRET;
+
         sandbox.restore();
     });
 
     it('アクションを完了できるはず', async () => {
+        const project = { id: '', settings: { chevre: {} } };
         const order = {
             customer: { telephone: '+819096793896' },
             acceptedOffers: [
@@ -63,6 +74,7 @@ describe('returnOrder()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const orderRepo = new domain.repository.Order(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
@@ -73,6 +85,10 @@ describe('returnOrder()', () => {
             .resolves([returnOrderTransaction])
             .onSecondCall()
             .resolves([placeOrderTransaction]);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -105,6 +121,7 @@ describe('returnOrder()', () => {
             action: actionRepo,
             order: orderRepo,
             ownershipInfo: ownershipInfoRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             task: taskRepo
         });
@@ -114,6 +131,7 @@ describe('returnOrder()', () => {
     });
 
     it('COA予約内容抽出に失敗すればアクションにエラー結果が追加されるはず', async () => {
+        const project = { id: '', settings: { chevre: {} } };
         const order = {
             customer: { telephone: '+819096793896' },
             acceptedOffers: [
@@ -150,6 +168,7 @@ describe('returnOrder()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const orderRepo = new domain.repository.Order(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
@@ -160,6 +179,10 @@ describe('returnOrder()', () => {
             .resolves([returnOrderTransaction])
             .onSecondCall()
             .resolves([{}]);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -177,6 +200,7 @@ describe('returnOrder()', () => {
             action: actionRepo,
             order: orderRepo,
             ownershipInfo: ownershipInfoRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             task: taskRepo
         })

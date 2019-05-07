@@ -3,12 +3,12 @@
  */
 import * as createDebug from 'debug';
 
-import * as chevre from '../../chevre';
 import * as emailMessageBuilder from '../../emailMessageBuilder';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 // import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -20,9 +20,9 @@ export type IStartOperation<T> = (repos: {
     action: ActionRepo;
     invoice: InvoiceRepo;
     order: OrderRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
-    cancelReservationService: chevre.service.transaction.CancelReservation;
 }) => Promise<T>;
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type ITaskAndTransactionOperation<T> = (repos: {
@@ -42,9 +42,9 @@ export function start(
         action: ActionRepo;
         invoice: InvoiceRepo;
         order: OrderRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
-        cancelReservationService: chevre.service.transaction.CancelReservation;
     }) => {
         const seller = await repos.seller.findById({ id: params.seller.id });
 
@@ -126,7 +126,8 @@ export function start(
             throw error;
         }
 
-        // Chevre予約の場合、予約キャンセル取引開始
+        // Chevre予約の場合、予約キャンセル取引開始する？
+        // いったん保留中
         const pendingCancelReservationTransactions: factory.chevre.transaction.cancelReservation.ITransaction[] = [];
         const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             placeOrderTransaction.object.authorizeActions

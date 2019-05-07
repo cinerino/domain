@@ -19,6 +19,7 @@ import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard
 import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTicket';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
+import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
@@ -94,6 +95,10 @@ export class Person extends PersonRepo { }
  * 会員プログラムリポジトリ
  */
 export class ProgramMembership extends ProgramMembershipRepo { }
+/**
+ * プロジェクトリポジトリ
+ */
+export class Project extends ProjectRepo { }
 /**
  * 販売者リポジトリ
  */

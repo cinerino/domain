@@ -5,13 +5,17 @@ import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
+import { credentials } from '../../credentials';
+
 import { handleMvtkReserveError } from '../../errorHandler';
 import * as factory from '../../factory';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as PaymentMethodRepo } from '../../repo/paymentMethod';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -313,9 +317,11 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         action: ActionRepo;
         event: EventRepo;
         invoice: InvoiceRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
-        movieTicketSeatService: mvtkapi.service.Seat;
     }) => {
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
         // アクション開始
         const action = await repos.action.start(params);
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
@@ -393,6 +399,18 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
             }
 
+            const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
+                domain: credentials.mvtkReserve.authorizeServerDomain,
+                clientId: credentials.mvtkReserve.clientId,
+                clientSecret: credentials.mvtkReserve.clientSecret,
+                scopes: [],
+                state: ''
+            });
+            const movieTicketSeatService = new mvtkapi.service.Seat({
+                endpoint: project.settings.mvtkReserve.endpoint,
+                auth: mvtkReserveAuthClient
+            });
+
             seatInfoSyncIn = {
                 kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
                 yykDvcTyp: mvtkapi.mvtk.services.seat.seatInfoSync.ReserveDeviceType.EntertainerSitePC, // 予約デバイス区分
@@ -414,7 +432,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 skhnCd: skhnCd // 作品コード
             };
 
-            seatInfoSyncResult = await repos.movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
+            seatInfoSyncResult = await movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
 
             await Promise.all(params.object.map(async (paymentMethod) => {
                 await repos.invoice.changePaymentStatus({
@@ -456,9 +474,23 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         action: ActionRepo;
         event: EventRepo;
         invoice: InvoiceRepo;
-        movieTicketSeatService: mvtkapi.service.Seat;
+        project: ProjectRepo;
         task: TaskRepo;
     }) => {
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+
+        const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
+            domain: credentials.mvtkReserve.authorizeServerDomain,
+            clientId: credentials.mvtkReserve.clientId,
+            clientSecret: credentials.mvtkReserve.clientSecret,
+            scopes: [],
+            state: ''
+        });
+        const movieTicketSeatService = new mvtkapi.service.Seat({
+            endpoint: project.settings.mvtkReserve.endpoint,
+            auth: mvtkReserveAuthClient
+        });
+
         // アクション開始
         const action = await repos.action.start(params);
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
@@ -474,7 +506,7 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
                 ...payActionResult.seatInfoSyncIn,
                 trkshFlg: mvtkapi.mvtk.services.seat.seatInfoSync.DeleteFlag.True // 取消フラグ
             };
-            seatInfoSyncResult = await repos.movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
+            seatInfoSyncResult = await movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
         } catch (error) {
             // actionにエラー結果を追加
             try {
