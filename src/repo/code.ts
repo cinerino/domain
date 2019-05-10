@@ -143,7 +143,7 @@ export class MongoRepository {
         const doc = await this.authorizationModel.findOne({
             code: {
                 $exists: true,
-                $$eq: params.code
+                $eq: params.code
             },
             validFrom: {
                 $exists: true,
