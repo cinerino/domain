@@ -57,6 +57,7 @@ describe('service.payment.creditCard.authorize()', () => {
     });
 
     it('GMOが正常であれば、エラーにならないはず', async () => {
+        const project = { id: 'id', settings: { gmo: {} } };
         const agent = {
             id: 'agentId'
         };
@@ -89,9 +90,14 @@ describe('service.payment.creditCard.authorize()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const organizationRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -122,7 +128,7 @@ describe('service.payment.creditCard.authorize()', () => {
             .resolves(action);
 
         const result = await domain.service.payment.creditCard.authorize({
-            project: { id: 'projectId', gmoInfo: { siteId: '', sitePass: '' } },
+            project: { id: project.id },
             agent: agent,
             purpose: transaction,
             object: {
@@ -135,6 +141,7 @@ describe('service.payment.creditCard.authorize()', () => {
             }
         })({
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             seller: organizationRepo
         });
@@ -144,6 +151,7 @@ describe('service.payment.creditCard.authorize()', () => {
     });
 
     it('GMOでエラーが発生すれば、承認アクションを諦めて、エラーとなるはず', async () => {
+        const project = { id: 'id', settings: { gmo: {} } };
         const agent = {
             id: 'agentId'
         };
@@ -177,8 +185,13 @@ describe('service.payment.creditCard.authorize()', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -207,13 +220,7 @@ describe('service.payment.creditCard.authorize()', () => {
             .never();
 
         const result = await domain.service.payment.creditCard.authorize({
-            project: {
-                id: 'projectId',
-                gmoInfo: {
-                    siteId: 'siteId',
-                    sitePass: 'sitePass'
-                }
-            },
+            project: { id: project.id },
             agent: agent,
             purpose: transaction,
             object: {
@@ -226,6 +233,7 @@ describe('service.payment.creditCard.authorize()', () => {
             }
         })({
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             seller: organizationRepo
         })
@@ -236,6 +244,7 @@ describe('service.payment.creditCard.authorize()', () => {
     });
 
     it('GMO処理でエラーオブジェクトでない例外が発生すれば、承認アクションを諦めて、そのままエラーとなるはず', async () => {
+        const project = { id: 'id', settings: { gmo: {} } };
         const agent = {
             id: 'agentId'
         };
@@ -269,8 +278,13 @@ describe('service.payment.creditCard.authorize()', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -299,13 +313,7 @@ describe('service.payment.creditCard.authorize()', () => {
             .never();
 
         const result = await domain.service.payment.creditCard.authorize({
-            project: {
-                id: 'projectId',
-                gmoInfo: {
-                    siteId: 'siteId',
-                    sitePass: 'sitePass'
-                }
-            },
+            project: { id: project.id },
             agent: agent,
             purpose: transaction,
             object: {
@@ -318,6 +326,7 @@ describe('service.payment.creditCard.authorize()', () => {
             }
         })({
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             seller: organizationRepo
         })
@@ -326,7 +335,9 @@ describe('service.payment.creditCard.authorize()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('GMOで流量制限オーバーエラーが発生すれば、承認アクションを諦めて、ServiceUnavailableエラーとなるはず', async () => {
+        const project = { id: 'id', settings: { gmo: {} } };
         const agent = {
             id: 'agentId'
         };
@@ -364,8 +375,13 @@ describe('service.payment.creditCard.authorize()', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -394,13 +410,7 @@ describe('service.payment.creditCard.authorize()', () => {
             .never();
 
         const result = await domain.service.payment.creditCard.authorize({
-            project: {
-                id: 'projectId',
-                gmoInfo: {
-                    siteId: 'siteId',
-                    sitePass: 'sitePass'
-                }
-            },
+            project: { id: project.id },
             agent: agent,
             purpose: transaction,
             object: {
@@ -413,6 +423,7 @@ describe('service.payment.creditCard.authorize()', () => {
             }
         })({
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             seller: organizationRepo
         })
@@ -422,7 +433,9 @@ describe('service.payment.creditCard.authorize()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('GMOでオーダーID重複エラーが発生すれば、承認アクションを諦めて、AlreadyInUseエラーとなるはず', async () => {
+        const project = { id: 'id', settings: { gmo: {} } };
         const agent = {
             id: 'agentId'
         };
@@ -460,8 +473,13 @@ describe('service.payment.creditCard.authorize()', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -490,13 +508,7 @@ describe('service.payment.creditCard.authorize()', () => {
             .never();
 
         const result = await domain.service.payment.creditCard.authorize({
-            project: {
-                id: 'projectId',
-                gmoInfo: {
-                    siteId: 'siteId',
-                    sitePass: 'sitePass'
-                }
-            },
+            project: { id: project.id },
             agent: agent,
             purpose: transaction,
             object: {
@@ -509,6 +521,7 @@ describe('service.payment.creditCard.authorize()', () => {
             }
         })({
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             seller: organizationRepo
         })
@@ -518,7 +531,9 @@ describe('service.payment.creditCard.authorize()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('GMOServiceBadRequestErrorエラーが発生すれば、承認アクションを諦めて、Argumentエラーとなるはず', async () => {
+        const project = { id: 'id', settings: { gmo: {} } };
         const agent = {
             id: 'agentId'
         };
@@ -556,8 +571,13 @@ describe('service.payment.creditCard.authorize()', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const organizationRepo = new domain.repository.Seller(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -586,13 +606,7 @@ describe('service.payment.creditCard.authorize()', () => {
             .never();
 
         const result = await domain.service.payment.creditCard.authorize({
-            project: {
-                id: 'projectId',
-                gmoInfo: {
-                    siteId: 'siteId',
-                    sitePass: 'sitePass'
-                }
-            },
+            project: { id: project.id },
             agent: agent,
             purpose: transaction,
             object: {
@@ -605,6 +619,7 @@ describe('service.payment.creditCard.authorize()', () => {
             }
         })({
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo,
             seller: organizationRepo
         })

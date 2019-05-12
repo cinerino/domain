@@ -64,6 +64,13 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                 default:
                     // 座席予約確定
+                    if (project.settings === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                    }
+                    if (project.settings.chevre === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings not found');
+                    }
+
                     const chevreAuthClient = new chevre.auth.ClientCredentials({
                         domain: credentials.chevre.authorizeServerDomain,
                         clientId: credentials.chevre.clientId,
@@ -109,6 +116,9 @@ export function searchScreeningEventReservations(
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
 
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
@@ -125,6 +135,10 @@ export function searchScreeningEventReservations(
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
+                if (project.settings.chevre === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings not found');
+                }
+
                 const chevreAuthClient = new chevre.auth.ClientCredentials({
                     domain: credentials.chevre.authorizeServerDomain,
                     clientId: credentials.chevre.clientId,

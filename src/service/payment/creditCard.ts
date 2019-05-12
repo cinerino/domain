@@ -9,6 +9,7 @@ import * as util from 'util';
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -21,6 +22,7 @@ export import IUnauthorizedCardOfMember = factory.paymentMethod.paymentCard.cred
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -31,13 +33,6 @@ export type IAuthorizeOperation<T> = (repos: {
 export function authorize(params: {
     project: {
         id: string;
-        /**
-         * GMO決済情報
-         */
-        gmoInfo: {
-            siteId: string;
-            sitePass: string;
-        };
     };
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.creditCard.IObject;
@@ -46,9 +41,22 @@ export function authorize(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (project.settings.gmo === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -126,8 +134,8 @@ export function authorize(params: {
                 accessPass: entryTranResult.accessPass,
                 orderId: orderId,
                 method: params.object.method,
-                siteId: params.project.gmoInfo.siteId,
-                sitePass: params.project.gmoInfo.sitePass,
+                siteId: project.settings.gmo.siteId,
+                sitePass: project.settings.gmo.sitePass,
                 cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
                 cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
                 expire: (<IUncheckedCardRaw>creditCard).expire,

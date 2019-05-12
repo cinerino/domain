@@ -36,23 +36,6 @@ export interface IConnectionSettings {
      * Cognitoサービスプロバイダー
      */
     cognitoIdentityServiceProvider?: AWS.CognitoIdentityServiceProvider;
-    /**
-     * GMO設定
-     */
-    gmo?: {
-        /**
-         * APIエンドポイント
-         */
-        endpoint: string;
-        /**
-         * サイトID
-         */
-        siteId: string;
-        /**
-         * サイトパス
-         */
-        sitePass: string;
-    };
 }
 
 export interface ISettings extends IConnectionSettings {

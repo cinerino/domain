@@ -134,6 +134,13 @@ export function searchEventOffers(params: {
                 return screeningRoomSections;
 
             default:
+                if (project.settings === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                }
+                if (project.settings.chevre === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings not found');
+                }
+
                 const chevreAuthClient = new chevre.auth.ClientCredentials({
                     domain: credentials.chevre.authorizeServerDomain,
                     clientId: credentials.chevre.clientId,
@@ -184,6 +191,12 @@ export function searchEventTicketOffers(params: {
         seller: SellerRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         const chevreAuthClient = new chevre.auth.ClientCredentials({
             domain: credentials.chevre.authorizeServerDomain,

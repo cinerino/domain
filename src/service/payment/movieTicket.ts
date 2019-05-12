@@ -321,6 +321,12 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         seller: SellerRepo;
     }) => {
         const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.mvtkReserve === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         // アクション開始
         const action = await repos.action.start(params);
@@ -478,6 +484,12 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         task: TaskRepo;
     }) => {
         const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.mvtkReserve === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
             domain: credentials.mvtkReserve.authorizeServerDomain,

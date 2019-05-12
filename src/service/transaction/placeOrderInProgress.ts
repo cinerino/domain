@@ -86,7 +86,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
-            project: params.project,
+            project: (params.project !== undefined) ? { typeOf: 'Project', id: params.project.id } : undefined,
             typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
             agent: params.agent,

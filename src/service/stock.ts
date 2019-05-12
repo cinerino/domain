@@ -48,6 +48,12 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         }
 
         const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         const chevreAuthClient = new chevre.auth.ClientCredentials({
             domain: credentials.chevre.authorizeServerDomain,
@@ -197,8 +203,8 @@ export async function findMovieImage(params: {
 /**
  * 座席仮予約キャンセル
  */
-// tslint:disable-next-line:max-func-body-length
 export function cancelSeatReservationAuth(params: { transactionId: string }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -272,6 +278,13 @@ export function cancelSeatReservationAuth(params: { transactionId: string }) {
                         break;
 
                     default:
+                        if (project.settings === undefined) {
+                            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                        }
+                        if (project.settings.chevre === undefined) {
+                            throw new factory.errors.ServiceUnavailable('Project settings not found');
+                        }
+
                         const chevreAuthClient = new chevre.auth.ClientCredentials({
                             domain: credentials.chevre.authorizeServerDomain,
                             clientId: credentials.chevre.clientId,
@@ -314,6 +327,12 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
         }
 
         const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         const chevreAuthClient = new chevre.auth.ClientCredentials({
             domain: credentials.chevre.authorizeServerDomain,

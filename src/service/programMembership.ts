@@ -14,6 +14,7 @@ import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as ProgramMembershipRepo } from '../repo/programMembership';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
@@ -43,6 +44,7 @@ export type IRegisterOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
     programMembership: ProgramMembershipRepo;
+    project: ProjectRepo;
     registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
@@ -187,6 +189,7 @@ export function register(
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
         programMembership: ProgramMembershipRepo;
+        project: ProjectRepo;
         registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
@@ -440,6 +443,7 @@ function processPlaceOrder(params: {
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
+        project: ProjectRepo;
         programMembership: ProgramMembershipRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
@@ -607,13 +611,7 @@ function processPlaceOrder(params: {
         debug('creditCard found.', creditCard.cardSeq);
 
         await CreditCardPaymentService.authorize({
-            project: {
-                id: project.id,
-                gmoInfo: {
-                    siteId: repos.creditCard.options.siteId,
-                    sitePass: repos.creditCard.options.sitePass
-                }
-            },
+            project: project,
             agent: params.registerActionAttributes.agent,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,

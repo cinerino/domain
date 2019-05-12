@@ -307,18 +307,6 @@ export function returnOrder(params: { orderNumber: string }) {
         }
 
         // アクション開始
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
-        const cancelReservationService = new chevre.service.transaction.CancelReservation({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
         const returnOrderActionAttributes = potentialActions.returnOrder;
         const action = await repos.action.start(returnOrderActionAttributes);
         try {
@@ -401,6 +389,25 @@ export function returnOrder(params: { orderNumber: string }) {
                         // tslint:disable-next-line:max-line-length
                         responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
+                        if (project.settings === undefined) {
+                            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                        }
+                        if (project.settings.chevre === undefined) {
+                            throw new factory.errors.ServiceUnavailable('Project settings not found');
+                        }
+
+                        const chevreAuthClient = new chevre.auth.ClientCredentials({
+                            domain: credentials.chevre.authorizeServerDomain,
+                            clientId: credentials.chevre.clientId,
+                            clientSecret: credentials.chevre.clientSecret,
+                            scopes: [],
+                            state: ''
+                        });
+                        const cancelReservationService = new chevre.service.transaction.CancelReservation({
+                            endpoint: project.settings.chevre.endpoint,
+                            auth: chevreAuthClient
+                        });
+
                         if (cancelReservationService !== undefined) {
                             const cancelReservationTransaction = await cancelReservationService.start({
                                 project: project,
@@ -428,12 +435,12 @@ export function returnOrder(params: { orderNumber: string }) {
             }
 
             // 予約キャンセル確定
-            const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
-            if (cancelReservationTransactions !== undefined && cancelReservationService !== undefined) {
-                await Promise.all(cancelReservationTransactions.map(async (cancelReservationTransaction) => {
-                    await cancelReservationService.confirm({ id: cancelReservationTransaction.id });
-                }));
-            }
+            // const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
+            // if (cancelReservationTransactions !== undefined && cancelReservationService !== undefined) {
+            //     await Promise.all(cancelReservationTransactions.map(async (cancelReservationTransaction) => {
+            //         await cancelReservationService.confirm({ id: cancelReservationTransaction.id });
+            //     }));
+            // }
 
             // 注文ステータス変更
             debug('changing orderStatus...');

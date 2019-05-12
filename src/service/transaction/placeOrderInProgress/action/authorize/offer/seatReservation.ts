@@ -144,6 +144,13 @@ export function create(params: {
 
                 default:
                     // 基本的にCHEVREにて予約取引開始
+                    if (project.settings === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                    }
+                    if (project.settings.chevre === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings not found');
+                    }
+
                     const chevreAuthClient = new chevre.auth.ClientCredentials({
                         domain: credentials.chevre.authorizeServerDomain,
                         clientId: credentials.chevre.clientId,
@@ -624,6 +631,13 @@ export function cancel(params: {
                 default:
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+
+                    if (project.settings === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                    }
+                    if (project.settings.chevre === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings not found');
+                    }
 
                     const chevreAuthClient = new chevre.auth.ClientCredentials({
                         domain: credentials.chevre.authorizeServerDomain,
