@@ -74,6 +74,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         sandbox.mock(ownershipInfoRepo)
@@ -140,6 +141,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo
         });
@@ -156,6 +158,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
@@ -237,6 +240,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo,
             depositService: depositService
@@ -254,6 +258,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
@@ -327,6 +332,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo,
             depositService: depositService
@@ -345,6 +351,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
@@ -424,6 +431,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo,
             depositService: depositService
@@ -444,6 +452,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         sandbox.mock(ownershipInfoRepo)
@@ -473,6 +482,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo
         });
@@ -489,6 +499,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         sandbox.mock(ownershipInfoRepo)
@@ -538,6 +549,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo
         })
@@ -554,6 +566,7 @@ describe('会員プログラムに登録する', () => {
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
         const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         sandbox.mock(ownershipInfoRepo)
@@ -611,6 +624,7 @@ describe('会員プログラムに登録する', () => {
             ownershipInfo: ownershipInfoRepo,
             person: personRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
             transaction: transactionRepo
         })
