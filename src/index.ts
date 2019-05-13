@@ -38,14 +38,6 @@ export import COA = COA;
 
 /**
  * GMOのAPIクライアント
- * @example
- * domain.GMO.services.card.searchMember({
- *     siteId: '',
- *     sitePass: '',
- *     memberId: ''
- * }).then((result) => {
- *     console.log(result);
- * });
  */
 export import GMO = GMO;
 
