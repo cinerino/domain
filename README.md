@@ -28,18 +28,11 @@ npm install @cinerino/domain
 | `DEBUG`                              | false    | cinerino-domain:* | Debug                           |
 | `PROJECT_ID`                         | true     |                   | CinerinoプロジェクトID          |
 | `NODE_ENV`                           | true     |                   | 環境名                          |
-| `MONGOLAB_URI`                       | true     |                   | MongoDB connection URI          |
 | `SENDGRID_API_KEY`                   | true     |                   | SendGrid API Key                |
 | `LINE_NOTIFY_URL`                    | true     |                   | LINE Notify URL                 |
 | `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN` | true     |                   | LINE Notify アクセストークン    |
-| `GMO_ENDPOINT`                       | true     |                   | GMO API エンドポイント          |
-| `GMO_SITE_ID`                        | true     |                   | GMO サイトID                    |
-| `GMO_SITE_PASS`                      | true     |                   | GMO サイトパス                  |
-| `WAITER_SECRET`                      | true     |                   | WAITER許可証トークン秘密鍵      |
-| `WAITER_PASSPORT_ISSUER`             | true     |                   | WAITER許可証発行者              |
 | `COA_ENDPOINT`                       | true     |                   | COAサービスエンドポイント       |
 | `COA_REFRESH_TOKEN`                  | true     |                   | COAサービスリフレッシュトークン |
-| `ORDER_INQUIRY_ENDPOINT`             | true     |                   | 注文照会エンドポイント          |
 | `TELEMETRY_API_ENDPOINT`             | true     |                   | Telemetry API エンドポイント    |
 | `CUSTOM_SEARCH_ENGINE_ID`            | true     |                   | Googleカスタム検索エンジンID    |
 | `GOOGLE_API_KEY`                     | true     |                   | Google API Key                  |
