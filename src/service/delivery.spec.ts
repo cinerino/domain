@@ -22,7 +22,7 @@ describe('ポイントインセンティブを適用する', () => {
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
+
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -42,8 +42,7 @@ describe('ポイントインセンティブを適用する', () => {
                 pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         })({
-            action: actionRepo,
-            pecorinoAuthClient: pecorinoAuthClient
+            action: actionRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -52,7 +51,7 @@ describe('ポイントインセンティブを適用する', () => {
     it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
         const pecorinoError = new Error('pecorinoError');
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
+
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -75,8 +74,7 @@ describe('ポイントインセンティブを適用する', () => {
                 pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         })({
-            action: actionRepo,
-            pecorinoAuthClient: pecorinoAuthClient
+            action: actionRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, pecorinoError);
@@ -91,7 +89,7 @@ describe('ポイントインセンティブを返却する', () => {
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
+
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -123,8 +121,7 @@ describe('ポイントインセンティブを返却する', () => {
                 }
             }
         })({
-            action: actionRepo,
-            pecorinoAuthClient: pecorinoAuthClient
+            action: actionRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -133,7 +130,7 @@ describe('ポイントインセンティブを返却する', () => {
     it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
         const pecorinoError = new Error('pecorinoError');
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
+
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -167,8 +164,7 @@ describe('ポイントインセンティブを返却する', () => {
                 }
             }
         })({
-            action: actionRepo,
-            pecorinoAuthClient: pecorinoAuthClient
+            action: actionRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, pecorinoError);
@@ -191,7 +187,7 @@ describe('ポイントインセンティブ承認取消', () => {
             }
         }];
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const pecorinoAuthClient = new domain.pecorinoapi.auth.ClientCredentials(<any>{});
+
         sandbox.mock(actionRepo)
             .expects('searchByPurpose')
             .once()
@@ -206,8 +202,7 @@ describe('ポイントインセンティブ承認取消', () => {
             .resolves({});
 
         const result = await domain.service.delivery.cancelPointAward(<any>{})({
-            action: actionRepo,
-            pecorinoAuthClient: pecorinoAuthClient
+            action: actionRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
