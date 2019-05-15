@@ -240,6 +240,20 @@ export interface IConfirmResultOrderParams {
         minValue?: number;
     };
 }
+
+export interface IConfirmEmailOptionsParams {
+    /**
+     * 注文配送メールテンプレート
+     * メールをカスタマイズしたい場合、PUGテンプレートを指定
+     * @see https://pugjs.org/api/getting-started.html
+     */
+    template?: string;
+    /**
+     * 注文配送メール送信者
+     */
+    sender?: { email?: string };
+}
+
 export interface IConfirmParams {
     project: factory.chevre.project.IProject;
     /**
@@ -258,12 +272,7 @@ export interface IConfirmParams {
          * 注文配送メールを送信するかどうか
          */
         sendEmailMessage?: boolean;
-        /**
-         * 注文配送メールテンプレート
-         * メールをカスタマイズしたい場合、PUGテンプレートを指定
-         * @see https://pugjs.org/api/getting-started.html
-         */
-        emailTemplate?: string;
+        email?: IConfirmEmailOptionsParams;
         /**
          * ムビチケバリデーションを適用するかどうか
          */
@@ -416,7 +425,7 @@ export function confirm(params: IConfirmParams) {
             order: order,
             seller: seller,
             sendEmailMessage: params.options.sendEmailMessage,
-            emailTemplate: params.options.emailTemplate
+            email: params.options.email
         });
 
         // ステータス変更
@@ -1071,7 +1080,7 @@ export async function createPotentialActionsFromTransaction(params: {
     order: factory.order.IOrder;
     seller: ISeller;
     sendEmailMessage?: boolean;
-    emailTemplate?: string;
+    email?: IConfirmEmailOptionsParams;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project
@@ -1409,7 +1418,7 @@ export async function createPotentialActionsFromTransaction(params: {
         const emailMessage = await emailMessageBuilder.createSendOrderMessage({
             project: project,
             order: params.order,
-            emailTemplate: params.emailTemplate
+            email: params.email
         });
         sendEmailMessageActionAttributes = {
             project: params.transaction.project,

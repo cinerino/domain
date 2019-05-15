@@ -21,7 +21,12 @@ export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecificat
 export async function createSendOrderMessage(params: {
     project: factory.project.IProject;
     order: factory.order.IOrder;
-    emailTemplate?: string;
+    email?: {
+        sender?: {
+            email?: string;
+        };
+        template?: string;
+    };
 }): Promise<factory.creativeWork.message.email.ICreativeWork> {
     // tslint:disable-next-line:max-func-body-length
     return new Promise<factory.creativeWork.message.email.ICreativeWork>(async (resolve, reject) => {
@@ -45,7 +50,7 @@ export async function createSendOrderMessage(params: {
             );
 
             // テンプレートからEメールメッセージを作成
-            const emailTemplate = params.emailTemplate;
+            const emailTemplate = (params.email !== undefined) ? params.email.template : undefined;
             let emailMessageText: string;
             if (emailTemplate !== undefined) {
                 emailMessageText = await new Promise<string>((resolveRender) => {
@@ -170,7 +175,11 @@ export async function createSendOrderMessage(params: {
                         sender: {
                             typeOf: params.order.seller.typeOf,
                             name: params.order.seller.name,
-                            email: 'noreply@example.com'
+                            email: (params.email !== undefined
+                                && params.email.sender !== undefined
+                                && params.email.sender.email !== undefined)
+                                ? params.email.sender.email
+                                : 'noreply@example.com'
                         },
                         toRecipient: {
                             typeOf: params.order.customer.typeOf,
