@@ -583,6 +583,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
+                        project: transaction.project,
                         orderNumber: transaction.object.order.orderNumber
                     }
                 };

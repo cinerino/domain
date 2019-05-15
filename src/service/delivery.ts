@@ -381,9 +381,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
 /**
  * ポイントインセンティブ承認取消
  */
-export function cancelPointAward(params: {
-    transactionId: string;
-}) {
+export function cancelPointAward(params: factory.task.IData<factory.taskName.CancelPointAward>) {
     return async (repos: {
         action: ActionRepo;
     }) => {

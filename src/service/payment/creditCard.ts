@@ -391,9 +391,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
 /**
  * クレジットカードオーソリ取消
  */
-export function cancelCreditCardAuth(params: {
-    transactionId: string;
-}) {
+export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName.CancelCreditCard>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;

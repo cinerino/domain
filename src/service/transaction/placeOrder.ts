@@ -73,6 +73,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             numberOfTried: 0,
             executionResults: [],
             data: {
+                project: transaction.project,
                 url: webhookUrl,
                 payload: { transaction: transaction }
             }
@@ -115,6 +116,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
+                        project: project,
                         transactionId: transaction.id
                     }
                 };
@@ -127,6 +129,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
+                        project: project,
                         transactionId: transaction.id
                     }
                 };
@@ -139,6 +142,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
+                        project: project,
                         transactionId: transaction.id
                     }
                 };
@@ -151,6 +155,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
+                        project: project,
                         transactionId: transaction.id
                     }
                 };

@@ -261,7 +261,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 /**
  * 注文返品アクション
  */
-export function returnOrder(params: { orderNumber: string }) {
+export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOrder>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;

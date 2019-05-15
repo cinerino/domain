@@ -203,13 +203,14 @@ export async function findMovieImage(params: {
 /**
  * 座席仮予約キャンセル
  */
-export function cancelSeatReservationAuth(params: { transactionId: string }) {
+export function cancelSeatReservationAuth(params: factory.task.IData<factory.taskName.CancelSeatReservation>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
 
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
@@ -326,7 +327,8 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
             return;
         }
 
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }

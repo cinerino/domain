@@ -149,10 +149,7 @@ ${content}`
     };
 }
 
-export function triggerWebhook(params: {
-    url: string;
-    payload: any;
-}) {
+export function triggerWebhook(params: factory.task.IData<factory.taskName.TriggerWebhook>) {
     return async () => {
         return new Promise<void>((resolve, reject) => {
             request.post(

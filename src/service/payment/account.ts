@@ -423,14 +423,13 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
 /**
  * 口座オーソリ取消
  */
-export function cancelAccountAuth(params: {
-    transactionId: string;
-}) {
+export function cancelAccountAuth(params: factory.task.IData<factory.taskName.CancelAccount>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
