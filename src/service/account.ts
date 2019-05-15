@@ -166,11 +166,10 @@ export function close<T extends factory.accountType>(params: {
 /**
  * 口座検索
  */
-export function search(
-    params: factory.ownershipInfo.ISearchConditions<factory.ownershipInfo.AccountGoodType.Account> & {
-        project: factory.project.IProject;
-    }
-): IAccountsOperation<IOwnershipInfoWithDetail[]> {
+export function search(params: {
+    project: factory.project.IProject;
+    conditions: factory.ownershipInfo.ISearchConditions<factory.ownershipInfo.AccountGoodType.Account>;
+}): IAccountsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
@@ -180,10 +179,10 @@ export function search(
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 口座所有権を検索
-            const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>(params);
+            const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>(params.conditions);
             const accountNumbers = ownershipInfos.map((o) => o.typeOfGood.accountNumber);
-            const typeOfGood =
-                (<factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.AccountGoodType.Account>>params.typeOfGood);
+            const typeOfGood = <factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.AccountGoodType.Account>>
+                params.conditions.typeOfGood;
 
             if (accountNumbers.length > 0) {
                 if (project.settings === undefined) {
