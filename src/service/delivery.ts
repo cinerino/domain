@@ -11,7 +11,10 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as util from 'util';
 
+import { credentials } from '../credentials';
+
 import * as factory from '../factory';
+
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
@@ -19,6 +22,14 @@ import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
+
+const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
@@ -270,7 +281,6 @@ export function onSend(sendOrderActionAttributes: factory.action.transfer.send.o
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
-        pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
@@ -279,7 +289,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
             // 入金取引確定
             const depositService = new pecorinoapi.service.transaction.Deposit({
                 endpoint: params.object.pointAPIEndpoint,
-                auth: repos.pecorinoAuthClient
+                auth: pecorinoAuthClient
             });
             await depositService.confirm({ id: params.object.pointTransaction.id });
         } catch (error) {
@@ -308,7 +318,6 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
-        pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
     }) => {
         // アクション開始
         const order = params.object.purpose;
@@ -320,7 +329,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             // 入金した分を引き出し取引実行
             const withdrawService = new pecorinoapi.service.transaction.Withdraw({
                 endpoint: authorizePointAwardAction.pointAPIEndpoint,
-                auth: repos.pecorinoAuthClient
+                auth: pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
                 typeOf: factory.pecorino.transactionType.Withdraw,
@@ -377,7 +386,6 @@ export function cancelPointAward(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        pecorinoAuthClient: pecorinoapi.auth.ClientCredentials;
     }) => {
         // ポイントインセンティブ承認アクションを取得
         const authorizeActions = <factory.action.authorize.award.point.IAction[]>
@@ -398,7 +406,7 @@ export function cancelPointAward(params: {
                 // アクションステータスに関係なく取消処理実行
                 const depositService = new pecorinoapi.service.transaction.Deposit({
                     endpoint: action.result.pointAPIEndpoint,
-                    auth: repos.pecorinoAuthClient
+                    auth: pecorinoAuthClient
                 });
 
                 await depositService.cancel({

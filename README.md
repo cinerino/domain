@@ -23,19 +23,28 @@ npm install @cinerino/domain
 
 ### Environment variables
 
-| Name                                 | Required | Value             | Purpose                         |
-| ------------------------------------ | -------- | ----------------- | ------------------------------- |
-| `DEBUG`                              | false    | cinerino-domain:* | Debug                           |
-| `PROJECT_ID`                         | true     |                   | CinerinoプロジェクトID          |
-| `NODE_ENV`                           | true     |                   | 環境名                          |
-| `SENDGRID_API_KEY`                   | true     |                   | SendGrid API Key                |
-| `LINE_NOTIFY_URL`                    | true     |                   | LINE Notify URL                 |
-| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN` | true     |                   | LINE Notify アクセストークン    |
-| `COA_ENDPOINT`                       | true     |                   | COAサービスエンドポイント       |
-| `COA_REFRESH_TOKEN`                  | true     |                   | COAサービスリフレッシュトークン |
-| `TELEMETRY_API_ENDPOINT`             | true     |                   | Telemetry API エンドポイント    |
-| `CUSTOM_SEARCH_ENGINE_ID`            | true     |                   | Googleカスタム検索エンジンID    |
-| `GOOGLE_API_KEY`                     | true     |                   | Google API Key                  |
+| Name                                   | Required | Value             | Purpose                        |
+| -------------------------------------- | -------- | ----------------- | ------------------------------ |
+| `DEBUG`                                | false    | cinerino-domain:* | Debug                          |
+| `PROJECT_ID`                           | true     |                   | Cinerino Project ID            |
+| `NODE_ENV`                             | true     |                   | Environment name               |
+| `SENDGRID_API_KEY`                     | true     |                   | SendGrid API Key               |
+| `LINE_NOTIFY_URL`                      | true     |                   | LINE Notify URL                |
+| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN`   | true     |                   | LINE Notify access token       |
+| `COA_ENDPOINT`                         | true     |                   | COA credentilas                |
+| `COA_REFRESH_TOKEN`                    | true     |                   | credentilas                    |
+| `CHEVRE_AUTHORIZE_SERVER_DOMAIN`       | true     |                   | Chevre credentials             |
+| `CHEVRE_CLIENT_ID`                     | true     |                   | Chevre credentials             |
+| `CHEVRE_CLIENT_SECRET`                 | true     |                   | Chevre credentials             |
+| `MVTK_RESERVE_AUTHORIZE_SERVER_DOMAIN` | true     |                   | Mvtk Reserve credentials       |
+| `MVTK_RESERVE_CLIENT_ID`               | true     |                   | Mvtk Reserve credentials       |
+| `MVTK_RESERVE_CLIENT_SECRET`           | true     |                   | Mvtk Reserve credentials       |
+| `PECORINO_AUTHORIZE_SERVER_DOMAIN`     | true     |                   | Pecorino credentials           |
+| `PECORINO_CLIENT_ID`                   | true     |                   | Pecorino credentials           |
+| `PECORINO_CLIENT_SECRET`               | true     |                   | Pecorino credentials           |
+| `TELEMETRY_API_ENDPOINT`               | true     |                   | Telemetry API endpoint         |
+| `CUSTOM_SEARCH_ENGINE_ID`              | true     |                   | Google Custom Search Engine ID |
+| `GOOGLE_API_KEY`                       | true     |                   | Google API Key                 |
 
 ## Code Samples
 

@@ -1,5 +1,4 @@
 import * as GMO from '@motionpicture/gmo-service';
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 
 import { IConnectionSettings, IOperation } from '../task';
 
@@ -33,21 +32,6 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         if (settings.cognitoIdentityServiceProvider === undefined) {
             throw new Error('settings.cognitoIdentityServiceProvider undefined.');
         }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (settings.pecorinoEndpoint === undefined) {
-            throw new Error('settings.pecorinoEndpoint undefined.');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (settings.pecorinoAuthClient === undefined) {
-            throw new Error('settings.pecorinoAuthClient undefined.');
-        }
-
-        const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: settings.pecorinoEndpoint,
-            auth: settings.pecorinoAuthClient
-        });
 
         const projectRepo = new ProjectRepo(settings.connection);
         const projectId = (data.project !== undefined) ? data.project.id : <string>process.env.PROJECT_ID;
@@ -75,8 +59,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
             programMembership: new ProgramMembershipRepo(settings.connection),
             project: new ProjectRepo(settings.connection),
             registerActionInProgressRepo: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
-            transaction: new TransactionRepo(settings.connection),
-            depositService: depositService
+            transaction: new TransactionRepo(settings.connection)
         });
     };
 }

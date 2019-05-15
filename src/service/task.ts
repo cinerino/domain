@@ -1,7 +1,6 @@
 /**
  * タスクサービス
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
@@ -24,14 +23,6 @@ export interface IConnectionSettings {
      * Redisクライアント
      */
     redisClient?: redis.RedisClient;
-    /**
-     * PecorinoAPIエンドポイント
-     */
-    pecorinoEndpoint?: string;
-    /**
-     * PecorinoAPI認証クライアント
-     */
-    pecorinoAuthClient?: pecorinoapi.auth.ClientCredentials;
     /**
      * Cognitoサービスプロバイダー
      */

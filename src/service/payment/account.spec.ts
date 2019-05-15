@@ -19,6 +19,11 @@ describe('service.payment.account.authorize()', () => {
     });
 
     it('口座サービスを正常であればエラーにならないはず', async () => {
+        const project = {
+            typeOf: 'Project',
+            id: 'id',
+            settings: { pecorino: {} }
+        };
         const agent = {
             id: 'agentId',
             memberOf: {}
@@ -49,9 +54,13 @@ describe('service.payment.account.authorize()', () => {
         };
         const pendingTransaction = { typeOf: domain.factory.pecorino.transactionType.Transfer, id: 'transactionId' };
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -64,12 +73,13 @@ describe('service.payment.account.authorize()', () => {
             .expects('complete')
             .once()
             .resolves(action);
-        sandbox.mock(transferService)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Transfer.prototype)
             .expects('start')
             .once()
             .resolves(pendingTransaction);
 
         const result = await domain.service.payment.account.authorize({
+            project: <any>project,
             purpose: transaction,
             agent: transaction.agent,
             object: {
@@ -87,8 +97,8 @@ describe('service.payment.account.authorize()', () => {
             }
         })({
             action: actionRepo,
-            transaction: transactionRepo,
-            transferTransactionService: transferService
+            project: projectRepo,
+            transaction: transactionRepo
         });
 
         assert.deepEqual(result, action);
@@ -96,6 +106,11 @@ describe('service.payment.account.authorize()', () => {
     });
 
     it('口座サービスでエラーが発生すればアクションにエラー結果が追加されるはず', async () => {
+        const project = {
+            typeOf: 'Project',
+            id: 'id',
+            settings: { pecorino: {} }
+        };
         const agent = {
             id: 'agentId',
             memberOf: {}
@@ -128,9 +143,15 @@ describe('service.payment.account.authorize()', () => {
             recipient: seller
         };
         const startPayTransactionResult = new Error('startPayTransactionError');
+
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -139,7 +160,7 @@ describe('service.payment.account.authorize()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(transferService)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Transfer.prototype)
             .expects('start')
             .once()
             .rejects(startPayTransactionResult);
@@ -152,6 +173,7 @@ describe('service.payment.account.authorize()', () => {
             .never();
 
         const result = await domain.service.payment.account.authorize({
+            project: <any>project,
             purpose: transaction,
             agent: transaction.agent,
             object: {
@@ -170,8 +192,8 @@ describe('service.payment.account.authorize()', () => {
             }
         })({
             action: actionRepo,
-            transaction: transactionRepo,
-            transferTransactionService: transferService
+            project: projectRepo,
+            transaction: transactionRepo
         })
             .catch((err) => err);
 
@@ -186,6 +208,11 @@ describe('ポイント決済承認を取り消す', () => {
     });
 
     it('出金取引による承認アクションが存在すれば、キャンセルできるはず', async () => {
+        const project = {
+            typeOf: 'Project',
+            id: 'id',
+            settings: { pecorino: {} }
+        };
         const transaction = {
             typeOf: domain.factory.transactionType.PlaceOrder,
             id: 'transactionId',
@@ -197,9 +224,15 @@ describe('ポイント決済承認を取り消す', () => {
                 pendingTransaction: { typeOf: domain.factory.pecorino.transactionType.Withdraw }
             }
         };
+
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const withdrawService = new domain.pecorinoapi.service.transaction.Withdraw(<any>{});
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -208,19 +241,20 @@ describe('ポイント決済承認を取り消す', () => {
             .expects('cancel')
             .once()
             .resolves(action);
-        sandbox.mock(withdrawService)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('cancel')
             .once()
             .resolves();
 
         const result = await domain.service.payment.account.voidTransaction({
+            project: <any>project,
             id: 'actionId',
             agent: transaction.agent,
             purpose: transaction
         })({
             action: actionRepo,
-            transaction: transactionRepo,
-            withdrawTransactionService: withdrawService
+            project: projectRepo,
+            transaction: transactionRepo
         });
 
         assert.equal(result, undefined);
@@ -228,6 +262,11 @@ describe('ポイント決済承認を取り消す', () => {
     });
 
     it('転送取引による承認アクションが存在すれば、キャンセルできるはず', async () => {
+        const project = {
+            typeOf: 'Project',
+            id: 'id',
+            settings: { pecorino: {} }
+        };
         const transaction = {
             typeOf: domain.factory.transactionType.PlaceOrder,
             id: 'transactionId',
@@ -239,9 +278,15 @@ describe('ポイント決済承認を取り消す', () => {
                 pendingTransaction: { typeOf: domain.factory.pecorino.transactionType.Transfer }
             }
         };
+
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const transferService = new domain.pecorinoapi.service.transaction.Transfer(<any>{});
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -250,19 +295,20 @@ describe('ポイント決済承認を取り消す', () => {
             .expects('cancel')
             .once()
             .resolves(action);
-        sandbox.mock(transferService)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Transfer.prototype)
             .expects('cancel')
             .once()
             .resolves();
 
         const result = await domain.service.payment.account.voidTransaction({
+            project: <any>project,
             id: 'actionId',
             agent: transaction.agent,
             purpose: transaction
         })({
             action: actionRepo,
-            transaction: transactionRepo,
-            transferTransactionService: transferService
+            project: projectRepo,
+            transaction: transactionRepo
         });
 
         assert.equal(result, undefined);

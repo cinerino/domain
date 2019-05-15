@@ -7,18 +7,29 @@ import * as moment from 'moment';
 
 import * as factory from '../../../../../../factory';
 
+import { credentials } from '../../../../../../credentials';
+
 import { handlePecorinoError } from '../../../../../../errorHandler';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as OwnershipInfoRepo } from '../../../../../../repo/ownershipInfo';
+import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
+const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
+    project: ProjectRepo;
     transaction: TransactionRepo;
     ownershipInfo: OwnershipInfoRepo;
-    depositTransactionService: pecorinoapi.service.transaction.Deposit;
 }) => Promise<T>;
 
 /**
@@ -45,17 +56,17 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
-        /**
-         * 入金取引サービス
-         */
-        depositTransactionService: pecorinoapi.service.transaction.Deposit;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transaction.id
         });
+
+        const projectId = (transaction.project !== undefined) ? transaction.project.id : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if: please write tests */
@@ -107,10 +118,20 @@ export function create(params: {
         // Pecorinoオーソリ取得
         let pecorinoTransaction: factory.action.authorize.award.point.IPointTransaction;
         try {
-            pecorinoEndpoint = repos.depositTransactionService.options.endpoint;
+            if (project.settings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings undefined');
+            }
+            if (project.settings.pecorino === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not found');
+            }
+            const depositService = new pecorinoapi.service.transaction.Deposit({
+                endpoint: project.settings.pecorino.endpoint,
+                auth: pecorinoAuthClient
+            });
+            pecorinoEndpoint = depositService.options.endpoint;
 
             debug('starting pecorino pay transaction...', params.object.amount);
-            pecorinoTransaction = await repos.depositTransactionService.start({
+            pecorinoTransaction = await depositService.start({
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
                     typeOf: transaction.seller.typeOf,
@@ -188,8 +209,8 @@ export function cancel(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
-        depositTransactionService: pecorinoapi.service.transaction.Deposit;
     }) => {
         debug('canceling pecorino authorize action...');
         const transaction = await repos.transaction.findInProgressById({
@@ -203,11 +224,24 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
+        const projectId = (transaction.project !== undefined) ? transaction.project.id : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
+
         // まずアクションをキャンセル
         const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.award.point.IResult>action.result;
 
         // Pecorinoで取引中止実行
-        await repos.depositTransactionService.cancel(actionResult.pointTransaction);
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.pecorino === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+        const depositService = new pecorinoapi.service.transaction.Deposit({
+            endpoint: project.settings.pecorino.endpoint,
+            auth: pecorinoAuthClient
+        });
+        await depositService.cancel(actionResult.pointTransaction);
     };
 }

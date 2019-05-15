@@ -65,7 +65,8 @@ describe('会員プログラムに登録する', () => {
         sandbox.restore();
     });
 
-    it('リポジトリが正常であれば登録できるはず', async () => {
+    // tslint:disable-next-line:max-func-body-length
+    it('リポジトリが正常であれば登録できて、ポイントを追加できるはず', async () => {
         const creditCard = { cardSeq: 'cardSeq' };
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
@@ -77,13 +78,34 @@ describe('会員プログラムに登録する', () => {
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+
+        const fakeOwnershipInfo = [{
+            typeOfGood: { accountNumber: '123' }
+        }];
+        const fakeTransaction = {
+            seller: { name: {} },
+            agent: {}
+        };
+        const project = {
+            id: 'id',
+            settings: {
+                pecorino: {}
+            }
+        };
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(ownershipInfoRepo)
             .expects('search')
-            .once()
+            .twice()
+            .resolves(fakeOwnershipInfo)
+            .onFirstCall()
             .resolves([]);
         sandbox.mock(actionRepo)
             .expects('start')
-            .once()
+            .twice()
             .resolves({});
         sandbox.mock(registerActionInProgressRepoRepo)
             .expects('lock')
@@ -91,12 +113,12 @@ describe('会員プログラムに登録する', () => {
             .resolves(1);
         sandbox.mock(actionRepo)
             .expects('complete')
-            .once()
+            .twice()
             .resolves({});
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
             .expects('start')
             .once()
-            .returns(async () => Promise.resolve({}));
+            .returns(async () => Promise.resolve(fakeTransaction));
         sandbox.mock(creditCardRepo)
             .expects('search')
             .once()
@@ -121,6 +143,10 @@ describe('会員プログラムに登録する', () => {
             .expects('confirm')
             .once()
             .returns(async () => Promise.resolve({}));
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+            .expects('start')
+            .once()
+            .resolves({});
 
         const result = await domain.service.programMembership.register(<any>{
             agent: {
@@ -129,7 +155,7 @@ describe('会員プログラムに登録する', () => {
             object: {
                 itemOffered: {
                     id: 'programMembershipId',
-                    offers: [{ price: 123 }],
+                    offers: [],
                     hostingOrganization: {}
                 }
             }
@@ -149,108 +175,7 @@ describe('会員プログラムに登録する', () => {
         sandbox.verify();
     });
 
-    it('リポジトリが正常であれば登録できて、ポイントを追加できるはず', async () => {
-        const creditCard = { cardSeq: 'cardSeq' };
-        const actionRepo = new domain.repository.Action(mongoose.connection);
-        const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
-        const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
-        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
-        const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
-        const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
-        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
-        const fakeOwnershipInfo = [{
-            typeOfGood: { accountNumber: '123' }
-        }];
-        const fakeTransaction = {
-            seller: { name: {} },
-            agent: {}
-        };
-
-        sandbox.mock(ownershipInfoRepo)
-            .expects('search')
-            .twice()
-            .resolves(fakeOwnershipInfo)
-            .onFirstCall()
-            .resolves([]);
-        sandbox.mock(actionRepo)
-            .expects('start')
-            .twice()
-            .resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo)
-            .expects('lock')
-            .once()
-            .resolves(1);
-        sandbox.mock(actionRepo)
-            .expects('complete')
-            .twice()
-            .resolves({});
-        sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('start')
-            .once()
-            .returns(async () => Promise.resolve(fakeTransaction));
-        sandbox.mock(creditCardRepo)
-            .expects('search')
-            .once()
-            .resolves([creditCard]);
-        sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership)
-            .expects('create')
-            .once()
-            .returns(async () => Promise.resolve({}));
-        sandbox.mock(domain.service.payment.creditCard)
-            .expects('authorize')
-            .once()
-            .returns(async () => Promise.resolve({}));
-        sandbox.mock(personRepo)
-            .expects('getUserAttributes')
-            .once()
-            .resolves({});
-        sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('updateCustomerProfile')
-            .once()
-            .returns(async () => Promise.resolve({}));
-        sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('confirm')
-            .once()
-            .returns(async () => Promise.resolve({}));
-        sandbox.mock(depositService)
-            .expects('start')
-            .once()
-            .resolves({});
-
-        const result = await domain.service.programMembership.register(<any>{
-            agent: {
-                memberOf: { membershipNumber: 'membershipNumber' }
-            },
-            object: {
-                itemOffered: {
-                    id: 'programMembershipId',
-                    offers: [],
-                    hostingOrganization: {}
-                }
-            }
-        })({
-            action: actionRepo,
-            creditCard: creditCardRepo,
-            orderNumber: orderNumberRepo,
-            seller: sellerRepo,
-            ownershipInfo: ownershipInfoRepo,
-            person: personRepo,
-            programMembership: programMembershipRepo,
-            project: projectRepo,
-            registerActionInProgressRepo: registerActionInProgressRepoRepo,
-            transaction: transactionRepo,
-            depositService: depositService
-        });
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-
     it('ポイントを追加する時、所有権が見つけなかったら、エラーとなるはず', async () => {
-        // const creditCard = { cardSeq: 'cardSeq' };
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
@@ -261,12 +186,22 @@ describe('会員プログラムに登録する', () => {
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
+
         const fakeTransaction = {
             seller: { name: {} },
             agent: {}
         };
+        const project = {
+            id: 'id',
+            settings: {
+                pecorino: {}
+            }
+        };
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(ownershipInfoRepo)
             .expects('search')
             .twice()
@@ -309,7 +244,7 @@ describe('会員プログラムに登録する', () => {
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
             .expects('confirm')
             .never();
-        sandbox.mock(depositService)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('start')
             .never();
 
@@ -334,16 +269,15 @@ describe('会員プログラムに登録する', () => {
             programMembership: programMembershipRepo,
             project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
-            transaction: transactionRepo,
-            depositService: depositService
+            transaction: transactionRepo
         })
             .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('ポイントを追加する時、エラーが発生すればエラーとなるはず', async () => {
-        // const creditCard = { cardSeq: 'cardSeq' };
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
@@ -354,7 +288,7 @@ describe('会員プログラムに登録する', () => {
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        const depositService = new domain.pecorinoapi.service.transaction.Deposit(<any>{});
+
         const fakeOwnershipInfo = [{
             typeOfGood: { accountNumber: '123' }
         }];
@@ -362,7 +296,17 @@ describe('会員プログラムに登録する', () => {
             seller: { name: {} },
             agent: {}
         };
+        const project = {
+            id: 'id',
+            settings: {
+                pecorino: {}
+            }
+        };
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(ownershipInfoRepo)
             .expects('search')
             .twice()
@@ -407,7 +351,7 @@ describe('会員プログラムに登録する', () => {
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
             .expects('confirm')
             .never();
-        sandbox.mock(depositService)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('start')
             .once()
             .rejects('fake error');
@@ -433,8 +377,7 @@ describe('会員プログラムに登録する', () => {
             programMembership: programMembershipRepo,
             project: projectRepo,
             registerActionInProgressRepo: registerActionInProgressRepoRepo,
-            transaction: transactionRepo,
-            depositService: depositService
+            transaction: transactionRepo
         })
             .catch((err) => err);
         assert.equal(result, 'fake error');
@@ -442,9 +385,6 @@ describe('会員プログラムに登録する', () => {
     });
 
     it('すでに登録済であれば何もしないはず', async () => {
-        const ownershipInfo = {
-            typeOfGood: { id: 'programMembershipId' }
-        };
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
@@ -455,6 +395,14 @@ describe('会員プログラムに登録する', () => {
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+
+        const ownershipInfo = {
+            typeOfGood: { id: 'programMembershipId' }
+        };
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .never();
         sandbox.mock(ownershipInfoRepo)
             .expects('search')
             .once()
@@ -490,74 +438,7 @@ describe('会員プログラムに登録する', () => {
         sandbox.verify();
     });
 
-    it('注文プロセスでエラーが発生すればアクションを断念するはず', async () => {
-        const startPlaceOrderError = new Error('startPlaceOrderError');
-        const actionRepo = new domain.repository.Action(mongoose.connection);
-        const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
-        const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
-        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
-        const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
-        const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
-        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        sandbox.mock(ownershipInfoRepo)
-            .expects('search')
-            .once()
-            .resolves([]);
-        sandbox.mock(actionRepo)
-            .expects('start')
-            .once()
-            .resolves({});
-        sandbox.mock(registerActionInProgressRepoRepo)
-            .expects('lock')
-            .once()
-            .resolves(1);
-        sandbox.mock(domain.service.transaction.placeOrderInProgress)
-            .expects('start')
-            .once()
-            .returns(async () => Promise.reject(startPlaceOrderError));
-        sandbox.mock(registerActionInProgressRepoRepo)
-            .expects('unlock')
-            .once()
-            .resolves();
-        sandbox.mock(actionRepo)
-            .expects('complete')
-            .never();
-        sandbox.mock(actionRepo)
-            .expects('giveUp')
-            .once()
-            .resolves({});
-
-        const result = await domain.service.programMembership.register(<any>{
-            agent: {
-                memberOf: { membershipNumber: 'membershipNumber' }
-            },
-            object: {
-                itemOffered: {
-                    id: 'programMembershipId',
-                    offers: [],
-                    hostingOrganization: {}
-                }
-            }
-        })({
-            action: actionRepo,
-            creditCard: creditCardRepo,
-            orderNumber: orderNumberRepo,
-            seller: sellerRepo,
-            ownershipInfo: ownershipInfoRepo,
-            person: personRepo,
-            programMembership: programMembershipRepo,
-            project: projectRepo,
-            registerActionInProgressRepo: registerActionInProgressRepoRepo,
-            transaction: transactionRepo
-        })
-            .catch((err) => err);
-        assert.deepEqual(result, startPlaceOrderError);
-        sandbox.verify();
-    });
-
+    // tslint:disable-next-line:max-func-body-length
     it('クレジットカードが見つからなければアクションを断念するはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const creditCardRepo = new domain.repository.paymentMethod.CreditCard(<any>{});
@@ -569,13 +450,34 @@ describe('会員プログラムに登録する', () => {
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+
+        const fakeOwnershipInfo = [{
+            typeOfGood: { accountNumber: '123' }
+        }];
+        const fakeTransaction = {
+            seller: { name: {} },
+            agent: {}
+        };
+        const project = {
+            id: 'id',
+            settings: {
+                pecorino: {}
+            }
+        };
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(ownershipInfoRepo)
             .expects('search')
-            .once()
+            .twice()
+            .resolves(fakeOwnershipInfo)
+            .onFirstCall()
             .resolves([]);
         sandbox.mock(actionRepo)
             .expects('start')
-            .once()
+            .twice()
             .resolves({});
         sandbox.mock(registerActionInProgressRepoRepo)
             .expects('lock')
@@ -584,7 +486,7 @@ describe('会員プログラムに登録する', () => {
         sandbox.mock(domain.service.transaction.placeOrderInProgress)
             .expects('start')
             .once()
-            .returns(async () => Promise.resolve({}));
+            .returns(async () => Promise.resolve(fakeTransaction));
         sandbox.mock(domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership)
             .expects('create')
             .once()
@@ -599,9 +501,14 @@ describe('会員プログラムに登録する', () => {
             .resolves(1);
         sandbox.mock(actionRepo)
             .expects('complete')
-            .never();
+            .once()
+            .resolves({});
         sandbox.mock(actionRepo)
             .expects('giveUp')
+            .once()
+            .resolves({});
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+            .expects('start')
             .once()
             .resolves({});
 

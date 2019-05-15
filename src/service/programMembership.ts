@@ -7,6 +7,8 @@ import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
+import { credentials } from '../credentials';
+
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
@@ -26,6 +28,14 @@ import { handlePecorinoError } from '../errorHandler';
 import * as factory from '../factory';
 
 const debug = createDebug('cinerino-domain:service');
+
+const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
@@ -48,7 +58,6 @@ export type IRegisterOperation<T> = (repos: {
     registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
-    depositService?: pecorinoapi.service.transaction.Deposit;
 }) => Promise<T>;
 
 /**
@@ -193,7 +202,6 @@ export function register(
         registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
-        depositService?: pecorinoapi.service.transaction.Deposit;
     }) => {
         const now = new Date();
 
@@ -447,12 +455,12 @@ function processPlaceOrder(params: {
         programMembership: ProgramMembershipRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
-        depositService?: pecorinoapi.service.transaction.Deposit;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
-        const project: factory.project.IProject = (params.registerActionAttributes.project !== undefined)
-            ? params.registerActionAttributes.project
-            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+        const projectId = (params.registerActionAttributes.project !== undefined)
+            ? params.registerActionAttributes.project.id
+            : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
 
         const programMembership = params.registerActionAttributes.object.itemOffered;
         // tslint:disable-next-line:no-single-line-block-comment
@@ -493,103 +501,111 @@ function processPlaceOrder(params: {
         })(repos);
         debug('transaction started', transaction.id);
 
-        // シネサンのスマフォアプリ登録時、元から1ポイント追加される
-        if (repos.depositService !== undefined) {
-            const now = new Date();
-            const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-                typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                    accountType: factory.accountType.Point
-                },
-                ownedBy: {
-                    id: customer.id
-                },
-                ownedFrom: now,
-                ownedThrough: now
-            });
+        // 登録時、1ポイント追加される
+        const now = new Date();
+        const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+            typeOfGood: {
+                typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                accountType: factory.accountType.Point
+            },
+            ownedBy: {
+                id: customer.id
+            },
+            ownedFrom: now,
+            ownedThrough: now
+        });
 
-            if (accountOwnershipInfos.length === 0) {
-                throw new factory.errors.NotFound('accountOwnershipInfos');
-            }
-
-            // 承認アクションを開始する
-            const actionAttributes: factory.action.authorize.award.point.IAttributes = {
-                project: transaction.project,
-                typeOf: factory.actionType.AuthorizeAction,
-                object: {
-                    typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                    transactionId: transaction.id,
-                    amount: 1
-                },
-                agent: transaction.seller,
-                recipient: transaction.agent,
-                purpose: transaction
-            };
-            const action = await repos.action.start(actionAttributes);
-
-            let pointAPIEndpoint: string;
-
-            // Pecorinoオーソリ取得
-            let pointTransaction: factory.action.authorize.award.point.IPointTransaction;
-
-            try {
-                pointAPIEndpoint = repos.depositService.options.endpoint;
-
-                debug('starting pecorino pay transaction...', 1);
-                pointTransaction = await repos.depositService.start({
-                    typeOf: factory.pecorino.transactionType.Deposit,
-                    agent: {
-                        typeOf: transaction.seller.typeOf,
-                        id: transaction.seller.id,
-                        name: transaction.seller.name.ja,
-                        url: transaction.seller.url
-                    },
-                    // 最大1ヵ月のオーソリ
-                    expires: moment()
-                        .add(1, 'month')
-                        .toDate(),
-                    recipient: {
-                        typeOf: transaction.agent.typeOf,
-                        id: transaction.agent.id,
-                        name: `Place Order Transaction ${transaction.id}`,
-                        url: transaction.agent.url
-                    },
-                    object: {
-                        amount: 1,
-                        description: '会員新規登録インセンティブ',
-                        toLocation: {
-                            typeOf: factory.pecorino.account.TypeOf.Account,
-                            accountType: factory.accountType.Point,
-                            accountNumber: accountOwnershipInfos[0].typeOfGood.accountNumber
-                        }
-                    }
-                });
-                debug('pointTransaction started.', pointTransaction.id);
-            } catch (error) {
-                // actionにエラー結果を追加
-                try {
-                    // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    const actionError = { ...error, ...{ name: error.name, message: error.message } };
-                    await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-                } catch (__) {
-                    // 失敗したら仕方ない
-                }
-
-                error = handlePecorinoError(error);
-                throw error;
-            }
-
-            // アクションを完了
-            debug('ending authorize action...');
-            const actionResult: factory.action.authorize.award.point.IResult = {
-                price: 0, // JPYとして0円
-                amount: 1,
-                pointTransaction: pointTransaction,
-                pointAPIEndpoint: pointAPIEndpoint
-            };
-
-            await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+        if (accountOwnershipInfos.length === 0) {
+            throw new factory.errors.NotFound('accountOwnershipInfos');
         }
+
+        // 承認アクションを開始する
+        const actionAttributes: factory.action.authorize.award.point.IAttributes = {
+            project: transaction.project,
+            typeOf: factory.actionType.AuthorizeAction,
+            object: {
+                typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
+                transactionId: transaction.id,
+                amount: 1
+            },
+            agent: transaction.seller,
+            recipient: transaction.agent,
+            purpose: transaction
+        };
+        const action = await repos.action.start(actionAttributes);
+
+        let pointAPIEndpoint: string;
+
+        // Pecorinoオーソリ取得
+        let pointTransaction: factory.action.authorize.award.point.IPointTransaction;
+
+        try {
+            if (project.settings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings undefined');
+            }
+            if (project.settings.pecorino === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not found');
+            }
+            const depositService = new pecorinoapi.service.transaction.Deposit({
+                endpoint: project.settings.pecorino.endpoint,
+                auth: pecorinoAuthClient
+            });
+            pointAPIEndpoint = depositService.options.endpoint;
+
+            debug('starting pecorino pay transaction...', 1);
+            pointTransaction = await depositService.start({
+                typeOf: factory.pecorino.transactionType.Deposit,
+                agent: {
+                    typeOf: transaction.seller.typeOf,
+                    id: transaction.seller.id,
+                    name: transaction.seller.name.ja,
+                    url: transaction.seller.url
+                },
+                // 最大1ヵ月のオーソリ
+                expires: moment()
+                    .add(1, 'month')
+                    .toDate(),
+                recipient: {
+                    typeOf: transaction.agent.typeOf,
+                    id: transaction.agent.id,
+                    name: `Place Order Transaction ${transaction.id}`,
+                    url: transaction.agent.url
+                },
+                object: {
+                    amount: 1,
+                    description: '会員新規登録インセンティブ',
+                    toLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountType: factory.accountType.Point,
+                        accountNumber: accountOwnershipInfos[0].typeOfGood.accountNumber
+                    }
+                }
+            });
+            debug('pointTransaction started.', pointTransaction.id);
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                const actionError = { ...error, ...{ name: error.name, message: error.message } };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            error = handlePecorinoError(error);
+            throw error;
+        }
+
+        // アクションを完了
+        debug('ending authorize action...');
+        const actionResult: factory.action.authorize.award.point.IResult = {
+            price: 0, // JPYとして0円
+            amount: 1,
+            pointTransaction: pointTransaction,
+            pointAPIEndpoint: pointAPIEndpoint
+        };
+
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
 
         // 会員プログラムオファー承認
         await PlaceOrderService.action.authorize.offer.programMembership.create({

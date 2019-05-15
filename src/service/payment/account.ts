@@ -5,9 +5,13 @@ import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
+import { credentials } from '../../credentials';
+
 import * as factory from '../../factory';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -15,11 +19,18 @@ import { handlePecorinoError } from '../../errorHandler';
 
 const debug = createDebug('cinerino-domain:service');
 
+const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    project: ProjectRepo;
     transaction: TransactionRepo;
-    withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
-    transferTransactionService?: pecorinoapi.service.transaction.Transfer;
 }) => Promise<T>;
 
 /**
@@ -27,6 +38,7 @@ export type IAuthorizeOperation<T> = (repos: {
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
 export function authorize<T extends factory.accountType>(params: {
+    project: factory.project.IProject;
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
         fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
@@ -37,16 +49,17 @@ export function authorize<T extends factory.accountType>(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
-        /**
-         * 出金取引サービス
-         */
-        withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
-        /**
-         * 転送取引サービス
-         */
-        transferTransactionService?: pecorinoapi.service.transaction.Transfer;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.pecorino === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -93,12 +106,12 @@ export function authorize<T extends factory.accountType>(params: {
             /* istanbul ignore else *//* istanbul ignore next */
             if (params.object.toAccount === undefined) {
                 // 転送先口座が指定されていない場合は、出金取引
-                if (repos.withdrawTransactionService === undefined) {
-                    throw new Error('withdrawTransactionService required');
-                }
-
+                const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                    endpoint: project.settings.pecorino.endpoint,
+                    auth: pecorinoAuthClient
+                });
                 debug('starting pecorino pay transaction...', params.object.amount);
-                pendingTransaction = await repos.withdrawTransactionService.start({
+                pendingTransaction = await withdrawService.start({
                     typeOf: factory.pecorino.transactionType.Withdraw,
                     agent: {
                         typeOf: transaction.agent.typeOf,
@@ -125,12 +138,12 @@ export function authorize<T extends factory.accountType>(params: {
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
             } else {
-                if (repos.transferTransactionService === undefined) {
-                    throw new Error('transferTransactionService required');
-                }
-
+                const transferService = new pecorinoapi.service.transaction.Transfer({
+                    endpoint: project.settings.pecorino.endpoint,
+                    auth: pecorinoAuthClient
+                });
                 debug('starting pecorino pay transaction...', params.object.amount);
-                pendingTransaction = await repos.transferTransactionService.start({
+                pendingTransaction = await transferService.start({
                     typeOf: factory.pecorino.transactionType.Transfer,
                     agent: {
                         typeOf: transaction.agent.typeOf,
@@ -205,16 +218,24 @@ export function authorize<T extends factory.accountType>(params: {
  * 口座承認取消
  */
 export function voidTransaction(params: {
+    project: factory.project.IProject;
     agent: { id: string };
     id: string;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
-        withdrawTransactionService?: pecorinoapi.service.transaction.Withdraw;
-        transferTransactionService?: pecorinoapi.service.transaction.Transfer;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (project.settings.pecorino === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         // 進行中取引存在確認
         debug('canceling pecorino authorize action...');
         await repos.transaction.findInProgressById({
@@ -231,17 +252,17 @@ export function voidTransaction(params: {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else *//* istanbul ignore next */
         if (pendingTransaction.typeOf === factory.pecorino.transactionType.Withdraw) {
-            if (repos.withdrawTransactionService === undefined) {
-                throw new Error('withdrawTransactionService required');
-            }
-
-            await repos.withdrawTransactionService.cancel(pendingTransaction);
+            const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                endpoint: project.settings.pecorino.endpoint,
+                auth: pecorinoAuthClient
+            });
+            await withdrawService.cancel(pendingTransaction);
         } else if (pendingTransaction.typeOf === factory.pecorino.transactionType.Transfer) {
-            if (repos.transferTransactionService === undefined) {
-                throw new Error('transferTransactionService required');
-            }
-
-            await repos.transferTransactionService.cancel(pendingTransaction);
+            const transferService = new pecorinoapi.service.transaction.Transfer({
+                endpoint: project.settings.pecorino.endpoint,
+                auth: pecorinoAuthClient
+            });
+            await transferService.cancel(pendingTransaction);
         }
     };
 }
@@ -252,25 +273,41 @@ export function voidTransaction(params: {
 export function settleTransaction(params: factory.task.IData<factory.taskName.MoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
-        withdrawService: pecorinoapi.service.transaction.Withdraw;
-        transferService: pecorinoapi.service.transaction.Transfer;
+        project: ProjectRepo;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
+            const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+            const project = await repos.project.findById({ id: projectId });
+            if (project.settings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings undefined');
+            }
+            if (project.settings.pecorino === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not found');
+            }
+
             const pendingTransaction = params.object.pendingTransaction;
 
             switch (pendingTransaction.typeOf) {
                 case pecorinoapi.factory.transactionType.Withdraw:
                     // 支払取引の場合確定
-                    await repos.withdrawService.confirm(pendingTransaction);
+                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                        endpoint: project.settings.pecorino.endpoint,
+                        auth: pecorinoAuthClient
+                    });
+                    await withdrawService.confirm(pendingTransaction);
 
                     break;
 
                 case pecorinoapi.factory.transactionType.Transfer:
                     // 転送取引の場合確定
-                    await repos.transferService.confirm(pendingTransaction);
+                    const transferService = new pecorinoapi.service.transaction.Transfer({
+                        endpoint: project.settings.pecorino.endpoint,
+                        auth: pecorinoAuthClient
+                    });
+                    await transferService.confirm(pendingTransaction);
 
                     break;
 
@@ -308,25 +345,43 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
-        withdrawService: pecorinoapi.service.transaction.Withdraw;
-        transferService: pecorinoapi.service.transaction.Transfer;
+        project: ProjectRepo;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
+
         try {
+            const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+            const project = await repos.project.findById({ id: projectId });
+            if (project.settings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings undefined');
+            }
+            const pecorinoSettings = project.settings.pecorino;
+            if (pecorinoSettings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not found');
+            }
+
             await Promise.all(params.object.map(async (paymentMethod) => {
                 const pendingTransaction = paymentMethod.pendingTransaction;
 
                 switch (pendingTransaction.typeOf) {
                     case pecorinoapi.factory.transactionType.Withdraw:
                         // 支払取引の場合、確定
-                        await repos.withdrawService.confirm(pendingTransaction);
+                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await withdrawService.confirm(pendingTransaction);
 
                         break;
 
                     case pecorinoapi.factory.transactionType.Transfer:
                         // 転送取引の場合確定
-                        await repos.transferService.confirm(pendingTransaction);
+                        const transferService = new pecorinoapi.service.transaction.Transfer({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await transferService.confirm(pendingTransaction);
 
                         break;
 
@@ -368,12 +423,22 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
 /**
  * 口座オーソリ取消
  */
-export function cancelAccountAuth(params: { transactionId: string }) {
+export function cancelAccountAuth(params: {
+    transactionId: string;
+}) {
     return async (repos: {
         action: ActionRepo;
-        withdrawService: pecorinoapi.service.transaction.Withdraw;
-        transferService: pecorinoapi.service.transaction.Transfer;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        if (project.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        const pecorinoSettings = project.settings.pecorino;
+        if (pecorinoSettings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         // 口座承認アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
             await repos.action.searchByPurpose({
@@ -393,12 +458,20 @@ export function cancelAccountAuth(params: { transactionId: string }) {
                 // アクションステータスに関係なく取消処理実行
                 switch (action.result.pendingTransaction.typeOf) {
                     case pecorinoapi.factory.transactionType.Withdraw:
-                        await repos.withdrawService.cancel(action.result.pendingTransaction);
+                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await withdrawService.cancel(action.result.pendingTransaction);
 
                         break;
 
                     case pecorinoapi.factory.transactionType.Transfer:
-                        await repos.transferService.cancel(action.result.pendingTransaction);
+                        const transferService = new pecorinoapi.service.transaction.Transfer({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await transferService.cancel(action.result.pendingTransaction);
 
                         break;
 
@@ -419,16 +492,26 @@ export function cancelAccountAuth(params: { transactionId: string }) {
 /**
  * 口座返金処理を実行する
  */
+// tslint:disable-next-line:max-func-body-length
 export function refundAccount(params: factory.task.IData<factory.taskName.RefundAccount>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         task: TaskRepo;
-        depositService: pecorinoapi.service.transaction.Deposit;
-        transferService: pecorinoapi.service.transaction.Transfer;
     }) => {
         const action = await repos.action.start(params);
 
         try {
+            const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+            const project = await repos.project.findById({ id: projectId });
+            if (project.settings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings undefined');
+            }
+            const pecorinoSettings = project.settings.pecorino;
+            if (pecorinoSettings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not found');
+            }
+
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
 
@@ -438,7 +521,11 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
                 switch (pendingTransaction.typeOf) {
                     case factory.pecorino.transactionType.Withdraw:
-                        const depositTransaction = await repos.depositService.start({
+                        const depositService = new pecorinoapi.service.transaction.Deposit({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        const depositTransaction = await depositService.start({
                             typeOf: factory.pecorino.transactionType.Deposit,
                             agent: pendingTransaction.recipient,
                             expires: moment()
@@ -453,12 +540,16 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             }
                         });
 
-                        await repos.depositService.confirm(depositTransaction);
+                        await depositService.confirm(depositTransaction);
 
                         break;
 
                     case factory.pecorino.transactionType.Transfer:
-                        const transferTransaction = await repos.transferService.start({
+                        const transferService = new pecorinoapi.service.transaction.Transfer({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        const transferTransaction = await transferService.start({
                             typeOf: factory.pecorino.transactionType.Transfer,
                             agent: pendingTransaction.recipient,
                             expires: moment()
@@ -474,7 +565,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             }
                         });
 
-                        await repos.transferService.confirm(transferTransaction);
+                        await transferService.confirm(transferTransaction);
 
                         break;
 
