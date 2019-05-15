@@ -24,9 +24,9 @@ type IAccountsOperation<T> = (repos: {
 }) => Promise<T>;
 
 const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
+    domain: credentials.pecorino.authorizeServerDomain,
+    clientId: credentials.pecorino.clientId,
+    clientSecret: credentials.pecorino.clientSecret,
     scopes: [],
     state: ''
 });
