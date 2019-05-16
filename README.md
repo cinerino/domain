@@ -31,6 +31,8 @@ npm install @cinerino/domain
 | `SENDGRID_API_KEY`                     | true     |                   | SendGrid API Key               |
 | `LINE_NOTIFY_URL`                      | true     |                   | LINE Notify URL                |
 | `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN`   | true     |                   | LINE Notify access token       |
+| `AWS_ACCESS_KEY_ID`                    | true     |                   | AWS access key                 |
+| `AWS_SECRET_ACCESS_KEY`                | true     |                   | AWS secret access key          |
 | `COA_ENDPOINT`                         | true     |                   | COA credentilas                |
 | `COA_REFRESH_TOKEN`                    | true     |                   | credentilas                    |
 | `CHEVRE_AUTHORIZE_SERVER_DOMAIN`       | true     |                   | Chevre credentials             |

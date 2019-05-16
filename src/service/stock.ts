@@ -24,6 +24,14 @@ import * as MasterSyncService from './masterSync';
 const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export import IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
@@ -55,13 +63,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
@@ -286,13 +287,6 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                             throw new factory.errors.ServiceUnavailable('Project settings not found');
                         }
 
-                        const chevreAuthClient = new chevre.auth.ClientCredentials({
-                            domain: credentials.chevre.authorizeServerDomain,
-                            clientId: credentials.chevre.clientId,
-                            clientSecret: credentials.chevre.clientSecret,
-                            scopes: [],
-                            state: ''
-                        });
                         const reserveService = new chevre.service.transaction.Reserve({
                             endpoint: project.settings.chevre.endpoint,
                             auth: chevreAuthClient
@@ -336,13 +330,6 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient

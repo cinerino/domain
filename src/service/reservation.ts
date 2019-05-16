@@ -13,6 +13,14 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
 
 type IOwnershipInfoWithDetail =
@@ -71,13 +79,6 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
                         throw new factory.errors.ServiceUnavailable('Project settings not found');
                     }
 
-                    const chevreAuthClient = new chevre.auth.ClientCredentials({
-                        domain: credentials.chevre.authorizeServerDomain,
-                        clientId: credentials.chevre.clientId,
-                        clientSecret: credentials.chevre.clientSecret,
-                        scopes: [],
-                        state: ''
-                    });
                     const reserveService = new chevre.service.transaction.Reserve({
                         endpoint: project.settings.chevre.endpoint,
                         auth: chevreAuthClient
@@ -139,13 +140,6 @@ export function searchScreeningEventReservations(
                     throw new factory.errors.ServiceUnavailable('Project settings not found');
                 }
 
-                const chevreAuthClient = new chevre.auth.ClientCredentials({
-                    domain: credentials.chevre.authorizeServerDomain,
-                    clientId: credentials.chevre.clientId,
-                    clientSecret: credentials.chevre.clientSecret,
-                    scopes: [],
-                    state: ''
-                });
                 const reservationService = new chevre.service.Reservation({
                     endpoint: project.settings.chevre.endpoint,
                     auth: chevreAuthClient

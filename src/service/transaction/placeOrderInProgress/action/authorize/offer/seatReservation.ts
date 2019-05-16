@@ -20,6 +20,14 @@ import * as OfferService from '../../../../../offer';
 
 const debug = createDebug('cinerino-domain:service');
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type ICreateOperation<T> = (repos: {
     event: EventRepo;
     action: ActionRepo;
@@ -151,13 +159,6 @@ export function create(params: {
                         throw new factory.errors.ServiceUnavailable('Project settings not found');
                     }
 
-                    const chevreAuthClient = new chevre.auth.ClientCredentials({
-                        domain: credentials.chevre.authorizeServerDomain,
-                        clientId: credentials.chevre.clientId,
-                        clientSecret: credentials.chevre.clientSecret,
-                        scopes: [],
-                        state: ''
-                    });
                     const reserveService = new chevre.service.transaction.Reserve({
                         endpoint: project.settings.chevre.endpoint,
                         auth: chevreAuthClient
@@ -639,13 +640,6 @@ export function cancel(params: {
                         throw new factory.errors.ServiceUnavailable('Project settings not found');
                     }
 
-                    const chevreAuthClient = new chevre.auth.ClientCredentials({
-                        domain: credentials.chevre.authorizeServerDomain,
-                        clientId: credentials.chevre.clientId,
-                        clientSecret: credentials.chevre.clientSecret,
-                        scopes: [],
-                        state: ''
-                    });
                     const reserveService = new chevre.service.transaction.Reserve({
                         endpoint: project.settings.chevre.endpoint,
                         auth: chevreAuthClient

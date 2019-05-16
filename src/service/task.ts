@@ -1,7 +1,6 @@
 /**
  * タスクサービス
  */
-import * as AWS from 'aws-sdk';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
@@ -23,10 +22,6 @@ export interface IConnectionSettings {
      * Redisクライアント
      */
     redisClient?: redis.RedisClient;
-    /**
-     * Cognitoサービスプロバイダー
-     */
-    cognitoIdentityServiceProvider?: AWS.CognitoIdentityServiceProvider;
 }
 
 export interface ISettings extends IConnectionSettings {

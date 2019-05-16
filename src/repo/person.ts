@@ -1,10 +1,17 @@
 import * as AWS from 'aws-sdk';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
+import { credentials } from '../credentials';
+
 import * as factory from '../factory';
 
 export type AttributeListType = AWS.CognitoIdentityServiceProvider.AttributeListType;
-export type IPerson = factory.person.IProfile & factory.person.IPerson;
+export type IPerson = factory.person.IPerson;
+
+const awsCredentials = new AWS.Credentials({
+    accessKeyId: credentials.aws.accessKeyId,
+    secretAccessKey: credentials.aws.secretAccessKey
+});
 
 /**
  * 会員リポジトリ
@@ -13,8 +20,12 @@ export type IPerson = factory.person.IProfile & factory.person.IPerson;
 export class CognitoRepository {
     public readonly cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
 
-    constructor(cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider) {
-        this.cognitoIdentityServiceProvider = cognitoIdentityServiceProvider;
+    constructor() {
+        this.cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider({
+            apiVersion: 'latest',
+            region: 'ap-northeast-1',
+            credentials: awsCredentials
+        });
     }
 
     public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType) {

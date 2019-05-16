@@ -22,6 +22,14 @@ import * as COA from '../coa';
 
 const debug = createDebug('cinerino-domain:service');
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 
@@ -396,13 +404,6 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
                             throw new factory.errors.ServiceUnavailable('Project settings not found');
                         }
 
-                        const chevreAuthClient = new chevre.auth.ClientCredentials({
-                            domain: credentials.chevre.authorizeServerDomain,
-                            clientId: credentials.chevre.clientId,
-                            clientSecret: credentials.chevre.clientSecret,
-                            scopes: [],
-                            state: ''
-                        });
                         const cancelReservationService = new chevre.service.transaction.CancelReservation({
                             endpoint: project.settings.chevre.endpoint,
                             auth: chevreAuthClient

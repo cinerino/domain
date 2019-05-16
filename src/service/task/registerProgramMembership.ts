@@ -27,11 +27,6 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         if (settings.redisClient === undefined) {
             throw new Error('settings.redisClient undefined.');
         }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (settings.cognitoIdentityServiceProvider === undefined) {
-            throw new Error('settings.cognitoIdentityServiceProvider undefined.');
-        }
 
         const projectRepo = new ProjectRepo(settings.connection);
         const projectId = (data.project !== undefined) ? data.project.id : <string>process.env.PROJECT_ID;
@@ -55,7 +50,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
             orderNumber: new OrderNumberRepo(settings.redisClient),
             seller: new SellerRepo(settings.connection),
             ownershipInfo: new OwnershipInfoRepo(settings.connection),
-            person: new PersonRepo(settings.cognitoIdentityServiceProvider),
+            person: new PersonRepo(),
             programMembership: new ProgramMembershipRepo(settings.connection),
             project: new ProjectRepo(settings.connection),
             registerActionInProgressRepo: new RegisterProgramMembershipInProgressRepo(settings.redisClient),

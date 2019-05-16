@@ -15,6 +15,14 @@ import * as MasterSync from './masterSync';
 
 const debug = createDebug('cinerino-domain:service');
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type ISearchEventsOperation<T> = (repos: {
     event: EventRepo;
     attendeeCapacity?: EventAttendeeCapacityRepo;
@@ -141,14 +149,6 @@ export function searchEventOffers(params: {
                     throw new factory.errors.ServiceUnavailable('Project settings not found');
                 }
 
-                const chevreAuthClient = new chevre.auth.ClientCredentials({
-                    domain: credentials.chevre.authorizeServerDomain,
-                    clientId: credentials.chevre.clientId,
-                    clientSecret: credentials.chevre.clientSecret,
-                    scopes: [],
-                    state: ''
-                });
-
                 const eventService = new chevre.service.Event({
                     endpoint: project.settings.chevre.endpoint,
                     auth: chevreAuthClient
@@ -197,14 +197,6 @@ export function searchEventTicketOffers(params: {
         if (project.settings.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
-
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
 
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
