@@ -7,6 +7,7 @@ import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 import * as domain from '../index';
 
+import { MongoRepository as TaskRepo } from '../repo/task';
 import * as PlaceOrderTask from './task/placeOrder';
 
 let sandbox: sinon.SinonSandbox;
@@ -29,9 +30,8 @@ describe('executeByName()', () => {
             data: { datakey: 'dataValue' },
             status: domain.factory.taskStatus.Running
         };
-        const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(taskRepo)
+        sandbox.mock(TaskRepo.prototype)
             .expects('executeOneByName')
             .once()
             .resolves(task);
@@ -40,14 +40,13 @@ describe('executeByName()', () => {
             .once()
             .withArgs(task.data)
             .returns(async () => Promise.resolve());
-        sandbox.mock(taskRepo)
+        sandbox.mock(TaskRepo.prototype)
             .expects('pushExecutionResultById')
             .once()
             .withArgs(task.id, domain.factory.taskStatus.Executed)
             .resolves();
 
         const result = await domain.service.task.executeByName(task)({
-            taskRepo: taskRepo,
             connection: mongoose.connection
         });
 
@@ -57,9 +56,8 @@ describe('executeByName()', () => {
 
     it('未実行タスクが存在しなければ、実行されないはず', async () => {
         const taskName = domain.factory.taskName.PlaceOrder;
-        const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(taskRepo)
+        sandbox.mock(TaskRepo.prototype)
             .expects('executeOneByName')
             .once()
             .resolves(null);
@@ -68,7 +66,6 @@ describe('executeByName()', () => {
             .never();
 
         const result = await domain.service.task.executeByName({ project: project, name: taskName })({
-            taskRepo: taskRepo,
             connection: mongoose.connection
         });
 
@@ -140,21 +137,19 @@ describe('execute()', () => {
             data: { datakey: 'dataValue' },
             status: domain.factory.taskStatus.Running
         };
-        const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(PlaceOrderTask)
             .expects('call')
             .once()
             .withArgs(task.data)
             .returns(async () => Promise.resolve());
-        sandbox.mock(taskRepo)
+        sandbox.mock(TaskRepo.prototype)
             .expects('pushExecutionResultById')
             .once()
             .withArgs(task.id, domain.factory.taskStatus.Executed)
             .resolves();
 
         const result = await domain.service.task.execute(<any>task)({
-            taskRepo: taskRepo,
             connection: mongoose.connection
         });
 
@@ -169,16 +164,14 @@ describe('execute()', () => {
             data: { datakey: 'dataValue' },
             status: domain.factory.taskStatus.Running
         };
-        const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(taskRepo)
+        sandbox.mock(TaskRepo.prototype)
             .expects('pushExecutionResultById')
             .once()
             .withArgs(task.id, task.status)
             .resolves();
 
         const result = await domain.service.task.execute(<any>task)({
-            taskRepo: taskRepo,
             connection: mongoose.connection
         });
 

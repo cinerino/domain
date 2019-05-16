@@ -24,15 +24,7 @@ export interface IConnectionSettings {
     redisClient?: redis.RedisClient;
 }
 
-export interface ISettings extends IConnectionSettings {
-    /**
-     * タスクリポジトリ
-     */
-    taskRepo: TaskRepo;
-}
-
 export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
-export type IExecuteOperation<T> = (settings: ISettings) => Promise<T>;
 export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
 
 export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
@@ -43,12 +35,14 @@ export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
 export function executeByName<T extends factory.taskName>(params: {
     project?: factory.project.IProject;
     name: T;
-}): IExecuteOperation<void> {
-    return async (settings: ISettings) => {
+}): IOperation<void> {
+    return async (settings: IConnectionSettings) => {
+        const taskRepo = new TaskRepo(settings.connection);
+
         // 未実行のタスクを取得
         let task: factory.task.ITask<T> | null = null;
         try {
-            task = await settings.taskRepo.executeOneByName(params);
+            task = await taskRepo.executeOneByName(params);
             debug('task found', task);
         } catch (error) {
             // tslint:disable-next-line:no-single-line-block-comment
@@ -66,11 +60,13 @@ export function executeByName<T extends factory.taskName>(params: {
 /**
  * タスクを実行する
  */
-export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOperation<void> {
+export function execute(task: factory.task.ITask<factory.taskName>): IOperation<void> {
     debug('executing a task...', task);
     const now = new Date();
 
-    return async (settings: ISettings) => {
+    return async (settings: IConnectionSettings) => {
+        const taskRepo = new TaskRepo(settings.connection);
+
         try {
             // タスク名の関数が定義されていなければ、TypeErrorとなる
             const { call } = await import(`./task/${task.name}`);
@@ -79,7 +75,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOpe
                 executedAt: now,
                 error: ''
             };
-            await settings.taskRepo.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
+            await taskRepo.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
         } catch (error) {
             // 実行結果追加
             const result = {
@@ -87,7 +83,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IExecuteOpe
                 error: error.stack
             };
             // 失敗してもここではステータスを戻さない(Runningのまま待機)
-            await settings.taskRepo.pushExecutionResultById(task.id, task.status, result);
+            await taskRepo.pushExecutionResultById(task.id, task.status, result);
         }
     };
 }
