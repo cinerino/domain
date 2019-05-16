@@ -30,7 +30,7 @@ npm install @cinerino/domain
 | `NODE_ENV`                             | true     |                   | Environment name               |
 | `SENDGRID_API_KEY`                     | true     |                   | SendGrid API Key               |
 | `LINE_NOTIFY_URL`                      | true     |                   | LINE Notify URL                |
-| `DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN`   | true     |                   | LINE Notify access token       |
+| `LINE_NOTIFY_ACCESS_TOKEN`             | true     |                   | LINE Notify access token       |
 | `AWS_ACCESS_KEY_ID`                    | true     |                   | AWS access key                 |
 | `AWS_SECRET_ACCESS_KEY`                | true     |                   | AWS secret access key          |
 | `COA_ENDPOINT`                         | true     |                   | COA credentilas                |
@@ -47,6 +47,7 @@ npm install @cinerino/domain
 | `TELEMETRY_API_ENDPOINT`               | true     |                   | Telemetry API endpoint         |
 | `CUSTOM_SEARCH_ENGINE_ID`              | true     |                   | Google Custom Search Engine ID |
 | `GOOGLE_API_KEY`                       | true     |                   | Google API Key                 |
+| `SENDGRID_API_KEY`                     | true     |                   | SendGrid API key               |
 
 ## Code Samples
 

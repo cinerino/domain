@@ -170,9 +170,9 @@ export async function findMovieImage(params: {
     return new Promise<string | undefined>((resolve) => {
         customsearch.cse.list(
             {
-                cx: <string>process.env.CUSTOM_SEARCH_ENGINE_ID,
+                cx: credentials.customSearch.engineId,
                 q: params.query,
-                auth: <string>process.env.GOOGLE_API_KEY,
+                auth: credentials.customSearch.apiKey,
                 num: 1,
                 rights: 'cc_publicdomain cc_sharealike',
                 // start: 0,

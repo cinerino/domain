@@ -9,7 +9,10 @@ import * as request from 'request';
 import * as util from 'util';
 import * as validator from 'validator';
 
+import { credentials } from '../credentials';
+
 import * as factory from '../factory';
+
 import { MongoRepository as ActionRepo } from '../repo/action';
 
 export type Operation<T> = () => Promise<T>;
@@ -30,7 +33,7 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
         let result: any = {};
 
         try {
-            sgMail.setApiKey(<string>process.env.SENDGRID_API_KEY);
+            sgMail.setApiKey(credentials.sendGrid.apiKey);
             const emailMessage = actionAttributes.object;
             const msg = {
                 to: {
@@ -88,13 +91,13 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
  */
 export function report2developers(subject: string, content: string, imageThumbnail?: string, imageFullsize?: string): Operation<void> {
     return async () => {
-        const LINE_NOTIFY_URL = process.env.LINE_NOTIFY_URL;
-        const LINE_NOTIFY_ACCESS_TOKEN = process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
+        const LINE_NOTIFY_URL = credentials.lineNotify.url;
+        const LINE_NOTIFY_ACCESS_TOKEN = credentials.lineNotify.accessToken;
         if (LINE_NOTIFY_URL === undefined) {
             throw new Error('Environment variable LINE_NOTIFY_URL not set');
         }
         if (LINE_NOTIFY_ACCESS_TOKEN === undefined) {
-            throw new Error('Environment variable DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN not set');
+            throw new Error('Environment variable LINE_NOTIFY_ACCESS_TOKEN not set');
         }
 
         const message = `

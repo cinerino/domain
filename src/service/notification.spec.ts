@@ -9,6 +9,8 @@ import * as mongoose from 'mongoose';
 import * as nock from 'nock';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
+
+import { credentials } from '../credentials';
 import * as domain from '../index';
 
 const LINE_NOTIFY_URL_BASE_PATH = 'https://notify-api.line.me';
@@ -23,19 +25,23 @@ describe('report2developers()', () => {
     beforeEach(() => {
         process.env.LINE_NOTIFY_URL = `${LINE_NOTIFY_URL_BASE_PATH}${LINE_NOTIFY_URI}`;
         process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN = 'accessToken';
+        credentials.lineNotify.url = process.env.LINE_NOTIFY_URL;
+        credentials.lineNotify.accessToken = process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
         nock.cleanAll();
         sandbox.restore();
     });
 
     afterEach(() => {
-        delete process.env.LINE_NOTIFY_URL;
-        delete process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
+        delete credentials.lineNotify.url;
+        delete credentials.lineNotify.accessToken;
     });
 
     it('LINE Notifyのアクセストークンを環境変数に未設定であれば、エラーになるはず', async () => {
-        delete process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
+        delete credentials.lineNotify.accessToken;
 
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK, {});
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
+            .post(LINE_NOTIFY_URI)
+            .reply(OK, {});
         const imageThumbnail = 'https://example.com';
         const imageFullsize = 'https://example.com';
 
@@ -47,7 +53,9 @@ describe('report2developers()', () => {
     });
 
     it('LINE Notifyが200を返せば、エラーにならないはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK, {});
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
+            .post(LINE_NOTIFY_URI)
+            .reply(OK, {});
         const imageThumbnail = 'https://example.com';
         const imageFullsize = 'https://example.com';
 
@@ -58,7 +66,9 @@ describe('report2developers()', () => {
     });
 
     it('LINE Notifyの200を返さなければ、エラーになるはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(BAD_REQUEST, { message: 'message' });
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
+            .post(LINE_NOTIFY_URI)
+            .reply(BAD_REQUEST, { message: 'message' });
 
         const result = await domain.service.notification.report2developers('', '')()
             .catch((err) => err);
@@ -68,7 +78,9 @@ describe('report2developers()', () => {
     });
 
     it('LINE Notifyの状態が正常でなければ、エラーになるはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).replyWithError(new Error('lineError'));
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
+            .post(LINE_NOTIFY_URI)
+            .replyWithError(new Error('lineError'));
 
         const result = await domain.service.notification.report2developers('', '')()
             .catch((err) => err);
@@ -77,7 +89,9 @@ describe('report2developers()', () => {
     });
 
     it('imageThumbnailがURLでなければ、エラーになるはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK);
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
+            .post(LINE_NOTIFY_URI)
+            .reply(OK);
         const imageThumbnail = 'invalidUrl';
 
         const result = await domain.service.notification.report2developers('', '', imageThumbnail)()
@@ -88,7 +102,9 @@ describe('report2developers()', () => {
     });
 
     it('imageFullsizeがURLでなければ、エラーになるはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH).post(LINE_NOTIFY_URI).reply(OK);
+        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
+            .post(LINE_NOTIFY_URI)
+            .reply(OK);
         const imageThumbnail = 'https://example.com';
         const imageFullsize = 'invalidUrl';
 
@@ -121,9 +137,18 @@ describe('sendEmailMessage()', () => {
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
 
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
-        sandbox.mock(sgMail).expects('send').once().resolves(sendResponse);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
+        sandbox.mock(sgMail)
+            .expects('send')
+            .once()
+            .resolves(sendResponse);
 
         const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({ action: actionRepo });
 
@@ -148,10 +173,21 @@ describe('sendEmailMessage()', () => {
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
 
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
-        sandbox.mock(actionRepo).expects('complete').never();
-        sandbox.mock(sgMail).expects('send').once().resolves(sendResponse);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
+        sandbox.mock(sgMail)
+            .expects('send')
+            .once()
+            .resolves(sendResponse);
 
         const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({ action: actionRepo })
             .catch((err) => err);
