@@ -12,12 +12,10 @@ import * as domain from '../index';
 
 let sandbox: sinon.SinonSandbox;
 let redisClient: redis.RedisClient;
-let cognitoIdentityServiceProvider: domain.AWS.CognitoIdentityServiceProvider;
 
 before(() => {
     sandbox = sinon.createSandbox();
     redisClient = redis.createClient();
-    cognitoIdentityServiceProvider = new domain.AWS.CognitoIdentityServiceProvider();
 });
 
 describe('会員プログラム登録タスクを作成する', () => {
@@ -73,7 +71,7 @@ describe('会員プログラムに登録する', () => {
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person();
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
@@ -181,7 +179,7 @@ describe('会員プログラムに登録する', () => {
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person();
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
@@ -283,7 +281,7 @@ describe('会員プログラムに登録する', () => {
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person();
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
@@ -390,7 +388,7 @@ describe('会員プログラムに登録する', () => {
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person();
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
@@ -445,7 +443,7 @@ describe('会員プログラムに登録する', () => {
         const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
+        const personRepo = new domain.repository.Person();
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const registerActionInProgressRepoRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
