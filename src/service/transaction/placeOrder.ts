@@ -35,8 +35,10 @@ export function exportTasks(params: {
         }
 
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        await exportTasksById(transaction)(repos);
+        const tasks = await exportTasksById(transaction)(repos);
         await repos.transaction.setTasksExportedById({ id: transaction.id });
+
+        return tasks;
     };
 }
 

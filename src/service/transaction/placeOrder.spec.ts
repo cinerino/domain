@@ -52,7 +52,7 @@ describe('exportTasks()', () => {
             task: taskRepo,
             transaction: transactionRepo
         });
-        assert.equal(result, undefined);
+        assert(Array.isArray(result));
         sandbox.verify();
     });
 
