@@ -198,7 +198,7 @@ export function authorize(params: {
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: orderId,
-            name: factory.paymentMethodType.CreditCard,
+            name: (typeof params.object.name === 'string') ? params.object.name : String(factory.paymentMethodType.CreditCard),
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.priceCurrency.JPY,

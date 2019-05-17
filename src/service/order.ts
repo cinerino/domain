@@ -411,7 +411,7 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
 
                         if (cancelReservationService !== undefined) {
                             const cancelReservationTransaction = await cancelReservationService.start({
-                                project: project,
+                                project: { typeOf: project.typeOf, id: project.id },
                                 typeOf: factory.chevre.transactionType.CancelReservation,
                                 agent: {
                                     typeOf: returnOrderTransaction.agent.typeOf,

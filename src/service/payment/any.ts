@@ -43,8 +43,8 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         //     throw new factory.errors.Forbidden('A specified transaction is not yours.');
         // }
 
-        // ショップ情報取得
-        const movieTheater = await repos.seller.findById({
+        // 販売者情報取得
+        const seller = await repos.seller.findById({
             id: transaction.seller.id
         });
 
@@ -54,6 +54,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: params.object.typeOf,
+                name: params.object.name,
                 amount: params.object.amount,
                 additionalProperty: params.object.additionalProperty
             },
@@ -64,11 +65,11 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         const action = await repos.action.start(actionAttributes);
 
         try {
-            if (movieTheater.paymentAccepted === undefined) {
+            if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
             }
             const paymentAccepted = <factory.seller.IPaymentAccepted<T>>
-                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === params.object.typeOf);
+                seller.paymentAccepted.find((a) => a.paymentMethodType === params.object.typeOf);
             if (paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
             }
@@ -93,7 +94,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
             paymentMethod: params.object.typeOf,
             paymentStatus: factory.paymentStatusType.PaymentComplete,
             paymentMethodId: '',
-            name: params.object.typeOf,
+            name: (typeof params.object.name === 'string') ? params.object.name : String(params.object.typeOf),
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.priceCurrency.JPY,

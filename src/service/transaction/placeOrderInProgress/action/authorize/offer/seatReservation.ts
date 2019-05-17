@@ -167,7 +167,7 @@ export function create(params: {
                     debug('starting reserve transaction...');
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
                         await reserveService.start({
-                            project: params.project,
+                            project: { typeOf: params.project.typeOf, id: params.project.id },
                             typeOf: chevre.factory.transactionType.Reserve,
                             agent: {
                                 typeOf: transaction.agent.typeOf,

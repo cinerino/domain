@@ -198,7 +198,7 @@ export function authorize<T extends factory.accountType>(params: {
             paymentMethod: factory.paymentMethodType.Account,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: params.object.fromAccount.accountNumber,
-            name: params.object.fromAccount.accountType,
+            name: (typeof params.object.name === 'string') ? params.object.name : String(params.object.fromAccount.accountType),
             fromAccount: params.object.fromAccount,
             toAccount: params.object.toAccount,
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],

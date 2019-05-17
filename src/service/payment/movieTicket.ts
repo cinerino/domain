@@ -165,7 +165,7 @@ export function authorize(params: {
             paymentMethod: factory.paymentMethodType.MovieTicket,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: params.object.movieTickets[0].identifier,
-            name: 'ムビチケ',
+            name: (typeof params.object.name === 'string') ? params.object.name : String(factory.paymentMethodType.MovieTicket),
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.unitCode.C62,
