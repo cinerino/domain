@@ -9,7 +9,9 @@ import * as moment from 'moment';
 import { format } from 'util';
 
 import * as emailMessageBuilder from '../../emailMessageBuilder';
+
 import * as factory from '../../factory';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
@@ -241,19 +243,6 @@ export interface IConfirmResultOrderParams {
     };
 }
 
-export interface IConfirmEmailOptionsParams {
-    /**
-     * 注文配送メールテンプレート
-     * メールをカスタマイズしたい場合、PUGテンプレートを指定
-     * @see https://pugjs.org/api/getting-started.html
-     */
-    template?: string;
-    /**
-     * 注文配送メール送信者
-     */
-    sender?: { email?: string };
-}
-
 export interface IConfirmParams {
     project: factory.chevre.project.IProject;
     /**
@@ -272,7 +261,7 @@ export interface IConfirmParams {
          * 注文配送メールを送信するかどうか
          */
         sendEmailMessage?: boolean;
-        email?: IConfirmEmailOptionsParams;
+        email?: factory.creativeWork.message.email.ICustomization;
         /**
          * ムビチケバリデーションを適用するかどうか
          */
@@ -1080,7 +1069,7 @@ export async function createPotentialActionsFromTransaction(params: {
     order: factory.order.IOrder;
     seller: ISeller;
     sendEmailMessage?: boolean;
-    email?: IConfirmEmailOptionsParams;
+    email?: factory.creativeWork.message.email.ICustomization;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project

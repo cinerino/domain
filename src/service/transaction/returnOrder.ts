@@ -289,7 +289,9 @@ export function confirm(params: {
                     const emailMessage = await emailMessageBuilder.createRefundMessage({
                         order,
                         paymentMethods: a.object.map((o) => o.paymentMethod),
-                        emailTemplate: emailTemplate
+                        email: {
+                            template: emailTemplate
+                        }
                     });
                     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
                         project: transaction.project,
