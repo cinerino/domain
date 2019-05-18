@@ -213,9 +213,7 @@ export function confirm(params: {
                     };
                     potentialActions?: {
                         sendEmailMessage?: {
-                            object?: {
-                                emailTemplate?: string;
-                            };
+                            object?: factory.creativeWork.message.email.ICustomization;
                         };
                     };
                 }[];
@@ -261,8 +259,9 @@ export function confirm(params: {
             await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
                 .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
                 .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
-                    // カスタムメールテンプレートの指定を確認
-                    let emailTemplate: string | undefined;
+                    // Eメールカスタマイズの指定を確認
+                    let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
+
                     const refundCreditCardActionParams = (params.potentialActions !== undefined
                         && params.potentialActions.returnOrder !== undefined
                         && params.potentialActions.returnOrder.potentialActions !== undefined
@@ -282,16 +281,14 @@ export function confirm(params: {
                             && assignedRefundCreditCardAction.potentialActions !== undefined
                             && assignedRefundCreditCardAction.potentialActions.sendEmailMessage !== undefined
                             && assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object !== undefined) {
-                            emailTemplate = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object.emailTemplate;
+                            emailCustomization = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object;
                         }
                     }
 
                     const emailMessage = await emailMessageBuilder.createRefundMessage({
                         order,
                         paymentMethods: a.object.map((o) => o.paymentMethod),
-                        email: {
-                            template: emailTemplate
-                        }
+                        email: emailCustomization
                     });
                     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
                         project: transaction.project,

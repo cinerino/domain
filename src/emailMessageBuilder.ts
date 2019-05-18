@@ -163,40 +163,46 @@ export async function createSendOrderMessage(params: {
                         return;
                     }
 
+                    const sender: factory.creativeWork.message.email.IParticipant = {
+                        typeOf: params.order.seller.typeOf,
+                        name: (params.email !== undefined
+                            && params.email.sender !== undefined
+                            && typeof params.email.sender.name === 'string')
+                            ? params.email.sender.name
+                            : params.order.seller.name,
+                        email: (params.email !== undefined
+                            && params.email.sender !== undefined
+                            && typeof params.email.sender.email === 'string')
+                            ? params.email.sender.email
+                            : 'noreply@example.com'
+                    };
+
+                    const toRecipient: factory.creativeWork.message.email.IParticipant = {
+                        typeOf: params.order.customer.typeOf,
+                        name: (params.email !== undefined
+                            && params.email.toRecipient !== undefined
+                            && typeof params.email.toRecipient.name === 'string')
+                            ? params.email.toRecipient.name
+                            : `${params.order.customer.familyName} ${params.order.customer.givenName}`,
+                        email: (params.email !== undefined
+                            && params.email.toRecipient !== undefined
+                            && typeof params.email.toRecipient.email === 'string')
+                            ? params.email.toRecipient.email
+                            : defaultToRecipientEmail
+                    };
+
+                    const about: string = (params.email !== undefined
+                        && typeof params.email.about === 'string')
+                        ? params.email.about
+                        : defaultSubject;
+
                     const email: factory.creativeWork.message.email.ICreativeWork = {
                         typeOf: factory.creativeWorkType.EmailMessage,
                         identifier: `SendOrder-${params.order.orderNumber}`,
                         name: `SendOrder-${params.order.orderNumber}`,
-                        sender: {
-                            typeOf: params.order.seller.typeOf,
-                            name: (params.email !== undefined
-                                && params.email.sender !== undefined
-                                && typeof params.email.sender.name === 'string')
-                                ? params.email.sender.name
-                                : params.order.seller.name,
-                            email: (params.email !== undefined
-                                && params.email.sender !== undefined
-                                && typeof params.email.sender.email === 'string')
-                                ? params.email.sender.email
-                                : 'noreply@example.com'
-                        },
-                        toRecipient: {
-                            typeOf: params.order.customer.typeOf,
-                            name: (params.email !== undefined
-                                && params.email.toRecipient !== undefined
-                                && typeof params.email.toRecipient.name === 'string')
-                                ? params.email.toRecipient.name
-                                : `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-                            email: (params.email !== undefined
-                                && params.email.toRecipient !== undefined
-                                && typeof params.email.toRecipient.email === 'string')
-                                ? params.email.toRecipient.email
-                                : defaultToRecipientEmail
-                        },
-                        about: (params.email !== undefined
-                            && typeof params.email.about === 'string')
-                            ? params.email.about
-                            : defaultSubject,
+                        sender: sender,
+                        toRecipient: toRecipient,
+                        about: about,
                         text: emailMessageText
                     };
 
@@ -273,39 +279,65 @@ export async function createRefundMessage(params: {
             {
                 sellerName: params.order.seller.name
             },
-            (renderSubjectErr, subject) => {
+            (renderSubjectErr, defaultSubject) => {
                 if (renderSubjectErr instanceof Error) {
                     reject(renderSubjectErr);
 
                     return;
                 }
 
-                debug('subject:', subject);
+                debug('defaultSubject:', defaultSubject);
 
-                const toRecipientEmail = params.order.customer.email;
-                if (toRecipientEmail === undefined) {
+                const defaultToRecipientEmail = params.order.customer.email;
+                if (defaultToRecipientEmail === undefined) {
                     reject(new factory.errors.Argument('order', 'order.customer.email undefined'));
 
                     return;
                 }
 
+                const sender: factory.creativeWork.message.email.IParticipant = {
+                    typeOf: params.order.seller.typeOf,
+                    name: (params.email !== undefined
+                        && params.email.sender !== undefined
+                        && typeof params.email.sender.name === 'string')
+                        ? params.email.sender.name
+                        : params.order.seller.name,
+                    email: (params.email !== undefined
+                        && params.email.sender !== undefined
+                        && typeof params.email.sender.email === 'string')
+                        ? params.email.sender.email
+                        : 'noreply@example.com'
+                };
+
+                const toRecipient: factory.creativeWork.message.email.IParticipant = {
+                    typeOf: params.order.customer.typeOf,
+                    name: (params.email !== undefined
+                        && params.email.toRecipient !== undefined
+                        && typeof params.email.toRecipient.name === 'string')
+                        ? params.email.toRecipient.name
+                        : `${params.order.customer.familyName} ${params.order.customer.givenName}`,
+                    email: (params.email !== undefined
+                        && params.email.toRecipient !== undefined
+                        && typeof params.email.toRecipient.email === 'string')
+                        ? params.email.toRecipient.email
+                        : defaultToRecipientEmail
+                };
+
+                const about: string = (params.email !== undefined
+                    && typeof params.email.about === 'string')
+                    ? params.email.about
+                    : defaultSubject;
+
                 const email: factory.creativeWork.message.email.ICreativeWork = {
                     typeOf: factory.creativeWorkType.EmailMessage,
-                    identifier: `refundOrder-${params.order.orderNumber}`,
-                    name: `refundOrder-${params.order.orderNumber}`,
-                    sender: {
-                        typeOf: params.order.seller.typeOf,
-                        name: params.order.seller.name,
-                        email: 'noreply@example.com'
-                    },
-                    toRecipient: {
-                        typeOf: params.order.customer.typeOf,
-                        name: `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-                        email: toRecipientEmail
-                    },
-                    about: subject,
+                    identifier: `RefundOrder-${params.order.orderNumber}`,
+                    name: `RefundOrder-${params.order.orderNumber}`,
+                    sender: sender,
+                    toRecipient: toRecipient,
+                    about: about,
                     text: emailMessageText
                 };
+
                 resolve(email);
             }
         );
