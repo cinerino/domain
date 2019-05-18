@@ -5,7 +5,7 @@ import * as jwt from 'jsonwebtoken';
 
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { ICode, MongoRepository as CodeRepo, RedisRepository as TemporaryCodeRepo } from '../repo/code';
+import { ICode, MongoRepository as CodeRepo } from '../repo/code';
 
 export type IToken = string;
 /**
@@ -18,7 +18,7 @@ export function getToken(params: {
     expiresIn: number;
 }) {
     return async (repos: {
-        code: CodeRepo | TemporaryCodeRepo;
+        code: CodeRepo;
     }): Promise<IToken> => {
         const data = await repos.code.findOne({ code: params.code });
 

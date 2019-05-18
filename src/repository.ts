@@ -5,7 +5,7 @@
 import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgress } from './repo/action/registerProgramMembershipInProgress';
-import { MongoRepository as CodeRepo, RedisRepository as TemporaryCodeRepo } from './repo/code';
+import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as EventRepo } from './repo/event';
 import { RedisRepository as EventAttendeeCapacityRepo } from './repo/event/attendeeCapacity';
@@ -41,10 +41,6 @@ export namespace action {
  * 所有権コードリポジトリ
  */
 export class Code extends CodeRepo { }
-/**
- * 一時所有権コードリポジトリ
- */
-export class TemporaryCode extends TemporaryCodeRepo { }
 
 /**
  * 確認番号リポジトリ
