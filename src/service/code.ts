@@ -87,6 +87,11 @@ export function verifyToken<T>(params: {
                 // 失敗したら仕方ない
             }
 
+            // JWTエラーをハンドリング
+            if (error instanceof jwt.TokenExpiredError) {
+                throw new factory.errors.Argument('token', `${error.message} expiredAt:${error.expiredAt}`);
+            }
+
             throw error;
         }
         await repos.action.complete({ typeOf: actionAttributes.typeOf, id: action.id, result: result });
