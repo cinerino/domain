@@ -7,17 +7,113 @@ import * as factory from '../factory';
 import { modelName } from './mongoose/model/authorization';
 
 export type IData = any;
-
 export type ICode = string;
 
 /**
- * コードリポジトリ
+ * 承認コードリポジトリ
  */
 export class MongoRepository {
     public readonly authorizationModel: typeof Model;
 
     constructor(connection: Connection) {
         this.authorizationModel = connection.model(modelName);
+    }
+
+    // tslint:disable-next-line:max-func-body-length
+    public static CREATE_MONGO_CONDITIONS(params: factory.authorization.ISearchConditions) {
+        const andConditions: any[] = [];
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.project !== undefined) {
+            if (Array.isArray(params.project.ids)) {
+                andConditions.push({
+                    'project.id': {
+                        $exists: true,
+                        $in: params.project.ids
+                    }
+                });
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        const object = <factory.authorization.IObjectSearchConditions>params.object;
+        if (object !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(object.ids)) {
+                andConditions.push({
+                    'object.id': {
+                        $exists: true,
+                        $in: object.ids
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(object.typeOfs)) {
+                andConditions.push({
+                    'object.typeOf': {
+                        $exists: true,
+                        $in: object.typeOfs
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (object.typeOfGood !== undefined) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(object.typeOfGood.ids)) {
+                    andConditions.push({
+                        'object.typeOfGood.id': {
+                            $exists: true,
+                            $in: object.typeOfGood.ids
+                        }
+                    });
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(object.typeOfGood.typeOfs)) {
+                    andConditions.push({
+                        'object.typeOfGood.typeOf': {
+                            $exists: true,
+                            $in: object.typeOfGood.typeOfs
+                        }
+                    });
+                }
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray(params.codes)) {
+            andConditions.push({
+                code: { $exists: true, $in: params.codes }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.validFrom instanceof Date) {
+            andConditions.push({
+                validUntil: { $exists: true, $gte: params.validFrom }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.validThrough instanceof Date) {
+            andConditions.push({
+                validFrom: { $lte: params.validThrough }
+            });
+        }
+
+        return andConditions;
     }
 
     /**
@@ -71,6 +167,41 @@ export class MongoRepository {
         const authorization = doc.toObject();
 
         return authorization.object;
+    }
+
+    public async count(params: factory.authorization.ISearchConditions): Promise<number> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+
+        return this.authorizationModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
+            .setOptions({ maxTimeMS: 10000 })
+            .exec();
+    }
+
+    public async search(params: factory.authorization.ISearchConditions): Promise<factory.authorization.IAuthorization[]> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+        const query = this.authorizationModel.find(
+            (conditions.length > 0) ? { $and: conditions } : {},
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        );
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.sort !== undefined) {
+            query.sort(params.sort);
+        }
+
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
     }
 
     /**

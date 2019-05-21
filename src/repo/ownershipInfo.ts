@@ -42,7 +42,10 @@ export class MongoRepository {
         const typeOfGood = <factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.IGoodType>>params.typeOfGood;
         if (typeOfGood !== undefined) {
             andConditions.push({
-                'typeOfGood.typeOf': typeOfGood.typeOf
+                'typeOfGood.typeOf': {
+                    $exists: true,
+                    $eq: typeOfGood.typeOf
+                }
             });
 
             switch (typeOfGood.typeOf) {

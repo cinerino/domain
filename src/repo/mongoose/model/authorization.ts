@@ -116,6 +116,26 @@ schema.index(
     }
 );
 
+schema.index(
+    { 'object.typeOfGood.typeOf': 1, validFrom: 1 },
+    {
+        name: 'searchByObjectTypeOfGoodTypeOf',
+        partialFilterExpression: {
+            'object.typeOfGood.typeOf': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'object.typeOfGood.id': 1, validFrom: 1 },
+    {
+        name: 'searchByObjectTypeOfGoodId',
+        partialFilterExpression: {
+            'object.typeOfGood.id': { $exists: true }
+        }
+    }
+);
+
 mongoose.model(modelName, schema)
     .on(
         'index',
