@@ -111,12 +111,20 @@ export function open<T extends factory.accountType>(params: {
     };
 }
 
+export interface IClosingAccount {
+    accountType: factory.accountType;
+    accountNumber: string;
+}
+
 /**
  * 口座解約
  */
 export function close<T extends factory.accountType>(params: {
     project: factory.project.IProject;
-    ownedBy: {
+    /**
+     * 所有者を指定しなければ、問答無用に口座番号から口座を解約します
+     */
+    ownedBy?: {
         id: string;
     };
     accountType: T;
@@ -129,17 +137,30 @@ export function close<T extends factory.accountType>(params: {
         const project = await repos.project.findById({ id: params.project.id });
 
         try {
-            const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-                typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                    accountType: params.accountType,
-                    accountNumbers: [params.accountNumber]
-                },
-                ownedBy: params.ownedBy
-            });
-            const ownershipInfo = accountOwnershipInfos[0];
-            if (ownershipInfo === undefined) {
-                throw new factory.errors.NotFound('Account');
+            let closingAccount: IClosingAccount = {
+                accountType: params.accountType,
+                accountNumber: params.accountNumber
+            };
+
+            // 所有者を指定された場合、口座所有権を確認
+            if (params.ownedBy !== undefined) {
+                const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+                    typeOfGood: {
+                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                        accountType: params.accountType,
+                        accountNumbers: [params.accountNumber]
+                    },
+                    ownedBy: params.ownedBy
+                });
+                const ownershipInfo = accountOwnershipInfos[0];
+                if (ownershipInfo === undefined) {
+                    throw new factory.errors.NotFound('Account');
+                }
+
+                closingAccount = {
+                    accountType: ownershipInfo.typeOfGood.accountType,
+                    accountNumber: ownershipInfo.typeOfGood.accountNumber
+                };
             }
 
             if (project.settings === undefined) {
@@ -148,14 +169,12 @@ export function close<T extends factory.accountType>(params: {
             if (project.settings.pecorino === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
+
             const accountService = new pecorinoapi.service.Account({
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
             });
-            await accountService.close({
-                accountType: ownershipInfo.typeOfGood.accountType,
-                accountNumber: ownershipInfo.typeOfGood.accountNumber
-            });
+            await accountService.close(closingAccount);
         } catch (error) {
             error = handlePecorinoError(error);
             throw error;
