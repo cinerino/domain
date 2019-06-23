@@ -1849,12 +1849,6 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
-        const stateReserveSeatResult = {
-            listSeat: [{
-                seatSection: 'seatSection',
-                listFreeSeat: [{ seatNum: 'seatNumber' }]
-            }]
-        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId',
@@ -1886,10 +1880,6 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
-            .expects('stateReserveSeat')
-            .once()
-            .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo.actionModel)
             .expects('findOneAndUpdate')
             .once()
@@ -2233,12 +2223,6 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
-        const stateReserveSeatResult = {
-            listSeat: [{
-                seatSection: 'seatSection',
-                listFreeSeat: [{ seatNum: 'seatNumber' }]
-            }]
-        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId',
@@ -2270,10 +2254,6 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
-            .expects('stateReserveSeat')
-            .once()
-            .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo.actionModel)
             .expects('findOneAndUpdate')
             .once()

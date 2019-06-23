@@ -33,6 +33,15 @@ export type ICOAMvtkTicket = COA.services.master.IMvtkTicketcodeResult & {
     addGlasses: number;
 };
 
+export type IAcceptedOfferWithoutDetail =
+    factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail<WebAPIIdentifier.COA> & {
+        ticketInfo: factory.offer.seatReservation.ICOATicketInfo & {
+            spseatAdd1: number;
+            spseatAdd2: number;
+            spseatKbn: string;
+        };
+    };
+
 /**
  * 座席予約に対する承認アクションを開始する前の処理
  * 供給情報の有効性の確認などを行う。
@@ -43,7 +52,7 @@ export type ICOAMvtkTicket = COA.services.master.IMvtkTicketcodeResult & {
 async function validateOffers(
     isMember: boolean,
     screeningEvent: factory.event.screeningEvent.IEvent,
-    offers: factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail<WebAPIIdentifier.COA>[],
+    offers: IAcceptedOfferWithoutDetail[],
     coaTickets?: COA.services.master.ITicketResult[]
 ): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> {
     // 詳細情報ありの供給情報リストを初期化
@@ -80,9 +89,6 @@ async function validateOffers(
         availableSalesTickets.push(...salesTickets4member);
     }
 
-    // 座席空席状況取得
-    const { listSeat } = await COA.services.reserve.stateReserveSeat(coaInfo);
-
     // 利用可能でないチケットコードが供給情報に含まれていれば引数エラー
     // 供給情報ごとに確認
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
@@ -90,16 +96,6 @@ async function validateOffers(
         let offerWithDetails: factory.offer.seatReservation.IOfferWithDetails;
         let availableSalesTicket: COA.services.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
         let coaPointTicket: COA.services.master.ITicketResult | undefined;
-
-        const section = listSeat.find((s) => s.seatSection === offer.seatSection);
-        if (section === undefined) {
-            throw new factory.errors.NotFound('Section');
-        }
-
-        const freeSeat = section.listFreeSeat.find((s) => s.seatNum === offer.seatNumber);
-        if (freeSeat === undefined) {
-            throw new factory.errors.NotFound('Seat');
-        }
 
         // ポイント消費鑑賞券の場合
         if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
@@ -255,8 +251,8 @@ async function validateOffers(
 
         const includeGlasses = (offer.ticketInfo.addGlasses > 0);
         const addGlasses = (includeGlasses) ? availableSalesTicket.addGlasses : 0;
-        const spseatAdd1 = (typeof freeSeat.spseatAdd1 === 'number') ? freeSeat.spseatAdd1 : 0;
-        const spseatAdd2 = (typeof freeSeat.spseatAdd2 === 'number') ? freeSeat.spseatAdd2 : 0;
+        const spseatAdd1 = offer.ticketInfo.spseatAdd1;
+        const spseatAdd2 = offer.ticketInfo.spseatAdd2;
 
         // 実際の売上金額を算出
         const price = [
@@ -293,7 +289,7 @@ async function validateOffers(
                 salePrice: salePrice,
                 spseatAdd1: spseatAdd1,
                 spseatAdd2: spseatAdd2,
-                spseatKbn: (typeof freeSeat.spseatKbn === 'string') ? freeSeat.spseatKbn : '',
+                spseatKbn: offer.ticketInfo.spseatKbn,
                 addGlasses: addGlasses,
                 ticketCount: 1,
                 seatNum: offer.seatNumber,
@@ -367,11 +363,42 @@ export function create(params: {
             id: params.object.event.id
         });
 
+        // 必ず定義されている前提
+        const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
+
+        // 座席空席状況取得
+        const { listSeat } = await COA.services.reserve.stateReserveSeat(coaInfo);
+
         // 供給情報の有効性を確認
+        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = params.object.acceptedOffer.map((offer) => {
+            const section = listSeat.find((s) => s.seatSection === offer.seatSection);
+            if (section === undefined) {
+                throw new factory.errors.NotFound('Available Section');
+            }
+
+            const freeSeat = section.listFreeSeat.find((s) => s.seatNum === offer.seatNumber);
+            if (freeSeat === undefined) {
+                throw new factory.errors.NotFound('Available Seat');
+            }
+
+            const spseatAdd1 = (typeof freeSeat.spseatAdd1 === 'number') ? freeSeat.spseatAdd1 : 0;
+            const spseatAdd2 = (typeof freeSeat.spseatAdd2 === 'number') ? freeSeat.spseatAdd2 : 0;
+            const spseatKbn = (typeof freeSeat.spseatKbn === 'string') ? freeSeat.spseatKbn : '';
+
+            return {
+                ...offer,
+                ticketInfo: {
+                    ...offer.ticketInfo,
+                    spseatAdd1: spseatAdd1,
+                    spseatAdd2: spseatAdd2,
+                    spseatKbn: spseatKbn
+                }
+            };
+        });
         const acceptedOffer = await validateOffers(
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
-            params.object.acceptedOffer,
+            acceptedOffersWithoutDetails,
             (repos.offer !== undefined)
                 ? /* istanbul ignore next */ repos.offer.searchCOATickets({ theaterCode: screeningEvent.superEvent.location.branchCode })
                 : undefined
@@ -396,9 +423,6 @@ export function create(params: {
             instrument: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
         };
         const action = await repos.action.start(actionAttributes);
-
-        // 必ず定義されている前提
-        const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
 
         // COA仮予約
         const updTmpReserveSeatArgs = {
@@ -527,6 +551,7 @@ export function changeOffers(params: {
     transaction: { id: string };
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         action: ActionRepo;
@@ -576,10 +601,30 @@ export function changeOffers(params: {
         });
 
         // 供給情報の有効性を確認
+        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = params.object.acceptedOffer.map((offer) => {
+            const originalOffer = authorizeAction.object.acceptedOffer.find((o) => {
+                return o.seatSection === offer.seatSection
+                    && o.seatNumber === offer.seatNumber;
+            });
+
+            if (originalOffer === undefined) {
+                throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
+            }
+
+            return {
+                ...offer,
+                ticketInfo: {
+                    ...offer.ticketInfo,
+                    spseatAdd1: originalOffer.ticketInfo.spseatAdd1,
+                    spseatAdd2: originalOffer.ticketInfo.spseatAdd2,
+                    spseatKbn: originalOffer.ticketInfo.spseatKbn
+                }
+            };
+        });
         const acceptedOffer = await validateOffers(
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
-            params.object.acceptedOffer,
+            acceptedOffersWithoutDetails,
             (repos.offer !== undefined)
                 ? /* istanbul ignore next */ repos.offer.searchCOATickets({ theaterCode: screeningEvent.superEvent.location.branchCode })
                 : undefined
