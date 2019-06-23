@@ -47,6 +47,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const reserveSeatsTemporarilyResult = <any>{};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -57,12 +63,34 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(reserveSeatsTemporarilyResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(reserveSeatsTemporarilyResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -109,6 +137,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const reserveSeatsTemporarilyResult = <any>{};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -117,13 +151,38 @@ describe('action.authorize.seatReservation.create()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(domain.COA.services.master).expects('ticket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(reserveSeatsTemporarilyResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.master)
+            .expects('ticket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(reserveSeatsTemporarilyResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -172,6 +231,12 @@ describe('action.authorize.seatReservation.create()', () => {
             salePrice: 1000,
             addGlasses: 100
         }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const reserveSeatsTemporarilyResult = <any>{};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -182,12 +247,34 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(reserveSeatsTemporarilyResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(reserveSeatsTemporarilyResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -206,6 +293,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('COAが正常であれば、エラーにならないはず(ムビチケの場合)', async () => {
         const agent = {
             id: 'agentId'
@@ -241,6 +329,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const reserveSeatsTemporarilyResult = <any>{};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -254,13 +348,38 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.master).expects('mvtkTicketcode').once().resolves(mvtkTicket);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(reserveSeatsTemporarilyResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.master)
+            .expects('mvtkTicketcode')
+            .once()
+            .resolves(mvtkTicket);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(reserveSeatsTemporarilyResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -279,6 +398,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('ムビチケでメガネ代込みを指定された場合、メガネ代込みの承認アクションを取得できるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -310,6 +430,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets: any[] = [];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const reserveSeatsTemporarilyResult = <any>{};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -325,13 +451,38 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.master).expects('mvtkTicketcode').once().resolves(mvtkTicket);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(reserveSeatsTemporarilyResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.master)
+            .expects('mvtkTicketcode')
+            .once()
+            .resolves(mvtkTicket);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(reserveSeatsTemporarilyResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -379,6 +530,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const reserveSeatsTemporarilyResult = <any>{};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -389,13 +546,35 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
         // 会員と非会員で2回呼ばれるはず
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').twice().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(reserveSeatsTemporarilyResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .twice()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(reserveSeatsTemporarilyResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -443,6 +622,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const mvtkTicketResult = {
             name: 'COAServiceError',
             code: 200
@@ -452,14 +637,36 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
         // ムビチケを券種に変換で失敗する場合
-        sandbox.mock(domain.COA.services.master).expects('mvtkTicketcode').once().rejects(mvtkTicketResult);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').never();
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').never();
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(domain.COA.services.master)
+            .expects('mvtkTicketcode')
+            .once()
+            .rejects(mvtkTicketResult);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -472,7 +679,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -506,20 +714,48 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const mvtkTicketResult = new Error('mvtkTicketResult');
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
         // ムビチケを券種に変換でサーバーエラーの場合
-        sandbox.mock(domain.COA.services.master).expects('mvtkTicketcode').once().rejects(mvtkTicketResult);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').never();
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').never();
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(domain.COA.services.master)
+            .expects('mvtkTicketcode')
+            .once()
+            .rejects(mvtkTicketResult);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -532,7 +768,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert.deepEqual(result, mvtkTicketResult);
         sandbox.verify();
     });
@@ -566,6 +803,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const mvtkTicket = {
             ticketCode: 'ticketCode'
         };
@@ -574,13 +817,35 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.master).expects('mvtkTicketcode').once().resolves(mvtkTicket);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').never();
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').never();
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.master)
+            .expects('mvtkTicketcode')
+            .once()
+            .resolves(mvtkTicket);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -593,7 +858,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -626,17 +892,42 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').never();
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').never();
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -649,7 +940,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();
     });
@@ -682,10 +974,19 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').never();
-        sandbox.mock(actionRepo).expects('start').never();
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -698,7 +999,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
@@ -732,6 +1034,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -742,15 +1050,38 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().rejects(updTmpReserveSeatResult);
-        // giveUpが呼ばれて、completeは呼ばれないはず
-        sandbox.mock(actionRepo).expects('giveUp').once()
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
             .resolves(action);
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .rejects(updTmpReserveSeatResult);
+        // giveUpが呼ばれて、completeは呼ばれないはず
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -763,7 +1094,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.ServiceUnavailable);
         sandbox.verify();
     });
@@ -796,6 +1128,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -806,13 +1144,37 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().rejects(updTmpReserveSeatResult);
-        sandbox.mock(actionRepo).expects('giveUp').once().resolves(action);
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .rejects(updTmpReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -825,7 +1187,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.ServiceUnavailable);
         sandbox.verify();
     });
@@ -858,6 +1221,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -868,16 +1237,39 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        // COAが座席取得失敗エラーを返してきた場合
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().rejects(updTmpReserveSeatResult);
-        // giveUpが呼ばれて、completeは呼ばれないはず
-        sandbox.mock(actionRepo).expects('giveUp').once()
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
             .resolves(action);
-        sandbox.mock(actionRepo).expects('complete').never();
+        // COAが座席取得失敗エラーを返してきた場合
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .rejects(updTmpReserveSeatResult);
+        // giveUpが呼ばれて、completeは呼ばれないはず
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -890,7 +1282,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.AlreadyInUse);
         sandbox.verify();
     });
@@ -923,6 +1316,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -935,16 +1334,39 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        // COAが座席取得失敗エラーを返してきた場合
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().rejects(updTmpReserveSeatResult);
-        // giveUpが呼ばれて、completeは呼ばれないはず
-        sandbox.mock(actionRepo).expects('giveUp').once()
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
             .resolves(action);
-        sandbox.mock(actionRepo).expects('complete').never();
+        // COAが座席取得失敗エラーを返してきた場合
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .rejects(updTmpReserveSeatResult);
+        // giveUpが呼ばれて、completeは呼ばれないはず
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -957,7 +1379,8 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.Argument);
         sandbox.verify();
     });
@@ -990,6 +1413,12 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -1002,16 +1431,39 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        // COAが座席取得失敗エラーを返してきた場合
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().rejects(updTmpReserveSeatResult);
-        // giveUpが呼ばれて、completeは呼ばれないはず
-        sandbox.mock(actionRepo).expects('giveUp').once()
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
             .resolves(action);
-        sandbox.mock(actionRepo).expects('complete').never();
+        // COAが座席取得失敗エラーを返してきた場合
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .rejects(updTmpReserveSeatResult);
+        // giveUpが呼ばれて、completeは呼ばれないはず
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .once()
+            .resolves(action);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -1024,11 +1476,13 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.ServiceUnavailable);
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('制限単位がn人単位の券種が指定された場合、割引条件を満たしていなければ、Argumentエラー配列が投げられるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -1084,18 +1538,47 @@ describe('action.authorize.seatReservation.create()', () => {
             limitUnit: '001',
             limitCount: 2 // 2枚単位の制限
         }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: offers.map((o) => {
+                    return { seatNum: o.seatNumber };
+                })
+            }]
+        };
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').never();
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').never();
-        sandbox.mock(actionRepo).expects('giveUp').never();
-        sandbox.mock(actionRepo).expects('complete').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('giveUp')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -1108,12 +1591,14 @@ describe('action.authorize.seatReservation.create()', () => {
             event: eventRepo,
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(Array.isArray(result));
         assert(result[0] instanceof domain.factory.errors.Argument);
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('制限単位がn人単位の券種が指定された場合、割引条件を満たしていれば、承認アクションを取得できるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -1167,6 +1652,14 @@ describe('action.authorize.seatReservation.create()', () => {
                 ticketCode: 'ticketCode2'
             }
         ];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: offers.map((o) => {
+                    return { seatNum: o.seatNumber };
+                })
+            }]
+        };
         const updTmpReserveSeatResult = {};
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
@@ -1177,12 +1670,34 @@ describe('action.authorize.seatReservation.create()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo).expects('start').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('updTmpReserveSeat').once().resolves(updTmpReserveSeatResult);
-        sandbox.mock(actionRepo).expects('complete').once().resolves(action);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('start')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('updTmpReserveSeat')
+            .once()
+            .resolves(updTmpReserveSeatResult);
+        sandbox.mock(actionRepo)
+            .expects('complete')
+            .once()
+            .resolves(action);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
             agent: agent,
@@ -1231,9 +1746,18 @@ describe('action.authorize.seatReservation.cancel()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('delTmpReserve').once().resolves();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('cancel')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('delTmpReserve')
+            .once()
+            .resolves();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.cancel({
             agent: agent,
@@ -1268,9 +1792,16 @@ describe('action.authorize.seatReservation.cancel()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('cancel').never();
-        sandbox.mock(domain.COA.services.reserve).expects('delTmpReserve').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('cancel')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('delTmpReserve')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.cancel({
             agent: agent,
@@ -1279,7 +1810,8 @@ describe('action.authorize.seatReservation.cancel()', () => {
         })({
             action: actionRepo,
             transaction: transactionRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
@@ -1317,6 +1849,12 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId',
@@ -1332,11 +1870,31 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(actionRepo).expects('findById').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo.actionModel).expects('findOneAndUpdate').once().chain('exec').resolves(new actionRepo.actionModel(action));
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo.actionModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(new actionRepo.actionModel(action));
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.changeOffers({
             agent: agent,
@@ -1395,10 +1953,19 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').never();
-        sandbox.mock(actionRepo).expects('findById').never();
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .never();
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.changeOffers({
             agent: agent,
@@ -1412,7 +1979,8 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             action: actionRepo,
             transaction: transactionRepo,
             event: eventRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.Forbidden);
         sandbox.verify();
     });
@@ -1457,10 +2025,20 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('findById').once().resolves(action);
-        sandbox.mock(eventRepo).expects('findById').never();
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .once()
+            .resolves(action);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.changeOffers({
             agent: agent,
@@ -1474,7 +2052,8 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             action: actionRepo,
             transaction: transactionRepo,
             event: eventRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.NotFound);
         assert.equal((<domain.factory.errors.NotFound>result).entityName, 'authorizeAction');
         sandbox.verify();
@@ -1518,10 +2097,20 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('findById').once().resolves(action);
-        sandbox.mock(eventRepo).expects('findById').never();
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .once()
+            .resolves(action);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.changeOffers({
             agent: agent,
@@ -1535,7 +2124,8 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             action: actionRepo,
             transaction: transactionRepo,
             event: eventRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.Argument);
         sandbox.verify();
     });
@@ -1583,10 +2173,20 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(actionRepo).expects('findById').once().resolves(action);
-        sandbox.mock(eventRepo).expects('findById').never();
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').never();
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .once()
+            .resolves(action);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .never();
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.changeOffers({
             agent: agent,
@@ -1600,7 +2200,8 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             action: actionRepo,
             transaction: transactionRepo,
             event: eventRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
         assert(result instanceof domain.factory.errors.Argument);
         assert.equal((<domain.factory.errors.Argument>result).argumentName, 'offers');
         sandbox.verify();
@@ -1632,6 +2233,12 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             }
         }];
         const salesTickets = [{ ticketCode: offers[0].ticketInfo.ticketCode }];
+        const stateReserveSeatResult = {
+            listSeat: [{
+                seatSection: 'seatSection',
+                listFreeSeat: [{ seatNum: 'seatNumber' }]
+            }]
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId',
@@ -1647,11 +2254,31 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
-        sandbox.mock(transactionRepo).expects('findInProgressById').once().resolves(transaction);
-        sandbox.mock(eventRepo).expects('findById').once().resolves(event);
-        sandbox.mock(actionRepo).expects('findById').once().resolves(action);
-        sandbox.mock(domain.COA.services.reserve).expects('salesTicket').once().resolves(salesTickets);
-        sandbox.mock(actionRepo.actionModel).expects('findOneAndUpdate').once().chain('exec').resolves(null);
+        sandbox.mock(transactionRepo)
+            .expects('findInProgressById')
+            .once()
+            .resolves(transaction);
+        sandbox.mock(eventRepo)
+            .expects('findById')
+            .once()
+            .resolves(event);
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .once()
+            .resolves(action);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('salesTicket')
+            .once()
+            .resolves(salesTickets);
+        sandbox.mock(domain.COA.services.reserve)
+            .expects('stateReserveSeat')
+            .once()
+            .resolves(stateReserveSeatResult);
+        sandbox.mock(actionRepo.actionModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
         const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.changeOffers({
             agent: agent,
@@ -1665,7 +2292,8 @@ describe('action.authorize.seatReservation.changeOffers()', () => {
             action: actionRepo,
             transaction: transactionRepo,
             event: eventRepo
-        }).catch((err) => err);
+        })
+            .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.NotFound);
         sandbox.verify();

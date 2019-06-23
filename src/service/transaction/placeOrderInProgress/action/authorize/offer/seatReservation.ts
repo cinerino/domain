@@ -419,6 +419,9 @@ function validateAcceptedOffers(params: {
                             addPrice: availableSalesTicket.addPrice,
                             disPrice: 0,
                             salePrice: availableSalesTicket.addPrice,
+                            spseatAdd1: 0,
+                            spseatAdd2: 0,
+                            spseatKbn: '',
                             addGlasses: 0, // まずメガネ代金なしでデータをセット
                             mvtkAppPrice: mvtkTicketCodeIn.appPrice,
                             ticketCount: 1,

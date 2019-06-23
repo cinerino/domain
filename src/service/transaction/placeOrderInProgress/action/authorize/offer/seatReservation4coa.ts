@@ -79,7 +79,9 @@ async function validateOffers(
         });
         availableSalesTickets.push(...salesTickets4member);
     }
-    debug('availableSalesTickets:', availableSalesTickets);
+
+    // 座席空席状況取得
+    const { listSeat } = await COA.services.reserve.stateReserveSeat(coaInfo);
 
     // 利用可能でないチケットコードが供給情報に含まれていれば引数エラー
     // 供給情報ごとに確認
@@ -88,6 +90,16 @@ async function validateOffers(
         let offerWithDetails: factory.offer.seatReservation.IOfferWithDetails;
         let availableSalesTicket: COA.services.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
         let coaPointTicket: COA.services.master.ITicketResult | undefined;
+
+        const section = listSeat.find((s) => s.seatSection === offer.seatSection);
+        if (section === undefined) {
+            throw new factory.errors.NotFound('Section');
+        }
+
+        const freeSeat = section.listFreeSeat.find((s) => s.seatNum === offer.seatNumber);
+        if (freeSeat === undefined) {
+            throw new factory.errors.NotFound('Seat');
+        }
 
         // ポイント消費鑑賞券の場合
         if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
@@ -241,12 +253,32 @@ async function validateOffers(
             }
         }
 
+        const includeGlasses = (offer.ticketInfo.addGlasses > 0);
+        const addGlasses = (includeGlasses) ? availableSalesTicket.addGlasses : 0;
+        const spseatAdd1 = (typeof freeSeat.spseatAdd1 === 'number') ? freeSeat.spseatAdd1 : 0;
+        const spseatAdd2 = (typeof freeSeat.spseatAdd2 === 'number') ? freeSeat.spseatAdd2 : 0;
+
+        // 実際の売上金額を算出
+        const price = [
+            Number(availableSalesTicket.salePrice),
+            addGlasses,
+            spseatAdd1,
+            spseatAdd2
+        ].reduce((a, b) => a + b, 0);
+
+        // COAに渡す販売金額については、特別席加算額は興収部分のみ加算
+        const salePrice = [
+            Number(availableSalesTicket.salePrice),
+            addGlasses,
+            spseatAdd1
+        ].reduce((a, b) => a + b, 0);
+
         offerWithDetails = {
             typeOf: 'Offer',
             id: availableSalesTicket.ticketCode,
             name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
             alternateName: { ja: availableSalesTicket.ticketNameKana, en: '' },
-            price: availableSalesTicket.salePrice,
+            price: price,
             priceCurrency: factory.priceCurrency.JPY,
             seatNumber: offer.seatNumber,
             seatSection: offer.seatSection,
@@ -258,8 +290,11 @@ async function validateOffers(
                 stdPrice: availableSalesTicket.stdPrice,
                 addPrice: availableSalesTicket.addPrice,
                 disPrice: 0,
-                salePrice: availableSalesTicket.salePrice,
-                addGlasses: 0, // まずメガネ代0でセット
+                salePrice: salePrice,
+                spseatAdd1: spseatAdd1,
+                spseatAdd2: spseatAdd2,
+                spseatKbn: (typeof freeSeat.spseatKbn === 'string') ? freeSeat.spseatKbn : '',
+                addGlasses: addGlasses,
                 ticketCount: 1,
                 seatNum: offer.seatNumber,
 
@@ -275,16 +310,11 @@ async function validateOffers(
             }
         };
 
-        // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
-        // 販売可能チケットからセットする。
-        const includeGlasses = (offer.ticketInfo.addGlasses > 0);
+        // メガネ代込み要求の場合、チケット名調整特別対応
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (includeGlasses) {
             offerWithDetails.ticketInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
-            (<number>offerWithDetails.price) += availableSalesTicket.addGlasses;
-            offerWithDetails.ticketInfo.salePrice += availableSalesTicket.addGlasses;
-            offerWithDetails.ticketInfo.addGlasses = availableSalesTicket.addGlasses;
         }
 
         offersWithDetails.push({ ...offerWithDetails, additionalProperty: offer.additionalProperty });
