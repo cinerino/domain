@@ -188,9 +188,8 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             });
             debug('kubunNames found.');
 
-            // 永続化
-            const screeningEventSerieses = await Promise.all(filmsFromCOA.map(async (filmFromCOA) => {
-                const screeningEventSeries = createScreeningEventSeriesFromCOA({
+            const screeningEventSerieses = filmsFromCOA.map((filmFromCOA) => {
+                return createScreeningEventSeriesFromCOA({
                     project: project,
                     filmFromCOA: filmFromCOA,
                     movieTheater: movieTheater,
@@ -199,11 +198,11 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                     joueihousikiKubuns: joueihousikiKubuns,
                     jimakufukikaeKubuns: jimakufukikaeKubuns
                 });
-
+            });
+            // 永続化
+            for (const screeningEventSeries of screeningEventSerieses) {
                 await repos.event.save(screeningEventSeries);
-
-                return screeningEventSeries;
-            }));
+            }
 
             // イベントごとに永続化トライ
             const screeningEvents: factory.event.screeningEvent.IEvent[] = [];
@@ -235,7 +234,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                         return;
                     }
 
-                    // 永続化
                     const screeningEvent = createScreeningEventFromCOA({
                         project: project,
                         performanceFromCOA: scheduleFromCOA,
@@ -248,8 +246,9 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 }
             });
 
+            // 永続化
             debug(`storing ${screeningEvents.length} screeningEvents...`);
-            await Promise.all(screeningEvents.map(async (screeningEvent) => {
+            for (const screeningEvent of screeningEvents) {
                 try {
                     await repos.event.save<factory.chevre.eventType.ScreeningEvent>(screeningEvent);
                 } catch (error) {
@@ -258,7 +257,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                     // tslint:disable-next-line:no-console
                     console.error(error);
                 }
-            }));
+            }
             debug(`${screeningEvents.length} screeningEvents stored.`);
 
             // COAから削除されたイベントをキャンセル済ステータスへ変更
@@ -274,11 +273,11 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             const idsShouldBe = screeningEvents.map((e) => e.id);
             const cancelledIds = difference(ids, idsShouldBe);
             debug(`cancelling ${cancelledIds.length} events...`);
-            await Promise.all(cancelledIds.map(async (id) => {
+            for (const cancelledId of cancelledIds) {
                 try {
                     await repos.event.cancel({
                         typeOf: factory.chevre.eventType.ScreeningEvent,
-                        id: id
+                        id: cancelledId
                     });
                 } catch (error) {
                     // tslint:disable-next-line:no-single-line-block-comment
@@ -286,7 +285,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                     // tslint:disable-next-line:no-console
                     console.error(error);
                 }
-            }));
+            }
             debug(`${cancelledIds.length} events cancelled.`);
         }
     };
