@@ -369,11 +369,17 @@ export function createScreeningEventFromCOA(params: {
     });
 
     // COA情報を整形して開始日時と終了日時を作成('2500'のような日またぎの時刻入力に対応)
+    const DAY = 2400;
+    let timeBegin = params.performanceFromCOA.timeBegin;
     let timeEnd = params.performanceFromCOA.timeEnd;
-    let addDay = 0;
+    let addDay4startDate = 0;
+    let addDay4endDate = 0;
     try {
-        const DAY = 2400;
-        addDay += Math.floor(Number(timeEnd) / DAY);
+        addDay4startDate += Math.floor(Number(timeBegin) / DAY);
+        // tslint:disable-next-line:no-magic-numbers
+        timeBegin = `0000${Number(timeBegin) % DAY}`.slice(-4);
+
+        addDay4endDate += Math.floor(Number(timeEnd) / DAY);
         // tslint:disable-next-line:no-magic-numbers
         timeEnd = `0000${Number(timeEnd) % DAY}`.slice(-4);
     } catch (error) {
@@ -381,9 +387,10 @@ export function createScreeningEventFromCOA(params: {
     }
 
     let endDate = moment(`${params.performanceFromCOA.dateJouei} ${timeEnd} +09:00`, 'YYYYMMDD HHmm Z')
-        .add(addDay, 'days')
+        .add(addDay4endDate, 'days')
         .toDate();
-    const startDate = moment(`${params.performanceFromCOA.dateJouei} ${params.performanceFromCOA.timeBegin} +09:00`, 'YYYYMMDD HHmm Z')
+    const startDate = moment(`${params.performanceFromCOA.dateJouei} ${timeBegin} +09:00`, 'YYYYMMDD HHmm Z')
+        .add(addDay4startDate, 'days')
         .toDate();
 
     // startDateの方が大きければ日またぎイベントなので調整
