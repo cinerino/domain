@@ -313,6 +313,12 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
+        // 取引内のアクションかどうか確認
+        const action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
         await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
 
         // 特に何もしない

@@ -227,8 +227,14 @@ export function cancel(params: {
         const projectId = (transaction.project !== undefined) ? transaction.project.id : <string>process.env.PROJECT_ID;
         const project = await repos.project.findById({ id: projectId });
 
+        // 取引内のアクションかどうか確認
+        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
         // まずアクションをキャンセル
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.award.point.IResult>action.result;
 
         // Pecorinoで取引中止実行

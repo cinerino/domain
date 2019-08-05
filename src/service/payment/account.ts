@@ -238,13 +238,19 @@ export function voidTransaction(params: {
 
         // 進行中取引存在確認
         debug('canceling pecorino authorize action...');
-        await repos.transaction.findInProgressById({
+        const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
         });
 
+        // 取引内のアクションかどうか確認
+        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
         // まずアクションをキャンセル
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>action.result;
         const pendingTransaction = actionResult.pendingTransaction;
 

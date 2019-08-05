@@ -136,7 +136,13 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        // 取引内のアクションかどうか確認
+        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
+        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
         debug('action canceld.', action.id);
     };
 }

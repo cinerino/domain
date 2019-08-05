@@ -519,9 +519,15 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
+        // 取引内のアクションかどうか確認
+        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
         // MongoDBでcompleteステータスであるにも関わらず、COAでは削除されている、というのが最悪の状況
         // それだけは回避するためにMongoDBを先に変更
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>action.result;
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -567,9 +573,15 @@ export function changeOffers(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // アクション中のイベント識別子と座席リストが合っているかどうか確認
-        const authorizeAction = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>>
+        // 取引内のアクションかどうか確認
+        const action = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>>
             await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
+        // アクション中のイベント識別子と座席リストが合っているかどうか確認
+        const authorizeAction = action;
         // 完了ステータスのアクションのみ更新可能
         if (authorizeAction.actionStatus !== factory.actionStatusType.CompletedActionStatus) {
             throw new factory.errors.NotFound('authorizeAction');
@@ -662,7 +674,7 @@ export function changeOffers(params: {
                     throw new factory.errors.NotFound('authorizeAction');
                 }
 
-                return <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>>doc.toObject();
+                return doc.toObject();
             });
     };
 }

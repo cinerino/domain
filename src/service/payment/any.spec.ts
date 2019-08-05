@@ -13,7 +13,7 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('action.authorize.any.create()', () => {
+describe('汎用決済承認', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -86,7 +86,7 @@ describe('action.authorize.any.create()', () => {
     });
 });
 
-describe('action.authorize.any.cancel()', () => {
+describe('汎用決済承認取消', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -106,19 +106,20 @@ describe('action.authorize.any.cancel()', () => {
                 }
             }]
         };
+        const transaction = {
+            typeOf: domain.factory.transactionType.PlaceOrder,
+            id: 'transactionId',
+            agent: agent,
+            seller: seller
+        };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId',
             result: {
                 execTranArgs: {},
                 entryTranArgs: {}
-            }
-        };
-        const transaction = {
-            typeOf: domain.factory.transactionType.PlaceOrder,
-            id: 'transactionId',
-            agent: agent,
-            seller: seller
+            },
+            purpose: transaction
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
@@ -128,6 +129,10 @@ describe('action.authorize.any.cancel()', () => {
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(actionRepo)
+            .expects('findById')
+            .once()
+            .resolves(action);
         sandbox.mock(actionRepo)
             .expects('cancel')
             .once()

@@ -125,7 +125,13 @@ export function voidTransaction(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        // 取引内のアクションかどうか確認
+        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        }
+
+        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
         const actionResult = <factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>action.result;
         debug('actionResult:', actionResult);
 
