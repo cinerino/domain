@@ -41,12 +41,12 @@ export function authorize<T extends factory.accountType>(params: {
     project: factory.project.IProject;
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
-        fromAccount: factory.action.authorize.paymentMethod.account.IAccount<T>;
+        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount<T>;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -104,7 +104,7 @@ export function authorize<T extends factory.accountType>(params: {
         try {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else *//* istanbul ignore next */
-            if (params.object.toAccount === undefined) {
+            if (params.object.fromAccount !== undefined && params.object.toAccount === undefined) {
                 // 転送先口座が指定されていない場合は、出金取引
                 const withdrawService = new pecorinoapi.service.transaction.Withdraw({
                     endpoint: project.settings.pecorino.endpoint,
@@ -137,7 +137,7 @@ export function authorize<T extends factory.accountType>(params: {
                     }
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
-            } else {
+            } else if (params.object.fromAccount !== undefined && params.object.toAccount !== undefined) {
                 const transferService = new pecorinoapi.service.transaction.Transfer({
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
@@ -174,6 +174,40 @@ export function authorize<T extends factory.accountType>(params: {
                     }
                 });
                 debug('pecorinoTransaction started.', pendingTransaction.id);
+            } else if (params.object.fromAccount === undefined && params.object.toAccount !== undefined) {
+                const depositService = new pecorinoapi.service.transaction.Deposit({
+                    endpoint: project.settings.pecorino.endpoint,
+                    auth: pecorinoAuthClient
+                });
+                debug('starting pecorino pay transaction...', params.object.amount);
+                pendingTransaction = await depositService.start({
+                    typeOf: factory.pecorino.transactionType.Deposit,
+                    agent: {
+                        typeOf: transaction.agent.typeOf,
+                        id: transaction.agent.id,
+                        name: agentName,
+                        url: transaction.agent.url
+                    },
+                    expires: accountTransactionExpires,
+                    recipient: {
+                        typeOf: recipient.typeOf,
+                        id: recipient.id,
+                        name: recipientName,
+                        url: recipient.url
+                    },
+                    object: {
+                        amount: params.object.amount,
+                        description: notes,
+                        toLocation: {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: params.object.toAccount.accountType,
+                            accountNumber: params.object.toAccount.accountNumber
+                        }
+                    }
+                });
+                debug('pecorinoTransaction started.', pendingTransaction.id);
+            } else {
+                throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
             }
         } catch (error) {
             // actionにエラー結果を追加
@@ -185,7 +219,7 @@ export function authorize<T extends factory.accountType>(params: {
                 // 失敗したら仕方ない
             }
 
-            // PecorinoAPIのエラーｗｐハンドリング
+            // PecorinoAPIのエラーをハンドリング
             error = handlePecorinoError(error);
             throw error;
         }
@@ -193,12 +227,20 @@ export function authorize<T extends factory.accountType>(params: {
         // アクションを完了
         debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
-            accountId: params.object.fromAccount.accountNumber,
+            accountId: (params.object.fromAccount !== undefined)
+                ? params.object.fromAccount.accountNumber
+                : '',
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.Account,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: params.object.fromAccount.accountNumber,
-            name: (typeof params.object.name === 'string') ? params.object.name : String(params.object.fromAccount.accountType),
+            paymentMethodId: (params.object.fromAccount !== undefined)
+                ? params.object.fromAccount.accountNumber
+                : '',
+            name: (typeof params.object.name === 'string')
+                ? params.object.name
+                : (params.object.fromAccount !== undefined)
+                    ? String(params.object.fromAccount.accountType)
+                    : '',
             fromAccount: params.object.fromAccount,
             toAccount: params.object.toAccount,
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
