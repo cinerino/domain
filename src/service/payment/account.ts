@@ -297,20 +297,40 @@ export function voidTransaction(params: {
         const pendingTransaction = actionResult.pendingTransaction;
 
         // Pecorinoで取消中止実行
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else *//* istanbul ignore next */
-        if (pendingTransaction.typeOf === factory.pecorino.transactionType.Withdraw) {
-            const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
-            });
-            await withdrawService.cancel(pendingTransaction);
-        } else if (pendingTransaction.typeOf === factory.pecorino.transactionType.Transfer) {
-            const transferService = new pecorinoapi.service.transaction.Transfer({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
-            });
-            await transferService.cancel(pendingTransaction);
+        switch (pendingTransaction.typeOf) {
+            case pecorinoapi.factory.transactionType.Deposit:
+                const depositService = new pecorinoapi.service.transaction.Deposit({
+                    endpoint: project.settings.pecorino.endpoint,
+                    auth: pecorinoAuthClient
+                });
+                await depositService.cancel({ id: pendingTransaction.id });
+
+                break;
+
+            case pecorinoapi.factory.transactionType.Transfer:
+                const transferService = new pecorinoapi.service.transaction.Transfer({
+                    endpoint: project.settings.pecorino.endpoint,
+                    auth: pecorinoAuthClient
+                });
+                await transferService.cancel({ id: pendingTransaction.id });
+
+                break;
+
+            case pecorinoapi.factory.transactionType.Withdraw:
+                const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                    endpoint: project.settings.pecorino.endpoint,
+                    auth: pecorinoAuthClient
+                });
+                await withdrawService.cancel({ id: pendingTransaction.id });
+
+                break;
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
+            default:
+                throw new factory.errors.NotImplemented(
+                    `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
+                );
         }
     };
 }
@@ -339,23 +359,30 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
             const pendingTransaction = params.object.pendingTransaction;
 
             switch (pendingTransaction.typeOf) {
-                case pecorinoapi.factory.transactionType.Withdraw:
-                    // 支払取引の場合確定
-                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                case pecorinoapi.factory.transactionType.Deposit:
+                    const depositService = new pecorinoapi.service.transaction.Deposit({
                         endpoint: project.settings.pecorino.endpoint,
                         auth: pecorinoAuthClient
                     });
-                    await withdrawService.confirm(pendingTransaction);
+                    await depositService.confirm({ id: pendingTransaction.id });
 
                     break;
 
                 case pecorinoapi.factory.transactionType.Transfer:
-                    // 転送取引の場合確定
                     const transferService = new pecorinoapi.service.transaction.Transfer({
                         endpoint: project.settings.pecorino.endpoint,
                         auth: pecorinoAuthClient
                     });
-                    await transferService.confirm(pendingTransaction);
+                    await transferService.confirm({ id: pendingTransaction.id });
+
+                    break;
+
+                case pecorinoapi.factory.transactionType.Withdraw:
+                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                        endpoint: project.settings.pecorino.endpoint,
+                        auth: pecorinoAuthClient
+                    });
+                    await withdrawService.confirm({ id: pendingTransaction.id });
 
                     break;
 
@@ -539,8 +566,8 @@ export function cancelAccountAuth(params: factory.task.IData<factory.taskName.Ca
 /**
  * 口座返金処理を実行する
  */
-// tslint:disable-next-line:max-func-body-length
 export function refundAccount(params: factory.task.IData<factory.taskName.RefundAccount>) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -564,16 +591,16 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
             await Promise.all(payActionAttributes.object.map(async (paymentMethod) => {
                 const pendingTransaction = paymentMethod.pendingTransaction;
-                const notes = 'Cinerino 返金';
+                const description = `Refund [${pendingTransaction.object.description}]`;
 
                 switch (pendingTransaction.typeOf) {
-                    case factory.pecorino.transactionType.Withdraw:
-                        const depositService = new pecorinoapi.service.transaction.Deposit({
+                    case factory.pecorino.transactionType.Deposit:
+                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
                             endpoint: pecorinoSettings.endpoint,
                             auth: pecorinoAuthClient
                         });
-                        const depositTransaction = await depositService.start({
-                            typeOf: factory.pecorino.transactionType.Deposit,
+                        const withdrawTransaction = await withdrawService.start({
+                            typeOf: factory.pecorino.transactionType.Withdraw,
                             agent: pendingTransaction.recipient,
                             expires: moment()
                                 // tslint:disable-next-line:no-magic-numbers
@@ -582,12 +609,13 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             recipient: pendingTransaction.agent,
                             object: {
                                 amount: pendingTransaction.object.amount,
-                                description: notes,
+                                description: description,
+                                fromLocation: pendingTransaction.object.toLocation,
                                 toLocation: pendingTransaction.object.fromLocation
                             }
                         });
 
-                        await depositService.confirm(depositTransaction);
+                        await withdrawService.confirm(withdrawTransaction);
 
                         break;
 
@@ -606,13 +634,38 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             recipient: pendingTransaction.agent,
                             object: {
                                 amount: pendingTransaction.object.amount,
-                                description: notes,
+                                description: description,
                                 fromLocation: pendingTransaction.object.toLocation,
                                 toLocation: pendingTransaction.object.fromLocation
                             }
                         });
 
                         await transferService.confirm(transferTransaction);
+
+                        break;
+
+                    case factory.pecorino.transactionType.Withdraw:
+                        const depositService = new pecorinoapi.service.transaction.Deposit({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        const depositTransaction = await depositService.start({
+                            typeOf: factory.pecorino.transactionType.Deposit,
+                            agent: pendingTransaction.recipient,
+                            expires: moment()
+                                // tslint:disable-next-line:no-magic-numbers
+                                .add(5, 'minutes')
+                                .toDate(),
+                            recipient: pendingTransaction.agent,
+                            object: {
+                                amount: pendingTransaction.object.amount,
+                                description: description,
+                                fromLocation: pendingTransaction.object.toLocation,
+                                toLocation: pendingTransaction.object.fromLocation
+                            }
+                        });
+
+                        await depositService.confirm(depositTransaction);
 
                         break;
 
