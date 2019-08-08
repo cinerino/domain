@@ -21,6 +21,10 @@ export type ITaskAndTransactionOperation<T> = (repos: {
 export function exportTasks(params: {
     project?: factory.project.IProject;
     status: factory.transactionStatusType;
+    /**
+     * タスク実行日時バッファ
+     */
+    runsTasksAfterInSeconds?: number;
 }) {
     return async (repos: {
         task: TaskRepo;
@@ -36,7 +40,10 @@ export function exportTasks(params: {
         }
 
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        const tasks = await exportTasksById(transaction)(repos);
+        const tasks = await exportTasksById({
+            id: transaction.id,
+            runsTasksAfterInSeconds: params.runsTasksAfterInSeconds
+        })(repos);
         await repos.transaction.setTasksExportedById({ id: transaction.id });
 
         return tasks;
@@ -46,7 +53,13 @@ export function exportTasks(params: {
 /**
  * 取引のタスクを出力します
  */
-export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
+export function exportTasksById(params: {
+    id: string;
+    /**
+     * タスク実行日時バッファ
+     */
+    runsTasksAfterInSeconds?: number;
+}): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
@@ -62,7 +75,14 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // タスク実行日時バッファの指定があれば調整
         let taskRunsAt = new Date();
+        if (typeof params.runsTasksAfterInSeconds === 'number') {
+            taskRunsAt = moment(taskRunsAt)
+                .add(params.runsTasksAfterInSeconds, 'seconds')
+                .toDate();
+        }
 
         // ウェブフックタスクを追加
         const webhookUrl =
@@ -72,7 +92,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             project: project,
             name: factory.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,
-            runsAt: taskRunsAt, // なるはやで実行
+            runsAt: taskRunsAt,
             remainingNumberOfTries: 3,
             numberOfTried: 0,
             executionResults: [],
@@ -97,7 +117,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     project: project,
                     name: factory.taskName.PlaceOrder,
                     status: factory.taskStatus.Ready,
-                    runsAt: taskRunsAt, // なるはやで実行
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
@@ -111,12 +131,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             // 期限切れor中止の場合は、タスクリストを作成する
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                // 取引処理中に期限が切れる可能性があるので、タスク実行日時にややバッファを設定
-                taskRunsAt = moment(taskRunsAt)
-                    // tslint:disable-next-line:no-magic-numbers
-                    .add(2, 'minutes')
-                    .toDate();
-
                 const cancelSeatReservationTaskAttributes: factory.task.IAttributes<factory.taskName.CancelSeatReservation> = {
                     project: project,
                     name: factory.taskName.CancelSeatReservation,
