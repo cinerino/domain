@@ -212,12 +212,17 @@ export function confirm<T extends factory.accountType>(params: {
                     agent: transaction.agent,
                     recipient: transaction.recipient,
                     amount: transaction.object.amount,
-                    fromLocation: {
-                        typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: (<IFromAccount>a.object.fromAccount).accountType,
-                        accountNumber: (<IFromAccount>a.object.fromAccount).accountNumber,
-                        name: fromLocationName
-                    },
+                    fromLocation: (a.object.fromAccount !== undefined)
+                        ? {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: (<IFromAccount>a.object.fromAccount).accountType,
+                            accountNumber: (<IFromAccount>a.object.fromAccount).accountNumber,
+                            name: fromLocationName
+                        }
+                        : {
+                            typeOf: transaction.agent.typeOf,
+                            name: fromLocationName
+                        },
                     toLocation: transaction.object.toLocation,
                     purpose: {
                         typeOf: transaction.typeOf,

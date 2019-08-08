@@ -233,23 +233,21 @@ export function authorize<T extends factory.accountType>(params: {
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.Account,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: (params.object.fromAccount !== undefined)
-                ? params.object.fromAccount.accountNumber
-                : '',
+            paymentMethodId: pendingTransaction.id,
             name: (typeof params.object.name === 'string')
                 ? params.object.name
                 : (params.object.fromAccount !== undefined)
                     ? String(params.object.fromAccount.accountType)
                     : '',
-            fromAccount: params.object.fromAccount,
-            toAccount: params.object.toAccount,
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: (params.object.currency !== undefined) ? params.object.currency : factory.priceCurrency.JPY,
                 value: params.object.amount
-            }
+            },
+            ...(params.object.fromAccount !== undefined) ? { fromAccount: params.object.fromAccount } : {},
+            ...(params.object.toAccount !== undefined) ? { toAccount: params.object.toAccount } : {}
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
