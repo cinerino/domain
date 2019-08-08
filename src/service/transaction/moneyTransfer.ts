@@ -80,7 +80,14 @@ export function start(
             object: {
                 clientUser: params.object.clientUser,
                 amount: params.object.amount,
-                toLocation: toLocation,
+                toLocation: (toLocation.typeOf === factory.pecorino.account.TypeOf.Account)
+                    ? {
+                        typeOf: toLocation.typeOf,
+                        accountType: (<factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>toLocation).accountType,
+                        accountNumber: (<factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>toLocation).accountNumber,
+                        name: toLocation.name
+                    }
+                    : toLocation,
                 description: params.object.description,
                 authorizeActions: []
             },
