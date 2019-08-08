@@ -1,7 +1,5 @@
 import * as mongoose from 'mongoose';
 
-import MultilingualStringSchemaType from '../schemaTypes/multilingualString';
-
 const modelName = 'Organization';
 
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
@@ -71,8 +69,8 @@ const schema = new mongoose.Schema(
             required: true
         },
         identifier: String,
-        name: MultilingualStringSchemaType,
-        legalName: MultilingualStringSchemaType,
+        name: mongoose.SchemaTypes.Mixed,
+        legalName: mongoose.SchemaTypes.Mixed,
         sameAs: String,
         url: String,
         parentOrganization: parentOrganizationSchema,

@@ -1,7 +1,5 @@
 import * as mongoose from 'mongoose';
 
-import MultilingualStringSchemaType from '../schemaTypes/multilingualString';
-
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
 const modelName = 'Place';
@@ -44,9 +42,9 @@ const schema = new mongoose.Schema(
             required: true
         },
         identifier: mongoose.SchemaTypes.Mixed,
-        name: MultilingualStringSchemaType,
-        description: MultilingualStringSchemaType,
-        address: MultilingualStringSchemaType,
+        name: mongoose.SchemaTypes.Mixed,
+        description: mongoose.SchemaTypes.Mixed,
+        address: mongoose.SchemaTypes.Mixed,
         branchCode: String,
         containedInPlace: containedInPlaceSchema,
         containsPlace: [containsPlaceSchema],

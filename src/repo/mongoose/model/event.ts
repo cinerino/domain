@@ -1,7 +1,5 @@
 import * as mongoose from 'mongoose';
 
-import MultilingualStringSchemaType from '../schemaTypes/multilingualString';
-
 const modelName = 'Event';
 
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
@@ -49,8 +47,8 @@ const schema = new mongoose.Schema(
             required: true
         },
         identifier: identifierSchema,
-        name: MultilingualStringSchemaType,
-        description: MultilingualStringSchemaType,
+        name: mongoose.SchemaTypes.Mixed,
+        description: mongoose.SchemaTypes.Mixed,
         doorTime: Date,
         duration: String,
         endDate: Date,
