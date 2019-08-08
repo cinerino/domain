@@ -2,6 +2,7 @@
  * 注文取引サービス
  */
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 
 import * as factory from '../../factory';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -61,6 +62,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+        let taskRunsAt = new Date();
 
         // ウェブフックタスクを追加
         const webhookUrl =
@@ -70,7 +72,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             project: project,
             name: factory.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,
-            runsAt: new Date(), // なるはやで実行
+            runsAt: taskRunsAt, // なるはやで実行
             remainingNumberOfTries: 3,
             numberOfTried: 0,
             executionResults: [],
@@ -95,7 +97,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     project: project,
                     name: factory.taskName.PlaceOrder,
                     status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
+                    runsAt: taskRunsAt, // なるはやで実行
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
@@ -109,11 +111,17 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
             // 期限切れor中止の場合は、タスクリストを作成する
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
+                // 取引処理中に期限が切れる可能性があるので、タスク実行日時にややバッファを設定
+                taskRunsAt = moment(taskRunsAt)
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(2, 'minutes')
+                    .toDate();
+
                 const cancelSeatReservationTaskAttributes: factory.task.IAttributes<factory.taskName.CancelSeatReservation> = {
                     project: project,
                     name: factory.taskName.CancelSeatReservation,
                     status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
@@ -126,7 +134,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     project: project,
                     name: factory.taskName.CancelCreditCard,
                     status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
@@ -139,7 +147,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     project: project,
                     name: factory.taskName.CancelAccount,
                     status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
@@ -152,7 +160,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     project: project,
                     name: factory.taskName.CancelPointAward,
                     status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
