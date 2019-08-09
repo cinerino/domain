@@ -1498,6 +1498,10 @@ export async function createPotentialActionsFromTransaction(params: {
                 sendOrder: sendOrderActionAttributes,
                 confirmReservation: confirmReservationActions,
                 givePointAward: givePointAwardActions
+            },
+            purpose: {
+                typeOf: params.transaction.typeOf,
+                id: params.transaction.id
             }
         }
     };
