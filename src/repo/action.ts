@@ -91,6 +91,38 @@ export class MongoRepository {
                     }
                 }
             }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.object.event !== undefined) {
+                if (params.object.event.id !== undefined) {
+                    if (Array.isArray(params.object.event.id.$in)) {
+                        andConditions.push({
+                            'object.event.id': {
+                                $exists: true,
+                                $in: params.object.event.id.$in
+                            }
+                        });
+                    }
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.object.acceptedOffer !== undefined) {
+                if (params.object.acceptedOffer.ticketedSeat !== undefined) {
+                    if (params.object.acceptedOffer.ticketedSeat.seatNumber !== undefined) {
+                        if (Array.isArray(params.object.acceptedOffer.ticketedSeat.seatNumber.$in)) {
+                            andConditions.push({
+                                'object.acceptedOffer.ticketedSeat.seatNumber': {
+                                    $exists: true,
+                                    $in: params.object.acceptedOffer.ticketedSeat.seatNumber.$in
+                                }
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -209,6 +241,92 @@ export class MongoRepository {
             andConditions.push({
                 startDate: { $lte: params.startThrough }
             });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.fromLocation !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.fromLocation.typeOf !== undefined) {
+                if (Array.isArray(params.fromLocation.typeOf.$in)) {
+                    andConditions.push({
+                        'fromLocation.typeOf': {
+                            $exists: true,
+                            $in: params.fromLocation.typeOf.$in
+                        }
+                    });
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.fromLocation.accountNumber !== undefined) {
+                if (Array.isArray(params.fromLocation.accountNumber.$in)) {
+                    andConditions.push({
+                        'fromLocation.accountNumber': {
+                            $exists: true,
+                            $in: params.fromLocation.accountNumber.$in
+                        }
+                    });
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.fromLocation.accountType !== undefined) {
+                if (Array.isArray(params.fromLocation.accountType.$in)) {
+                    andConditions.push({
+                        'fromLocation.accountType': {
+                            $exists: true,
+                            $in: params.fromLocation.accountType.$in
+                        }
+                    });
+                }
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.toLocation !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.toLocation.typeOf !== undefined) {
+                if (Array.isArray(params.toLocation.typeOf.$in)) {
+                    andConditions.push({
+                        'toLocation.typeOf': {
+                            $exists: true,
+                            $in: params.toLocation.typeOf.$in
+                        }
+                    });
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.toLocation.accountNumber !== undefined) {
+                if (Array.isArray(params.toLocation.accountNumber.$in)) {
+                    andConditions.push({
+                        'toLocation.accountNumber': {
+                            $exists: true,
+                            $in: params.toLocation.accountNumber.$in
+                        }
+                    });
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.toLocation.accountType !== undefined) {
+                if (Array.isArray(params.toLocation.accountType.$in)) {
+                    andConditions.push({
+                        'toLocation.accountType': {
+                            $exists: true,
+                            $in: params.toLocation.accountType.$in
+                        }
+                    });
+                }
+            }
         }
 
         return andConditions;

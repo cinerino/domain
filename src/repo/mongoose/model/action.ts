@@ -216,6 +216,26 @@ schema.index(
 );
 
 schema.index(
+    { 'object.event.id': 1, startDate: -1 },
+    {
+        name: 'searchByObjectEventId',
+        partialFilterExpression: {
+            'object.event.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'object.acceptedOffer.ticketedSeat.seatNumber': 1, startDate: -1 },
+    {
+        name: 'searchByObjectAcceptedOfferTicketedSeatSeatNumber',
+        partialFilterExpression: {
+            'object.acceptedOffer.ticketedSeat.seatNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'result.typeOf': 1, startDate: -1 },
     {
         name: 'searchByResultTypeOf',
@@ -231,6 +251,66 @@ schema.index(
         name: 'searchByResultId',
         partialFilterExpression: {
             'result.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'fromLocation.typeOf': 1, startDate: -1 },
+    {
+        name: 'searchByFromLocationTypeOf',
+        partialFilterExpression: {
+            'fromLocation.typeOf': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'fromLocation.accountNumber': 1, startDate: -1 },
+    {
+        name: 'searchByFromLocationAccountNumber',
+        partialFilterExpression: {
+            'fromLocation.accountNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'fromLocation.accountType': 1, startDate: -1 },
+    {
+        name: 'searchByFromLocationAccountType',
+        partialFilterExpression: {
+            'fromLocation.accountType': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'toLocation.typeOf': 1, startDate: -1 },
+    {
+        name: 'searchByToLocationTypeOf',
+        partialFilterExpression: {
+            'toLocation.typeOf': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'toLocation.accountNumber': 1, startDate: -1 },
+    {
+        name: 'searchByToLocationAccountNumber',
+        partialFilterExpression: {
+            'toLocation.accountNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'toLocation.accountType': 1, startDate: -1 },
+    {
+        name: 'searchByToLocationAccountType',
+        partialFilterExpression: {
+            'toLocation.accountType': { $exists: true }
         }
     }
 );
