@@ -313,7 +313,20 @@ async function validateOffers(
             offerWithDetails.ticketInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
         }
 
-        offersWithDetails.push({ ...offerWithDetails, additionalProperty: offer.additionalProperty });
+        offersWithDetails.push({
+            ...offerWithDetails,
+            additionalProperty: offer.additionalProperty,
+            id: <string>offerWithDetails.id,
+            ...{
+                ticketedSeat: {
+                    typeOf: factory.chevre.placeType.Seat,
+                    // seatingType?: ISeatingType;
+                    seatNumber: offerWithDetails.seatNumber,
+                    seatRow: '',
+                    seatSection: offerWithDetails.seatSection
+                }
+            }
+        });
     }));
 
     return offersWithDetails;
