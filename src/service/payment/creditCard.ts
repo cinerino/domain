@@ -307,7 +307,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
-    }) => {
+    }): Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>> => {
         const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
         const project = await repos.project.findById({ id: projectId });
         // tslint:disable-next-line:no-single-line-block-comment
@@ -390,7 +390,9 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.CreditCard> = {
             creditCardSales: alterTranResults
         };
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+
+        return <Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>>>
+            repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
 
