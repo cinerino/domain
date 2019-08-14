@@ -788,7 +788,7 @@ export function createOrderFromTransaction(params: {
                                 ticketType: {
                                     project: params.project,
                                     typeOf: <'Offer'>'Offer',
-                                    id: <string>requestedOffer.id,
+                                    id: requestedOffer.id,
                                     identifier: <string>requestedOffer.identifier,
                                     name: <factory.multilingualString>requestedOffer.name,
                                     description: <factory.multilingualString>requestedOffer.description,

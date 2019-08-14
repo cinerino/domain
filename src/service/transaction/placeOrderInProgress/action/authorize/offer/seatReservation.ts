@@ -97,7 +97,17 @@ export function create(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
-                event: event,
+                event: {
+                    endDate: event.endDate,
+                    eventStatus: event.eventStatus,
+                    id: event.id,
+                    location: event.location,
+                    name: event.name,
+                    project: event.project,
+                    startDate: event.startDate,
+                    superEvent: event.superEvent,
+                    typeOf: event.typeOf
+                },
                 acceptedOffer: acceptedOffers
             },
             agent: {
@@ -604,14 +614,9 @@ export function cancel(params: {
             const actionResult = action.result;
             let responseBody = actionResult.responseBody;
             const event = action.object.event;
-            const offers = event.offers;
-
-            if (offers.offeredThrough === undefined) {
-                offers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
-            }
 
             if (action.instrument === undefined || action.instrument === null) {
-                action.instrument = offers.offeredThrough;
+                action.instrument = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
             }
 
             switch (action.instrument.identifier) {
