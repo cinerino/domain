@@ -98,15 +98,23 @@ export function create(params: {
             object: {
                 typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
                 event: {
+                    additionalProperty: event.additionalProperty,
+                    alternateName: event.alternateName,
+                    alternativeHeadline: event.alternativeHeadline,
+                    description: event.description,
+                    doorTime: event.doorTime,
+                    duration: event.duration,
                     endDate: event.endDate,
                     eventStatus: event.eventStatus,
+                    headline: event.headline,
                     id: event.id,
                     location: event.location,
                     name: event.name,
                     project: event.project,
                     startDate: event.startDate,
                     superEvent: event.superEvent,
-                    typeOf: event.typeOf
+                    typeOf: event.typeOf,
+                    workPerformed: event.workPerformed
                 },
                 acceptedOffer: acceptedOffers
             },
