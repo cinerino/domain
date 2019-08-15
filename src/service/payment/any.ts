@@ -52,12 +52,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                typeOf: params.object.typeOf,
-                name: params.object.name,
-                amount: params.object.amount,
-                additionalProperty: params.object.additionalProperty
-            },
+            object: params.object,
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }

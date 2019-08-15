@@ -91,10 +91,9 @@ export function authorize(params: {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
+                ...params.object,
                 typeOf: factory.paymentMethodType.MovieTicket,
-                amount: 0,
-                movieTickets: params.object.movieTickets,
-                additionalProperty: params.object.additionalProperty
+                amount: 0
             },
             agent: transaction.agent,
             recipient: transaction.seller,

@@ -422,21 +422,20 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
 
         // クレジットカード仮売上アクションを取得
-        const authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
-            await repos.action.searchByPurpose({
-                typeOf: factory.actionType.AuthorizeAction,
-                purpose: {
-                    typeOf: factory.transactionType.PlaceOrder,
-                    id: params.transactionId
-                }
-            })
-                .then((actions) => actions
-                    .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard)
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                );
+        let authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>await repos.action.searchByPurpose({
+            typeOf: factory.actionType.AuthorizeAction,
+            purpose: {
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.transactionId
+            }
+        });
+        authorizeActions = authorizeActions
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
         await Promise.all(authorizeActions.map(async (action) => {
-            if (action.result !== undefined) {
-                debug('calling alterTran...');
+            // GMO取引が発生していれば取消
+            if (action.result !== undefined && action.result.entryTranArgs !== undefined && action.result.entryTranArgs !== null) {
                 await creditCardService.alterTran({
                     shopId: action.result.entryTranArgs.shopId,
                     shopPass: action.result.entryTranArgs.shopPass,
