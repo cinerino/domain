@@ -32,35 +32,35 @@ export type IConfirmOperation<T> = (repos: {
  * 取引開始
  */
 export function start(
-    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<factory.accountType>
+    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail
 ): IStartOperation<factory.transaction.moneyTransfer.ITransaction<factory.accountType>> {
     return async (repos: {
         accountService: pecorino.service.Account;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
-        debug(`${params.agent.id} is starting transfer transaction... amount:${params.object.amount}`);
+        debug(`${params.agent.id} is starting transfer transaction...`);
 
         const seller = await repos.seller.findById({ id: params.seller.id });
 
-        let toLocation: factory.transaction.moneyTransfer.IToLocation<factory.accountType> | undefined;
+        // let toLocation: factory.transaction.moneyTransfer.IToLocation<factory.accountType> | undefined;
 
-        if (params.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
-            // 口座存在確認
-            const toLocationParams = <factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>params.object.toLocation;
-            const searchAccountsResult = await repos.accountService.searchWithTotalCount<factory.accountType>({
-                limit: 1,
-                accountType: toLocationParams.accountType,
-                accountNumbers: [toLocationParams.accountNumber],
-                statuses: [pecorino.factory.accountStatusType.Opened]
-            });
-            toLocation = searchAccountsResult.data.shift();
-            if (toLocation === undefined) {
-                throw new factory.errors.NotFound('Account', 'To Location Not Found');
-            }
-        } else {
-            toLocation = params.object.toLocation;
-        }
+        // if (params.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+        //     // 口座存在確認
+        //     const toLocationParams = <factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>params.object.toLocation;
+        //     const searchAccountsResult = await repos.accountService.searchWithTotalCount<factory.accountType>({
+        //         limit: 1,
+        //         accountType: toLocationParams.accountType,
+        //         accountNumbers: [toLocationParams.accountNumber],
+        //         statuses: [pecorino.factory.accountStatusType.Opened]
+        //     });
+        //     toLocation = searchAccountsResult.data.shift();
+        //     if (toLocation === undefined) {
+        //         throw new factory.errors.NotFound('Account', 'To Location Not Found');
+        //     }
+        // } else {
+        //     toLocation = params.object.toLocation;
+        // }
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const startParams: factory.transaction.IStartParams<factory.transactionType.MoneyTransfer> = {
@@ -79,17 +79,17 @@ export function start(
             },
             object: {
                 clientUser: params.object.clientUser,
-                amount: params.object.amount,
-                toLocation: (toLocation.typeOf === factory.pecorino.account.TypeOf.Account)
-                    ? {
-                        typeOf: toLocation.typeOf,
-                        accountType: (<factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>toLocation).accountType,
-                        accountNumber: (<factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>toLocation).accountNumber,
-                        name: toLocation.name
-                    }
-                    : toLocation,
-                description: params.object.description,
-                authorizeActions: []
+                // amount: params.object.amount,
+                // toLocation: (toLocation.typeOf === factory.pecorino.account.TypeOf.Account)
+                //     ? {
+                //         typeOf: toLocation.typeOf,
+                //         accountType: (<factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>toLocation).accountType,
+                //         accountNumber: (<factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>toLocation).accountNumber,
+                //         name: toLocation.name
+                //     }
+                //     : toLocation,
+                authorizeActions: [],
+                ...(typeof params.object.description === 'string') ? { description: params.object.description } : {}
             },
             expires: params.expires
         };
@@ -159,7 +159,7 @@ export function confirm<T extends factory.accountType>(params: {
         });
         transaction.object.authorizeActions = authorizeActions;
 
-        // まずは一承認アクションのみ対応
+        // まずは1承認アクションのみ対応(順次拡張)
         const completedAuthorizeActions = authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
         if (completedAuthorizeActions.length !== 1) {
@@ -168,37 +168,35 @@ export function confirm<T extends factory.accountType>(params: {
 
         // 取引で指定された転送先口座への転送取引承認金額が合致しているかどうか確認
         type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType>;
-
         let authorizeAccountPaymentActions: factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[] = [];
 
-        if (transaction.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
-            const toLocation = <factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>transaction.object.toLocation;
-            authorizeAccountPaymentActions =
-                (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                    .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-                    // .filter((a) => (<IFromAccount>a.object.fromAccount).accountType === toLocation.accountType)
-                    .filter((a) => {
-                        return a.object.toAccount !== undefined
-                            && a.object.toAccount.accountType === toLocation.accountType
-                            && a.object.toAccount.accountNumber === toLocation.accountNumber;
-                    });
-        } else {
-            authorizeAccountPaymentActions =
-                (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                    .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-                    .filter((a) => {
-                        return a.object.toAccount === undefined
-                            && a.object.fromAccount !== undefined;
-                    });
-        }
+        // if (transaction.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+        //     const toLocation = <factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>transaction.object.toLocation;
+        //     authorizeAccountPaymentActions =
+        //         (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
+        //             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        //             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+        //             // .filter((a) => (<IFromAccount>a.object.fromAccount).accountType === toLocation.accountType)
+        //             .filter((a) => {
+        //                 return a.object.toAccount !== undefined
+        //                     && a.object.toAccount.accountType === toLocation.accountType
+        //                     && a.object.toAccount.accountNumber === toLocation.accountNumber;
+        //             });
+        // } else {
+        //     authorizeAccountPaymentActions =
+        //         (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
+        //             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        //             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+        //             .filter((a) => {
+        //                 return a.object.toAccount === undefined
+        //                     && a.object.fromAccount !== undefined;
+        //             });
+        // }
 
-        const authorizedAmount = authorizeAccountPaymentActions.reduce((a, b) => a + b.object.amount, 0);
-
-        if (authorizedAmount !== transaction.object.amount) {
-            throw new factory.errors.Argument('Transaction', 'Authorized amount not matched');
-        }
+        authorizeAccountPaymentActions =
+            (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+        // const authorizedAmount = authorizeAccountPaymentActions.reduce((a, b) => a + b.object.amount, 0);
 
         // 通貨転送アクション属性作成
         const moneyTransferActionAttributesList: factory.action.transfer.moneyTransfer.IAttributes<T>[] =
@@ -206,19 +204,23 @@ export function confirm<T extends factory.accountType>(params: {
                 const fromLocationName = (a.agent.name !== undefined)
                     ? (typeof a.agent.name === 'string') ? a.agent.name : a.agent.name.ja
                     : undefined;
+                const toLocationName = (a.recipient.name !== undefined)
+                    ? (typeof a.recipient.name === 'string') ? a.recipient.name : a.recipient.name.ja
+                    : undefined;
+
                 const actionResult = <factory.action.authorize.paymentMethod.account.IResult<T>>a.result;
 
                 return {
                     project: transaction.project,
                     typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
-                    description: transaction.object.description,
+                    ...(typeof a.object.notes === 'string') ? { description: a.object.notes } : {},
                     result: {},
                     object: {
                         pendingTransaction: actionResult.pendingTransaction
                     },
-                    agent: transaction.agent,
-                    recipient: transaction.recipient,
-                    amount: transaction.object.amount,
+                    agent: a.agent,
+                    recipient: a.recipient,
+                    amount: a.object.amount,
                     fromLocation: (a.object.fromAccount !== undefined)
                         ? {
                             typeOf: factory.pecorino.account.TypeOf.Account,
@@ -227,10 +229,20 @@ export function confirm<T extends factory.accountType>(params: {
                             name: fromLocationName
                         }
                         : {
-                            typeOf: transaction.agent.typeOf,
+                            typeOf: a.agent.typeOf,
                             name: fromLocationName
                         },
-                    toLocation: transaction.object.toLocation,
+                    toLocation: (a.object.toAccount !== undefined)
+                        ? {
+                            typeOf: factory.pecorino.account.TypeOf.Account,
+                            accountType: a.object.toAccount.accountType,
+                            accountNumber: a.object.toAccount.accountNumber,
+                            name: toLocationName
+                        }
+                        : {
+                            typeOf: a.recipient.typeOf,
+                            name: toLocationName
+                        },
                     purpose: {
                         typeOf: transaction.typeOf,
                         id: transaction.id
