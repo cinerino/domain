@@ -1,6 +1,8 @@
 /**
  * 通知サービス
  */
+// tslint:disable-next-line:no-implicit-dependencies no-submodule-imports
+import { MailData } from '@sendgrid/helpers/classes/mail';
 // tslint:disable-next-line:no-require-imports
 import sgMail = require('@sendgrid/mail');
 import * as createDebug from 'debug';
@@ -21,7 +23,6 @@ const debug = createDebug('cinerino-domain:service');
 
 /**
  * Eメールメッセージを送信する
- * @param actionAttributes Eメール送信アクション属性
  * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
  */
 export function sendEmailMessage(actionAttributes: factory.action.transfer.send.message.email.IAttributes) {
@@ -35,7 +36,7 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
         try {
             sgMail.setApiKey(credentials.sendGrid.apiKey);
             const emailMessage = actionAttributes.object;
-            const msg = {
+            const msg: MailData = {
                 to: {
                     name: emailMessage.toRecipient.name,
                     email: emailMessage.toRecipient.email
@@ -44,8 +45,8 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
                     name: emailMessage.sender.name,
                     email: emailMessage.sender.email
                 },
-                subject: emailMessage.about,
-                text: emailMessage.text,
+                ...(String(emailMessage.about).length > 0) ? { subject: String(emailMessage.about) } : {},
+                ...(String(emailMessage.text).length > 0) ? { text: String(emailMessage.text) } : {},
                 // html: '<strong>and easy to do anywhere, even with Node.js</strong>',
                 // categories: ['Transactional', 'My category'],
                 // 送信予定を追加することもできるが、タスクの実行予定日時でコントロールする想定
@@ -85,7 +86,6 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
 }
 
 /**
- * report to developers
  * 開発者に報告する
  * @see https://notify-bot.line.me/doc/ja/
  */
