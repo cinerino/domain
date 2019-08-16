@@ -196,34 +196,7 @@ export function start(
 /**
  * 取引確定
  */
-export function confirm(params: {
-    id: string;
-    agent: { id: string };
-    potentialActions?: {
-        returnOrder?: {
-            potentialActions?: {
-                /**
-                 * クレジットカード返金アクションについてカスタマイズする場合に指定
-                 */
-                refundCreditCard?: {
-                    object: {
-                        object: {
-                            paymentMethod: { paymentMethodId: string };
-                        }[];
-                    };
-                    potentialActions?: {
-                        sendEmailMessage?: {
-                            object?: factory.creativeWork.message.email.ICustomization;
-                        };
-                    };
-                }[];
-                // refundAccount?: refundAccountActions,
-                // refundMovieTicket?: refundMovieTicketActions,
-                // returnPointAward?: returnPointAwardActions
-            };
-        };
-    };
-}) {
+export function confirm(params: factory.transaction.returnOrder.IConfirmParams) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -240,8 +213,10 @@ export function confirm(params: {
             throw new factory.errors.Argument('transaction', 'Transaction already canceled');
         }
 
-        if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+        if (params.agent !== undefined && params.agent.id !== undefined) {
+            if (transaction.agent.id !== params.agent.id) {
+                throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            }
         }
 
         const order = transaction.object.order;
@@ -402,64 +377,71 @@ export function confirm(params: {
                 }));
 
         // ムビチケ着券返金アクション
-        const refundMovieTicketActions =
-            await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.MovieTicket>[]>payActions)
-                .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.MovieTicket)
-                .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>> => {
-                    const emailMessage = await emailMessageBuilder.createRefundMessage({
-                        order,
-                        paymentMethods: a.object.map((o) => o.paymentMethod)
-                    });
-                    const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
-                        project: transaction.project,
-                        typeOf: factory.actionType.SendAction,
-                        object: emailMessage,
-                        agent: {
-                            typeOf: seller.typeOf,
-                            id: seller.id,
-                            name: seller.name,
-                            url: seller.url
-                        },
-                        recipient: order.customer,
-                        potentialActions: {},
-                        purpose: {
-                            typeOf: order.typeOf,
-                            seller: order.seller,
-                            customer: order.customer,
-                            confirmationNumber: order.confirmationNumber,
-                            orderNumber: order.orderNumber,
-                            price: order.price,
-                            priceCurrency: order.priceCurrency,
-                            orderDate: order.orderDate
-                        }
-                    };
+        let refundMovieTicketActions: factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
+        const refundMovieTicket = params.potentialActions !== undefined
+            && params.potentialActions.returnOrder !== undefined
+            && params.potentialActions.returnOrder.potentialActions !== undefined
+            && params.potentialActions.returnOrder.potentialActions.refundMovieTicket === true;
+        if (refundMovieTicket) {
+            refundMovieTicketActions =
+                await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.MovieTicket>[]>payActions)
+                    .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.MovieTicket)
+                    .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>> => {
+                        const emailMessage = await emailMessageBuilder.createRefundMessage({
+                            order,
+                            paymentMethods: a.object.map((o) => o.paymentMethod)
+                        });
+                        const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
+                            project: transaction.project,
+                            typeOf: factory.actionType.SendAction,
+                            object: emailMessage,
+                            agent: {
+                                typeOf: seller.typeOf,
+                                id: seller.id,
+                                name: seller.name,
+                                url: seller.url
+                            },
+                            recipient: order.customer,
+                            potentialActions: {},
+                            purpose: {
+                                typeOf: order.typeOf,
+                                seller: order.seller,
+                                customer: order.customer,
+                                confirmationNumber: order.confirmationNumber,
+                                orderNumber: order.orderNumber,
+                                price: order.price,
+                                priceCurrency: order.priceCurrency,
+                                orderDate: order.orderDate
+                            }
+                        };
 
-                    return {
-                        project: transaction.project,
-                        typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
-                        object: a,
-                        agent: {
-                            typeOf: seller.typeOf,
-                            id: seller.id,
-                            name: seller.name,
-                            url: seller.url
-                        },
-                        recipient: order.customer,
-                        purpose: {
-                            typeOf: order.typeOf,
-                            seller: order.seller,
-                            customer: order.customer,
-                            confirmationNumber: order.confirmationNumber,
-                            orderNumber: order.orderNumber,
-                            price: order.price,
-                            priceCurrency: order.priceCurrency,
-                            orderDate: order.orderDate
-                        },
-                        potentialActions: {
-                            sendEmailMessage: sendEmailMessageActionAttributes
-                        }
-                    };
-                }));
+                        return {
+                            project: transaction.project,
+                            typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+                            object: a,
+                            agent: {
+                                typeOf: seller.typeOf,
+                                id: seller.id,
+                                name: seller.name,
+                                url: seller.url
+                            },
+                            recipient: order.customer,
+                            purpose: {
+                                typeOf: order.typeOf,
+                                seller: order.seller,
+                                customer: order.customer,
+                                confirmationNumber: order.confirmationNumber,
+                                orderNumber: order.orderNumber,
+                                price: order.price,
+                                priceCurrency: order.priceCurrency,
+                                orderDate: order.orderDate
+                            },
+                            potentialActions: {
+                                sendEmailMessage: sendEmailMessageActionAttributes
+                            }
+                        };
+                    }));
+        }
 
         // ポイントインセンティブの数だけ、返却アクションを作成
         const givePointActions = <factory.action.transfer.give.pointAward.IAction[]>actionsOnOrder
