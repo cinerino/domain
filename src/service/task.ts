@@ -43,7 +43,6 @@ export function executeByName<T extends factory.taskName>(params: {
         let task: factory.task.ITask<T> | null = null;
         try {
             task = await taskRepo.executeOneByName(params);
-            debug('task found', task);
         } catch (error) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
@@ -61,7 +60,6 @@ export function executeByName<T extends factory.taskName>(params: {
  * タスクを実行する
  */
 export function execute(task: factory.task.ITask<factory.taskName>): IOperation<void> {
-    debug('executing a task...', task);
     const now = new Date();
 
     return async (settings: IConnectionSettings) => {
@@ -80,7 +78,13 @@ export function execute(task: factory.task.ITask<factory.taskName>): IOperation<
             // 実行結果追加
             const result = {
                 executedAt: now,
-                error: error.stack
+                error: {
+                    ...error,
+                    code: error.code,
+                    message: error.message,
+                    name: error.name,
+                    stack: error.stack
+                }
             };
             // 失敗してもここではステータスを戻さない(Runningのまま待機)
             await taskRepo.pushExecutionResultById(task.id, task.status, result);
@@ -121,11 +125,12 @@ export function abort(params: {
         debug('abortedTask found', abortedTask);
 
         // 開発者へ報告
-        const lastResult = (abortedTask.executionResults.length > 0) ?
-            abortedTask.executionResults[abortedTask.executionResults.length - 1].error :
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            '';
+        const lastExecutionResult = (abortedTask.executionResults.length > 0)
+            ? abortedTask.executionResults[abortedTask.executionResults.length - 1]
+            : undefined;
+        const lastMessage: string = (lastExecutionResult !== undefined)
+            ? (typeof lastExecutionResult.error === 'string') ? lastExecutionResult.error : lastExecutionResult.error.message
+            : '';
 
         await NotificationService.report2developers(
             ABORT_REPORT_SUBJECT,
@@ -137,7 +142,7 @@ runsAt:${moment(abortedTask.runsAt)
 lastTriedAt:${moment(<Date>abortedTask.lastTriedAt)
                 .toISOString()}
 numberOfTried:${abortedTask.numberOfTried}
-lastResult:${lastResult}`
+lastMessage:${lastMessage}`
         )();
     };
 }
