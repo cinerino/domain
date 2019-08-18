@@ -241,7 +241,6 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
 
                 switch (action.instrument.identifier) {
                     case WebAPIIdentifier.COA:
-                        // tslint:disable-next-line:max-line-length
                         responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.COA>>responseBody;
 
                         // tslint:disable-next-line:no-suspicious-comment
@@ -261,14 +260,17 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                         } catch (error) {
                             let deleted = false;
                             // COAサービスエラーの場合ハンドリング
-                            // すでに取消済の場合こうなるので、okとする
                             // tslint:disable-next-line:no-single-line-block-comment
                             /* istanbul ignore if */
                             if (error.name === 'COAServiceError') {
-                                if (error.code < INTERNAL_SERVER_ERROR) {
-                                    if (action.actionStatus === factory.actionStatusType.CanceledActionStatus) {
+                                if (Number.isInteger(error.code) && error.code < INTERNAL_SERVER_ERROR) {
+                                    // すでに取消済の場合こうなるので、okとする
+                                    if (error.message === '座席取消失敗') {
                                         deleted = true;
                                     }
+                                    // if (action.actionStatus === factory.actionStatusType.CanceledActionStatus) {
+                                    //     deleted = true;
+                                    // }
                                 }
                             }
 
@@ -292,7 +294,6 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                             auth: chevreAuthClient
                         });
 
-                        // tslint:disable-next-line:max-line-length
                         responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.Chevre>>responseBody;
 
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
