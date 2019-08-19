@@ -280,6 +280,52 @@ export class CognitoRepository {
     }
 
     /**
+     * 削除
+     */
+    public async deleteById(params: {
+        userPooId: string;
+        userId: string;
+    }): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.cognitoIdentityServiceProvider.listUsers(
+                {
+                    UserPoolId: params.userPooId,
+                    Filter: `sub="${params.userId}"`
+                },
+                (listUsersErr, data) => {
+                    if (listUsersErr instanceof Error) {
+                        reject(listUsersErr);
+                    } else {
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore if: please write tests */
+                        if (data.Users === undefined) {
+                            reject(new factory.errors.NotFound('User'));
+                        } else {
+                            const user = data.Users.shift();
+                            if (user === undefined || user.Username === undefined) {
+                                reject(new factory.errors.NotFound('User'));
+                            } else {
+                                this.cognitoIdentityServiceProvider.adminDeleteUser(
+                                    {
+                                        UserPoolId: params.userPooId,
+                                        Username: user.Username
+                                    },
+                                    (err) => {
+                                        if (err instanceof Error) {
+                                            reject(err);
+                                        } else {
+                                            resolve();
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    }
+                });
+        });
+    }
+
+    /**
      * 退会
      */
     public async unregister(params: {
