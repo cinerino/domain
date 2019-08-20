@@ -200,8 +200,14 @@ export function search(params: {
             // 口座所有権を検索
             const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>(params.conditions);
             const accountNumbers = ownershipInfos.map((o) => o.typeOfGood.accountNumber);
-            const typeOfGood = <factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.AccountGoodType.Account>>
-                params.conditions.typeOfGood;
+
+            const typeOfGood = params.conditions.typeOfGood;
+            if (typeOfGood === undefined) {
+                throw new factory.errors.ArgumentNull('typeOfGood');
+            }
+            if (typeof typeOfGood.accountType !== 'string') {
+                throw new factory.errors.ArgumentNull('typeOfGood.accountType');
+            }
 
             if (accountNumbers.length > 0) {
                 if (project.settings === undefined) {

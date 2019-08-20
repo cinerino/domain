@@ -1,13 +1,9 @@
 /**
  * 会員プログラムサービス
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
-
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
-
-import { credentials } from '../credentials';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
@@ -24,18 +20,9 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
-import { handlePecorinoError } from '../errorHandler';
 import * as factory from '../factory';
 
 const debug = createDebug('cinerino-domain:service');
-
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
@@ -457,6 +444,8 @@ function processPlaceOrder(params: {
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
+        const now = new Date();
+
         const projectId = (params.registerActionAttributes.project !== undefined)
             ? params.registerActionAttributes.project.id
             : <string>process.env.PROJECT_ID;
@@ -501,111 +490,48 @@ function processPlaceOrder(params: {
         })(repos);
         debug('transaction started', transaction.id);
 
-        // 登録時、1ポイント追加される
-        const now = new Date();
-        const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+        // 新規登録かどうか、所有権で確認
+        const programMembershipOwnershipInfos = await repos.ownershipInfo.search<'ProgramMembership'>({
+            limit: 1,
             typeOfGood: {
-                typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                accountType: factory.accountType.Point
+                typeOf: 'ProgramMembership',
+                ids: [<string>programMembership.id]
             },
-            ownedBy: {
-                id: customer.id
-            },
-            ownedFrom: now,
-            ownedThrough: now
+            ownedBy: { id: customer.id }
         });
 
-        if (accountOwnershipInfos.length === 0) {
-            throw new factory.errors.NotFound('accountOwnershipInfos');
-        }
-
-        // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.award.point.IAttributes = {
-            project: transaction.project,
-            typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                transactionId: transaction.id,
-                amount: 1
-            },
-            agent: transaction.seller,
-            recipient: transaction.agent,
-            purpose: transaction
-        };
-        const action = await repos.action.start(actionAttributes);
-
-        let pointAPIEndpoint: string;
-
-        // Pecorinoオーソリ取得
-        let pointTransaction: factory.action.authorize.award.point.IPointTransaction;
-
-        try {
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-            const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
+        if (programMembershipOwnershipInfos.length === 0) {
+            // 新規登録時、1ポイント追加される
+            // ポイント口座を検索
+            const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+                typeOfGood: {
+                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                    accountType: factory.accountType.Point
+                },
+                ownedBy: { id: customer.id },
+                ownedFrom: now,
+                ownedThrough: now
             });
-            pointAPIEndpoint = depositService.options.endpoint;
+            if (accountOwnershipInfos.length === 0) {
+                throw new factory.errors.NotFound('accountOwnershipInfos');
+            }
+            const toAccount = accountOwnershipInfos[0].typeOfGood;
 
-            debug('starting pecorino pay transaction...', 1);
-            pointTransaction = await depositService.start({
-                typeOf: factory.pecorino.transactionType.Deposit,
-                agent: {
-                    typeOf: transaction.seller.typeOf,
-                    id: transaction.seller.id,
-                    name: transaction.seller.name.ja,
-                    url: transaction.seller.url
-                },
-                // 最大1ヵ月のオーソリ
-                expires: moment()
-                    .add(1, 'month')
-                    .toDate(),
-                recipient: {
-                    typeOf: transaction.agent.typeOf,
-                    id: transaction.agent.id,
-                    name: `Place Order Transaction ${transaction.id}`,
-                    url: transaction.agent.url
-                },
+            await PlaceOrderService.action.authorize.award.point.create({
+                agent: { id: transaction.agent.id },
+                transaction: { id: transaction.id },
                 object: {
                     amount: 1,
-                    description: '会員新規登録インセンティブ',
-                    toLocation: {
-                        typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: factory.accountType.Point,
-                        accountNumber: accountOwnershipInfos[0].typeOfGood.accountNumber
-                    }
+                    toAccountNumber: toAccount.accountNumber,
+                    notes: '会員新規登録インセンティブ'
                 }
+            })({
+                action: repos.action,
+                ownershipInfo: repos.ownershipInfo,
+                project: repos.project,
+                transaction: repos.transaction
             });
-            debug('pointTransaction started.', pointTransaction.id);
-        } catch (error) {
-            // actionにエラー結果を追加
-            try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ name: error.name, message: error.message } };
-                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
-            }
-
-            error = handlePecorinoError(error);
-            throw error;
         }
-
-        // アクションを完了
-        debug('ending authorize action...');
-        const actionResult: factory.action.authorize.award.point.IResult = {
-            price: 0, // JPYとして0円
-            amount: 1,
-            pointTransaction: pointTransaction,
-            pointAPIEndpoint: pointAPIEndpoint
-        };
-
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
 
         // 会員プログラムオファー承認
         await PlaceOrderService.action.authorize.offer.programMembership.create({

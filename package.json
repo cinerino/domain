@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@chevre/api-nodejs-client": "^1.0.0",
-    "@cinerino/factory": "1.0.0-alpha.150",
+    "@cinerino/factory": "1.0.0-alpha.151",
     "@motionpicture/coa-service": "7.0.0-alpha.0",
     "@motionpicture/gmo-service": "^4.3.0",
     "@movieticket/reserve-api-nodejs-client": "^1.0.1",

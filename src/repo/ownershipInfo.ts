@@ -39,71 +39,72 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        const typeOfGood = <factory.ownershipInfo.ITypeOfGoodSearchConditions<factory.ownershipInfo.IGoodType>>params.typeOfGood;
+        const typeOfGood = params.typeOfGood;
         if (typeOfGood !== undefined) {
-            andConditions.push({
-                'typeOfGood.typeOf': {
-                    $exists: true,
-                    $eq: typeOfGood.typeOf
-                }
-            });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (typeof typeOfGood.typeOf === 'string') {
+                andConditions.push({
+                    'typeOfGood.typeOf': {
+                        $exists: true,
+                        $eq: typeOfGood.typeOf
+                    }
+                });
+            }
 
-            switch (typeOfGood.typeOf) {
-                case factory.ownershipInfo.AccountGoodType.Account:
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (typeOfGood.accountType !== undefined) {
-                        andConditions.push({
-                            'typeOfGood.accountType': {
-                                $exists: true,
-                                $eq: typeOfGood.accountType
-                            }
-                        });
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (typeof typeOfGood.id === 'string') {
+                andConditions.push({
+                    'typeOfGood.id': {
+                        $exists: true,
+                        $eq: typeOfGood.id
                     }
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (typeOfGood.accountNumber !== undefined) {
-                        andConditions.push({
-                            'typeOfGood.accountNumber': {
-                                $exists: true,
-                                $eq: typeOfGood.accountNumber
-                            }
-                        });
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(typeOfGood.ids)) {
+                andConditions.push({
+                    'typeOfGood.id': {
+                        $exists: true,
+                        $in: typeOfGood.ids
                     }
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (typeOfGood.accountNumbers !== undefined) {
-                        andConditions.push({
-                            'typeOfGood.accountNumber': {
-                                $exists: true,
-                                $in: typeOfGood.accountNumbers
-                            }
-                        });
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (typeof typeOfGood.accountType === 'string') {
+                andConditions.push({
+                    'typeOfGood.accountType': {
+                        $exists: true,
+                        $eq: typeOfGood.accountType
                     }
-                    break;
-                case factory.chevre.reservationType.EventReservation:
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (typeOfGood.id !== undefined) {
-                        andConditions.push({
-                            'typeOfGood.id': {
-                                $exists: true,
-                                $eq: typeOfGood.id
-                            }
-                        });
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (typeof typeOfGood.accountNumber === 'string') {
+                andConditions.push({
+                    'typeOfGood.accountNumber': {
+                        $exists: true,
+                        $eq: typeOfGood.accountNumber
                     }
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (typeOfGood.ids !== undefined) {
-                        andConditions.push({
-                            'typeOfGood.id': {
-                                $exists: true,
-                                $in: typeOfGood.ids
-                            }
-                        });
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(typeOfGood.accountNumbers)) {
+                andConditions.push({
+                    'typeOfGood.accountNumber': {
+                        $exists: true,
+                        $in: typeOfGood.accountNumbers
                     }
-                    break;
-                default:
+                });
             }
         }
 
