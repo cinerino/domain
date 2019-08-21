@@ -488,7 +488,6 @@ function processPlaceOrder(params: {
             seller: { typeOf: seller.typeOf, id: seller.id },
             object: {}
         })(repos);
-        debug('transaction started', transaction.id);
 
         // 新規登録かどうか、所有権で確認
         const programMembershipOwnershipInfos = await repos.ownershipInfo.search<'ProgramMembership'>({
@@ -566,7 +565,6 @@ function processPlaceOrder(params: {
             },
             purpose: transaction
         })(repos);
-        debug('creditCard authorization created.');
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -581,13 +579,10 @@ function processPlaceOrder(params: {
             id: transaction.id,
             agent: { id: params.registerActionAttributes.agent.id, ...profile }
         })(repos);
-        debug('customer contact set.');
 
         // 取引確定
-        debug('confirming transaction...', transaction.id);
-
         return PlaceOrderService.confirm({
-            project: project,
+            project: { typeOf: project.typeOf, id: project.id },
             id: transaction.id,
             agent: { id: params.registerActionAttributes.agent.id },
             result: {

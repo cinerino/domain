@@ -1,45 +1,45 @@
 const domain = require('../lib');
 const mongoose = require('mongoose');
 
+const project = { typeOf: 'Project', id: process.env.PROJECT_ID };
+
 async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
-    const project = {
-        typeOf: 'Project',
-        id: 'cinerino'
-    };
-
-    const sellerRepo = new domain.repository.Seller(mongoose.connection);
-    const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
-    const eventRepo = new domain.repository.Event(mongoose.connection);
-    const paymentMethodRepo = new domain.repository.PaymentMethod(mongoose.connection);
-    const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
-    const orderRepo = new domain.repository.Order(mongoose.connection);
-    const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-    const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const taskRepo = new domain.repository.Task(mongoose.connection);
-    const actionRepo = new domain.repository.Action(mongoose.connection);
+    const cursor = await taskRepo.taskModel.find(
+        {
+            // _id: '5bd9c9d69d1c011924cceb35',
+            name: domain.factory.taskName.RegisterProgramMembership,
+            status: domain.factory.taskStatus.Ready
+        },
+        {
+            _id: 1,
+            project: 1
+        }
+    )
+        .cursor();
+    console.log('tasks found');
 
-    let result = await sellerRepo.organizationModel.updateMany({}, { project: project }).exec();
-    console.log(result);
-    // result = await programMembershipRepo.programMembershipModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await eventRepo.eventModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await paymentMethodRepo.paymentMethodModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await invoiceRepo.invoiceModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await orderRepo.orderModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await ownershipInfoRepo.ownershipInfoModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await transactionRepo.transactionModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await actionRepo.actionModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
-    // result = await taskRepo.taskModel.updateMany({}, { project: project }).exec();
-    // console.log(result);
+    let i = 0;
+    await cursor.eachAsync(async (doc) => {
+        const task = doc.toObject();
+
+        if (task.project === undefined || task.project === null) {
+            i += 1;
+            await taskRepo.taskModel.findOneAndUpdate(
+                { _id: task.id },
+                {
+                    project: project,
+                    'data.project': project,
+                    'data.object.itemOffered.project': project
+                }
+            ).exec();
+        }
+        console.log('added', task.id, i);
+    });
+
+    console.log(i, 'tasks project added');
 }
 
 main().then(console.log).catch(console.error);
