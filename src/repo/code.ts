@@ -38,6 +38,26 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.id !== undefined) {
+            if (Array.isArray(params.id.$in)) {
+                andConditions.push({
+                    _id: { $in: params.id.$in }
+                });
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.code !== undefined) {
+            if (Array.isArray(params.code.$in)) {
+                andConditions.push({
+                    code: { $exists: true, $in: params.code.$in }
+                });
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         const object = <factory.authorization.IObjectSearchConditions>params.object;
         if (object !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
