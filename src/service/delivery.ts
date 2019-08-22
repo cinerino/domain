@@ -38,7 +38,6 @@ export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.owners
  * 注文を配送する
  */
 export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
@@ -90,10 +89,10 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         }
 
         // アクション完了
-        debug('ending action...');
-        const result: factory.action.transfer.send.order.IResult = {
-            ownershipInfos: ownershipInfos
-        };
+        // const result: factory.action.transfer.send.order.IResult = {
+        //     ownershipInfos: ownershipInfos
+        // };
+        const result: factory.action.transfer.send.order.IResult = ownershipInfos;
         await repos.action.complete({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, result: result });
 
         // 潜在アクション

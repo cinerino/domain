@@ -124,18 +124,16 @@ export class MongoRepository {
         data: IData;
         validFrom: Date;
         expiresInSeconds: number;
-    }): Promise<ICode> {
+    }): Promise<factory.authorization.IAuthorization> {
         const code = uuid.v4();
 
-        await this.save({
+        return this.save({
             project: params.project,
             code: code,
             data: params.data,
             validFrom: params.validFrom,
             expiresInSeconds: params.expiresInSeconds
         });
-
-        return code;
     }
 
     /**
@@ -213,12 +211,12 @@ export class MongoRepository {
         data: IData;
         validFrom: Date;
         expiresInSeconds: number;
-    }): Promise<void> {
+    }): Promise<factory.authorization.IAuthorization> {
         const validUntil = moment(params.validFrom)
             .add(params.expiresInSeconds, 'seconds')
             .toDate();
 
-        await this.authorizationModel.create({
+        return this.authorizationModel.create({
             project: params.project,
             typeOf: 'Authorization',
             code: params.code,

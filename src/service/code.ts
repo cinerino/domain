@@ -5,9 +5,69 @@ import * as jwt from 'jsonwebtoken';
 
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { ICode, MongoRepository as CodeRepo } from '../repo/code';
+import { ICode, IData, MongoRepository as CodeRepo } from '../repo/code';
 
 export type IToken = string;
+
+/**
+ * コードを発行する
+ */
+export function publish(params: {
+    project: factory.project.IProject;
+    agent: factory.action.IParticipant;
+    recipient: factory.action.IParticipant;
+    object: IData;
+    purpose: any;
+    validFrom: Date;
+    expiresInSeconds: number;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        code: CodeRepo;
+    }): Promise<factory.authorization.IAuthorization> => {
+        const actionAttributes: factory.action.authorize.IAttributes<any, any> = {
+            project: params.project,
+            typeOf: factory.actionType.AuthorizeAction,
+            agent: params.agent,
+            recipient: params.recipient,
+            object: params.object,
+            purpose: params.purpose
+        };
+        const action = await repos.action.start(actionAttributes);
+
+        let authorization: factory.authorization.IAuthorization;
+
+        try {
+            authorization = await repos.code.publish({
+                project: params.project,
+                data: params.object,
+                validFrom: params.validFrom,
+                expiresInSeconds: params.expiresInSeconds
+            });
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            // JWTエラーをハンドリング
+            if (error instanceof jwt.TokenExpiredError) {
+                throw new factory.errors.Argument('token', `${error.message} expiredAt:${error.expiredAt}`);
+            }
+
+            throw error;
+        }
+
+        const result: factory.authorization.IAuthorization = authorization;
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+
+        return authorization;
+    };
+}
+
 /**
  * コードをトークンに変換する
  */
@@ -42,6 +102,7 @@ export function getToken(params: {
         });
     };
 }
+
 export function verifyToken<T>(params: {
     project: factory.project.IProject;
     agent: factory.action.check.token.IAgent;
