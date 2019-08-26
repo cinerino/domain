@@ -848,8 +848,6 @@ export function createOrderFromTransaction(params: {
                                     additionalProperty: undefined,
                                     maximumAttendeeCapacity: undefined,
                                     remainingAttendeeCapacity: undefined,
-                                    checkInCount: undefined,
-                                    attendeeCount: undefined,
                                     offers: undefined,
                                     workPerformed: {
                                         ...event.superEvent.workPerformed,
@@ -1439,7 +1437,7 @@ export async function createPotentialActionsFromTransaction(params: {
     /* istanbul ignore if */
     if (programMembershipOffers.length > 0) {
         registerProgramMembershipTaskAttributes.push(...programMembershipOffers.map((o) => {
-            const actionAttributes: factory.action.interact.register.programMembership.IAttributes = {
+            const data: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
                 project: params.transaction.project,
                 typeOf: factory.actionType.RegisterAction,
                 agent: params.transaction.agent,
@@ -1461,14 +1459,14 @@ export async function createPotentialActionsFromTransaction(params: {
                 .toDate();
 
             return {
-                project: actionAttributes.project,
+                project: data.project,
                 name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
                 status: factory.taskStatus.Ready,
                 runsAt: runsAt,
                 remainingNumberOfTries: 10,
                 numberOfTried: 0,
                 executionResults: [],
-                data: actionAttributes
+                data: data
             };
         }));
     }

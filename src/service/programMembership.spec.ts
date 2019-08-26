@@ -95,6 +95,7 @@ describe('会員プログラムに登録する', () => {
                 memberOf: { membershipNumber: 'membershipNumber' }
             },
             object: {
+                typeOf: 'Offer',
                 itemOffered: {
                     id: 'programMembershipId',
                     offers: [],

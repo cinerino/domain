@@ -50,6 +50,7 @@ export type IRegisterOperation<T> = (repos: {
 /**
  * 会員プログラム登録タスクを作成する
  */
+// tslint:disable-next-line:max-func-body-length
 export function createRegisterTask(params: {
     agent: factory.person.IPerson;
     seller: {
@@ -148,7 +149,7 @@ export function createRegisterTask(params: {
             }
         };
         // 登録アクション属性を作成
-        const registerActionAttributes: factory.action.interact.register.programMembership.IAttributes = {
+        const data: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
             project: programMembership.project,
             typeOf: factory.actionType.RegisterAction,
             agent: params.agent,
@@ -157,14 +158,14 @@ export function createRegisterTask(params: {
         };
         // 会員プログラム登録タスクを作成する
         const taskAttributes: factory.task.IAttributes<factory.taskName.RegisterProgramMembership> = {
-            project: registerActionAttributes.project,
+            project: data.project,
             name: factory.taskName.RegisterProgramMembership,
             status: factory.taskStatus.Ready,
             runsAt: now,
             remainingNumberOfTries: 10,
             numberOfTried: 0,
             executionResults: [],
-            data: registerActionAttributes
+            data: data
         };
 
         return repos.task.save<factory.taskName.RegisterProgramMembership>(taskAttributes);
@@ -176,8 +177,9 @@ export function createRegisterTask(params: {
  */
 // tslint:disable-next-line:max-func-body-length
 export function register(
-    params: factory.action.interact.register.programMembership.IAttributes
+    params: factory.task.IData<factory.taskName.RegisterProgramMembership>
 ): IRegisterOperation<void> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         creditCard: CreditCardRepo;
@@ -203,33 +205,48 @@ export function register(
         if (customer.memberOf.membershipNumber === undefined) {
             throw new factory.errors.NotFound('params.agent.memberOf.membershipNumber');
         }
-        const programMembershipId = params.object.itemOffered.id;
+
+        const programMembership = params.object.itemOffered;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (programMembershipId === undefined) {
-            throw new factory.errors.NotFound('params.object.itemOffered.id');
+        if (programMembership.id === undefined) {
+            throw new factory.errors.ArgumentNull('ProgramMembership ID');
         }
 
         const programMemberships = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
             typeOfGood: {
-                typeOf: 'ProgramMembership'
+                typeOf: 'ProgramMembership',
+                ids: [programMembership.id]
             },
-            ownedBy: {
-                id: customer.id
-            },
+            ownedBy: { id: customer.id },
             ownedFrom: now,
             ownedThrough: now
         });
         // すでに会員プログラムに加入済であれば何もしない
-        const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.id === params.object.itemOffered.id);
+        const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.id === programMembership.id);
         if (selectedProgramMembership !== undefined) {
             debug('Already registered.');
 
             return;
         }
 
+        // 新規登録かどうか、所有権で確認
+        // const programMembershipOwnershipInfos = await repos.ownershipInfo.search<'ProgramMembership'>({
+        //     limit: 1,
+        //     typeOfGood: {
+        //         typeOf: 'ProgramMembership',
+        //         ids: [programMembership.id]
+        //     },
+        //     ownedBy: { id: customer.id }
+        // });
+        // const isNewRegister = programMembershipOwnershipInfos.length === 0;
+
         // アクション開始
-        const action = await repos.action.start(params);
+        const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = {
+            ...params,
+            object: programMembership
+        };
+        const action = await repos.action.start(registerActionAttibutes);
 
         let order: factory.order.IOrder;
         let lockNumber: number | undefined;
@@ -238,7 +255,7 @@ export function register(
             lockNumber = await repos.registerActionInProgressRepo.lock(
                 {
                     membershipNumber: customer.memberOf.membershipNumber,
-                    programMembershipId: programMembershipId
+                    programMembershipId: programMembership.id
                 },
                 action.id
             );
@@ -264,7 +281,7 @@ export function register(
                 if (lockNumber !== undefined) {
                     await repos.registerActionInProgressRepo.unlock({
                         membershipNumber: customer.memberOf.membershipNumber,
-                        programMembershipId: programMembershipId
+                        programMembershipId: programMembership.id
                     });
                 }
             } catch (error) {
@@ -430,7 +447,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
  * 会員プログラム登録アクション属性から、会員プログラムを注文する
  */
 function processPlaceOrder(params: {
-    registerActionAttributes: factory.action.interact.register.programMembership.IAttributes;
+    registerActionAttributes: factory.task.IData<factory.taskName.RegisterProgramMembership>;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -445,25 +462,22 @@ function processPlaceOrder(params: {
         ownershipInfo: OwnershipInfoRepo;
     }) => {
         const now = new Date();
+        const registerObject = params.registerActionAttributes.object;
 
         const projectId = (params.registerActionAttributes.project !== undefined)
             ? params.registerActionAttributes.project.id
             : <string>process.env.PROJECT_ID;
         const project = await repos.project.findById({ id: projectId });
 
-        const programMembership = params.registerActionAttributes.object.itemOffered;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (programMembership.offers === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership.offers');
-        }
-        const acceptedOffer = params.registerActionAttributes.object;
+        const acceptedOffer = registerObject;
+        const programMembership = acceptedOffer.itemOffered;
         const seller = programMembership.hostingOrganization;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (seller === undefined) {
             throw new factory.errors.NotFound('ProgramMembership.hostingOrganization');
         }
+
         const customer = (<factory.person.IPerson>params.registerActionAttributes.agent);
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
