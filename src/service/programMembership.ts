@@ -244,7 +244,14 @@ export function register(
         // アクション開始
         const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = {
             ...params,
-            object: programMembership
+            object: {
+                typeOf: programMembership.typeOf,
+                id: programMembership.id,
+                hostingOrganization: programMembership.hostingOrganization,
+                name: programMembership.name,
+                programName: programMembership.programName,
+                project: programMembership.project
+            }
         };
         const action = await repos.action.start(registerActionAttibutes);
 
@@ -514,36 +521,41 @@ function processPlaceOrder(params: {
         });
 
         if (programMembershipOwnershipInfos.length === 0) {
-            // 新規登録時、1ポイント追加される
-            // ポイント口座を検索
-            const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-                typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                    accountType: factory.accountType.Point
-                },
-                ownedBy: { id: customer.id },
-                ownedFrom: now,
-                ownedThrough: now
-            });
-            if (accountOwnershipInfos.length === 0) {
-                throw new factory.errors.NotFound('accountOwnershipInfos');
-            }
-            const toAccount = accountOwnershipInfos[0].typeOfGood;
-
-            await PlaceOrderService.action.authorize.award.point.create({
-                agent: { id: transaction.agent.id },
-                transaction: { id: transaction.id },
-                object: {
-                    amount: 1,
-                    toAccountNumber: toAccount.accountNumber,
-                    notes: '会員新規登録インセンティブ'
+            // 新規登録時の獲得ポイント
+            const membershipPointsEarned = programMembership.membershipPointsEarned;
+            if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
+                // ポイント口座を検索
+                const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+                    typeOfGood: {
+                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                        accountType: factory.accountType.Point
+                    },
+                    ownedBy: { id: customer.id },
+                    ownedFrom: now,
+                    ownedThrough: now
+                });
+                if (accountOwnershipInfos.length === 0) {
+                    throw new factory.errors.NotFound('accountOwnershipInfos');
                 }
-            })({
-                action: repos.action,
-                ownershipInfo: repos.ownershipInfo,
-                project: repos.project,
-                transaction: repos.transaction
-            });
+                const toAccount = accountOwnershipInfos[0].typeOfGood;
+
+                await PlaceOrderService.action.authorize.award.point.create({
+                    agent: { id: transaction.agent.id },
+                    transaction: { id: transaction.id },
+                    object: {
+                        amount: Number(membershipPointsEarned.value),
+                        toAccountNumber: toAccount.accountNumber,
+                        notes: (typeof membershipPointsEarned.name === 'string')
+                            ? membershipPointsEarned.name
+                            : programMembership.programName
+                    }
+                })({
+                    action: repos.action,
+                    ownershipInfo: repos.ownershipInfo,
+                    project: repos.project,
+                    transaction: repos.transaction
+                });
+            }
         }
 
         // 会員プログラムオファー承認
