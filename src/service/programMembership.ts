@@ -250,7 +250,8 @@ export function register(
                 hostingOrganization: programMembership.hostingOrganization,
                 name: programMembership.name,
                 programName: programMembership.programName,
-                project: programMembership.project
+                project: programMembership.project,
+                award: programMembership.award
             }
         };
         const action = await repos.action.start(registerActionAttibutes);
