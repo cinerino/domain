@@ -4,41 +4,23 @@ const modelName = 'ProgramMembership';
 
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
-const hostingOrganizationSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const offerSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 会員プログラムスキーマ
  */
 const schema = new mongoose.Schema(
     {
+        award: [mongoose.SchemaTypes.Mixed],
+        description: String,
+        hostingOrganization: mongoose.SchemaTypes.Mixed,
+        membershipPointsEarned: mongoose.SchemaTypes.Mixed,
+        name: String,
+        offers: [mongoose.SchemaTypes.Mixed],
+        programName: String,
         project: mongoose.SchemaTypes.Mixed,
         typeOf: {
             type: String,
             required: true
-        },
-        hostingOrganization: hostingOrganizationSchema,
-        programName: {
-            type: String,
-            required: true
-        },
-        award: [String],
-        offers: [offerSchema]
+        }
     },
     {
         collection: 'programMemberships',
