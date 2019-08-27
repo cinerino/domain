@@ -391,7 +391,8 @@ export function create(params: {
 
             const freeSeat = section.listFreeSeat.find((s) => s.seatNum === offer.seatNumber);
             if (freeSeat === undefined) {
-                throw new factory.errors.NotFound('Available Seat');
+                // throw new factory.errors.NotFound('Available Seat');
+                throw new factory.errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
             }
 
             const spseatAdd1 = (typeof freeSeat.spseatAdd1 === 'number') ? freeSeat.spseatAdd1 : 0;
@@ -466,9 +467,13 @@ export function create(params: {
                 // 失敗したら仕方ない
             }
 
-            // メッセージ「座席取得失敗」の場合は、座席の重複とみなす
-            if (error.message === '座席取得失敗') {
-                throw new factory.errors.AlreadyInUse('action.object', ['offers'], error.message);
+            // if (error.message === '座席取得失敗') {
+            //     throw new factory.errors.AlreadyInUse('action.object', ['offers'], error.message);
+            // }
+
+            // メッセージ「既に予約済みです」の場合は、座席の重複とみなす
+            if (error.message === '既に予約済みです') {
+                throw new factory.errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
             }
 
             // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
