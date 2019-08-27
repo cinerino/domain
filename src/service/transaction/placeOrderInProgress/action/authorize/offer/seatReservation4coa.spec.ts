@@ -1231,7 +1231,7 @@ describe('action.authorize.seatReservation.create()', () => {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
         };
-        const updTmpReserveSeatResult = new Error('座席取得失敗');
+        const updTmpReserveSeatResult = new Error('既に予約済みです');
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
