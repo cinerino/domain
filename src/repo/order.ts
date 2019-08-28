@@ -399,6 +399,7 @@ export class MongoRepository {
             { orderNumber: params.orderNumber },
             { orderStatus: params.orderStatus },
             {
+                new: true,
                 projection: {
                     __v: 0,
                     createdAt: 0,
@@ -428,6 +429,7 @@ export class MongoRepository {
                 dateReturned: params.dateReturned
             },
             {
+                new: true,
                 projection: {
                     __v: 0,
                     createdAt: 0,
