@@ -243,59 +243,20 @@ export interface IConfirmResultOrderParams {
     };
 }
 
-/**
- * 注文通知パラメータ
- */
-export interface IInformOrderParams {
-    /**
-     * 通知先
-     */
-    recipient?: {
-        /**
-         * 通知URL
-         */
-        url?: string;
-    };
-}
-
-export interface IPotentialActionsParams {
-    order?: {
-        potentialActions?: {
-            informOrder?: IInformOrderParams[];
-            sendOrder?: {
-                potentialActions?: {
-                    informOrder?: IInformOrderParams[];
-                };
-            };
-        };
-    };
-}
-
-export interface IConfirmParams {
+export interface IConfirmParams extends factory.transaction.placeOrder.IConfirmParams {
     project: factory.chevre.project.IProject;
-    /**
-     * 取引ID
-     */
-    id: string;
-    /**
-     * 取引進行者
-     */
-    agent: { id: string };
     result: {
         order: IConfirmResultOrderParams;
     };
-    potentialActions?: IPotentialActionsParams;
-    options: {
-        /**
-         * 注文配送メールを送信するかどうか
-         */
-        sendEmailMessage?: boolean;
-        email?: factory.creativeWork.message.email.ICustomization;
-        /**
-         * ムビチケバリデーションを適用するかどうか
-         */
-        validateMovieTicket?: boolean;
-    };
+    /**
+     * 注文配送メールを送信するかどうか
+     */
+    sendEmailMessage?: boolean;
+    email?: factory.creativeWork.message.email.ICustomization;
+    /**
+     * ムビチケバリデーションを適用するかどうか
+     */
+    validateMovieTicket?: boolean;
 }
 
 /**
@@ -324,8 +285,10 @@ export function confirm(params: IConfirmParams) {
             throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
         }
 
-        if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours');
+        if (params.agent !== undefined && typeof params.agent.id === 'string') {
+            if (transaction.agent.id !== params.agent.id) {
+                throw new factory.errors.Forbidden('A specified transaction is not yours');
+            }
         }
 
         const project: factory.project.IProject = (transaction.project !== undefined)
@@ -351,7 +314,7 @@ export function confirm(params: IConfirmParams) {
         validateTransaction(transaction);
 
         // ムビチケ条件が整っているかどうか確認
-        if (params.options.validateMovieTicket === true) {
+        if (params.validateMovieTicket === true) {
             validateMovieTicket(transaction);
         }
 
@@ -442,8 +405,8 @@ export function confirm(params: IConfirmParams) {
             transaction: transaction,
             order: order,
             seller: seller,
-            sendEmailMessage: params.options.sendEmailMessage,
-            email: params.options.email,
+            sendEmailMessage: params.sendEmailMessage,
+            email: params.email,
             potentialActions: params.potentialActions
         });
 
@@ -1098,7 +1061,7 @@ export async function createPotentialActionsFromTransaction(params: {
     seller: ISeller;
     sendEmailMessage?: boolean;
     email?: factory.creativeWork.message.email.ICustomization;
-    potentialActions?: IPotentialActionsParams;
+    potentialActions?: factory.transaction.placeOrder.IConfirmPotentialActionsParams;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project

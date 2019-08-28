@@ -1,7 +1,7 @@
 /**
  * 注文返品取引サービス
  */
-import * as createDebug from 'debug';
+// import * as createDebug from 'debug';
 
 import * as emailMessageBuilder from '../../emailMessageBuilder';
 import * as factory from '../../factory';
@@ -14,7 +14,7 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-const debug = createDebug('cinerino-domain:service');
+// const debug = createDebug('cinerino-domain:service');
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
@@ -220,9 +220,10 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
         }
 
         const order = transaction.object.order;
-        const seller = await repos.seller.findById({
-            id: order.seller.id
-        });
+        const seller = await repos.seller.findById(
+            { id: order.seller.id },
+            { paymentAccepted: 0 } // 決済情報は不要
+        );
 
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
@@ -465,9 +466,39 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                 };
             }
         );
+
+        const informOrderActionsOnReturn: factory.action.interact.inform.IAttributes<any, any>[] = [];
+        if (params.potentialActions !== undefined) {
+            if (params.potentialActions.returnOrder !== undefined) {
+                if (params.potentialActions.returnOrder.potentialActions !== undefined) {
+                    if (Array.isArray(params.potentialActions.returnOrder.potentialActions.informOrder)) {
+                        params.potentialActions.returnOrder.potentialActions.informOrder.forEach((a) => {
+                            if (a.recipient !== undefined) {
+                                if (typeof a.recipient.url === 'string') {
+                                    informOrderActionsOnReturn.push({
+                                        agent: transaction.seller,
+                                        object: order,
+                                        project: transaction.project,
+                                        // purpose: params.transaction,
+                                        recipient: {
+                                            id: transaction.agent.id,
+                                            name: transaction.agent.name,
+                                            typeOf: transaction.agent.typeOf,
+                                            url: a.recipient.url
+                                        },
+                                        typeOf: factory.actionType.InformAction
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
             project: transaction.project,
-            typeOf: <factory.actionType.ReturnAction>factory.actionType.ReturnAction,
+            typeOf: factory.actionType.ReturnAction,
             object: {
                 typeOf: order.typeOf,
                 seller: order.seller,
@@ -481,6 +512,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             agent: order.customer,
             recipient: seller,
             potentialActions: {
+                informOrder: informOrderActionsOnReturn,
                 refundCreditCard: refundCreditCardActions,
                 refundAccount: refundAccountActions,
                 refundMovieTicket: refundMovieTicketActions,
@@ -494,7 +526,6 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
         };
 
         // ステータス変更
-        debug('updating transaction...');
         transaction = await repos.transaction.confirm({
             typeOf: transaction.typeOf,
             id: transaction.id,

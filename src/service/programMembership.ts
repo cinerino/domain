@@ -615,7 +615,7 @@ function processPlaceOrder(params: {
             result: {
                 order: { orderDate: new Date() }
             },
-            options: { sendEmailMessage: false }
+            sendEmailMessage: false
         })(repos);
     };
 }
