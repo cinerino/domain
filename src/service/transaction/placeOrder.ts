@@ -97,9 +97,18 @@ export function exportTasksById(params: {
             numberOfTried: 0,
             executionResults: [],
             data: {
+                agent: transaction.seller,
+                object: { transaction: transaction },
                 project: transaction.project,
-                url: webhookUrl,
-                payload: { transaction: transaction }
+                purpose: { typeOf: transaction.typeOf, id: transaction.id },
+                recipient: {
+                    id: '',
+                    name: { ja: 'Cinerino Telemetry', en: 'Cinerino Telemetry' },
+                    typeOf: factory.organizationType.Corporation,
+                    url: webhookUrl
+                },
+                typeOf: factory.actionType.InformAction
+                // payload: { transaction: transaction }
             }
         };
         taskAttributes.push(

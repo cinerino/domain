@@ -264,6 +264,24 @@ export function onSend(sendOrderActionAttributes: factory.action.transfer.send.o
             if (Array.isArray(potentialActions.registerProgramMembership)) {
                 taskAttributes.push(...potentialActions.registerProgramMembership);
             }
+
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map((a) => {
+                    // tslint:disable-next-line:no-unnecessary-local-variable
+                    const informOrderTask: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
+                        project: a.project,
+                        name: factory.taskName.TriggerWebhook,
+                        status: factory.taskStatus.Ready,
+                        runsAt: now, // なるはやで実行
+                        remainingNumberOfTries: 10,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: a
+                    };
+
+                    return informOrderTask;
+                }));
+            }
         }
 
         // タスク保管
