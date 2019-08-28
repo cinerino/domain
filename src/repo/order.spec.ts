@@ -58,7 +58,7 @@ describe('changeStatus()', () => {
 
         const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus });
 
-        assert.equal(result, undefined);
+        assert.equal(typeof result, 'object');
         sandbox.verify();
     });
 

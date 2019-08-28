@@ -121,8 +121,6 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             throw error;
         }
 
-        // アクション完了
-        debug('ending action...');
         await repos.action.complete({ typeOf: orderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
@@ -138,7 +136,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
     return async (repos: {
         task: TaskRepo;
     }) => {
-        const orderPotentialActions = orderActionAttributes.potentialActions;
+        const potentialActions = orderActionAttributes.potentialActions;
         const now = new Date();
 
         // potentialActionsのためのタスクを生成
@@ -146,19 +144,19 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (orderPotentialActions !== undefined) {
+        if (potentialActions !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (orderPotentialActions.sendOrder !== undefined) {
+            if (potentialActions.sendOrder !== undefined) {
                 const sendOrderTask: factory.task.IAttributes<factory.taskName.SendOrder> = {
-                    project: orderPotentialActions.sendOrder.project,
+                    project: potentialActions.sendOrder.project,
                     name: factory.taskName.SendOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: now, // なるはやで実行
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
-                    data: orderPotentialActions.sendOrder
+                    data: potentialActions.sendOrder
                 };
                 taskAttributes.push(sendOrderTask);
             }
@@ -166,8 +164,8 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             // 予約確定
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.confirmReservation)) {
-                taskAttributes.push(...orderPotentialActions.confirmReservation.map(
+            if (Array.isArray(potentialActions.confirmReservation)) {
+                taskAttributes.push(...potentialActions.confirmReservation.map(
                     (a): factory.task.IAttributes<factory.taskName.ConfirmReservation> => {
                         return {
                             project: a.project,
@@ -185,8 +183,8 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             // クレジットカード決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.payCreditCard)) {
-                taskAttributes.push(...orderPotentialActions.payCreditCard.map(
+            if (Array.isArray(potentialActions.payCreditCard)) {
+                taskAttributes.push(...potentialActions.payCreditCard.map(
                     (a): factory.task.IAttributes<factory.taskName.PayCreditCard> => {
                         return {
                             project: a.project,
@@ -204,8 +202,8 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             // 口座決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.payAccount)) {
-                taskAttributes.push(...orderPotentialActions.payAccount.map(
+            if (Array.isArray(potentialActions.payAccount)) {
+                taskAttributes.push(...potentialActions.payAccount.map(
                     (a): factory.task.IAttributes<factory.taskName.PayAccount> => {
                         return {
                             project: a.project,
@@ -223,8 +221,8 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             // ムビチケ決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.payMovieTicket)) {
-                taskAttributes.push(...orderPotentialActions.payMovieTicket.map(
+            if (Array.isArray(potentialActions.payMovieTicket)) {
+                taskAttributes.push(...potentialActions.payMovieTicket.map(
                     (a): factory.task.IAttributes<factory.taskName.PayMovieTicket> => {
                         return {
                             project: a.project,
@@ -242,8 +240,8 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             // ポイント付与
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(orderPotentialActions.givePointAward)) {
-                taskAttributes.push(...orderPotentialActions.givePointAward.map(
+            if (Array.isArray(potentialActions.givePointAward)) {
+                taskAttributes.push(...potentialActions.givePointAward.map(
                     (a): factory.task.IAttributes<factory.taskName.GivePointAward> => {
                         return {
                             project: a.project,
@@ -256,6 +254,23 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                             data: a
                         };
                     }));
+            }
+
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map(
+                    (a): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    })
+                );
             }
         }
 
@@ -315,11 +330,10 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         }
 
         // アクション開始
+        let order = returnOrderTransaction.object.order;
         const returnOrderActionAttributes = potentialActions.returnOrder;
         const action = await repos.action.start(returnOrderActionAttributes);
         try {
-            const order = returnOrderTransaction.object.order;
-
             // 直列で実行しないとCOAの予約取消に失敗する可能性ありなので要注意
             for (const acceptedOffer of order.acceptedOffers) {
                 const itemOffered = acceptedOffer.itemOffered;
@@ -444,8 +458,7 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             // }
 
             // 注文ステータス変更
-            debug('changing orderStatus...');
-            await repos.order.returnOrder({
+            order = await repos.order.returnOrder({
                 orderNumber: order.orderNumber,
                 dateReturned: new Date()
             });
@@ -461,12 +474,10 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             throw error;
         }
 
-        // アクション完了
-        debug('ending action...');
         await repos.action.complete({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, result: {} });
 
         // 潜在アクション
-        await onReturn(returnOrderActionAttributes)({ task: repos.task });
+        await onReturn(returnOrderActionAttributes, order)({ task: repos.task });
     };
 }
 
@@ -474,20 +485,25 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
  * 返品アクション後の処理
  * 注文返品後に何をすべきかは返品アクションのpotentialActionsとして定義されているはずなので、それらをタスクとして登録します。
  */
-export function onReturn(returnActionAttributes: factory.action.transfer.returnAction.order.IAttributes) {
+export function onReturn(
+    returnActionAttributes: factory.action.transfer.returnAction.order.IAttributes,
+    order: factory.order.IOrder
+) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
     }) => {
         const now = new Date();
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+        const potentialActions = returnActionAttributes.potentialActions;
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (returnActionAttributes.potentialActions !== undefined) {
+        if (potentialActions !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(returnActionAttributes.potentialActions.refundCreditCard)) {
-                taskAttributes.push(...returnActionAttributes.potentialActions.refundCreditCard.map(
+            if (Array.isArray(potentialActions.refundCreditCard)) {
+                taskAttributes.push(...potentialActions.refundCreditCard.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundCreditCard> => {
                         return {
                             project: a.project,
@@ -506,8 +522,8 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
             // 口座返金タスク
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(returnActionAttributes.potentialActions.refundAccount)) {
-                taskAttributes.push(...returnActionAttributes.potentialActions.refundAccount.map(
+            if (Array.isArray(potentialActions.refundAccount)) {
+                taskAttributes.push(...potentialActions.refundAccount.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundAccount> => {
                         return {
                             project: a.project,
@@ -526,8 +542,8 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
             // 口座返金タスク
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(returnActionAttributes.potentialActions.refundMovieTicket)) {
-                taskAttributes.push(...returnActionAttributes.potentialActions.refundMovieTicket.map(
+            if (Array.isArray(potentialActions.refundMovieTicket)) {
+                taskAttributes.push(...potentialActions.refundMovieTicket.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundMovieTicket> => {
                         return {
                             project: a.project,
@@ -546,8 +562,8 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
             // Pecorinoインセンティブ返却タスク
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(returnActionAttributes.potentialActions.returnPointAward)) {
-                taskAttributes.push(...returnActionAttributes.potentialActions.returnPointAward.map(
+            if (Array.isArray(potentialActions.returnPointAward)) {
+                taskAttributes.push(...potentialActions.returnPointAward.map(
                     (a): factory.task.IAttributes<factory.taskName.ReturnPointAward> => {
                         return {
                             project: a.project,
@@ -561,6 +577,26 @@ export function onReturn(returnActionAttributes: factory.action.transfer.returnA
                         };
                     }
                 ));
+            }
+
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map(
+                    (a): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
             }
         }
 

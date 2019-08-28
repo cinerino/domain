@@ -394,32 +394,53 @@ export class MongoRepository {
     public async changeStatus(params: {
         orderNumber: string;
         orderStatus: factory.orderStatus;
-    }) {
+    }): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOneAndUpdate(
             { orderNumber: params.orderNumber },
-            { orderStatus: params.orderStatus }
-        )
-            .exec();
-        if (doc === null) {
-            throw new factory.errors.NotFound('Order');
-        }
-    }
-
-    /**
-     * 注文を返品する
-     */
-    public async returnOrder(params: { orderNumber: string; dateReturned: Date }) {
-        const doc = await this.orderModel.findOneAndUpdate(
-            { orderNumber: params.orderNumber },
+            { orderStatus: params.orderStatus },
             {
-                orderStatus: factory.orderStatus.OrderReturned,
-                dateReturned: params.dateReturned
+                projection: {
+                    __v: 0,
+                    createdAt: 0,
+                    updatedAt: 0
+                }
             }
         )
             .exec();
         if (doc === null) {
             throw new factory.errors.NotFound('Order');
         }
+
+        return doc.toObject();
+    }
+
+    /**
+     * 注文を返品する
+     */
+    public async returnOrder(params: {
+        orderNumber: string;
+        dateReturned: Date;
+    }): Promise<factory.order.IOrder> {
+        const doc = await this.orderModel.findOneAndUpdate(
+            { orderNumber: params.orderNumber },
+            {
+                orderStatus: factory.orderStatus.OrderReturned,
+                dateReturned: params.dateReturned
+            },
+            {
+                projection: {
+                    __v: 0,
+                    createdAt: 0,
+                    updatedAt: 0
+                }
+            }
+        )
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound('Order');
+        }
+
+        return doc.toObject();
     }
 
     /**

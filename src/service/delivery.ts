@@ -45,7 +45,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         task: TaskRepo;
     }) => {
-        const order = params.object;
+        let order = params.object;
 
         // アクション開始
         const sendOrderActionAttributes = params;
@@ -60,7 +60,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
             }));
 
             // 注文ステータス変更
-            await repos.order.changeStatus({
+            order = await repos.order.changeStatus({
                 orderNumber: order.orderNumber,
                 orderStatus: factory.orderStatus.OrderDelivered
             });
@@ -96,7 +96,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         await repos.action.complete({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, result: result });
 
         // 潜在アクション
-        await onSend(sendOrderActionAttributes)({ task: repos.task });
+        await onSend(sendOrderActionAttributes, order)({ task: repos.task });
     };
 }
 
@@ -219,7 +219,10 @@ export function createOwnershipInfosFromOrder(params: {
 /**
  * 注文配送後のアクション
  */
-export function onSend(sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes) {
+export function onSend(
+    sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes,
+    order: factory.order.IOrder
+) {
     return async (repos: { task: TaskRepo }) => {
         const potentialActions = sendOrderActionAttributes.potentialActions;
         const now = new Date();
@@ -266,21 +269,23 @@ export function onSend(sendOrderActionAttributes: factory.action.transfer.send.o
             }
 
             if (Array.isArray(potentialActions.informOrder)) {
-                taskAttributes.push(...potentialActions.informOrder.map((a) => {
-                    // tslint:disable-next-line:no-unnecessary-local-variable
-                    const informOrderTask: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
-                        project: a.project,
-                        name: factory.taskName.TriggerWebhook,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 10,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: a
-                    };
-
-                    return informOrderTask;
-                }));
+                taskAttributes.push(...potentialActions.informOrder.map(
+                    (a): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
             }
         }
 
