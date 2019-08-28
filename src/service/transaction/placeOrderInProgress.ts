@@ -243,6 +243,34 @@ export interface IConfirmResultOrderParams {
     };
 }
 
+/**
+ * 注文通知パラメータ
+ */
+export interface IInformOrderParams {
+    /**
+     * 通知先
+     */
+    recipient?: {
+        /**
+         * 通知URL
+         */
+        url?: string;
+    };
+}
+
+export interface IPotentialActionsParams {
+    order?: {
+        potentialActions?: {
+            informOrder?: IInformOrderParams[];
+            sendOrder?: {
+                potentialActions?: {
+                    informOrder?: IInformOrderParams[];
+                };
+            };
+        };
+    };
+}
+
 export interface IConfirmParams {
     project: factory.chevre.project.IProject;
     /**
@@ -256,6 +284,7 @@ export interface IConfirmParams {
     result: {
         order: IConfirmResultOrderParams;
     };
+    potentialActions?: IPotentialActionsParams;
     options: {
         /**
          * 注文配送メールを送信するかどうか
@@ -414,7 +443,8 @@ export function confirm(params: IConfirmParams) {
             order: order,
             seller: seller,
             sendEmailMessage: params.options.sendEmailMessage,
-            email: params.options.email
+            email: params.options.email,
+            potentialActions: params.potentialActions
         });
 
         // ステータス変更
@@ -1068,6 +1098,7 @@ export async function createPotentialActionsFromTransaction(params: {
     seller: ISeller;
     sendEmailMessage?: boolean;
     email?: factory.creativeWork.message.email.ICustomization;
+    potentialActions?: IPotentialActionsParams;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project
@@ -1471,6 +1502,68 @@ export async function createPotentialActionsFromTransaction(params: {
         }));
     }
 
+    const informOrderActionsOnPlaceOrder: factory.action.interact.inform.IAttributes<any, any>[] = [];
+    if (params.potentialActions !== undefined) {
+        if (params.potentialActions.order !== undefined) {
+            if (params.potentialActions.order.potentialActions !== undefined) {
+                if (Array.isArray(params.potentialActions.order.potentialActions.informOrder)) {
+                    params.potentialActions.order.potentialActions.informOrder.forEach((a) => {
+                        if (a.recipient !== undefined) {
+                            if (typeof a.recipient.url === 'string') {
+                                informOrderActionsOnPlaceOrder.push({
+                                    agent: params.transaction.seller,
+                                    object: params.order,
+                                    project: params.transaction.project,
+                                    // purpose: params.transaction,
+                                    recipient: {
+                                        id: params.transaction.agent.id,
+                                        name: params.transaction.agent.name,
+                                        typeOf: params.transaction.agent.typeOf,
+                                        url: a.recipient.url
+                                    },
+                                    typeOf: factory.actionType.InformAction
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    const informOrderActionsOnSentOrder: factory.action.interact.inform.IAttributes<any, any>[] = [];
+    if (params.potentialActions !== undefined) {
+        if (params.potentialActions.order !== undefined) {
+            if (params.potentialActions.order.potentialActions !== undefined) {
+                if (params.potentialActions.order.potentialActions.sendOrder !== undefined) {
+                    if (params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined) {
+                        if (Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.informOrder)) {
+                            params.potentialActions.order.potentialActions.sendOrder.potentialActions.informOrder.forEach((a) => {
+                                if (a.recipient !== undefined) {
+                                    if (typeof a.recipient.url === 'string') {
+                                        informOrderActionsOnSentOrder.push({
+                                            agent: params.transaction.seller,
+                                            object: params.order,
+                                            project: params.transaction.project,
+                                            // purpose: params.transaction,
+                                            recipient: {
+                                                id: params.transaction.agent.id,
+                                                name: params.transaction.agent.name,
+                                                typeOf: params.transaction.agent.typeOf,
+                                                url: a.recipient.url
+                                            },
+                                            typeOf: factory.actionType.InformAction
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     const sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes = {
         project: params.transaction.project,
         typeOf: factory.actionType.SendAction,
@@ -1478,8 +1571,9 @@ export async function createPotentialActionsFromTransaction(params: {
         agent: params.transaction.seller,
         recipient: params.transaction.agent,
         potentialActions: {
-            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined,
-            registerProgramMembership: registerProgramMembershipTaskAttributes
+            informOrder: informOrderActionsOnSentOrder,
+            registerProgramMembership: registerProgramMembershipTaskAttributes,
+            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined
         }
     };
 
@@ -1490,12 +1584,13 @@ export async function createPotentialActionsFromTransaction(params: {
             object: params.order,
             agent: params.transaction.agent,
             potentialActions: {
-                payCreditCard: payCreditCardActions,
-                payAccount: payAccountActions,
-                payMovieTicket: payMovieTicketActions,
-                sendOrder: sendOrderActionAttributes,
                 confirmReservation: confirmReservationActions,
-                givePointAward: givePointAwardActions
+                givePointAward: givePointAwardActions,
+                informOrder: informOrderActionsOnPlaceOrder,
+                payAccount: payAccountActions,
+                payCreditCard: payCreditCardActions,
+                payMovieTicket: payMovieTicketActions,
+                sendOrder: sendOrderActionAttributes
             },
             purpose: {
                 typeOf: params.transaction.typeOf,
