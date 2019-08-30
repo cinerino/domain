@@ -32,6 +32,42 @@ export type ISearchEventReservationsOperation<T> = (repos: {
 }) => Promise<T>;
 
 /**
+ * 予約取消
+ */
+export function cancelReservation(params: factory.task.IData<factory.taskName.CancelReservation>) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: ActionRepo;
+        // order: OrderRepo;
+        // ownershipInfo: OwnershipInfoRepo;
+        // project: ProjectRepo;
+        // transaction: TransactionRepo;
+        // task: TaskRepo;
+    }) => {
+        const action = await repos.action.start(params);
+
+        try {
+            // no op
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: {} });
+
+        // 潜在アクション
+        // await onReturn(returnOrderActionAttributes, order)({ task: repos.task });
+    };
+}
+
+/**
  * 予約を確定する
  */
 export function confirmReservation(params: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>) {

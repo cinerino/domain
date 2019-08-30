@@ -467,6 +467,35 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             }
         );
 
+        const cancelReservationActions: factory.action.organize.cancel.IAttributes<any, any>[] = [];
+        cancelReservationActions.push({
+            project: transaction.project,
+            typeOf: factory.actionType.CancelAction,
+            object: {
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            },
+            agent: order.customer,
+            potentialActions: {
+            },
+            purpose: {
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            }
+        });
+
         const informOrderActionsOnReturn: factory.action.interact.inform.IAttributes<any, any>[] = [];
         if (params.potentialActions !== undefined) {
             if (params.potentialActions.returnOrder !== undefined) {
@@ -512,6 +541,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             agent: order.customer,
             recipient: seller,
             potentialActions: {
+                cancelReservation: cancelReservationActions,
                 informOrder: informOrderActionsOnReturn,
                 refundCreditCard: refundCreditCardActions,
                 refundAccount: refundAccountActions,

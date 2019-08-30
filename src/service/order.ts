@@ -502,6 +502,25 @@ export function onReturn(
         if (potentialActions !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
+            if (Array.isArray(potentialActions.cancelReservation)) {
+                taskAttributes.push(...potentialActions.cancelReservation.map(
+                    (a): factory.task.IAttributes<factory.taskName.CancelReservation> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.CancelReservation,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }
+                ));
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (Array.isArray(potentialActions.refundCreditCard)) {
                 taskAttributes.push(...potentialActions.refundCreditCard.map(
                     (a): factory.task.IAttributes<factory.taskName.RefundCreditCard> => {
