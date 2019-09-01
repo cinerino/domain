@@ -1190,6 +1190,8 @@ export async function createPotentialActionsFromTransaction(params: {
                     // responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
                     // tslint:disable-next-line:max-line-length
                     const reserveTransaction = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+                    const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
+                        = [{ name: 'orderNumber', value: params.order.orderNumber }];
 
                     let confirmReservationObject:
                         factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
@@ -1214,9 +1216,7 @@ export async function createPotentialActionsFromTransaction(params: {
                                         givenName: params.order.customer.givenName,
                                         email: params.order.customer.email,
                                         telephone: params.order.customer.telephone,
-                                        identifier: [
-                                            { name: 'orderNumber', value: params.order.orderNumber }
-                                        ]
+                                        identifier: defaultUnderNameIdentifiers
                                     }
                                 };
                             })
@@ -1232,8 +1232,24 @@ export async function createPotentialActionsFromTransaction(params: {
                     });
                     // 予約確定パラメータの指定があれば上書きする
                     if (confirmReservationObjectParams !== undefined) {
-                        confirmReservationObject =
+                        const customizedConfirmReservationObject =
                             <factory.action.interact.confirm.reservation.IObject4Chevre>confirmReservationObjectParams.object;
+                        if (customizedConfirmReservationObject.object !== undefined
+                            && Array.isArray(customizedConfirmReservationObject.object.reservations)) {
+                            customizedConfirmReservationObject.object.reservations.forEach((r) => {
+                                if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                                    r.underName.identifier.push(...defaultUnderNameIdentifiers);
+                                }
+
+                                if (r.reservedTicket !== undefined
+                                    && r.reservedTicket.underName !== undefined
+                                    && Array.isArray(r.reservedTicket.underName.identifier)) {
+                                    r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
+                                }
+                            });
+                        }
+
+                        confirmReservationObject = customizedConfirmReservationObject;
                     }
 
                     confirmReservationActions.push({
