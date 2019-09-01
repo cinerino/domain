@@ -1054,7 +1054,7 @@ export function validateEventOffers(params: {
 /**
  * 取引のポストアクションを作成する
  */
-// tslint:disable-next-line:max-func-body-length
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 export async function createPotentialActionsFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
@@ -1073,6 +1073,17 @@ export async function createPotentialActionsFromTransaction(params: {
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
     const confirmReservationActions: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>[] = [];
+    let confirmReservationParams: factory.transaction.placeOrder.IConfirmReservationParams[] = [];
+    if (params.potentialActions !== undefined
+        && params.potentialActions.order !== undefined
+        && params.potentialActions.order.potentialActions !== undefined
+        && params.potentialActions.order.potentialActions.sendOrder !== undefined
+        && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
+        && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.confirmReservation)) {
+        confirmReservationParams =
+            params.potentialActions.order.potentialActions.sendOrder.potentialActions.confirmReservation;
+    }
+
     // tslint:disable-next-line:max-func-body-length
     seatReservationAuthorizeActions.forEach((a) => {
         const actionResult = a.result;
@@ -1176,41 +1187,59 @@ export async function createPotentialActionsFromTransaction(params: {
 
                 default:
                     // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+                    // responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+                    // tslint:disable-next-line:max-line-length
+                    const reserveTransaction = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+
+                    let confirmReservationObject:
+                        factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
+                        typeOf: factory.chevre.transactionType.Reserve,
+                        id: reserveTransaction.id,
+                        object: {
+                            reservations: reserveTransaction.object.reservations.map((r) => {
+                                // 購入者や販売者の情報を連携する
+                                return {
+                                    id: r.id,
+                                    reservedTicket: {
+                                        issuedBy: {
+                                            typeOf: params.order.seller.typeOf,
+                                            name: params.order.seller.name
+                                        }
+                                    },
+                                    underName: {
+                                        typeOf: params.order.customer.typeOf,
+                                        id: params.order.customer.id,
+                                        name: String(params.order.customer.name),
+                                        familyName: params.order.customer.familyName,
+                                        givenName: params.order.customer.givenName,
+                                        email: params.order.customer.email,
+                                        telephone: params.order.customer.telephone,
+                                        identifier: [
+                                            { name: 'orderNumber', value: params.order.orderNumber }
+                                        ]
+                                    }
+                                };
+                            })
+                        }
+                    };
+
+                    const confirmReservationObjectParams = confirmReservationParams.find((p) => {
+                        const object = <factory.action.interact.confirm.reservation.IObject4Chevre>p.object;
+
+                        return object !== undefined
+                            && object.typeOf === factory.chevre.transactionType.Reserve
+                            && object.id === reserveTransaction.id;
+                    });
+                    // 予約確定パラメータの指定があれば上書きする
+                    if (confirmReservationObjectParams !== undefined) {
+                        confirmReservationObject =
+                            <factory.action.interact.confirm.reservation.IObject4Chevre>confirmReservationObjectParams.object;
+                    }
 
                     confirmReservationActions.push({
                         project: params.transaction.project,
                         typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
-                        object: {
-                            typeOf: factory.chevre.transactionType.Reserve,
-                            id: responseBody.id,
-                            object: {
-                                reservations: responseBody.object.reservations.map((r) => {
-                                    // 購入者や販売者の情報を連携する
-                                    return {
-                                        id: r.id,
-                                        reservedTicket: {
-                                            issuedBy: {
-                                                typeOf: params.order.seller.typeOf,
-                                                name: params.order.seller.name
-                                            }
-                                        },
-                                        underName: {
-                                            typeOf: params.order.customer.typeOf,
-                                            id: params.order.customer.id,
-                                            name: String(params.order.customer.name),
-                                            familyName: params.order.customer.familyName,
-                                            givenName: params.order.customer.givenName,
-                                            email: params.order.customer.email,
-                                            telephone: params.order.customer.telephone,
-                                            identifier: [
-                                                { name: 'orderNumber', value: params.order.orderNumber }
-                                            ]
-                                        }
-                                    };
-                                })
-                            }
-                        },
+                        object: confirmReservationObject,
                         agent: params.transaction.agent,
                         purpose: {
                             typeOf: params.order.typeOf,
@@ -1534,6 +1563,7 @@ export async function createPotentialActionsFromTransaction(params: {
         agent: params.transaction.seller,
         recipient: params.transaction.agent,
         potentialActions: {
+            confirmReservation: confirmReservationActions,
             informOrder: informOrderActionsOnSentOrder,
             registerProgramMembership: registerProgramMembershipTaskAttributes,
             sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined
@@ -1547,7 +1577,6 @@ export async function createPotentialActionsFromTransaction(params: {
             object: params.order,
             agent: params.transaction.agent,
             potentialActions: {
-                confirmReservation: confirmReservationActions,
                 givePointAward: givePointAwardActions,
                 informOrder: informOrderActionsOnPlaceOrder,
                 payAccount: payAccountActions,

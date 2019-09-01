@@ -161,25 +161,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(sendOrderTask);
             }
 
-            // 予約確定
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.confirmReservation)) {
-                taskAttributes.push(...potentialActions.confirmReservation.map(
-                    (a): factory.task.IAttributes<factory.taskName.ConfirmReservation> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.ConfirmReservation,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }));
-            }
-
             // クレジットカード決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
