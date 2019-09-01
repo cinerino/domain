@@ -2,7 +2,7 @@
  * 注文サービス
  */
 // import * as createDebug from 'debug';
-// import * as moment from 'moment';
+import * as moment from 'moment';
 
 // import { credentials } from '../credentials';
 
@@ -13,7 +13,6 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -261,7 +260,6 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
@@ -279,10 +277,8 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             throw new factory.errors.NotFound('Return order transaction');
         }
 
-        // const projectId: string = (returnOrderTransaction.project !== undefined)
-        //     ? returnOrderTransaction.project.id
-        //     : <string>process.env.PROJECT_ID;
-        // const project = await repos.project.findById({ id: projectId });
+        const dateReturned = moment(returnOrderTransaction.endDate)
+            .toDate();
 
         const potentialActions = returnOrderTransaction.potentialActions;
         if (potentialActions === undefined) {
@@ -292,21 +288,45 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         // アクション開始
         let order = returnOrderTransaction.object.order;
         const returnOrderActionAttributes = potentialActions.returnOrder;
+        const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
+
         const action = await repos.action.start(returnOrderActionAttributes);
+
         try {
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO 所有権の所有期間変更
+            // 所有権の所有期間変更
+            const sendOrderActions = <factory.action.transfer.send.order.IAction[]>await repos.action.search({
+                typeOf: factory.actionType.SendAction,
+                object: { orderNumber: { $in: [order.orderNumber] } },
+                actionStatusTypes: [factory.actionStatusType.CompletedActionStatus]
+            });
+
+            await Promise.all(sendOrderActions.map(async (a) => {
+                const ownershipInfos = a.result;
+                if (Array.isArray(ownershipInfos)) {
+                    await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
+                        const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
+                            { _id: ownershipInfo.id },
+                            { ownedThrough: dateReturned }
+                        )
+                            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+                            .exec();
+                        if (doc !== null) {
+                            returnedOwnershipInfos.push(doc.toObject());
+                        }
+                    }));
+                }
+            }));
 
             // 注文ステータス変更
             order = await repos.order.returnOrder({
                 orderNumber: order.orderNumber,
-                dateReturned: new Date()
+                dateReturned: dateReturned
             });
         } catch (error) {
             // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, error: actionError });
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -314,7 +334,8 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             throw error;
         }
 
-        await repos.action.complete({ typeOf: returnOrderActionAttributes.typeOf, id: action.id, result: {} });
+        const result: factory.action.transfer.returnAction.order.IResult = returnedOwnershipInfos;
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
 
         // 潜在アクション
         await onReturn(returnOrderActionAttributes, order)({ task: repos.task });
