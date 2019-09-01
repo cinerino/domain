@@ -1,13 +1,12 @@
 /**
  * 注文サービス
  */
-import * as createDebug from 'debug';
-import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
-import * as moment from 'moment';
+// import * as createDebug from 'debug';
+// import * as moment from 'moment';
 
-import { credentials } from '../credentials';
+// import { credentials } from '../credentials';
 
-import * as chevre from '../chevre';
+// import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -18,17 +17,9 @@ import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-import * as COA from '../coa';
+// import * as COA from '../coa';
 
-const debug = createDebug('cinerino-domain:service');
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const debug = createDebug('cinerino-domain:service');
 
 export type IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 export type WebAPIIdentifier = factory.service.webAPI.Identifier;
@@ -266,7 +257,6 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
  * 注文返品アクション
  */
 export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOrder>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
@@ -289,25 +279,14 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             throw new factory.errors.NotFound('Return order transaction');
         }
 
-        const projectId: string = (returnOrderTransaction.project !== undefined)
-            ? returnOrderTransaction.project.id
-            : <string>process.env.PROJECT_ID;
-        const project = await repos.project.findById({ id: projectId });
+        // const projectId: string = (returnOrderTransaction.project !== undefined)
+        //     ? returnOrderTransaction.project.id
+        //     : <string>process.env.PROJECT_ID;
+        // const project = await repos.project.findById({ id: projectId });
 
         const potentialActions = returnOrderTransaction.potentialActions;
         if (potentialActions === undefined) {
             throw new factory.errors.NotFound('PotentialActions of return order transaction');
-        }
-
-        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
-            typeOf: factory.transactionType.PlaceOrder,
-            result: {
-                order: { orderNumbers: [returnOrderTransaction.object.order.orderNumber] }
-            }
-        });
-        const placeOrderTransaction = placeOrderTransactions.shift();
-        if (placeOrderTransaction === undefined) {
-            throw new factory.errors.NotFound('Place Order Transaction');
         }
 
         // アクション開始
@@ -315,128 +294,8 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         const returnOrderActionAttributes = potentialActions.returnOrder;
         const action = await repos.action.start(returnOrderActionAttributes);
         try {
-            // 直列で実行しないとCOAの予約取消に失敗する可能性ありなので要注意
-            for (const acceptedOffer of order.acceptedOffers) {
-                const itemOffered = acceptedOffer.itemOffered;
-
-                // 座席予約の場合キャンセル
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-                    const reservation = itemOffered;
-
-                    // COAで予約の場合予約取消
-                    if (acceptedOffer.offeredThrough !== undefined
-                        && acceptedOffer.offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
-                        const superEventLocationBranchCode = reservation.reservationFor.superEvent.location.branchCode;
-
-                        const phoneUtil = PhoneNumberUtil.getInstance();
-                        const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
-                        let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
-                        // COAでは数字のみ受け付けるので数字以外を除去
-                        telNum = telNum.replace(/[^\d]/g, '');
-                        const stateReserveResult = await COA.services.reserve.stateReserve({
-                            theaterCode: superEventLocationBranchCode,
-                            reserveNum: Number(reservation.reservationNumber),
-                            telNum: telNum
-                        });
-                        debug('COA stateReserveResult is', stateReserveResult);
-
-                        if (stateReserveResult !== null) {
-                            debug('deleting COA reservation...');
-                            await COA.services.reserve.delReserve({
-                                theaterCode: superEventLocationBranchCode,
-                                reserveNum: Number(reservation.reservationNumber),
-                                telNum: telNum,
-                                dateJouei: stateReserveResult.dateJouei,
-                                titleCode: stateReserveResult.titleCode,
-                                titleBranchNum: stateReserveResult.titleBranchNum,
-                                timeBegin: stateReserveResult.timeBegin,
-                                listSeat: stateReserveResult.listTicket
-                            });
-                            debug('COA delReserve processed.');
-                        }
-                    }
-                }
-            }
-
-            const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
-                placeOrderTransaction.object.authorizeActions
-                    .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-
-            for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
-                if (authorizeSeatReservationAction.result === undefined) {
-                    throw new factory.errors.NotFound('Result of seat reservation authorize action');
-                }
-
-                let responseBody = authorizeSeatReservationAction.result.responseBody;
-
-                if (authorizeSeatReservationAction.instrument === undefined) {
-                    authorizeSeatReservationAction.instrument = {
-                        typeOf: 'WebAPI',
-                        identifier: factory.service.webAPI.Identifier.Chevre
-                    };
-                }
-
-                switch (authorizeSeatReservationAction.instrument.identifier) {
-                    case factory.service.webAPI.Identifier.COA:
-                        // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
-
-                        // no op
-
-                        break;
-
-                    default:
-                        // tslint:disable-next-line:max-line-length
-                        responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
-
-                        if (project.settings === undefined) {
-                            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                        }
-                        if (project.settings.chevre === undefined) {
-                            throw new factory.errors.ServiceUnavailable('Project settings not found');
-                        }
-
-                        const cancelReservationService = new chevre.service.transaction.CancelReservation({
-                            endpoint: project.settings.chevre.endpoint,
-                            auth: chevreAuthClient
-                        });
-
-                        if (cancelReservationService !== undefined) {
-                            const cancelReservationTransaction = await cancelReservationService.start({
-                                project: { typeOf: project.typeOf, id: project.id },
-                                typeOf: factory.chevre.transactionType.CancelReservation,
-                                agent: {
-                                    typeOf: returnOrderTransaction.agent.typeOf,
-                                    id: returnOrderTransaction.agent.id,
-                                    name: String(order.customer.name)
-                                },
-                                object: {
-                                    transaction: {
-                                        typeOf: responseBody.typeOf,
-                                        id: responseBody.id
-                                    }
-                                },
-                                expires: moment(returnOrderTransaction.expires)
-                                    // tslint:disable-next-line:no-magic-numbers
-                                    .add(5, 'minutes')
-                                    .toDate()
-                            });
-
-                            await cancelReservationService.confirm(cancelReservationTransaction);
-                        }
-                }
-            }
-
-            // 予約キャンセル確定
-            // const cancelReservationTransactions = returnOrderTransaction.object.pendingCancelReservationTransactions;
-            // if (cancelReservationTransactions !== undefined && cancelReservationService !== undefined) {
-            //     await Promise.all(cancelReservationTransactions.map(async (cancelReservationTransaction) => {
-            //         await cancelReservationService.confirm({ id: cancelReservationTransaction.id });
-            //     }));
-            // }
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO 所有権の所有期間変更
 
             // 注文ステータス変更
             order = await repos.order.returnOrder({

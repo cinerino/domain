@@ -1,6 +1,7 @@
 /**
  * 注文返品取引サービス
  */
+import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 // import * as createDebug from 'debug';
 
 import * as emailMessageBuilder from '../../emailMessageBuilder';
@@ -197,7 +198,7 @@ export function start(
  * 取引確定
  */
 export function confirm(params: factory.transaction.returnOrder.IConfirmParams) {
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -224,6 +225,18 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             { id: order.seller.id },
             { paymentAccepted: 0 } // 決済情報は不要
         );
+
+        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+            limit: 1,
+            typeOf: factory.transactionType.PlaceOrder,
+            result: {
+                order: { orderNumbers: [order.orderNumber] }
+            }
+        });
+        const placeOrderTransaction = placeOrderTransactions.shift();
+        if (placeOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Transaction');
+        }
 
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
         const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
@@ -467,34 +480,91 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             }
         );
 
-        const cancelReservationActions: factory.action.organize.cancel.IAttributes<any, any>[] = [];
-        cancelReservationActions.push({
-            project: transaction.project,
-            typeOf: factory.actionType.CancelAction,
-            object: {
-                typeOf: order.typeOf,
-                seller: order.seller,
-                customer: order.customer,
-                confirmationNumber: order.confirmationNumber,
-                orderNumber: order.orderNumber,
-                price: order.price,
-                priceCurrency: order.priceCurrency,
-                orderDate: order.orderDate
-            },
-            agent: order.customer,
-            potentialActions: {
-            },
-            purpose: {
-                typeOf: order.typeOf,
-                seller: order.seller,
-                customer: order.customer,
-                confirmationNumber: order.confirmationNumber,
-                orderNumber: order.orderNumber,
-                price: order.price,
-                priceCurrency: order.priceCurrency,
-                orderDate: order.orderDate
+        const cancelReservationActions: factory.task.IData<factory.taskName.CancelReservation>[] = [];
+
+        const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+            placeOrderTransaction.object.authorizeActions
+                .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+        for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
+            if (authorizeSeatReservationAction.result === undefined) {
+                throw new factory.errors.NotFound('Result of seat reservation authorize action');
             }
-        });
+
+            let responseBody = authorizeSeatReservationAction.result.responseBody;
+
+            if (authorizeSeatReservationAction.instrument === undefined) {
+                authorizeSeatReservationAction.instrument = {
+                    typeOf: 'WebAPI',
+                    identifier: factory.service.webAPI.Identifier.Chevre
+                };
+            }
+
+            switch (authorizeSeatReservationAction.instrument.identifier) {
+                case factory.service.webAPI.Identifier.COA:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+                    const superEventLocationBranchCode = authorizeSeatReservationAction.object.event.superEvent.location.branchCode;
+
+                    const phoneUtil = PhoneNumberUtil.getInstance();
+                    const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
+                    let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
+                    // COAでは数字のみ受け付けるので数字以外を除去
+                    telNum = telNum.replace(/[^\d]/g, '');
+
+                    cancelReservationActions.push({
+                        project: transaction.project,
+                        typeOf: factory.actionType.CancelAction,
+                        object: {
+                            theaterCode: superEventLocationBranchCode,
+                            reserveNum: Number(responseBody.tmpReserveNum),
+                            telNum: telNum
+                        },
+                        agent: transaction.agent,
+                        potentialActions: {
+                        },
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
+                        instrument: authorizeSeatReservationAction.instrument
+                    });
+
+                    break;
+
+                default:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+
+                    cancelReservationActions.push({
+                        project: transaction.project,
+                        typeOf: factory.actionType.CancelAction,
+                        object: responseBody,
+                        agent: transaction.agent,
+                        potentialActions: {
+                        },
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
+                        instrument: authorizeSeatReservationAction.instrument
+                    });
+
+            }
+        }
 
         const informOrderActionsOnReturn: factory.action.interact.inform.IAttributes<any, any>[] = [];
         if (params.potentialActions !== undefined) {
