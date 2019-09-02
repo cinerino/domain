@@ -1193,7 +1193,7 @@ export async function createPotentialActionsFromTransaction(params: {
                     const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
                         = [{ name: 'orderNumber', value: params.order.orderNumber }];
 
-                    let confirmReservationObject:
+                    const confirmReservationObject:
                         factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
                         typeOf: factory.chevre.transactionType.Reserve,
                         id: reserveTransaction.id,
@@ -1234,22 +1234,40 @@ export async function createPotentialActionsFromTransaction(params: {
                     if (confirmReservationObjectParams !== undefined) {
                         const customizedConfirmReservationObject =
                             <factory.action.interact.confirm.reservation.IObject4Chevre>confirmReservationObjectParams.object;
-                        if (customizedConfirmReservationObject.object !== undefined
-                            && Array.isArray(customizedConfirmReservationObject.object.reservations)) {
-                            customizedConfirmReservationObject.object.reservations.forEach((r) => {
-                                if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-                                    r.underName.identifier.push(...defaultUnderNameIdentifiers);
-                                }
 
-                                if (r.reservedTicket !== undefined
-                                    && r.reservedTicket.underName !== undefined
-                                    && Array.isArray(r.reservedTicket.underName.identifier)) {
-                                    r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
-                                }
-                            });
+                        // 予約取引確定オブジェクトの指定があれば上書き
+                        if (customizedConfirmReservationObject.object !== undefined) {
+                            if (Array.isArray(customizedConfirmReservationObject.object.reservations)) {
+                                customizedConfirmReservationObject.object.reservations.forEach((r) => {
+                                    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                                        r.underName.identifier.push(...defaultUnderNameIdentifiers);
+                                    }
+
+                                    if (r.reservedTicket !== undefined
+                                        && r.reservedTicket.underName !== undefined
+                                        && Array.isArray(r.reservedTicket.underName.identifier)) {
+                                        r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
+                                    }
+                                });
+                            }
+
+                            confirmReservationObject.object = customizedConfirmReservationObject.object;
                         }
 
-                        confirmReservationObject = customizedConfirmReservationObject;
+                        // 予約取引確定後アクションの指定があれば上書き
+                        const confirmReservePotentialActions = (<any>customizedConfirmReservationObject).potentialActions;
+                        if (confirmReservePotentialActions !== undefined
+                            && confirmReservePotentialActions.reserve !== undefined
+                            && confirmReservePotentialActions.reserve.potentialActions !== undefined
+                            && Array.isArray(confirmReservePotentialActions.reserve.potentialActions.informReservation)) {
+                            (<any>confirmReservationObject).potentialActions = {
+                                reserve: {
+                                    potentialActions: {
+                                        informReservation: confirmReservePotentialActions.reserve.potentialActions.informReservation
+                                    }
+                                }
+                            };
+                        }
                     }
 
                     confirmReservationActions.push({
