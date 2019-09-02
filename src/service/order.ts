@@ -306,7 +306,8 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
                     await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
                         const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
                             { _id: ownershipInfo.id },
-                            { ownedThrough: dateReturned }
+                            { ownedThrough: dateReturned },
+                            { new: true }
                         )
                             .select({ __v: 0, createdAt: 0, updatedAt: 0 })
                             .exec();
