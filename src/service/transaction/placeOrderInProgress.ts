@@ -1260,7 +1260,7 @@ export async function createPotentialActionsFromTransaction(params: {
                             && confirmReservePotentialActions.reserve !== undefined
                             && confirmReservePotentialActions.reserve.potentialActions !== undefined
                             && Array.isArray(confirmReservePotentialActions.reserve.potentialActions.informReservation)) {
-                            customizedConfirmReservationObject.potentialActions = {
+                            confirmReservationObject.potentialActions = {
                                 reserve: {
                                     potentialActions: {
                                         informReservation: confirmReservePotentialActions.reserve.potentialActions.informReservation
