@@ -482,6 +482,14 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
 
         const cancelReservationActions: factory.task.IData<factory.taskName.CancelReservation>[] = [];
 
+        let cancelReservationParams: factory.transaction.returnOrder.ICancelReservationParams[] = [];
+        if (params.potentialActions !== undefined
+            && params.potentialActions.returnOrder !== undefined
+            && params.potentialActions.returnOrder.potentialActions !== undefined
+            && Array.isArray(params.potentialActions.returnOrder.potentialActions.cancelReservation)) {
+            cancelReservationParams = params.potentialActions.returnOrder.potentialActions.cancelReservation;
+        }
+
         const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             placeOrderTransaction.object.authorizeActions
                 .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
@@ -541,15 +549,14 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
 
                 default:
                     // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+                    const reserveTransaction = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
-                    cancelReservationActions.push({
+                    const cancelReservationAction: factory.task.IData<factory.taskName.CancelReservation> = {
                         project: transaction.project,
                         typeOf: factory.actionType.CancelAction,
-                        object: responseBody,
+                        object: reserveTransaction,
                         agent: transaction.agent,
-                        potentialActions: {
-                        },
+                        potentialActions: {},
                         purpose: {
                             typeOf: order.typeOf,
                             seller: order.seller,
@@ -561,8 +568,37 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                             orderDate: order.orderDate
                         },
                         instrument: authorizeSeatReservationAction.instrument
+                    };
+
+                    const cancelReservationObjectParams = cancelReservationParams.find((p) => {
+                        const object =
+                            <factory.transaction.returnOrder.ICancelReservationObject<factory.service.webAPI.Identifier.Chevre>>p.object;
+
+                        return object !== undefined
+                            && object.typeOf === factory.chevre.transactionType.Reserve
+                            && object.id === reserveTransaction.id;
                     });
 
+                    if (cancelReservationObjectParams !== undefined) {
+                        // 予約取消確定後アクションの指定があれば上書き
+                        if (cancelReservationObjectParams.potentialActions !== undefined
+                            && cancelReservationObjectParams.potentialActions.cancelReservation !== undefined
+                            && cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions !== undefined
+                            && Array.isArray(
+                                cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions.informReservation
+                            )) {
+                            cancelReservationAction.potentialActions = {
+                                cancelReservation: {
+                                    potentialActions: {
+                                        // tslint:disable-next-line:max-line-length
+                                        informReservation: cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions.informReservation
+                                    }
+                                }
+                            };
+                        }
+                    }
+
+                    cancelReservationActions.push(cancelReservationAction);
             }
         }
 

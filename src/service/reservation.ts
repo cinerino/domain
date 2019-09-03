@@ -115,7 +115,10 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
                                 .toDate()
                         });
 
-                        await cancelReservationService.confirm(cancelReservationTransaction);
+                        await cancelReservationService.confirm({
+                            id: cancelReservationTransaction.id,
+                            potentialActions: params.potentialActions
+                        });
                     }
             }
         } catch (error) {

@@ -1255,12 +1255,12 @@ export async function createPotentialActionsFromTransaction(params: {
                         }
 
                         // 予約取引確定後アクションの指定があれば上書き
-                        const confirmReservePotentialActions = (<any>customizedConfirmReservationObject).potentialActions;
+                        const confirmReservePotentialActions = customizedConfirmReservationObject.potentialActions;
                         if (confirmReservePotentialActions !== undefined
                             && confirmReservePotentialActions.reserve !== undefined
                             && confirmReservePotentialActions.reserve.potentialActions !== undefined
                             && Array.isArray(confirmReservePotentialActions.reserve.potentialActions.informReservation)) {
-                            (<any>confirmReservationObject).potentialActions = {
+                            customizedConfirmReservationObject.potentialActions = {
                                 reserve: {
                                     potentialActions: {
                                         informReservation: confirmReservePotentialActions.reserve.potentialActions.informReservation
