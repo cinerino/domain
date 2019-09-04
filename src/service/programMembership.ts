@@ -498,6 +498,13 @@ function processPlaceOrder(params: {
             throw new factory.errors.NotFound('params.agent.memberOf.membershipNumber');
         }
 
+        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
+        const person = await repos.person.findById({
+            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
+            userId: customer.id
+        });
+        debug('person exists', person);
+
         // 会員プログラム注文取引進行
         // 会員プログラム更新タスク作成は、注文後のアクションに定義すればよいか
         const transaction = await PlaceOrderService.start({
