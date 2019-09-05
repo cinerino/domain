@@ -2,7 +2,6 @@
  * 会員プログラムサービス
  */
 import * as GMO from '@motionpicture/gmo-service';
-import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -22,7 +21,10 @@ import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
 import * as factory from '../factory';
 
-const debug = createDebug('cinerino-domain:service');
+/**
+ * GMOメンバーIDにユーザーネームを使用するかどうか
+ */
+const USE_USERNAME_AS_GMO_MEMBER_ID = process.env.USE_USERNAME_AS_GMO_MEMBER_ID === '1';
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
@@ -175,7 +177,6 @@ export function createRegisterTask(params: {
 /**
  * 会員プログラム登録
  */
-// tslint:disable-next-line:max-func-body-length
 export function register(
     params: factory.task.IData<factory.taskName.RegisterProgramMembership>
 ): IRegisterOperation<void> {
@@ -194,23 +195,33 @@ export function register(
     }) => {
         const now = new Date();
 
-        const customer = (<factory.person.IPerson>params.agent);
+        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const project = await repos.project.findById({ id: projectId });
+
+        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
+        const customer = await repos.person.findById({
+            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
+            userId: params.agent.id
+        });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (customer.memberOf === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (customer.memberOf.membershipNumber === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf.membershipNumber');
+        if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
+            throw new factory.errors.NotFound('Customer MembershipNumber');
         }
 
-        const programMembership = params.object.itemOffered;
+        const acceptedOffer = params.object;
+        const programMembership = acceptedOffer.itemOffered;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (programMembership.id === undefined) {
             throw new factory.errors.ArgumentNull('ProgramMembership ID');
+        }
+
+        const seller = programMembership.hostingOrganization;
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (seller === undefined) {
+            throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
         }
 
         const programMemberships = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
@@ -225,7 +236,7 @@ export function register(
         // すでに会員プログラムに加入済であれば何もしない
         const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.id === programMembership.id);
         if (selectedProgramMembership !== undefined) {
-            debug('Already registered.');
+            // Already registered
 
             return;
         }
@@ -247,7 +258,7 @@ export function register(
             object: {
                 typeOf: programMembership.typeOf,
                 id: programMembership.id,
-                hostingOrganization: programMembership.hostingOrganization,
+                hostingOrganization: seller,
                 name: programMembership.name,
                 programName: programMembership.programName,
                 project: programMembership.project,
@@ -269,7 +280,10 @@ export function register(
             );
 
             const placeOrderResult = await processPlaceOrder({
-                registerActionAttributes: params
+                acceptedOffer: acceptedOffer,
+                customer: customer,
+                project: project,
+                seller: seller
             })(repos);
             order = placeOrderResult.order;
         } catch (error) {
@@ -300,7 +314,6 @@ export function register(
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.interact.register.programMembership.IResult = {
             order: order
         };
@@ -444,7 +457,6 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.interact.unRegister.programMembership.IResult = {};
 
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
@@ -452,10 +464,25 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
 }
 
 /**
- * 会員プログラム登録アクション属性から、会員プログラムを注文する
+ * 会員プログラムを注文する
  */
 function processPlaceOrder(params: {
-    registerActionAttributes: factory.task.IData<factory.taskName.RegisterProgramMembership>;
+    /**
+     * 会員プログラムオファー
+     */
+    acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
+    /**
+     * 購入者
+     */
+    customer: factory.person.IPerson;
+    /**
+     * プロジェクト
+     */
+    project: factory.project.IProject;
+    /**
+     * 販売者
+     */
+    seller: factory.seller.IOrganization<any>;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -470,45 +497,22 @@ function processPlaceOrder(params: {
         ownershipInfo: OwnershipInfoRepo;
     }) => {
         const now = new Date();
-        const registerObject = params.registerActionAttributes.object;
 
-        const projectId = (params.registerActionAttributes.project !== undefined)
-            ? params.registerActionAttributes.project.id
-            : <string>process.env.PROJECT_ID;
-        const project = await repos.project.findById({ id: projectId });
-
-        const acceptedOffer = registerObject;
+        const acceptedOffer = params.acceptedOffer;
         const programMembership = acceptedOffer.itemOffered;
-        const seller = programMembership.hostingOrganization;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (seller === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership.hostingOrganization');
-        }
+        const customer = params.customer;
+        const project = params.project;
+        const seller = params.seller;
 
-        const customer = (<factory.person.IPerson>params.registerActionAttributes.agent);
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (customer.memberOf === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf');
+        if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
+            throw new factory.errors.NotFound('Customer MembershipNumber');
         }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (customer.memberOf.membershipNumber === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf.membershipNumber');
-        }
-
-        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        const person = await repos.person.findById({
-            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
-            userId: customer.id
-        });
-        debug('person exists', person);
 
         // 会員プログラム注文取引進行
-        // 会員プログラム更新タスク作成は、注文後のアクションに定義すればよいか
         const transaction = await PlaceOrderService.start({
-            project: params.registerActionAttributes.project,
+            project: { typeOf: project.typeOf, id: project.id },
             expires: moment()
                 // tslint:disable-next-line:no-magic-numbers
                 .add(5, 'minutes')
@@ -568,57 +572,45 @@ function processPlaceOrder(params: {
 
         // 会員プログラムオファー承認
         await PlaceOrderService.action.authorize.offer.programMembership.create({
-            agentId: params.registerActionAttributes.agent.id,
+            agentId: customer.id,
             transactionId: transaction.id,
             acceptedOffer: acceptedOffer
         })(repos);
 
-        // 会員クレジットカード検索
-        // 事前にクレジットカードを登録しているはず
-        const creditCards = await repos.creditCard.search({ personId: customer.memberOf.membershipNumber });
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO 絞る
+        // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)
+        const gmoMemberId = (USE_USERNAME_AS_GMO_MEMBER_ID) ? customer.memberOf.membershipNumber : customer.id;
+        const creditCards = await repos.creditCard.search({ personId: gmoMemberId });
         // creditCards = creditCards.filter((c) => c.defaultFlag === '1');
         const creditCard = creditCards.shift();
         if (creditCard === undefined) {
             throw new factory.errors.NotFound('CreditCard');
         }
-        debug('creditCard found.', creditCard.cardSeq);
 
         await CreditCardPaymentService.authorize({
             project: project,
-            agent: params.registerActionAttributes.agent,
+            agent: customer,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,
                 amount: <number>acceptedOffer.price,
                 method: GMO.utils.util.Method.Lump,
                 creditCard: {
                     memberId: customer.memberOf.membershipNumber,
-                    cardSeq: parseInt(creditCard.cardSeq, 10)
+                    cardSeq: Number(creditCard.cardSeq)
                 }
             },
             purpose: transaction
         })(repos);
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if ((<factory.person.IPerson>params.registerActionAttributes.agent).memberOf === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf');
-        }
-        const profile = await repos.person.getUserAttributes({
-            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
-            username: customer.memberOf.membershipNumber
-        });
         await PlaceOrderService.updateCustomerProfile({
             id: transaction.id,
-            agent: { id: params.registerActionAttributes.agent.id, ...profile }
+            agent: customer
         })(repos);
 
         // 取引確定
         return PlaceOrderService.confirm({
             project: { typeOf: project.typeOf, id: project.id },
             id: transaction.id,
-            agent: { id: params.registerActionAttributes.agent.id },
+            agent: { id: customer.id },
             result: {
                 order: { orderDate: new Date() }
             },
