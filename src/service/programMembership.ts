@@ -36,7 +36,7 @@ export type ICreateUnRegisterTaskOperation<T> = (repos: {
     task: TaskRepo;
 }) => Promise<T>;
 
-export type IRegisterOperation<T> = (repos: {
+export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
     creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
@@ -47,6 +47,12 @@ export type IRegisterOperation<T> = (repos: {
     registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
+}) => Promise<T>;
+
+export type IRegisterOperation<T> = (repos: {
+    action: ActionRepo;
+    person: PersonRepo;
+    task: TaskRepo;
 }) => Promise<T>;
 
 /**
@@ -175,11 +181,11 @@ export function createRegisterTask(params: {
 }
 
 /**
- * 会員プログラム登録
+ * 会員プログラム注文
  */
-export function register(
+export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.RegisterProgramMembership>
-): IRegisterOperation<void> {
+): IOrderOperation<void> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -210,6 +216,10 @@ export function register(
         }
 
         const acceptedOffer = params.object;
+        if (acceptedOffer.typeOf !== 'Offer') {
+            throw new factory.errors.Argument('Object', 'Object type must be Offer');
+        }
+
         const programMembership = acceptedOffer.itemOffered;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -253,21 +263,21 @@ export function register(
         // const isNewRegister = programMembershipOwnershipInfos.length === 0;
 
         // アクション開始
-        const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = {
-            ...params,
-            object: {
-                typeOf: programMembership.typeOf,
-                id: programMembership.id,
-                hostingOrganization: seller,
-                name: programMembership.name,
-                programName: programMembership.programName,
-                project: programMembership.project,
-                award: programMembership.award
-            }
-        };
-        const action = await repos.action.start(registerActionAttibutes);
+        // const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = {
+        //     ...params,
+        //     object: {
+        //         typeOf: programMembership.typeOf,
+        //         id: programMembership.id,
+        //         hostingOrganization: seller,
+        //         name: programMembership.name,
+        //         programName: programMembership.programName,
+        //         project: programMembership.project,
+        //         award: programMembership.award
+        //     }
+        // };
+        // const action = await repos.action.start(registerActionAttibutes);
 
-        let order: factory.order.IOrder;
+        // let order: factory.order.IOrder;
         let lockNumber: number | undefined;
         try {
             // 登録処理を進行中に変更。進行中であれば競合エラー。
@@ -276,25 +286,26 @@ export function register(
                     membershipNumber: customer.memberOf.membershipNumber,
                     programMembershipId: programMembership.id
                 },
-                action.id
+                // action.id
+                '1' // いったん値はなんでもよい
             );
 
-            const placeOrderResult = await processPlaceOrder({
+            await processPlaceOrder({
                 acceptedOffer: acceptedOffer,
                 customer: customer,
                 project: project,
                 seller: seller
             })(repos);
-            order = placeOrderResult.order;
+            // order = placeOrderResult.order;
         } catch (error) {
             // actionにエラー結果を追加
-            try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
-                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
-            }
+            // try {
+            //     // tslint:disable-next-line:max-line-length no-single-line-block-comment
+            //     const actionError = { ...error, ...{ message: error.message, name: error.name } };
+            //     await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            // } catch (__) {
+            //     // 失敗したら仕方ない
+            // }
 
             try {
                 // 本プロセスがlockした場合は解除する。解除しなければタスクのリトライが無駄になってしまう。
@@ -313,12 +324,86 @@ export function register(
             throw error;
         }
 
-        // アクション完了
-        const actionResult: factory.action.interact.register.programMembership.IResult = {
-            order: order
-        };
+        // const actionResult: factory.action.interact.register.programMembership.IResult = {
+        //     order: order
+        // };
+        // await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+    };
+}
 
+/**
+ * 会員プログラム登録
+ * 登録アクションの後で、次回の会員プログラム注文タスクを作成する
+ */
+export function register(
+    params: factory.task.IData<factory.taskName.RegisterProgramMembership>
+): IRegisterOperation<void> {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: ActionRepo;
+        person: PersonRepo;
+        task: TaskRepo;
+    }) => {
+        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
+        const customer = await repos.person.findById({
+            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
+            userId: params.agent.id
+        });
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
+            throw new factory.errors.NotFound('Customer MembershipNumber');
+        }
+
+        const acceptedOffer = params.object;
+        if (acceptedOffer.typeOf !== 'ProgramMembership') {
+            throw new factory.errors.Argument('Object', 'Object type must be ProgramMembership');
+        }
+
+        const programMembership = acceptedOffer;
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (programMembership.id === undefined) {
+            throw new factory.errors.ArgumentNull('ProgramMembership ID');
+        }
+
+        const seller = programMembership.hostingOrganization;
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (seller === undefined) {
+            throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
+        }
+
+        // アクション開始
+        const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = params;
+        const action = <factory.action.interact.register.programMembership.IAction>await repos.action.start(registerActionAttibutes);
+
+        try {
+            // 特に何もしない
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        const actionResult: factory.action.interact.register.programMembership.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+
+        // 次の会員プログラム注文タスクを作成
+        if (action.potentialActions !== undefined) {
+            if (Array.isArray(action.potentialActions.orderProgramMembership)) {
+                await Promise.all(action.potentialActions.orderProgramMembership.map(async (taskAttribute) => {
+                    return repos.task.save(taskAttribute);
+                }));
+            }
+        }
     };
 }
 

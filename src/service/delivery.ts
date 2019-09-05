@@ -223,6 +223,7 @@ export function onSend(
     sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes,
     order: factory.order.IOrder
 ) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: { task: TaskRepo }) => {
         const potentialActions = sendOrderActionAttributes.potentialActions;
         const now = new Date();
@@ -284,7 +285,20 @@ export function onSend(
 
             // 会員プログラム更新タスクがあれば追加
             if (Array.isArray(potentialActions.registerProgramMembership)) {
-                taskAttributes.push(...potentialActions.registerProgramMembership);
+                taskAttributes.push(...potentialActions.registerProgramMembership.map(
+                    (a): factory.task.IAttributes<factory.taskName.RegisterProgramMembership> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.RegisterProgramMembership,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    })
+                );
             }
 
             if (Array.isArray(potentialActions.informOrder)) {

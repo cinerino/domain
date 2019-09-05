@@ -1484,8 +1484,8 @@ export async function createPotentialActionsFromTransaction(params: {
         };
     }
 
-    // 会員プログラムが注文アイテムにあれば、プログラム更新タスクを追加
-    const registerProgramMembershipTaskAttributes: factory.task.IAttributes<factory.taskName.RegisterProgramMembership>[] = [];
+    // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
+    const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
     const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
         params.order.acceptedOffers.filter(
             (o) => o.itemOffered.typeOf === <factory.programMembership.ProgramMembershipType>'ProgramMembership'
@@ -1493,12 +1493,15 @@ export async function createPotentialActionsFromTransaction(params: {
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore if */
     if (programMembershipOffers.length > 0) {
-        registerProgramMembershipTaskAttributes.push(...programMembershipOffers.map((o) => {
-            const data: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
-                project: params.transaction.project,
-                typeOf: factory.actionType.RegisterAction,
+        registerProgramMembershipActions.push(...programMembershipOffers.map((o) => {
+            const programMembership = o.itemOffered;
+
+            // 次回の会員プログラム注文タスクを生成
+            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
                 agent: params.transaction.agent,
-                object: o
+                object: o,
+                project: project,
+                typeOf: factory.actionType.RegisterAction
             };
 
             // どういう期間でいくらのオファーなのか
@@ -1515,15 +1518,37 @@ export async function createPotentialActionsFromTransaction(params: {
                 .add(eligibleDuration.value, 'seconds')
                 .toDate();
 
-            return {
-                project: data.project,
-                name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
-                status: factory.taskStatus.Ready,
-                runsAt: runsAt,
-                remainingNumberOfTries: 10,
-                numberOfTried: 0,
+            const orderProgramMembershipTask: factory.task.IAttributes<factory.taskName.RegisterProgramMembership> = {
+                data: orderProgramMembershipTaskData,
                 executionResults: [],
-                data: data
+                name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
+                numberOfTried: 0,
+                project: project,
+                remainingNumberOfTries: 10,
+                runsAt: runsAt,
+                status: factory.taskStatus.Ready
+            };
+
+            return {
+                agent: params.transaction.agent,
+                object: {
+                    typeOf: programMembership.typeOf,
+                    id: programMembership.id,
+                    hostingOrganization: programMembership.hostingOrganization,
+                    name: programMembership.name,
+                    programName: programMembership.programName,
+                    project: programMembership.project,
+                    award: programMembership.award
+                },
+                potentialActions: {
+                    orderProgramMembership: [orderProgramMembershipTask]
+                },
+                project: project,
+                prupose: {
+                    typeOf: params.order.typeOf,
+                    orderNumber: params.order.orderNumber
+                },
+                typeOf: <factory.actionType.RegisterAction>factory.actionType.RegisterAction
             };
         }));
     }
@@ -1599,7 +1624,7 @@ export async function createPotentialActionsFromTransaction(params: {
         potentialActions: {
             confirmReservation: confirmReservationActions,
             informOrder: informOrderActionsOnSentOrder,
-            registerProgramMembership: registerProgramMembershipTaskAttributes,
+            registerProgramMembership: registerProgramMembershipActions,
             sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined
         }
     };
