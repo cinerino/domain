@@ -13,6 +13,8 @@ const awsCredentials = new AWS.Credentials({
     secretAccessKey: credentials.aws.secretAccessKey
 });
 
+const TOKEN_ISSUER_ENDPOINT = 'https://cognito-idp.ap-northeast-1.amazonaws.com';
+
 /**
  * 会員リポジトリ
  * 会員情報の保管先は基本的にAmazon Cognitoです。
@@ -28,15 +30,24 @@ export class CognitoRepository {
         });
     }
 
-    public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType) {
+    public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType, userPoolId?: string) {
+        const additionalProperty: factory.person.IAdditionalProperty = userAttributes.map((a) => {
+            return { name: a.Name, value: a.Value };
+        });
+
+        if (userPoolId !== undefined) {
+            additionalProperty.push(
+                { name: 'tokenIssuer', value: `${TOKEN_ISSUER_ENDPOINT}/${userPoolId}` },
+                { name: 'iss', value: `${TOKEN_ISSUER_ENDPOINT}/${userPoolId}` }
+            );
+        }
+
         const profile: factory.person.IProfile = {
             givenName: '',
             familyName: '',
             email: '',
             telephone: '',
-            additionalProperty: userAttributes.map((a) => {
-                return { name: a.Name, value: a.Value };
-            })
+            additionalProperty: additionalProperty
         };
 
         userAttributes.forEach((userAttribute) => {
@@ -68,9 +79,10 @@ export class CognitoRepository {
 
     public static ATTRIBUTE2PERSON(params: {
         username?: string;
+        userPoolId?: string;
         attributes: AttributeListType;
     }) {
-        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params.attributes);
+        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params.attributes, params.userPoolId);
         const person: IPerson = {
             typeOf: factory.personType.Person,
             id: '',
@@ -164,7 +176,7 @@ export class CognitoRepository {
                         if (data.UserAttributes === undefined) {
                             reject(new factory.errors.NotFound('User'));
                         } else {
-                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
+                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes, params.userPooId));
                         }
                     }
                 });
@@ -226,6 +238,7 @@ export class CognitoRepository {
                             } else {
                                 resolve(CognitoRepository.ATTRIBUTE2PERSON({
                                     username: user.Username,
+                                    userPoolId: params.userPooId,
                                     attributes: user.Attributes
                                 }));
                             }
@@ -411,6 +424,7 @@ export class CognitoRepository {
                         } else {
                             resolve(data.Users.map((u) => CognitoRepository.ATTRIBUTE2PERSON({
                                 username: u.Username,
+                                userPoolId: params.userPooId,
                                 attributes: <AttributeListType>u.Attributes
                             })));
                         }
