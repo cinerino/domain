@@ -1544,7 +1544,7 @@ export async function createPotentialActionsFromTransaction(params: {
                     orderProgramMembership: [orderProgramMembershipTask]
                 },
                 project: project,
-                prupose: {
+                purpose: {
                     typeOf: params.order.typeOf,
                     orderNumber: params.order.orderNumber
                 },
