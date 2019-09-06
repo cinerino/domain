@@ -25,6 +25,7 @@ import * as factory from '../factory';
  * GMOメンバーIDにユーザーネームを使用するかどうか
  */
 const USE_USERNAME_AS_GMO_MEMBER_ID = process.env.USE_USERNAME_AS_GMO_MEMBER_ID === '1';
+const EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP = process.env.EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP;
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
@@ -81,6 +82,8 @@ export function createRegisterTask(params: {
      * 会員プログラムのオファー識別子
      */
     offerIdentifier: string;
+    sendEmailMessage?: boolean;
+    email?: factory.creativeWork.message.email.ICustomization;
 }): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.RegisterProgramMembership>> {
     return async (repos: {
         programMembership: ProgramMembershipRepo;
@@ -156,14 +159,19 @@ export function createRegisterTask(params: {
                 name: seller.name.ja
             }
         };
+
         // 登録アクション属性を作成
         const data: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
             project: programMembership.project,
             typeOf: factory.actionType.RegisterAction,
             agent: params.agent,
-            object: acceptedOffer
-            // potentialActions?: any;
+            object: acceptedOffer,
+            ...{
+                sendEmailMessage: params.sendEmailMessage,
+                email: params.email
+            }
         };
+
         // 会員プログラム登録タスクを作成する
         const taskAttributes: factory.task.IAttributes<factory.taskName.RegisterProgramMembership> = {
             project: data.project,
@@ -294,7 +302,9 @@ export function orderProgramMembership(
                 acceptedOffer: acceptedOffer,
                 customer: customer,
                 project: project,
-                seller: seller
+                seller: seller,
+                sendEmailMessage: (<any>params).sendEmailMessage,
+                email: (<any>params).email
             })(repos);
             // order = placeOrderResult.order;
         } catch (error) {
@@ -568,6 +578,8 @@ function processPlaceOrder(params: {
      * 販売者
      */
     seller: factory.seller.IOrganization<any>;
+    sendEmailMessage?: boolean;
+    email?: factory.creativeWork.message.email.ICustomization;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -617,7 +629,9 @@ function processPlaceOrder(params: {
             ownedBy: { id: customer.id }
         });
 
-        if (programMembershipOwnershipInfos.length === 0) {
+        const isNewRegister = programMembershipOwnershipInfos.length === 0;
+
+        if (isNewRegister) {
             // 新規登録時の獲得ポイント
             const membershipPointsEarned = programMembership.membershipPointsEarned;
             if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
@@ -699,7 +713,12 @@ function processPlaceOrder(params: {
             result: {
                 order: { orderDate: new Date() }
             },
-            sendEmailMessage: false
+            sendEmailMessage: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined) ? true : false,
+            email: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined)
+                ? {
+                    toRecipient: { email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
+                }
+                : undefined
         })(repos);
     };
 }
