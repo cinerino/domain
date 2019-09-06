@@ -17,7 +17,6 @@ const TOKEN_ISSUER_ENDPOINT = 'https://cognito-idp.ap-northeast-1.amazonaws.com'
 
 /**
  * 会員リポジトリ
- * 会員情報の保管先は基本的にAmazon Cognitoです。
  */
 export class CognitoRepository {
     public readonly cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
@@ -30,17 +29,10 @@ export class CognitoRepository {
         });
     }
 
-    public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType, userPoolId?: string) {
+    public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType) {
         const additionalProperty: factory.person.IAdditionalProperty = userAttributes.map((a) => {
             return { name: a.Name, value: a.Value };
         });
-
-        if (userPoolId !== undefined) {
-            additionalProperty.push(
-                { name: 'tokenIssuer', value: `${TOKEN_ISSUER_ENDPOINT}/${userPoolId}` },
-                { name: 'iss', value: `${TOKEN_ISSUER_ENDPOINT}/${userPoolId}` }
-            );
-        }
 
         const profile: factory.person.IProfile = {
             givenName: '',
@@ -82,18 +74,29 @@ export class CognitoRepository {
         userPoolId?: string;
         attributes: AttributeListType;
     }) {
-        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params.attributes, params.userPoolId);
+        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params.attributes);
+
+        const identifier: factory.person.IIdentifier = [];
+        if (typeof params.userPoolId === 'string') {
+            identifier.push(
+                { name: 'tokenIssuer', value: `${TOKEN_ISSUER_ENDPOINT}/${params.userPoolId}` },
+                { name: 'iss', value: `${TOKEN_ISSUER_ENDPOINT}/${params.userPoolId}` }
+            );
+        }
+
         const person: IPerson = {
+            ...profile,
             typeOf: factory.personType.Person,
             id: '',
+            identifier: identifier,
             memberOf: {
                 typeOf: 'ProgramMembership',
                 membershipNumber: params.username,
                 programName: 'Amazon Cognito',
                 award: []
-            },
-            ...profile
+            }
         };
+
         params.attributes.forEach((a) => {
             switch (a.Name) {
                 case 'sub':
@@ -176,7 +179,7 @@ export class CognitoRepository {
                         if (data.UserAttributes === undefined) {
                             reject(new factory.errors.NotFound('User'));
                         } else {
-                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes, params.userPooId));
+                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
                         }
                     }
                 });
