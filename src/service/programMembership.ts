@@ -716,15 +716,24 @@ function processPlaceOrder(params: {
             sendEmailMessage: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined) ? true : false,
             email: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined)
                 ? {
-                    about: 'Update ProgramMembership',
+                    about: `[${project.id}] Update ProgramMembership`,
                     toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
                     // tslint:disable:no-trailing-whitespace
-                    template: `| #{order.customer.id}の会員プログラムが更新されました。
+                    template: `| 会員プログラムが更新されました。
 | 
-| [注文番号]
+| [Project]
+| ${project.id}
+| 
+| [ID]
+| #{order.customer.id}
+| 
+| [Username]
+| ${customer.memberOf.membershipNumber}
+| 
+| [OrderNumber]
 | #{order.orderNumber}
 | 
-| [注文日時]
+| [Order Date]
 | #{order.orderDate}
 `
                 }
