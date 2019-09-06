@@ -716,7 +716,7 @@ function processPlaceOrder(params: {
             sendEmailMessage: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined) ? true : false,
             email: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined)
                 ? {
-                    about: `[${project.id}] Update ProgramMembership`,
+                    about: `[${project.id}] ProgramMembership Updated`,
                     toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
                     // tslint:disable:no-trailing-whitespace
                     template: `| 会員プログラムが更新されました。
