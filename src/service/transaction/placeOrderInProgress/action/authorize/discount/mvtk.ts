@@ -135,6 +135,7 @@ function seatSyncInfoIn2movieTickets(params: {
         if (knyknrNoInfo !== undefined) {
             const movieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
             knyknrNoInfo.knshInfo.forEach((knshInfo) => {
+                // tslint:disable-next-line:prefer-array-literal
                 [...Array(Number(knshInfo.miNum))].forEach(() => {
                     movieTickets.push({
                         typeOf: factory.paymentMethodType.MovieTicket,

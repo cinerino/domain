@@ -105,7 +105,7 @@ export function stream(params: {
                     }));
                 });
 
-                const fields: json2csv.json2csv.FieldInfo<any>[] = [
+                const fields: json2csv.default.FieldInfo<any>[] = [
                     { label: '取引ID', default: '', value: 'id' },
                     { label: '取引ステータス', default: '', value: 'status' },
                     { label: '取引開始日時', default: '', value: 'startDate' },

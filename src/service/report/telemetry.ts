@@ -765,7 +765,7 @@ function createGlobalFlow(
     }) => {
         // 全タスク名リスト
         const targetTaskNames: any[] = Object.keys(factory.taskName)
-            .map((k) => factory.taskName[<any>k]);
+            .map((k) => (<any>factory.taskName)[k]);
 
         const taskResults = await Promise.all(targetTaskNames.map(async (taskName) => {
             const numberOfTasksCreated = await repos.task.taskModel.count({

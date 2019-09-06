@@ -87,6 +87,7 @@ export class MvtkRepository {
                 if (knyknrNoInfo !== undefined) {
                     if (Array.isArray(knyknrNoInfoOut.ykknInfo)) {
                         knyknrNoInfoOut.ykknInfo.forEach((ykknInfo) => {
+                            // tslint:disable-next-line:prefer-array-literal
                             [...Array(Number(ykknInfo.ykknKnshbtsmiNum))].forEach(() => {
                                 movieTickets.push({
                                     typeOf: factory.paymentMethodType.MovieTicket,
@@ -114,6 +115,7 @@ export class MvtkRepository {
                     }
                     if (Array.isArray(knyknrNoInfoOut.mkknInfo)) {
                         knyknrNoInfoOut.mkknInfo.forEach((mkknInfo) => {
+                            // tslint:disable-next-line:prefer-array-literal
                             [...Array(Number(mkknInfo.mkknKnshbtsmiNum))].forEach(() => {
                                 movieTickets.push({
                                     typeOf: factory.paymentMethodType.MovieTicket,
