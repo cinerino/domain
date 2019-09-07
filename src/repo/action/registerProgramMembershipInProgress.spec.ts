@@ -26,7 +26,7 @@ describe('会員プログラム登録アクションをロックする', () => {
 
         const result = await actionRepo.lock(
             {
-                membershipNumber: 'membershipNumber',
+                id: 'id',
                 programMembershipId: 'programMembershipId'
             },
             'actionId'
@@ -46,7 +46,7 @@ describe('会員プログラム登録アクションロックを解除する', (
 
         const result = await actionRepo.unlock(
             {
-                membershipNumber: 'membershipNumber',
+                id: 'id',
                 programMembershipId: 'programMembershipId'
             }
         );
