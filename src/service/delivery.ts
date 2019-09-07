@@ -70,9 +70,10 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<'ProgramMembership'>>[]>
                 ownershipInfos.filter((o) => o.typeOfGood.typeOf === 'ProgramMembership');
             await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
-                const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
+                const customer = <factory.person.IPerson>o.ownedBy;
+                // const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
                 await repos.registerActionInProgress.unlock({
-                    membershipNumber: <string>memberOf.membershipNumber,
+                    id: customer.id,
                     programMembershipId: <string>o.typeOfGood.id
                 });
             }));

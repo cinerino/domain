@@ -40,14 +40,15 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         }
 
         switch (data.object.typeOf) {
-            case 'Offer':
+            // 旧会員プログラム注文タスクへの互換性維持のため
+            case <any>'Offer':
                 const creditCardRepo = new CreditCardRepo({
                     siteId: project.settings.gmo.siteId,
                     sitePass: project.settings.gmo.sitePass,
                     cardService: new GMO.service.Card({ endpoint: project.settings.gmo.endpoint })
                 });
 
-                await ProgramMembershipService.orderProgramMembership(data)({
+                await ProgramMembershipService.orderProgramMembership(<any>data)({
                     action: new ActionRepo(settings.connection),
                     creditCard: creditCardRepo,
                     orderNumber: new OrderNumberRepo(settings.redisClient),

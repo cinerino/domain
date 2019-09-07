@@ -84,7 +84,7 @@ export function createRegisterTask(params: {
     offerIdentifier: string;
     sendEmailMessage?: boolean;
     email?: factory.creativeWork.message.email.ICustomization;
-}): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.RegisterProgramMembership>> {
+}): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
         programMembership: ProgramMembershipRepo;
         seller: SellerRepo;
@@ -161,21 +161,19 @@ export function createRegisterTask(params: {
         };
 
         // 登録アクション属性を作成
-        const data: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
+        const data: factory.task.IData<factory.taskName.OrderProgramMembership> = {
             project: programMembership.project,
-            typeOf: factory.actionType.RegisterAction,
+            typeOf: factory.actionType.OrderAction,
             agent: params.agent,
             object: acceptedOffer,
-            ...{
-                sendEmailMessage: params.sendEmailMessage,
-                email: params.email
-            }
+            sendEmailMessage: params.sendEmailMessage,
+            email: params.email
         };
 
         // 会員プログラム登録タスクを作成する
-        const taskAttributes: factory.task.IAttributes<factory.taskName.RegisterProgramMembership> = {
+        const taskAttributes: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {
             project: data.project,
-            name: factory.taskName.RegisterProgramMembership,
+            name: factory.taskName.OrderProgramMembership,
             status: factory.taskStatus.Ready,
             runsAt: now,
             remainingNumberOfTries: 10,
@@ -184,7 +182,7 @@ export function createRegisterTask(params: {
             data: data
         };
 
-        return repos.task.save<factory.taskName.RegisterProgramMembership>(taskAttributes);
+        return repos.task.save<factory.taskName.OrderProgramMembership>(taskAttributes);
     };
 }
 
@@ -192,7 +190,7 @@ export function createRegisterTask(params: {
  * 会員プログラム注文
  */
 export function orderProgramMembership(
-    params: factory.task.IData<factory.taskName.RegisterProgramMembership>
+    params: factory.task.IData<factory.taskName.OrderProgramMembership>
 ): IOrderOperation<void> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -217,11 +215,6 @@ export function orderProgramMembership(
             userPooId: <string>process.env.COGNITO_USER_POOL_ID,
             userId: params.agent.id
         });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
-            throw new factory.errors.NotFound('Customer MembershipNumber');
-        }
 
         const acceptedOffer = params.object;
         if (acceptedOffer.typeOf !== 'Offer') {
@@ -291,7 +284,7 @@ export function orderProgramMembership(
             // 登録処理を進行中に変更。進行中であれば競合エラー。
             lockNumber = await repos.registerActionInProgressRepo.lock(
                 {
-                    membershipNumber: customer.memberOf.membershipNumber,
+                    id: customer.id,
                     programMembershipId: programMembership.id
                 },
                 // action.id
@@ -303,8 +296,8 @@ export function orderProgramMembership(
                 customer: customer,
                 project: project,
                 seller: seller,
-                sendEmailMessage: (<any>params).sendEmailMessage,
-                email: (<any>params).email
+                sendEmailMessage: params.sendEmailMessage,
+                email: params.email
             })(repos);
             // order = placeOrderResult.order;
         } catch (error) {
@@ -323,7 +316,7 @@ export function orderProgramMembership(
                 /* istanbul ignore else */
                 if (lockNumber !== undefined) {
                     await repos.registerActionInProgressRepo.unlock({
-                        membershipNumber: customer.memberOf.membershipNumber,
+                        id: customer.id,
                         programMembershipId: programMembership.id
                     });
                 }
@@ -355,15 +348,10 @@ export function register(
         task: TaskRepo;
     }) => {
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        const customer = await repos.person.findById({
+        await repos.person.findById({
             userPooId: <string>process.env.COGNITO_USER_POOL_ID,
             userId: params.agent.id
         });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
-            throw new factory.errors.NotFound('Customer MembershipNumber');
-        }
 
         const acceptedOffer = params.object;
         if (acceptedOffer.typeOf !== 'ProgramMembership') {
@@ -432,18 +420,9 @@ export function createUnRegisterTask(params: {
         task: TaskRepo;
     }) => {
         // 所有している会員プログラムを検索
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (params.agent.memberOf === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (params.agent.memberOf.membershipNumber === undefined) {
-            throw new factory.errors.NotFound('params.agent.memberOf.membershipNumber');
-        }
         const now = new Date();
         const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
+            limit: 1,
             typeOfGood: { typeOf: 'ProgramMembership' },
             ownedBy: { id: params.agent.id },
             ownedFrom: now,
@@ -494,18 +473,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         const action = await repos.action.start(params);
 
         try {
-            const memberOf = (<factory.person.IPerson>params.object.ownedBy).memberOf;
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (memberOf === undefined) {
-                throw new factory.errors.NotFound('params.object.ownedBy.memberOf');
-            }
-            const membershipNumber = memberOf.membershipNumber;
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (membershipNumber === undefined) {
-                throw new factory.errors.NotFound('params.object.ownedBy.memberOf.membershipNumber');
-            }
+            const customer = <factory.person.IPerson>params.object.ownedBy;
             const programMembershipId = params.object.typeOfGood.id;
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore if */
@@ -516,17 +484,17 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
             // 会員プログラム更新タスク(継続課金タスク)をキャンセル
             await repos.task.taskModel.findOneAndUpdate(
                 {
-                    name: factory.taskName.RegisterProgramMembership,
-                    status: factory.taskStatus.Ready,
-                    'data.agent.memberOf.membershipNumber': {
+                    // 旧会員プログラム注文タスクへの互換性維持
+                    name: { $in: [factory.taskName.OrderProgramMembership, factory.taskName.RegisterProgramMembership] },
+                    'data.agent.id': {
                         $exists: true,
-                        $eq: membershipNumber
-
+                        $eq: customer.id
                     },
                     'data.object.itemOffered.id': {
                         $exists: true,
                         $eq: programMembershipId
-                    }
+                    },
+                    status: factory.taskStatus.Ready
                 },
                 { status: factory.taskStatus.Aborted }
             )
@@ -693,7 +661,7 @@ function processPlaceOrder(params: {
                 amount: <number>acceptedOffer.price,
                 method: GMO.utils.util.Method.Lump,
                 creditCard: {
-                    memberId: customer.memberOf.membershipNumber,
+                    memberId: gmoMemberId,
                     cardSeq: Number(creditCard.cardSeq)
                 }
             },

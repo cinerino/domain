@@ -1497,11 +1497,11 @@ export async function createPotentialActionsFromTransaction(params: {
             const programMembership = o.itemOffered;
 
             // 次回の会員プログラム注文タスクを生成
-            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.RegisterProgramMembership> = {
+            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
                 agent: params.transaction.agent,
                 object: o,
                 project: project,
-                typeOf: factory.actionType.RegisterAction
+                typeOf: factory.actionType.OrderAction
             };
 
             // どういう期間でいくらのオファーなのか
@@ -1518,10 +1518,10 @@ export async function createPotentialActionsFromTransaction(params: {
                 .add(eligibleDuration.value, 'seconds')
                 .toDate();
 
-            const orderProgramMembershipTask: factory.task.IAttributes<factory.taskName.RegisterProgramMembership> = {
+            const orderProgramMembershipTask: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {
                 data: orderProgramMembershipTaskData,
                 executionResults: [],
-                name: <factory.taskName.RegisterProgramMembership>factory.taskName.RegisterProgramMembership,
+                name: <factory.taskName.OrderProgramMembership>factory.taskName.OrderProgramMembership,
                 numberOfTried: 0,
                 project: project,
                 remainingNumberOfTries: 10,

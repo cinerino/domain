@@ -7,7 +7,7 @@ const debug = createDebug('cinerino:repository');
  * 進行アクションキーインターフェース
  */
 export interface IProgressKey {
-    membershipNumber: string;
+    id: string;
     programMembershipId: string;
 }
 
@@ -28,7 +28,7 @@ export class RedisRepository {
      */
     public async lock(progressKey: IProgressKey, actionId: string): Promise<number> {
         return new Promise<number>((resolve, reject) => {
-            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.membershipNumber}:${progressKey.programMembershipId}`;
+            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
             const ttl = 7200;
             debug('locking...', key, ttl);
             this.redisClient.multi()
@@ -58,7 +58,7 @@ export class RedisRepository {
      */
     public async unlock(progressKey: IProgressKey) {
         return new Promise<void>((resolve, reject) => {
-            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.membershipNumber}:${progressKey.programMembershipId}`;
+            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
             this.redisClient.del([key], (err, res) => {
                 debug(err, res);
                 // tslint:disable-next-line:no-single-line-block-comment

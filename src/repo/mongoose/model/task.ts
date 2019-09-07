@@ -2,8 +2,6 @@ import * as mongoose from 'mongoose';
 
 const modelName = 'Task';
 
-import * as factory from '../../../factory';
-
 const safe = { j: true, w: 'majority', wtimeout: 10000 };
 
 const executionResultSchema = new mongoose.Schema(
@@ -114,6 +112,26 @@ schema.index(
 );
 
 schema.index(
+    { 'data.agent.id': 1, runsAt: -1 },
+    {
+        name: 'searchByDataAgentId',
+        partialFilterExpression: {
+            'data.agent.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'data.object.itemOffered.id': 1, runsAt: -1 },
+    {
+        name: 'searchByDataObjectItemOfferedId',
+        partialFilterExpression: {
+            'data.object.itemOffered.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { status: 1, name: 1, numberOfTried: 1, runsAt: 1 },
     {
         name: 'executeOneByName'
@@ -167,22 +185,6 @@ schema.index(
     {
         partialFilterExpression: {
             'data.transactionId': { $exists: true }
-        }
-    }
-);
-
-schema.index(
-    {
-        name: 1,
-        'data.agent.memberOf.membershipNumber': 1,
-        'data.object.itemOffered.id': 1
-    },
-    {
-        name: 'findRegisterProgramMembershipByMemberAndProgram',
-        partialFilterExpression: {
-            name: factory.taskName.RegisterProgramMembership,
-            'data.agent.memberOf.membershipNumber': { $exists: true },
-            'data.object.itemOffered.id': { $exists: true }
         }
     }
 );
