@@ -1611,9 +1611,11 @@ export function createRegisterProgramMembershipActions(params: {
             const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
                 agent: params.transaction.agent,
                 object: o,
+                // 注文確定後アクションは、次回も同様に設定
+                potentialActions: params.potentialActions,
                 project: project,
-                typeOf: factory.actionType.OrderAction,
-                sendEmailMessage: false
+                sendEmailMessage: false,
+                typeOf: factory.actionType.OrderAction
             };
 
             // アクションカスタマイズの指定があれば適用

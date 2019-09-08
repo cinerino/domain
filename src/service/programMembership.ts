@@ -62,6 +62,15 @@ export type IRegisterOperation<T> = (repos: {
 // tslint:disable-next-line:max-func-body-length
 export function createRegisterTask(params: {
     agent: factory.person.IPerson;
+    /**
+     * 会員プログラムのオファー識別子
+     */
+    offerIdentifier: string;
+    /**
+     * 会員プログラムID
+     */
+    programMembershipId: string;
+    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: {
         /**
          * 販売者タイプ
@@ -74,14 +83,6 @@ export function createRegisterTask(params: {
          */
         id: string;
     };
-    /**
-     * 会員プログラムID
-     */
-    programMembershipId: string;
-    /**
-     * 会員プログラムのオファー識別子
-     */
-    offerIdentifier: string;
     sendEmailMessage?: boolean;
     email?: factory.creativeWork.message.email.ICustomization;
 }): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
@@ -162,12 +163,13 @@ export function createRegisterTask(params: {
 
         // 登録アクション属性を作成
         const data: factory.task.IData<factory.taskName.OrderProgramMembership> = {
-            project: programMembership.project,
-            typeOf: factory.actionType.OrderAction,
             agent: params.agent,
             object: acceptedOffer,
+            potentialActions: params.potentialActions,
+            project: programMembership.project,
             sendEmailMessage: params.sendEmailMessage,
-            email: params.email
+            email: params.email,
+            typeOf: factory.actionType.OrderAction
         };
 
         // 会員プログラム登録タスクを作成する
@@ -294,6 +296,7 @@ export function orderProgramMembership(
             await processPlaceOrder({
                 acceptedOffer: acceptedOffer,
                 customer: customer,
+                potentialActions: params.potentialActions,
                 project: project,
                 seller: seller,
                 sendEmailMessage: params.sendEmailMessage,
@@ -538,6 +541,7 @@ function processPlaceOrder(params: {
      * 購入者
      */
     customer: factory.person.IPerson;
+    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     /**
      * プロジェクト
      */
@@ -720,6 +724,7 @@ function processPlaceOrder(params: {
             result: {
                 order: { orderDate: new Date() }
             },
+            potentialActions: params.potentialActions,
             sendEmailMessage: sendEmailMessage,
             email: email
         })(repos);
