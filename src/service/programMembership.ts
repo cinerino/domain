@@ -673,6 +673,45 @@ function processPlaceOrder(params: {
             agent: customer
         })(repos);
 
+        // 注文配送メール送信有無
+        let sendEmailMessage = false;
+        if (params.sendEmailMessage === true) {
+            sendEmailMessage = params.sendEmailMessage;
+        } else {
+            sendEmailMessage = !isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined;
+        }
+
+        // 注文配送メールカスマイズ
+        let email: factory.creativeWork.message.email.ICustomization | undefined;
+        if (sendEmailMessage) {
+            if (params.email !== undefined) {
+                email = params.email;
+            } else {
+                email = {
+                    about: `[${project.id}] ProgramMembership Updated`,
+                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
+                    // tslint:disable:no-trailing-whitespace
+                    //                     template: `| 会員プログラムが更新されました。
+                    // | 
+                    // | [Project]
+                    // | ${project.id}
+                    // | 
+                    // | [ID]
+                    // | #{order.customer.id}
+                    // | 
+                    // | [Username]
+                    // | ${customer.memberOf.membershipNumber}
+                    // | 
+                    // | [OrderNumber]
+                    // | #{order.orderNumber}
+                    // | 
+                    // | [Order Date]
+                    // | #{order.orderDate}
+                    // `
+                };
+            }
+        }
+
         // 取引確定
         return PlaceOrderService.confirm({
             project: { typeOf: project.typeOf, id: project.id },
@@ -681,31 +720,8 @@ function processPlaceOrder(params: {
             result: {
                 order: { orderDate: new Date() }
             },
-            sendEmailMessage: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined) ? true : false,
-            email: (!isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined)
-                ? {
-                    about: `[${project.id}] ProgramMembership Updated`,
-                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
-                    // tslint:disable:no-trailing-whitespace
-                    template: `| 会員プログラムが更新されました。
-| 
-| [Project]
-| ${project.id}
-| 
-| [ID]
-| #{order.customer.id}
-| 
-| [Username]
-| ${customer.memberOf.membershipNumber}
-| 
-| [OrderNumber]
-| #{order.orderNumber}
-| 
-| [Order Date]
-| #{order.orderDate}
-`
-                }
-                : undefined
+            sendEmailMessage: sendEmailMessage,
+            email: email
         })(repos);
     };
 }

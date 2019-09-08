@@ -1061,7 +1061,7 @@ export async function createPotentialActionsFromTransaction(params: {
     seller: ISeller;
     sendEmailMessage?: boolean;
     email?: factory.creativeWork.message.email.ICustomization;
-    potentialActions?: factory.transaction.placeOrder.IConfirmPotentialActionsParams;
+    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project
@@ -1485,73 +1485,7 @@ export async function createPotentialActionsFromTransaction(params: {
     }
 
     // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
-    const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
-    const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
-        params.order.acceptedOffers.filter(
-            (o) => o.itemOffered.typeOf === <factory.programMembership.ProgramMembershipType>'ProgramMembership'
-        );
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore if */
-    if (programMembershipOffers.length > 0) {
-        registerProgramMembershipActions.push(...programMembershipOffers.map((o) => {
-            const programMembership = o.itemOffered;
-
-            // 次回の会員プログラム注文タスクを生成
-            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
-                agent: params.transaction.agent,
-                object: o,
-                project: project,
-                typeOf: factory.actionType.OrderAction
-            };
-
-            // どういう期間でいくらのオファーなのか
-            const eligibleDuration = o.eligibleDuration;
-            if (eligibleDuration === undefined) {
-                throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
-            }
-            // 期間単位としては秒のみ実装
-            if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
-                throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
-            }
-            // プログラム更新日時は、今回のプログラムの所有期限
-            const runsAt = moment(params.order.orderDate)
-                .add(eligibleDuration.value, 'seconds')
-                .toDate();
-
-            const orderProgramMembershipTask: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {
-                data: orderProgramMembershipTaskData,
-                executionResults: [],
-                name: <factory.taskName.OrderProgramMembership>factory.taskName.OrderProgramMembership,
-                numberOfTried: 0,
-                project: project,
-                remainingNumberOfTries: 10,
-                runsAt: runsAt,
-                status: factory.taskStatus.Ready
-            };
-
-            return {
-                agent: params.transaction.agent,
-                object: {
-                    typeOf: programMembership.typeOf,
-                    id: programMembership.id,
-                    hostingOrganization: programMembership.hostingOrganization,
-                    name: programMembership.name,
-                    programName: programMembership.programName,
-                    project: programMembership.project,
-                    award: programMembership.award
-                },
-                potentialActions: {
-                    orderProgramMembership: [orderProgramMembershipTask]
-                },
-                project: project,
-                purpose: {
-                    typeOf: params.order.typeOf,
-                    orderNumber: params.order.orderNumber
-                },
-                typeOf: <factory.actionType.RegisterAction>factory.actionType.RegisterAction
-            };
-        }));
-    }
+    const registerProgramMembershipActions = createRegisterProgramMembershipActions(params);
 
     const informOrderActionsOnPlaceOrder: factory.action.interact.inform.IAttributes<any, any>[] = [];
     if (params.potentialActions !== undefined) {
@@ -1649,4 +1583,123 @@ export async function createPotentialActionsFromTransaction(params: {
             }
         }
     };
+}
+
+// tslint:disable-next-line:max-func-body-length
+export function createRegisterProgramMembershipActions(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+    order: factory.order.IOrder;
+    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+}): factory.action.interact.register.programMembership.IAttributes[] {
+    const project: factory.project.IProject = (params.transaction.project !== undefined)
+        ? params.transaction.project
+        : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+
+    // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
+    const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
+    const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
+        params.order.acceptedOffers.filter(
+            (o) => o.itemOffered.typeOf === <factory.programMembership.ProgramMembershipType>'ProgramMembership'
+        );
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
+    if (programMembershipOffers.length > 0) {
+        registerProgramMembershipActions.push(...programMembershipOffers.map((o) => {
+            const programMembership = o.itemOffered;
+
+            // 次回の会員プログラム注文タスクを生成
+            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
+                agent: params.transaction.agent,
+                object: o,
+                project: project,
+                typeOf: factory.actionType.OrderAction,
+                sendEmailMessage: false
+            };
+
+            // アクションカスタマイズの指定があれば適用
+            if (params.potentialActions !== undefined
+                && params.potentialActions.order !== undefined
+                && params.potentialActions.order.potentialActions !== undefined
+                && params.potentialActions.order.potentialActions.sendOrder !== undefined
+                && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
+                && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.registerProgramMembership)) {
+                const registerParams =
+                    params.potentialActions.order.potentialActions.sendOrder.potentialActions.registerProgramMembership.find((r) => {
+                        return r.object !== undefined
+                            && r.object.id === programMembership.id
+                            && r.object.typeOf === programMembership.typeOf;
+                    });
+                if (registerParams !== undefined) {
+                    const registerPotentialActions = registerParams.potentialActions;
+                    if (registerPotentialActions !== undefined
+                        && registerPotentialActions.orderProgramMembership !== undefined
+                        && registerPotentialActions.orderProgramMembership.potentialActions !== undefined
+                        && registerPotentialActions.orderProgramMembership.potentialActions.order !== undefined
+                        && registerPotentialActions.orderProgramMembership.potentialActions.order.potentialActions !== undefined) {
+                        const orderProgramMembershipPotentialActions =
+                            registerPotentialActions.orderProgramMembership.potentialActions.order.potentialActions;
+                        if (orderProgramMembershipPotentialActions.sendOrder !== undefined
+                            && orderProgramMembershipPotentialActions.sendOrder.potentialActions !== undefined
+                            && Array.isArray(orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage)) {
+                            const sendEmailMessage =
+                                orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage.shift();
+                            if (sendEmailMessage !== undefined && sendEmailMessage.object !== undefined) {
+                                orderProgramMembershipTaskData.sendEmailMessage = true;
+                                orderProgramMembershipTaskData.email = sendEmailMessage.object;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // どういう期間でいくらのオファーなのか
+            const eligibleDuration = o.eligibleDuration;
+            if (eligibleDuration === undefined) {
+                throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
+            }
+            // 期間単位としては秒のみ実装
+            if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
+                throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
+            }
+            // プログラム更新日時は、今回のプログラムの所有期限
+            const runsAt = moment(params.order.orderDate)
+                .add(eligibleDuration.value, 'seconds')
+                .toDate();
+
+            const orderProgramMembershipTask: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {
+                data: orderProgramMembershipTaskData,
+                executionResults: [],
+                name: <factory.taskName.OrderProgramMembership>factory.taskName.OrderProgramMembership,
+                numberOfTried: 0,
+                project: project,
+                remainingNumberOfTries: 10,
+                runsAt: runsAt,
+                status: factory.taskStatus.Ready
+            };
+
+            return {
+                agent: params.transaction.agent,
+                object: {
+                    typeOf: programMembership.typeOf,
+                    id: programMembership.id,
+                    hostingOrganization: programMembership.hostingOrganization,
+                    name: programMembership.name,
+                    programName: programMembership.programName,
+                    project: programMembership.project,
+                    award: programMembership.award
+                },
+                potentialActions: {
+                    orderProgramMembership: [orderProgramMembershipTask]
+                },
+                project: project,
+                purpose: {
+                    typeOf: params.order.typeOf,
+                    orderNumber: params.order.orderNumber
+                },
+                typeOf: <factory.actionType.RegisterAction>factory.actionType.RegisterAction
+            };
+        }));
+    }
+
+    return registerProgramMembershipActions;
 }
