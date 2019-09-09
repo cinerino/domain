@@ -412,41 +412,42 @@ export async function createPotentialActions(params: {
         };
     });
 
-    // メール送信ONであれば送信アクション属性を生成
-    let sendEmailMessageActions: factory.action.transfer.send.message.email.IAttributes | undefined;
+    // 注文配送メール送信設定
+    const sendEmailMessageActions: factory.action.transfer.send.message.email.IAttributes[] = [];
     if (params.potentialActions !== undefined
         && params.potentialActions.order !== undefined
         && params.potentialActions.order.potentialActions !== undefined
         && params.potentialActions.order.potentialActions.sendOrder !== undefined
         && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
         && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage)) {
-        const sendEmailMessage = params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage[0];
-        if (sendEmailMessage !== undefined) {
-            const emailMessage = await emailMessageBuilder.createSendOrderMessage({
-                project: project,
-                order: params.order,
-                email: sendEmailMessage.object
-            });
+        await Promise.all(
+            params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.map(async (s) => {
+                const emailMessage = await emailMessageBuilder.createSendOrderMessage({
+                    project: project,
+                    order: params.order,
+                    email: s.object
+                });
 
-            sendEmailMessageActions = {
-                project: params.transaction.project,
-                typeOf: factory.actionType.SendAction,
-                object: emailMessage,
-                agent: params.transaction.seller,
-                recipient: params.transaction.agent,
-                potentialActions: {},
-                purpose: {
-                    typeOf: params.order.typeOf,
-                    seller: params.order.seller,
-                    customer: params.order.customer,
-                    confirmationNumber: params.order.confirmationNumber,
-                    orderNumber: params.order.orderNumber,
-                    price: params.order.price,
-                    priceCurrency: params.order.priceCurrency,
-                    orderDate: params.order.orderDate
-                }
-            };
-        }
+                sendEmailMessageActions.push({
+                    project: params.transaction.project,
+                    typeOf: factory.actionType.SendAction,
+                    object: emailMessage,
+                    agent: params.transaction.seller,
+                    recipient: params.transaction.agent,
+                    potentialActions: {},
+                    purpose: {
+                        typeOf: params.order.typeOf,
+                        seller: params.order.seller,
+                        customer: params.order.customer,
+                        confirmationNumber: params.order.confirmationNumber,
+                        orderNumber: params.order.orderNumber,
+                        price: params.order.price,
+                        priceCurrency: params.order.priceCurrency,
+                        orderDate: params.order.orderDate
+                    }
+                });
+            })
+        );
     }
 
     // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
@@ -524,9 +525,7 @@ export async function createPotentialActions(params: {
             confirmReservation: confirmReservationActions,
             informOrder: informOrderActionsOnSentOrder,
             registerProgramMembership: registerProgramMembershipActions,
-            ...(sendEmailMessageActions !== undefined)
-                ? { sendEmailMessage: sendEmailMessageActions }
-                : {}
+            sendEmailMessage: sendEmailMessageActions
         }
     };
 

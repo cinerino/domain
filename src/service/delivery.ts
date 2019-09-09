@@ -255,19 +255,23 @@ export function onSend(
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (potentialActions.sendEmailMessage !== undefined) {
-                // 互換性維持のため、すでにメール送信タスクが存在するかどうか確認し、なければタスク追加
-                const sendEmailMessageTaskDoc = await repos.task.taskModel.findOne({
-                    name: factory.taskName.SendEmailMessage,
-                    'data.actionAttributes.object.identifier': {
-                        $exists: true,
-                        $eq: potentialActions.sendEmailMessage.object.identifier
-                    }
-                })
-                    .exec();
-
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (sendEmailMessageTaskDoc === null) {
+                if (Array.isArray(potentialActions.sendEmailMessage)) {
+                    potentialActions.sendEmailMessage.forEach((s) => {
+                        const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                            project: s.project,
+                            name: factory.taskName.SendEmailMessage,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 3,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                actionAttributes: s
+                            }
+                        };
+                        taskAttributes.push(sendEmailMessageTask);
+                    });
+                } else {
                     const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
                         project: potentialActions.sendEmailMessage.project,
                         name: factory.taskName.SendEmailMessage,
