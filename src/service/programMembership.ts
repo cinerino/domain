@@ -693,25 +693,7 @@ function processPlaceOrder(params: {
             } else {
                 email = {
                     about: `[${project.id}] ProgramMembership Updated`,
-                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
-                    // tslint:disable:no-trailing-whitespace
-                    template: `| ProgramMembership Updated.
-| 
-| [Project]
-| ${project.id}
-| 
-| [ID]
-| #{order.customer.id}
-| 
-| [Username]
-| ${customer.memberOf.membershipNumber}
-| 
-| [OrderNumber]
-| #{order.orderNumber}
-| 
-| [Order Date]
-| #{order.orderDate}
-`
+                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
                 };
             }
         }

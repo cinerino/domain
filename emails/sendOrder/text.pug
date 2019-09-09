@@ -1,5 +1,6 @@
 | #{order.customer.familyName} #{order.customer.givenName} 様
-| この度は、#{order.seller.name}のオンラインチケットサービスにてご購入頂き、誠にありがとうございます。お客様がご購入されましたチケットの情報は下記の通りです。
+| この度は、#{order.seller.name}のオンラインチケットサービスにてご購入頂き、誠にありがとうございます。
+| ご注文商品をお届けしました。詳細は下記の通りです。
 | 
 | [注文番号]
 | #{order.orderNumber}
@@ -10,17 +11,8 @@
 | [確認番号]
 | #{order.confirmationNumber}
 | 
-| [イベント日時]
-| #{eventStartDate}
-| 
-| [作品名]
-| #{workPerformedName}
-| 
-| [スクリーン名]
-| #{screenName}
-| 
-| [座席]
-| #{reservedSeats}
+| [注文内容]
+| #{orderItems}
 | 
 | [合計]
 | ￥#{order.price}
