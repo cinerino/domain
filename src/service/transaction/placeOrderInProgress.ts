@@ -1644,7 +1644,7 @@ export function createRegisterProgramMembershipActions(params: {
                             && orderProgramMembershipPotentialActions.sendOrder.potentialActions !== undefined
                             && Array.isArray(orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage)) {
                             const sendEmailMessage =
-                                orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage.shift();
+                                orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage[0];
                             if (sendEmailMessage !== undefined && sendEmailMessage.object !== undefined) {
                                 orderProgramMembershipTaskData.sendEmailMessage = true;
                                 orderProgramMembershipTaskData.email = sendEmailMessage.object;

@@ -693,25 +693,25 @@ function processPlaceOrder(params: {
             } else {
                 email = {
                     about: `[${project.id}] ProgramMembership Updated`,
-                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
+                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
                     // tslint:disable:no-trailing-whitespace
-                    //                     template: `| 会員プログラムが更新されました。
-                    // | 
-                    // | [Project]
-                    // | ${project.id}
-                    // | 
-                    // | [ID]
-                    // | #{order.customer.id}
-                    // | 
-                    // | [Username]
-                    // | ${customer.memberOf.membershipNumber}
-                    // | 
-                    // | [OrderNumber]
-                    // | #{order.orderNumber}
-                    // | 
-                    // | [Order Date]
-                    // | #{order.orderDate}
-                    // `
+                    template: `| ProgramMembership Updated.
+| 
+| [Project]
+| ${project.id}
+| 
+| [ID]
+| #{order.customer.id}
+| 
+| [Username]
+| ${customer.memberOf.membershipNumber}
+| 
+| [OrderNumber]
+| #{order.orderNumber}
+| 
+| [Order Date]
+| #{order.orderDate}
+`
                 };
             }
         }
