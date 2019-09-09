@@ -14,12 +14,10 @@ export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<fa
  */
 // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 export async function createPotentialActions(params: {
-    transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
-    seller: ISeller;
-    // sendEmailMessage?: boolean;
-    // email?: factory.creativeWork.message.email.ICustomization;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+    seller: ISeller;
+    transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project
@@ -573,21 +571,13 @@ export function createRegisterProgramMembershipActions(params: {
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore if */
     if (programMembershipOffers.length > 0) {
+        // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
         registerProgramMembershipActions.push(...programMembershipOffers.map((o) => {
             const programMembership = o.itemOffered;
 
-            // 次回の会員プログラム注文タスクを生成
-            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
-                agent: params.transaction.agent,
-                object: o,
-                // 注文確定後アクションは、次回も同様に設定
-                potentialActions: params.potentialActions,
-                project: project,
-                sendEmailMessage: false,
-                typeOf: factory.actionType.OrderAction
-            };
+            // 会員プログラム更新時のメール送信アクション
+            let sendEmailMessageOnUpdate: factory.transaction.placeOrder.ISendEmailMessageParams[] = [];
 
-            // アクションカスタマイズの指定があれば適用
             if (params.potentialActions !== undefined
                 && params.potentialActions.order !== undefined
                 && params.potentialActions.order.potentialActions !== undefined
@@ -605,23 +595,61 @@ export function createRegisterProgramMembershipActions(params: {
                     if (registerPotentialActions !== undefined
                         && registerPotentialActions.orderProgramMembership !== undefined
                         && registerPotentialActions.orderProgramMembership.potentialActions !== undefined
-                        && registerPotentialActions.orderProgramMembership.potentialActions.order !== undefined
-                        && registerPotentialActions.orderProgramMembership.potentialActions.order.potentialActions !== undefined) {
+                        && registerPotentialActions.orderProgramMembership.potentialActions.order !== undefined) {
                         const orderProgramMembershipPotentialActions =
                             registerPotentialActions.orderProgramMembership.potentialActions.order.potentialActions;
-                        if (orderProgramMembershipPotentialActions.sendOrder !== undefined
+                        if (orderProgramMembershipPotentialActions !== undefined
+                            && orderProgramMembershipPotentialActions.sendOrder !== undefined
                             && orderProgramMembershipPotentialActions.sendOrder.potentialActions !== undefined
                             && Array.isArray(orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage)) {
-                            const sendEmailMessage =
-                                orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage[0];
-                            if (sendEmailMessage !== undefined && sendEmailMessage.object !== undefined) {
-                                orderProgramMembershipTaskData.sendEmailMessage = true;
-                                orderProgramMembershipTaskData.email = sendEmailMessage.object;
-                            }
+                            sendEmailMessageOnUpdate =
+                                orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage;
                         }
                     }
                 }
             }
+
+            // 次回の会員プログラム注文確定後アクションを設定
+            const updateProgramMembershipPotentialActions: factory.transaction.placeOrder.IPotentialActionsParams = {
+                order: {
+                    potentialActions: {
+                        sendOrder: {
+                            potentialActions: {
+                                registerProgramMembership: [
+                                    {
+                                        object: { typeOf: programMembership.typeOf, id: <string>programMembership.id },
+                                        potentialActions: {
+                                            orderProgramMembership: {
+                                                potentialActions: {
+                                                    order: {
+                                                        potentialActions: {
+                                                            sendOrder: {
+                                                                potentialActions: {
+                                                                    sendEmailMessage: sendEmailMessageOnUpdate
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                ],
+                                sendEmailMessage: sendEmailMessageOnUpdate
+                            }
+                        }
+                    }
+                }
+            };
+
+            // 次回の会員プログラム注文タスクを生成
+            const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
+                agent: params.transaction.agent,
+                object: o,
+                potentialActions: updateProgramMembershipPotentialActions,
+                project: project,
+                typeOf: factory.actionType.OrderAction
+            };
 
             // どういう期間でいくらのオファーなのか
             const eligibleDuration = o.eligibleDuration;

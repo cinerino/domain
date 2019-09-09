@@ -83,8 +83,6 @@ export function createRegisterTask(params: {
          */
         id: string;
     };
-    sendEmailMessage?: boolean;
-    email?: factory.creativeWork.message.email.ICustomization;
 }): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
         programMembership: ProgramMembershipRepo;
@@ -167,8 +165,6 @@ export function createRegisterTask(params: {
             object: acceptedOffer,
             potentialActions: params.potentialActions,
             project: programMembership.project,
-            sendEmailMessage: params.sendEmailMessage,
-            email: params.email,
             typeOf: factory.actionType.OrderAction
         };
 
@@ -265,22 +261,6 @@ export function orderProgramMembership(
         // });
         // const isNewRegister = programMembershipOwnershipInfos.length === 0;
 
-        // アクション開始
-        // const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = {
-        //     ...params,
-        //     object: {
-        //         typeOf: programMembership.typeOf,
-        //         id: programMembership.id,
-        //         hostingOrganization: seller,
-        //         name: programMembership.name,
-        //         programName: programMembership.programName,
-        //         project: programMembership.project,
-        //         award: programMembership.award
-        //     }
-        // };
-        // const action = await repos.action.start(registerActionAttibutes);
-
-        // let order: factory.order.IOrder;
         let lockNumber: number | undefined;
         try {
             // 登録処理を進行中に変更。進行中であれば競合エラー。
@@ -298,21 +278,9 @@ export function orderProgramMembership(
                 customer: customer,
                 potentialActions: params.potentialActions,
                 project: project,
-                seller: seller,
-                sendEmailMessage: params.sendEmailMessage,
-                email: params.email
+                seller: seller
             })(repos);
-            // order = placeOrderResult.order;
         } catch (error) {
-            // actionにエラー結果を追加
-            // try {
-            //     // tslint:disable-next-line:max-line-length no-single-line-block-comment
-            //     const actionError = { ...error, ...{ message: error.message, name: error.name } };
-            //     await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            // } catch (__) {
-            //     // 失敗したら仕方ない
-            // }
-
             try {
                 // 本プロセスがlockした場合は解除する。解除しなければタスクのリトライが無駄になってしまう。
                 // tslint:disable-next-line:no-single-line-block-comment
@@ -329,11 +297,6 @@ export function orderProgramMembership(
 
             throw error;
         }
-
-        // const actionResult: factory.action.interact.register.programMembership.IResult = {
-        //     order: order
-        // };
-        // await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
 
@@ -550,8 +513,6 @@ function processPlaceOrder(params: {
      * 販売者
      */
     seller: factory.seller.IOrganization<any>;
-    sendEmailMessage?: boolean;
-    email?: factory.creativeWork.message.email.ICustomization;
 }) {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
@@ -677,27 +638,6 @@ function processPlaceOrder(params: {
             agent: customer
         })(repos);
 
-        // 注文配送メール送信有無
-        let sendEmailMessage = false;
-        if (params.sendEmailMessage === true) {
-            sendEmailMessage = params.sendEmailMessage;
-        } else {
-            sendEmailMessage = !isNewRegister && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined;
-        }
-
-        // 注文配送メールカスマイズ
-        let email: factory.creativeWork.message.email.ICustomization | undefined;
-        if (sendEmailMessage) {
-            if (params.email !== undefined) {
-                email = params.email;
-            } else {
-                email = {
-                    about: `[${project.id}] ProgramMembership Updated`,
-                    toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
-                };
-            }
-        }
-
         if (params.potentialActions === undefined) {
             params.potentialActions = {};
         }
@@ -716,7 +656,16 @@ function processPlaceOrder(params: {
         if (!Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage)) {
             params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage = [];
         }
-        if (sendEmailMessage) {
+
+        // プログラム更新の場合、管理者宛のメール送信を自動設定
+        if (!isNewRegister
+            && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined
+            && params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.length === 0) {
+            const email: factory.creativeWork.message.email.ICustomization = {
+                about: `[${project.id}] ProgramMembership Updated`,
+                toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
+            };
+
             params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.push({
                 object: email
             });
@@ -731,8 +680,6 @@ function processPlaceOrder(params: {
                 order: { orderDate: new Date() }
             },
             potentialActions: params.potentialActions
-            // sendEmailMessage: sendEmailMessage,
-            // email: email
         })(repos);
     };
 }
