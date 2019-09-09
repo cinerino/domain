@@ -553,7 +553,7 @@ function processPlaceOrder(params: {
     sendEmailMessage?: boolean;
     email?: factory.creativeWork.message.email.ICustomization;
 }) {
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
         creditCard: CreditCardRepo;
@@ -698,6 +698,30 @@ function processPlaceOrder(params: {
             }
         }
 
+        if (params.potentialActions === undefined) {
+            params.potentialActions = {};
+        }
+        if (params.potentialActions.order === undefined) {
+            params.potentialActions.order = {};
+        }
+        if (params.potentialActions.order.potentialActions === undefined) {
+            params.potentialActions.order.potentialActions = {};
+        }
+        if (params.potentialActions.order.potentialActions.sendOrder === undefined) {
+            params.potentialActions.order.potentialActions.sendOrder = {};
+        }
+        if (params.potentialActions.order.potentialActions.sendOrder.potentialActions === undefined) {
+            params.potentialActions.order.potentialActions.sendOrder.potentialActions = {};
+        }
+        if (!Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage)) {
+            params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage = [];
+        }
+        if (sendEmailMessage) {
+            params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.push({
+                object: email
+            });
+        }
+
         // 取引確定
         return PlaceOrderService.confirm({
             project: { typeOf: project.typeOf, id: project.id },
@@ -706,9 +730,9 @@ function processPlaceOrder(params: {
             result: {
                 order: { orderDate: new Date() }
             },
-            potentialActions: params.potentialActions,
-            sendEmailMessage: sendEmailMessage,
-            email: email
+            potentialActions: params.potentialActions
+            // sendEmailMessage: sendEmailMessage,
+            // email: email
         })(repos);
     };
 }

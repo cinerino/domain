@@ -246,8 +246,8 @@ export interface IConfirmParams extends factory.transaction.placeOrder.IConfirmP
     /**
      * 注文配送メールを送信するかどうか
      */
-    sendEmailMessage?: boolean;
-    email?: factory.creativeWork.message.email.ICustomization;
+    // sendEmailMessage?: boolean;
+    // email?: factory.creativeWork.message.email.ICustomization;
     /**
      * ムビチケバリデーションを適用するかどうか
      */
@@ -400,8 +400,8 @@ export function confirm(params: IConfirmParams) {
             transaction: transaction,
             order: order,
             seller: seller,
-            sendEmailMessage: params.sendEmailMessage,
-            email: params.email,
+            // sendEmailMessage: params.sendEmailMessage,
+            // email: params.email,
             potentialActions: params.potentialActions
         });
 

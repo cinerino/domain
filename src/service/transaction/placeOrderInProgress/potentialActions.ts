@@ -17,8 +17,8 @@ export async function createPotentialActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
     seller: ISeller;
-    sendEmailMessage?: boolean;
-    email?: factory.creativeWork.message.email.ICustomization;
+    // sendEmailMessage?: boolean;
+    // email?: factory.creativeWork.message.email.ICustomization;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
@@ -415,31 +415,40 @@ export async function createPotentialActions(params: {
     });
 
     // メール送信ONであれば送信アクション属性を生成
-    let sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes | null = null;
-    if (params.sendEmailMessage === true) {
-        const emailMessage = await emailMessageBuilder.createSendOrderMessage({
-            project: project,
-            order: params.order,
-            email: params.email
-        });
-        sendEmailMessageActionAttributes = {
-            project: params.transaction.project,
-            typeOf: factory.actionType.SendAction,
-            object: emailMessage,
-            agent: params.transaction.seller,
-            recipient: params.transaction.agent,
-            potentialActions: {},
-            purpose: {
-                typeOf: params.order.typeOf,
-                seller: params.order.seller,
-                customer: params.order.customer,
-                confirmationNumber: params.order.confirmationNumber,
-                orderNumber: params.order.orderNumber,
-                price: params.order.price,
-                priceCurrency: params.order.priceCurrency,
-                orderDate: params.order.orderDate
-            }
-        };
+    let sendEmailMessageActions: factory.action.transfer.send.message.email.IAttributes | undefined;
+    if (params.potentialActions !== undefined
+        && params.potentialActions.order !== undefined
+        && params.potentialActions.order.potentialActions !== undefined
+        && params.potentialActions.order.potentialActions.sendOrder !== undefined
+        && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
+        && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage)) {
+        const sendEmailMessage = params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage[0];
+        if (sendEmailMessage !== undefined) {
+            const emailMessage = await emailMessageBuilder.createSendOrderMessage({
+                project: project,
+                order: params.order,
+                email: sendEmailMessage.object
+            });
+
+            sendEmailMessageActions = {
+                project: params.transaction.project,
+                typeOf: factory.actionType.SendAction,
+                object: emailMessage,
+                agent: params.transaction.seller,
+                recipient: params.transaction.agent,
+                potentialActions: {},
+                purpose: {
+                    typeOf: params.order.typeOf,
+                    seller: params.order.seller,
+                    customer: params.order.customer,
+                    confirmationNumber: params.order.confirmationNumber,
+                    orderNumber: params.order.orderNumber,
+                    price: params.order.price,
+                    priceCurrency: params.order.priceCurrency,
+                    orderDate: params.order.orderDate
+                }
+            };
+        }
     }
 
     // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
@@ -517,7 +526,9 @@ export async function createPotentialActions(params: {
             confirmReservation: confirmReservationActions,
             informOrder: informOrderActionsOnSentOrder,
             registerProgramMembership: registerProgramMembershipActions,
-            sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined
+            ...(sendEmailMessageActions !== undefined)
+                ? { sendEmailMessage: sendEmailMessageActions }
+                : {}
         }
     };
 
