@@ -217,7 +217,7 @@ export function createOrderItems(params: {
         } else {
             return util.format(
                 '%s %s %s',
-                o.typeOf,
+                o.itemOffered.typeOf,
                 o.price,
                 o.priceCurrency
             );
