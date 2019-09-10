@@ -662,7 +662,7 @@ function processPlaceOrder(params: {
             && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined
             && params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.length === 0) {
             const email: factory.creativeWork.message.email.ICustomization = {
-                about: `[${project.id}] ProgramMembership Updated`,
+                about: `ProgramMembership Updated [${project.id}]`,
                 toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
             };
 
