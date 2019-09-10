@@ -1,24 +1,20 @@
 | #{order.customer.familyName} #{order.customer.givenName} 様
 | ご注文商品をお届けしました。詳細は下記の通りです。
 | 
-| [注文番号]
-| #{order.orderNumber}
+| 注文番号: #{order.orderNumber}
 | 
-| [注文日時]
-| #{order.orderDate}
+| 注文日時: #{order.orderDate}
 | 
-| [確認番号]
-| #{order.confirmationNumber}
+| 確認番号: #{order.confirmationNumber}
 | 
-| [注文内容]
+| 商品:
 | #{orderItems}
 | 
-| [合計]
-| ￥#{order.price}
+| 注文合計: #{order.price} #{order.priceCurrency}
 | 
-| なお、このメールは、#{order.seller.name}のチケットシステムをご利用頂いた方にお送りしておりますが、
-| 注文に覚えのない方に届いております場合は、下記お問い合わせ先までご連絡ください。
-| ※なお、このメールアドレスは送信専用となっておりますので、ご返信頂けません。
+| またのご利用をお待ちしています。
+| 
+| このEメールアドレスは配信専用です。このメッセージに返信しないようお願いいたします。
 | ご不明な点がございましたら、下記番号までお問合わせください。
 | 
 | お問い合わせはこちら
