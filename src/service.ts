@@ -4,6 +4,7 @@
  */
 import * as AccountService from './service/account';
 import * as CodeService from './service/code';
+import * as CustomerService from './service/customer';
 import * as DeliveryService from './service/delivery';
 import * as MasterSyncService from './service/masterSync';
 import * as NotificationService from './service/notification';
@@ -23,6 +24,7 @@ import * as UtilService from './service/util';
 
 export import account = AccountService;
 export import code = CodeService;
+export import customer = CustomerService;
 export import delivery = DeliveryService;
 export import masterSync = MasterSyncService;
 export import notification = NotificationService;
