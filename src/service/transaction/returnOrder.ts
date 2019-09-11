@@ -325,7 +325,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                             orderDate: order.orderDate
                         },
                         potentialActions: {
-                            sendEmailMessage: sendEmailMessageActionAttributes
+                            sendEmailMessage: [sendEmailMessageActionAttributes]
                         }
                     };
                 }));
@@ -385,7 +385,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                             orderDate: order.orderDate
                         },
                         potentialActions: {
-                            sendEmailMessage: sendEmailMessageActionAttributes
+                            sendEmailMessage: [sendEmailMessageActionAttributes]
                         }
                     };
                 }));
@@ -451,7 +451,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                                 orderDate: order.orderDate
                             },
                             potentialActions: {
-                                sendEmailMessage: sendEmailMessageActionAttributes
+                                sendEmailMessage: [sendEmailMessageActionAttributes]
                             }
                         };
                     }));
