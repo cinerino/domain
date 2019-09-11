@@ -2,6 +2,7 @@
  * 会員プログラムサービス
  */
 import * as GMO from '@motionpicture/gmo-service';
+import * as fs from 'fs';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -26,6 +27,7 @@ import * as factory from '../factory';
  */
 const USE_USERNAME_AS_GMO_MEMBER_ID = process.env.USE_USERNAME_AS_GMO_MEMBER_ID === '1';
 const EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP = process.env.EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP;
+const RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH = `${__dirname}/../../emails/renewProgramMembership/text.pug`;
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
@@ -661,9 +663,20 @@ function processPlaceOrder(params: {
         if (!isNewRegister
             && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined
             && params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.length === 0) {
+            const template = await new Promise<string | undefined>((resolve) => {
+                // tslint:disable-next-line:non-literal-fs-path
+                fs.readFile(RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH, { encoding: 'utf-8' }, (err, data) => {
+                    if (err instanceof Error) {
+                        resolve(undefined);
+                    } else {
+                        resolve(data);
+                    }
+                });
+            });
             const email: factory.creativeWork.message.email.ICustomization = {
-                about: `ProgramMembership Updated [${project.id}]`,
-                toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP }
+                about: `ProgramMembership Renewed [${project.id}]`,
+                toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
+                template: template
             };
 
             params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.push({
