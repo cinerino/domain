@@ -119,6 +119,7 @@ export function create(params: {
                 acceptedOffer: acceptedOffers
             },
             agent: {
+                project: transaction.seller.project,
                 id: transaction.seller.id,
                 typeOf: seller.typeOf,
                 name: seller.name,
@@ -352,6 +353,7 @@ function validateAcceptedOffers(params: {
                         // ムビチケ認証
                         const checkResult = await repos.movieTicket.checkByIdentifier({
                             movieTickets: [{
+                                project: params.project,
                                 typeOf: movieTicket.typeOf,
                                 identifier: movieTicket.identifier,
                                 accessCode: movieTicket.accessCode,

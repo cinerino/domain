@@ -65,6 +65,7 @@ describe('start()', () => {
             .resolves(passport);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
+            project: { typeOf: 'Project', id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -130,6 +131,7 @@ describe('start()', () => {
             .resolves(passport);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
+            project: { typeOf: 'Project', id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -191,6 +193,7 @@ describe('start()', () => {
             .resolves(transaction);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
+            project: { typeOf: 'Project', id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -244,6 +247,7 @@ describe('start()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
+            project: { typeOf: 'Project', id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -304,6 +308,7 @@ describe('start()', () => {
             .rejects(startResult);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
+            project: { typeOf: 'Project', id: 'id' },
             expires: expires,
             object: {
                 passport: {
@@ -364,6 +369,7 @@ describe('start()', () => {
             .rejects(startResult);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
+            project: { typeOf: 'Project', id: 'id' },
             expires: expires,
             object: {
                 passport: {

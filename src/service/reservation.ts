@@ -9,7 +9,6 @@ import { credentials } from '../credentials';
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
-import { project as projectByEnvironment } from '../project';
 
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -42,9 +41,7 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const projectId: string = (params.project !== undefined)
-            ? params.project.id
-            : projectByEnvironment.id;
+        const projectId: string = params.project.id;
         const project = await repos.project.findById({ id: projectId });
 
         const action = await repos.action.start(params);
@@ -146,7 +143,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: projectByEnvironment.id });
+        const project = await repos.project.findById({ id: params.project.id });
 
         // アクション開始
         const confirmActionAttributes = params;
@@ -217,13 +214,15 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
  * イベント予約検索
  */
 export function searchScreeningEventReservations(
-    params: factory.ownershipInfo.ISearchConditions<factory.chevre.reservationType.EventReservation>
+    params: factory.ownershipInfo.ISearchConditions<factory.chevre.reservationType.EventReservation> & {
+        project: factory.project.IProject;
+    }
 ): ISearchEventReservationsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: projectByEnvironment.id });
+        const project = await repos.project.findById({ id: params.project.id });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }

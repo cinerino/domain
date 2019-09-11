@@ -89,6 +89,7 @@ export function start(
             typeOf: factory.transactionType.ReturnOrder,
             agent: params.agent,
             seller: {
+                project: params.project,
                 id: seller.id,
                 typeOf: seller.typeOf,
                 name: seller.name,
@@ -284,6 +285,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
+                            project: transaction.project,
                             typeOf: seller.typeOf,
                             id: seller.id,
                             name: seller.name,
@@ -308,6 +310,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                         typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                         object: a,
                         agent: {
+                            project: transaction.project,
                             typeOf: seller.typeOf,
                             id: seller.id,
                             name: seller.name,
@@ -315,6 +318,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                         },
                         recipient: order.customer,
                         purpose: {
+                            project: transaction.project,
                             typeOf: order.typeOf,
                             seller: order.seller,
                             customer: order.customer,
@@ -344,6 +348,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
+                            project: transaction.project,
                             typeOf: seller.typeOf,
                             id: seller.id,
                             name: seller.name,
@@ -368,6 +373,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                         typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                         object: a,
                         agent: {
+                            project: transaction.project,
                             typeOf: seller.typeOf,
                             id: seller.id,
                             name: seller.name,
@@ -375,6 +381,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                         },
                         recipient: order.customer,
                         purpose: {
+                            project: transaction.project,
                             typeOf: order.typeOf,
                             seller: order.seller,
                             customer: order.customer,
@@ -410,6 +417,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                             typeOf: factory.actionType.SendAction,
                             object: emailMessage,
                             agent: {
+                                project: transaction.project,
                                 typeOf: seller.typeOf,
                                 id: seller.id,
                                 name: seller.name,
@@ -434,6 +442,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                             typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                             object: a,
                             agent: {
+                                project: transaction.project,
                                 typeOf: seller.typeOf,
                                 id: seller.id,
                                 name: seller.name,
@@ -441,6 +450,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                             },
                             recipient: order.customer,
                             purpose: {
+                                project: transaction.project,
                                 typeOf: order.typeOf,
                                 seller: order.seller,
                                 customer: order.customer,
@@ -470,6 +480,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                     object: a,
                     agent: order.customer,
                     recipient: {
+                        project: transaction.project,
                         typeOf: seller.typeOf,
                         id: seller.id,
                         name: seller.name,
@@ -635,6 +646,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             project: transaction.project,
             typeOf: factory.actionType.ReturnAction,
             object: {
+                project: transaction.project,
                 typeOf: order.typeOf,
                 seller: order.seller,
                 customer: order.customer,

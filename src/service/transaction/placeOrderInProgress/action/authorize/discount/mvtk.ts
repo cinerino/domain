@@ -21,7 +21,7 @@ export type ICreateOperation<T> = (repos: {
  * 着券済ムビチケ決済承認アクション
  */
 export function createMovieTicketPaymentAuthorization(params: {
-    project?: factory.project.IProject;
+    project: factory.project.IProject;
     agentId: string;
     transactionId: string;
     authorizeObject: factory.action.authorize.discount.mvtk.IObject;
@@ -138,6 +138,7 @@ function seatSyncInfoIn2movieTickets(params: {
                 // tslint:disable-next-line:prefer-array-literal
                 [...Array(Number(knshInfo.miNum))].forEach(() => {
                     movieTickets.push({
+                        project: params.event.project,
                         typeOf: factory.paymentMethodType.MovieTicket,
                         serviceType: knshInfo.knshTyp,
                         identifier: knyknrNoInfo.knyknrNo,

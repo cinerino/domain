@@ -7,7 +7,6 @@ import * as moment from 'moment-timezone';
 import * as util from 'util';
 
 import * as factory from '../../factory';
-import { project as projectByEnvironment } from '../../project';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
@@ -310,7 +309,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         invoice: InvoiceRepo;
         project: ProjectRepo;
     }): Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>> => {
-        const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
+        const projectId = params.project.id;
         const project = await repos.project.findById({ id: projectId });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -408,7 +407,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
-        const projectId = (transaction.project !== undefined) ? transaction.project.id : projectByEnvironment.id;
+        const projectId = params.project.id;
         const project = await repos.project.findById({ id: projectId });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -428,7 +427,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
             typeOf: factory.actionType.AuthorizeAction,
             purpose: {
                 typeOf: factory.transactionType.PlaceOrder,
-                id: params.transactionId
+                id: transaction.id
             }
         });
         authorizeActions = authorizeActions
@@ -465,7 +464,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
+        const projectId = params.project.id;
         const project = await repos.project.findById({ id: projectId });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */

@@ -69,6 +69,7 @@ export function start(
             agent: params.agent,
             recipient: params.recipient,
             seller: {
+                project: seller.project,
                 id: seller.id,
                 typeOf: seller.typeOf,
                 name: seller.name,

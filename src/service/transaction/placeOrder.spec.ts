@@ -26,6 +26,7 @@ describe('exportTasks()', () => {
         const status = domain.factory.transactionStatusType.Confirmed;
         const task = {};
         const transaction = {
+            project: { id: 'id' },
             id: 'transactionId',
             status: status,
             result: {},
@@ -90,6 +91,7 @@ describe('exportTasksById()', () => {
     it('確定取引であれば2つのタスクがエクスポートされるはず', async () => {
         const numberOfTasks = 2;
         const transaction = {
+            project: { id: 'id' },
             id: 'transactionId',
             status: domain.factory.transactionStatusType.Confirmed,
             result: {},
@@ -119,6 +121,7 @@ describe('exportTasksById()', () => {
 
     it('非対応ステータスの取引であれば、NotImplementedエラーになるはず', async () => {
         const transaction = {
+            project: { id: 'id' },
             id: 'transactionId',
             status: domain.factory.transactionStatusType.InProgress
         };
@@ -150,6 +153,7 @@ describe('sendEmail', () => {
 
     it('DBが正常であれば、タスクが登録されるはず', async () => {
         const transaction = {
+            project: { id: 'id' },
             id: 'id',
             status: domain.factory.transactionStatusType.Confirmed,
             seller: {},
@@ -190,6 +194,7 @@ describe('sendEmail', () => {
 
     it('取引ステータスが確定済でなければ、Forbiddenエラーになるはず', async () => {
         const transaction = {
+            project: { id: 'id' },
             id: 'id',
             status: domain.factory.transactionStatusType.InProgress,
             seller: {},

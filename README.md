@@ -44,7 +44,6 @@ npm install @cinerino/domain
 | `PECORINO_AUTHORIZE_SERVER_DOMAIN`     | true     |                   | Pecorino credentials           |
 | `PECORINO_CLIENT_ID`                   | true     |                   | Pecorino credentials           |
 | `PECORINO_CLIENT_SECRET`               | true     |                   | Pecorino credentials           |
-| `PROJECT_ID`                           | true     |                   | Cinerino Project ID            |
 | `SENDGRID_API_KEY`                     | true     |                   | SendGrid API key               |
 | `TELEMETRY_API_ENDPOINT`               | true     |                   | Telemetry API endpoint         |
 

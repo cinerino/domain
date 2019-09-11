@@ -5,7 +5,6 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import * as factory from '../../factory';
-import { project as projectByEnvironment } from '../../project';
 
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -72,9 +71,7 @@ export function exportTasksById(params: {
             id: params.id
         });
 
-        const project: factory.project.IProject = (transaction.project !== undefined)
-            ? transaction.project
-            : { typeOf: 'Project', id: projectByEnvironment.id };
+        const project: factory.project.IProject = transaction.project;
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
@@ -104,6 +101,7 @@ export function exportTasksById(params: {
                 project: transaction.project,
                 purpose: { typeOf: transaction.typeOf, id: transaction.id },
                 recipient: {
+                    project: transaction.project,
                     id: '',
                     name: { ja: 'Cinerino Telemetry', en: 'Cinerino Telemetry' },
                     typeOf: factory.organizationType.Corporation,

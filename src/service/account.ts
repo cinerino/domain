@@ -83,6 +83,7 @@ export function open<T extends factory.accountType>(params: {
                 account.accountNumber
             );
             const ownershipInfo: IOwnershipInfo = {
+                project: { typeOf: project.typeOf, id: project.id },
                 typeOf: 'OwnershipInfo',
                 id: '',
                 identifier: identifier,

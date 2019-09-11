@@ -5,7 +5,6 @@ import * as moment from 'moment';
 import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
-import { project as projectByEnvironment } from '../../../project';
 
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
@@ -20,9 +19,7 @@ export async function createPotentialActions(params: {
     seller: ISeller;
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
-    const project: factory.project.IProject = (params.transaction.project !== undefined)
-        ? params.transaction.project
-        : { typeOf: 'Project', id: projectByEnvironment.id };
+    const project: factory.project.IProject = params.transaction.project;
 
     // 予約確定アクション
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
@@ -128,6 +125,7 @@ export async function createPotentialActions(params: {
                         object: updReserveArgs,
                         agent: params.transaction.agent,
                         purpose: {
+                            project: params.order.project,
                             typeOf: params.order.typeOf,
                             seller: params.order.seller,
                             customer: params.order.customer,
@@ -233,6 +231,7 @@ export async function createPotentialActions(params: {
                         object: confirmReservationObject,
                         agent: params.transaction.agent,
                         purpose: {
+                            project: params.order.project,
                             typeOf: params.order.typeOf,
                             seller: params.order.seller,
                             customer: params.order.customer,
@@ -278,6 +277,7 @@ export async function createPotentialActions(params: {
                 }],
                 agent: params.transaction.agent,
                 purpose: {
+                    project: params.order.project,
                     typeOf: params.order.typeOf,
                     seller: params.order.seller,
                     customer: params.order.customer,
@@ -319,6 +319,7 @@ export async function createPotentialActions(params: {
                 }],
                 agent: params.transaction.agent,
                 purpose: {
+                    project: params.order.project,
                     typeOf: params.order.typeOf,
                     seller: params.order.seller,
                     customer: params.order.customer,
@@ -369,6 +370,7 @@ export async function createPotentialActions(params: {
                 }),
             agent: params.transaction.agent,
             purpose: {
+                project: params.order.project,
                 typeOf: params.order.typeOf,
                 seller: params.order.seller,
                 customer: params.order.customer,
@@ -401,6 +403,7 @@ export async function createPotentialActions(params: {
                 pointAPIEndpoint: actionResult.pointAPIEndpoint
             },
             purpose: {
+                project: params.order.project,
                 typeOf: params.order.typeOf,
                 seller: params.order.seller,
                 customer: params.order.customer,
@@ -558,9 +561,7 @@ export function createRegisterProgramMembershipActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }): factory.action.interact.register.programMembership.IAttributes[] {
-    const project: factory.project.IProject = (params.transaction.project !== undefined)
-        ? params.transaction.project
-        : { typeOf: 'Project', id: projectByEnvironment.id };
+    const project: factory.project.IProject = params.transaction.project;
 
     // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
     const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];

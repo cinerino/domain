@@ -13,7 +13,6 @@ import { IEvent as IEventCapcity, RedisRepository as EventAttendeeCapacityRepo }
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as factory from '../factory';
-import { project as projectByEnvironment } from '../project';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -79,9 +78,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         event: EventRepo;
         seller: SellerRepo;
     }) => {
-        const project: factory.project.IProject = (params.project !== undefined)
-            ? params.project
-            : projectByEnvironment;
+        const project: factory.project.IProject = params.project;
 
         // 劇場取得
         const movieTheater = createMovieTheaterFromCOA(

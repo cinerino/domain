@@ -7,7 +7,6 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import { format } from 'util';
 
 import * as factory from '../../factory';
-import { project as projectByEnvironment } from '../../project';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
@@ -84,11 +83,12 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
-            project: (params.project !== undefined) ? { typeOf: 'Project', id: params.project.id } : undefined,
+            project: { typeOf: 'Project', id: params.project.id },
             typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
             agent: params.agent,
             seller: {
+                project: seller.project,
                 id: seller.id,
                 typeOf: seller.typeOf,
                 name: seller.name,
@@ -282,9 +282,7 @@ export function confirm(params: IConfirmParams) {
             }
         }
 
-        const project: factory.project.IProject = (transaction.project !== undefined)
-            ? transaction.project
-            : { typeOf: 'Project', id: projectByEnvironment.id };
+        const project: factory.project.IProject = transaction.project;
 
         const seller = await repos.seller.findById({ id: transaction.seller.id });
         debug('seller found.', seller.id);
@@ -518,6 +516,7 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
                         requiredMovieTickets.push({
+                            project: transaction.project,
                             typeOf: factory.paymentMethodType.MovieTicket,
                             identifier: '',
                             accessCode: '',

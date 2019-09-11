@@ -6,7 +6,6 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import * as factory from '../../../../../../factory';
-import { project as projectByEnvironment } from '../../../../../../project';
 
 import { credentials } from '../../../../../../credentials';
 
@@ -66,7 +65,7 @@ export function create(params: {
             id: params.transaction.id
         });
 
-        const projectId = (transaction.project !== undefined) ? transaction.project.id : projectByEnvironment.id;
+        const projectId = transaction.project.id;
         const project = await repos.project.findById({ id: projectId });
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -101,6 +100,7 @@ export function create(params: {
                 amount: params.object.amount
             },
             agent: {
+                project: transaction.seller.project,
                 id: transaction.seller.id,
                 typeOf: seller.typeOf,
                 name: seller.name,
@@ -225,7 +225,7 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const projectId = (transaction.project !== undefined) ? transaction.project.id : projectByEnvironment.id;
+        const projectId = transaction.project.id;
         const project = await repos.project.findById({ id: projectId });
 
         // 取引内のアクションかどうか確認

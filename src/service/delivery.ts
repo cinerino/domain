@@ -115,6 +115,7 @@ export function createOwnershipInfosFromOrder(params: {
         const seller = params.order.seller;
         let ownedThrough: Date;
         const acquiredFrom = {
+            project: params.order.project,
             id: seller.id,
             typeOf: seller.typeOf,
             name: {
