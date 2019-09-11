@@ -10,18 +10,18 @@ const cognitoIdentityServiceProvider = new domain.AWS.CognitoIdentityServiceProv
 });
 
 async function main() {
-    const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
+    const personRepo = new domain.repository.Person({
+        userPoolId: process.env.COGNITO_USER_POOL_ID,
+    });
 
     const username = '';
 
     let profile = await personRepo.getUserAttributes({
-        userPooId: process.env.COGNITO_USER_POOL_ID,
         username: username
     });
     console.log('profile:', profile);
 
     await personRepo.updateProfile({
-        userPooId: process.env.COGNITO_USER_POOL_ID,
         username: username,
         profile: {
             familyName: 'テスト',
@@ -36,7 +36,6 @@ async function main() {
     });
 
     profile = await personRepo.getUserAttributes({
-        userPooId: process.env.COGNITO_USER_POOL_ID,
         username: username
     });
     console.log('profile:', profile);

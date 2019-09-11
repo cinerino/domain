@@ -29,10 +29,12 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
             }
 
             // Cognitoユーザを無効にする
-            await repos.person.unregister({
-                userPooId: <string>process.env.COGNITO_USER_POOL_ID,
+            await repos.person.disable({
                 username: customer.memberOf.membershipNumber
             });
+            // await repos.person.deleteById({
+            //     userId: customer.id
+            // });
         } catch (error) {
             // actionにエラー結果を追加
             try {

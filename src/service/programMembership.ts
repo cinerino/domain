@@ -212,7 +212,6 @@ export function orderProgramMembership(
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         const customer = await repos.person.findById({
-            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
             userId: params.agent.id
         });
 
@@ -317,7 +316,6 @@ export function register(
     }) => {
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         await repos.person.findById({
-            userPooId: <string>process.env.COGNITO_USER_POOL_ID,
             userId: params.agent.id
         });
 

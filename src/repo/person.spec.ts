@@ -25,7 +25,9 @@ describe('管理者権限でユーザー属性を取得する', () => {
             UserAttributes: []
         };
 
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('adminGetUser')
@@ -33,7 +35,6 @@ describe('管理者権限でユーザー属性を取得する', () => {
             .callsArgWith(1, null, data);
 
         const result = await personRepo.getUserAttributes({
-            userPooId: 'userPooId',
             username: 'username'
         });
         assert.equal(typeof result, 'object');
@@ -41,7 +42,9 @@ describe('管理者権限でユーザー属性を取得する', () => {
     });
 
     it('AWSが正常でなければそのままエラーとなるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const awsError = new Error('awsError');
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
@@ -50,7 +53,6 @@ describe('管理者権限でユーザー属性を取得する', () => {
             .callsArgWith(1, awsError);
 
         const result = await personRepo.getUserAttributes({
-            userPooId: 'userPooId',
             username: 'username'
         })
             .catch((err) => err);
@@ -65,7 +67,9 @@ describe('IDでユーザーを検索する', () => {
     });
 
     it('ユーザーが存在すればオブジェクトを取得できるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const data = {
             Users: [{
                 Attributes: [
@@ -84,7 +88,6 @@ describe('IDでユーザーを検索する', () => {
             .callsArgWith(1, null, data);
 
         const result = await personRepo.findById({
-            userPooId: 'userPooId',
             userId: 'userId'
         });
         assert.equal(typeof result, 'object');
@@ -92,7 +95,9 @@ describe('IDでユーザーを検索する', () => {
     });
 
     it('ユーザーが存在しなければNotFoundエラーとなるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const data = {
             Users: []
         };
@@ -103,7 +108,6 @@ describe('IDでユーザーを検索する', () => {
             .callsArgWith(1, null, data);
 
         const result = await personRepo.findById({
-            userPooId: 'userPooId',
             userId: 'userId'
         })
             .catch((err) => err);
@@ -112,7 +116,9 @@ describe('IDでユーザーを検索する', () => {
     });
 
     it('AWSが正常でなければそのままエラーとなるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const awsError = new Error('awsError');
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
@@ -121,7 +127,6 @@ describe('IDでユーザーを検索する', () => {
             .callsArgWith(1, awsError);
 
         const result = await personRepo.findById({
-            userPooId: 'userPooId',
             userId: 'userId'
         })
             .catch((err) => err);
@@ -136,7 +141,9 @@ describe('アクセストークンでユーザー属性を取得する', () => {
     });
 
     it('ユーザーが存在すればオブジェクトを取得できるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const data = {
             UserAttributes: [{ Name: 'sub', Value: 'value' }]
         };
@@ -152,7 +159,9 @@ describe('アクセストークンでユーザー属性を取得する', () => {
     });
 
     it('AWSが正常でなければそのままエラーとなるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const awsError = new Error('awsError');
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
@@ -173,7 +182,9 @@ describe('アクセストークンでユーザー属性を更新する', () => {
     });
 
     it('AWSが正常であれば成功するはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('updateUserAttributes')
@@ -194,7 +205,9 @@ describe('アクセストークンでユーザー属性を更新する', () => {
     });
 
     it('AWSがエラーを返せばArgumentエラーとなるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const awsError = new Error('awsError');
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
@@ -214,7 +227,9 @@ describe('アクセストークンでユーザー属性を更新する', () => {
     });
 
     it('電話番号フォーマットが適切でなければArgumentエラーとなるはず', async () => {
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('updateUserAttributes')
@@ -232,17 +247,18 @@ describe('アクセストークンでユーザー属性を更新する', () => {
     });
 });
 
-describe('unregister', () => {
+describe('disable', () => {
     beforeEach(() => {
         sandbox.restore();
     });
 
     it('AWSがエラーを返せばエラーとなるはず', async () => {
         const args = {
-            userPooId: 'userPoolId',
             username: 'username'
         };
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const awsError = new Error('awsError');
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
@@ -250,7 +266,7 @@ describe('unregister', () => {
             .once()
             .callsArgWith(1, awsError);
 
-        const result = await personRepo.unregister(args)
+        const result = await personRepo.disable(args)
             .catch((err) => err);
         assert.deepEqual(result, awsError);
         sandbox.verify();
@@ -258,17 +274,18 @@ describe('unregister', () => {
 
     it('AWSが正常であれば成功するはず', async () => {
         const args = {
-            userPooId: 'userPoolId',
             username: 'username'
         };
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('adminDisableUser')
             .once()
             .callsArgWith(1, null);
 
-        const result = await personRepo.unregister(args);
+        const result = await personRepo.disable(args);
         assert.equal(result, undefined);
         sandbox.verify();
     });
@@ -281,7 +298,6 @@ describe('会員検索', () => {
 
     it('AWSがエラーを返せばエラーとなるはず', async () => {
         const args = {
-            userPooId: 'userPoolId',
             username: 'username',
             id: 'id',
             email: 'email',
@@ -289,7 +305,9 @@ describe('会員検索', () => {
             givenName: 'givenName',
             familyName: 'familyName'
         };
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
         const awsError = new Error('awsError');
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
@@ -305,13 +323,14 @@ describe('会員検索', () => {
 
     it('AWSが正常であれば成功するはず', async () => {
         const args = {
-            userPooId: 'userPoolId',
             username: 'username'
         };
         const data = {
             Users: [{ Username: 'Username', Attributes: [{ Name: 'name', Value: 'value' }] }]
         };
-        const personRepo = new domain.repository.Person();
+        const personRepo = new domain.repository.Person({
+            userPoolId: 'xxxxx'
+        });
 
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('listUsers')

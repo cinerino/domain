@@ -10,13 +10,14 @@ const cognitoIdentityServiceProvider = new domain.AWS.CognitoIdentityServiceProv
 });
 
 async function main() {
-    const personRepo = new domain.repository.Person(cognitoIdentityServiceProvider);
-
     const userPoolId = process.env.COGNITO_USER_POOL_ID;
     const username = 'test';
 
+    const personRepo = new domain.repository.Person({
+        userPoolId: userPoolId
+    });
+
     const people = await personRepo.search({
-        userPooId: userPoolId,
         username: username,
     });
     console.log(people.length, 'people found');

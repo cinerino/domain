@@ -32,12 +32,15 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         const projectRepo = new ProjectRepo(settings.connection);
         const projectId = (data.project !== undefined) ? data.project.id : <string>process.env.PROJECT_ID;
         const project = await projectRepo.findById({ id: projectId });
-        if (project.settings === undefined) {
+        if (project.settings === undefined
+            || project.settings.gmo === undefined
+            || project.settings.cognito === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
-        if (project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
+
+        const personRepo = new PersonRepo({
+            userPoolId: project.settings.cognito.customerUserPool.id
+        });
 
         switch (data.object.typeOf) {
             // 旧会員プログラム注文タスクへの互換性維持のため
@@ -54,7 +57,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                     orderNumber: new OrderNumberRepo(settings.redisClient),
                     seller: new SellerRepo(settings.connection),
                     ownershipInfo: new OwnershipInfoRepo(settings.connection),
-                    person: new PersonRepo(),
+                    person: personRepo,
                     programMembership: new ProgramMembershipRepo(settings.connection),
                     project: new ProjectRepo(settings.connection),
                     registerActionInProgressRepo: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
@@ -66,7 +69,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
             case 'ProgramMembership':
                 await ProgramMembershipService.register(data)({
                     action: new ActionRepo(settings.connection),
-                    person: new PersonRepo(),
+                    person: personRepo,
                     task: new TaskRepo(settings.connection)
                 });
 

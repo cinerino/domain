@@ -19,9 +19,13 @@ const TOKEN_ISSUER_ENDPOINT = 'https://cognito-idp.ap-northeast-1.amazonaws.com'
  * 会員リポジトリ
  */
 export class CognitoRepository {
+    public readonly userPoolId: string;
     public readonly cognitoIdentityServiceProvider: AWS.CognitoIdentityServiceProvider;
 
-    constructor() {
+    constructor(params: {
+        userPoolId: string;
+    }) {
+        this.userPoolId = params.userPoolId;
         this.cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider({
             apiVersion: 'latest',
             region: 'ap-northeast-1',
@@ -161,13 +165,12 @@ export class CognitoRepository {
      * 管理者権限でユーザー属性を取得する
      */
     public async  getUserAttributes(params: {
-        userPooId: string;
         username: string;
     }) {
         return new Promise<factory.person.IProfile>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.adminGetUser(
                 {
-                    UserPoolId: params.userPooId,
+                    UserPoolId: this.userPoolId,
                     Username: params.username
                 },
                 (err, data) => {
@@ -190,7 +193,6 @@ export class CognitoRepository {
      * 管理者権限でプロフィール更新
      */
     public async updateProfile(params: {
-        userPooId: string;
         username: string;
         profile: factory.person.IProfile;
     }): Promise<void> {
@@ -199,7 +201,7 @@ export class CognitoRepository {
 
             this.cognitoIdentityServiceProvider.adminUpdateUserAttributes(
                 {
-                    UserPoolId: params.userPooId,
+                    UserPoolId: this.userPoolId,
                     Username: params.username,
                     UserAttributes: userAttributes
                 },
@@ -217,13 +219,12 @@ export class CognitoRepository {
      * 管理者権限でsubでユーザーを検索する
      */
     public async findById(params: {
-        userPooId: string;
         userId: string;
     }) {
         return new Promise<IPerson>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.listUsers(
                 {
-                    UserPoolId: params.userPooId,
+                    UserPoolId: this.userPoolId,
                     Filter: `sub="${params.userId}"`
                 },
                 (err, data) => {
@@ -241,7 +242,7 @@ export class CognitoRepository {
                             } else {
                                 resolve(CognitoRepository.ATTRIBUTE2PERSON({
                                     username: user.Username,
-                                    userPoolId: params.userPooId,
+                                    userPoolId: this.userPoolId,
                                     attributes: user.Attributes
                                 }));
                             }
@@ -299,13 +300,12 @@ export class CognitoRepository {
      * 削除
      */
     public async deleteById(params: {
-        userPooId: string;
         userId: string;
     }): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.listUsers(
                 {
-                    UserPoolId: params.userPooId,
+                    UserPoolId: this.userPoolId,
                     Filter: `sub="${params.userId}"`
                 },
                 (listUsersErr, data) => {
@@ -323,7 +323,7 @@ export class CognitoRepository {
                             } else {
                                 this.cognitoIdentityServiceProvider.adminDeleteUser(
                                     {
-                                        UserPoolId: params.userPooId,
+                                        UserPoolId: this.userPoolId,
                                         Username: user.Username
                                     },
                                     (err) => {
@@ -342,16 +342,15 @@ export class CognitoRepository {
     }
 
     /**
-     * 退会
+     * 無効化する
      */
-    public async unregister(params: {
-        userPooId: string;
+    public async disable(params: {
         username: string;
     }): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             this.cognitoIdentityServiceProvider.adminDisableUser(
                 {
-                    UserPoolId: params.userPooId,
+                    UserPoolId: this.userPoolId,
                     Username: params.username
                 },
                 (err) => {
@@ -369,7 +368,6 @@ export class CognitoRepository {
      * 検索
      */
     public async search(params: {
-        userPooId: string;
         id?: string;
         username?: string;
         email?: string;
@@ -380,7 +378,7 @@ export class CognitoRepository {
         return new Promise<IPerson[]>((resolve, reject) => {
             const request: AWS.CognitoIdentityServiceProvider.Types.ListUsersRequest = {
                 // Limit: 60,
-                UserPoolId: params.userPooId
+                UserPoolId: this.userPoolId
             };
 
             // tslint:disable-next-line:no-single-line-block-comment
@@ -427,7 +425,7 @@ export class CognitoRepository {
                         } else {
                             resolve(data.Users.map((u) => CognitoRepository.ATTRIBUTE2PERSON({
                                 username: u.Username,
-                                userPoolId: params.userPooId,
+                                userPoolId: this.userPoolId,
                                 attributes: <AttributeListType>u.Attributes
                             })));
                         }
