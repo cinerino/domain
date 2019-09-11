@@ -9,6 +9,7 @@ import { credentials } from '../credentials';
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
+import { project as projectByEnvironment } from '../project';
 
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -43,7 +44,7 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
     }) => {
         const projectId: string = (params.project !== undefined)
             ? params.project.id
-            : <string>process.env.PROJECT_ID;
+            : projectByEnvironment.id;
         const project = await repos.project.findById({ id: projectId });
 
         const action = await repos.action.start(params);
@@ -145,7 +146,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const project = await repos.project.findById({ id: projectByEnvironment.id });
 
         // アクション開始
         const confirmActionAttributes = params;
@@ -222,7 +223,7 @@ export function searchScreeningEventReservations(
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const project = await repos.project.findById({ id: projectByEnvironment.id });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }

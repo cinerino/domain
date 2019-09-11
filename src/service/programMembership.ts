@@ -21,6 +21,7 @@ import * as CreditCardPaymentService from './payment/creditCard';
 import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
 import * as factory from '../factory';
+import { project as projectByEnvironment } from '../project';
 
 /**
  * GMOメンバーIDにユーザーネームを使用するかどうか
@@ -207,7 +208,7 @@ export function orderProgramMembership(
     }) => {
         const now = new Date();
 
-        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
         const project = await repos.project.findById({ id: projectId });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)

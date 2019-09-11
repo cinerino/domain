@@ -5,6 +5,7 @@ import * as moment from 'moment';
 import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
+import { project as projectByEnvironment } from '../../../project';
 
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
@@ -21,7 +22,7 @@ export async function createPotentialActions(params: {
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project
-        : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+        : { typeOf: 'Project', id: projectByEnvironment.id };
 
     // 予約確定アクション
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
@@ -559,7 +560,7 @@ export function createRegisterProgramMembershipActions(params: {
 }): factory.action.interact.register.programMembership.IAttributes[] {
     const project: factory.project.IProject = (params.transaction.project !== undefined)
         ? params.transaction.project
-        : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+        : { typeOf: 'Project', id: projectByEnvironment.id };
 
     // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
     const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];

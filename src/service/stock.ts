@@ -12,6 +12,7 @@ import { credentials } from '../credentials';
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
+import { project as projectByEnvironment } from '../project';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
@@ -55,7 +56,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             return;
         }
 
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const project = await repos.project.findById({ id: projectByEnvironment.id });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
@@ -210,7 +211,7 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
         const project = await repos.project.findById({ id: projectId });
 
         // 座席仮予約アクションを取得
@@ -322,7 +323,7 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
             return;
         }
 
-        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
         const project = await repos.project.findById({ id: projectId });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');

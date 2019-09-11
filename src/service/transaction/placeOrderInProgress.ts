@@ -7,6 +7,7 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import { format } from 'util';
 
 import * as factory from '../../factory';
+import { project as projectByEnvironment } from '../../project';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
@@ -283,7 +284,7 @@ export function confirm(params: IConfirmParams) {
 
         const project: factory.project.IProject = (transaction.project !== undefined)
             ? transaction.project
-            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+            : { typeOf: 'Project', id: projectByEnvironment.id };
 
         const seller = await repos.seller.findById({ id: transaction.seller.id });
         debug('seller found.', seller.id);

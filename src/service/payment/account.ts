@@ -8,6 +8,7 @@ import * as moment from 'moment';
 import { credentials } from '../../credentials';
 
 import * as factory from '../../factory';
+import { project as projectByEnvironment } from '../../project';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
@@ -345,7 +346,7 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
         const action = await repos.action.start(params);
 
         try {
-            const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+            const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
             const project = await repos.project.findById({ id: projectId });
             if (project.settings === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings undefined');
@@ -424,7 +425,7 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         const action = await repos.action.start(params);
 
         try {
-            const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+            const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
             const project = await repos.project.findById({ id: projectId });
             if (project.settings === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings undefined');
@@ -501,7 +502,7 @@ export function cancelAccountAuth(params: factory.task.IData<factory.taskName.Ca
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+        const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
         const project = await repos.project.findById({ id: projectId });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
@@ -574,7 +575,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         const action = await repos.action.start(params);
 
         try {
-            const projectId = (params.project !== undefined) ? params.project.id : <string>process.env.PROJECT_ID;
+            const projectId = (params.project !== undefined) ? params.project.id : projectByEnvironment.id;
             const project = await repos.project.findById({ id: projectId });
             if (project.settings === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings undefined');

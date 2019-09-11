@@ -6,6 +6,7 @@ import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import { credentials } from '../../credentials';
+import { project as projectByEnvironment } from '../../project';
 
 import { handleMvtkReserveError } from '../../errorHandler';
 import * as factory from '../../factory';
@@ -325,7 +326,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const project = await repos.project.findById({ id: projectByEnvironment.id });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
@@ -488,7 +489,7 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        const project = await repos.project.findById({ id: <string>process.env.PROJECT_ID });
+        const project = await repos.project.findById({ id: projectByEnvironment.id });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }

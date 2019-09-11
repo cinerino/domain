@@ -3,6 +3,7 @@ import * as GMO from '@motionpicture/gmo-service';
 import { IConnectionSettings, IOperation } from '../task';
 
 import * as factory from '../../factory';
+import { project as projectByEnvironment } from '../../project';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
@@ -30,7 +31,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         }
 
         const projectRepo = new ProjectRepo(settings.connection);
-        const projectId = (data.project !== undefined) ? data.project.id : <string>process.env.PROJECT_ID;
+        const projectId = (data.project !== undefined) ? data.project.id : projectByEnvironment.id;
         const project = await projectRepo.findById({ id: projectId });
         if (project.settings === undefined
             || project.settings.gmo === undefined

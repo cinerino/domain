@@ -5,6 +5,8 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import * as factory from '../../factory';
+import { project as projectByEnvironment } from '../../project';
+
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -72,7 +74,7 @@ export function exportTasksById(params: {
 
         const project: factory.project.IProject = (transaction.project !== undefined)
             ? transaction.project
-            : { typeOf: 'Project', id: <string>process.env.PROJECT_ID };
+            : { typeOf: 'Project', id: projectByEnvironment.id };
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
@@ -108,7 +110,6 @@ export function exportTasksById(params: {
                     url: webhookUrl
                 },
                 typeOf: factory.actionType.InformAction
-                // payload: { transaction: transaction }
             }
         };
         taskAttributes.push(
