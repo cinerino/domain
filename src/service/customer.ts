@@ -10,7 +10,9 @@ import * as factory from '../factory';
 /**
  * 会員削除
  */
-export function deleteMember(params: factory.action.update.deleteAction.member.IAttributes) {
+export function deleteMember(params: factory.action.update.deleteAction.member.IAttributes & {
+    physically?: boolean;
+}) {
     return async (repos: {
         action: ActionRepo;
         person: PersonRepo;
@@ -21,20 +23,17 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
 
         try {
             const customer = params.object;
-            if (customer.memberOf === undefined) {
-                throw new factory.errors.NotFound('params.agent.memberOf');
-            }
-            if (customer.memberOf.membershipNumber === undefined) {
-                throw new factory.errors.NotFound('params.agent.memberOf.membershipNumber');
-            }
 
-            // Cognitoユーザを無効にする
-            await repos.person.disable({
-                username: customer.memberOf.membershipNumber
-            });
-            // await repos.person.deleteById({
-            //     userId: customer.id
-            // });
+            if (params.physically === true) {
+                await repos.person.deleteById({
+                    userId: customer.id
+                });
+            } else {
+                // Cognitoユーザを無効にする
+                await repos.person.disable({
+                    userId: customer.id
+                });
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {

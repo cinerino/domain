@@ -254,13 +254,23 @@ describe('disable', () => {
 
     it('AWSがエラーを返せばエラーとなるはず', async () => {
         const args = {
-            username: 'username'
+            userId: 'userId'
         };
+        const data = {
+            Users: [{
+                Username: 'Username'
+            }]
+        };
+        const awsError = new Error('awsError');
+
         const personRepo = new domain.repository.Person({
             userPoolId: 'xxxxx'
         });
-        const awsError = new Error('awsError');
 
+        sandbox.mock(personRepo.cognitoIdentityServiceProvider)
+            .expects('listUsers')
+            .once()
+            .callsArgWith(1, null, data);
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('adminDisableUser')
             .once()
@@ -274,12 +284,22 @@ describe('disable', () => {
 
     it('AWSが正常であれば成功するはず', async () => {
         const args = {
-            username: 'username'
+            userId: 'userId'
         };
+        const data = {
+            Users: [{
+                Username: 'Username'
+            }]
+        };
+
         const personRepo = new domain.repository.Person({
             userPoolId: 'xxxxx'
         });
 
+        sandbox.mock(personRepo.cognitoIdentityServiceProvider)
+            .expects('listUsers')
+            .once()
+            .callsArgWith(1, null, data);
         sandbox.mock(personRepo.cognitoIdentityServiceProvider)
             .expects('adminDisableUser')
             .once()

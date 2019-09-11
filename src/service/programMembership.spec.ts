@@ -55,37 +55,6 @@ describe('会員プログラム登録タスクを作成する', () => {
     });
 });
 
-describe('会員プログラム登録解除タスクを作成する', () => {
-    beforeEach(() => {
-        sandbox.restore();
-    });
-
-    it('リポジトリが正常であればタスクを作成できるはず', async () => {
-        const ownershipInfo = {};
-        const task = {};
-        const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-        const taskRepo = new domain.repository.Task(mongoose.connection);
-        sandbox.mock(ownershipInfoRepo)
-            .expects('search')
-            .once()
-            .resolves([ownershipInfo]);
-        sandbox.mock(taskRepo)
-            .expects('save')
-            .once()
-            .resolves(task);
-
-        const result = await domain.service.programMembership.createUnRegisterTask(<any>{
-            agent: { memberOf: { membershipNumber: 'membershipNumber' } },
-            ownershipInfoIdentifier: 'ownershipInfoIdentifier'
-        })({
-            ownershipInfo: ownershipInfoRepo,
-            task: taskRepo
-        });
-        assert.equal(typeof result, 'object');
-        sandbox.verify();
-    });
-});
-
 describe('会員プログラム登録解除', () => {
     beforeEach(() => {
         sandbox.restore();

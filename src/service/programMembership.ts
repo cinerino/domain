@@ -373,61 +373,6 @@ export function register(
 }
 
 /**
- * 会員プログラム登録解除タスクを作成する
- */
-export function createUnRegisterTask(params: {
-    agent: factory.person.IPerson;
-    /**
-     * 所有権識別子
-     */
-    ownershipInfoIdentifier: string;
-}): ICreateUnRegisterTaskOperation<factory.task.ITask<factory.taskName.UnRegisterProgramMembership>> {
-    return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
-        task: TaskRepo;
-    }) => {
-        // 所有している会員プログラムを検索
-        const now = new Date();
-        const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
-            limit: 1,
-            typeOfGood: { typeOf: 'ProgramMembership' },
-            ownedBy: { id: params.agent.id },
-            ownedFrom: now,
-            ownedThrough: now,
-            ...{
-                identifiers: [params.ownershipInfoIdentifier]
-            }
-        });
-        const ownershipInfo = ownershipInfos.shift();
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if: please write tests */
-        if (ownershipInfo === undefined) {
-            throw new factory.errors.NotFound('OwnershipInfo');
-        }
-
-        // 所有が確認できれば、会員プログラム登録解除タスクを作成する
-        const unRegisterActionAttributes: factory.action.interact.unRegister.programMembership.IAttributes = {
-            project: ownershipInfo.project,
-            typeOf: factory.actionType.UnRegisterAction,
-            agent: params.agent,
-            object: ownershipInfo
-        };
-        const taskAttributes: factory.task.IAttributes<factory.taskName.UnRegisterProgramMembership> = {
-            project: unRegisterActionAttributes.project,
-            name: factory.taskName.UnRegisterProgramMembership,
-            status: factory.taskStatus.Ready,
-            runsAt: now,
-            remainingNumberOfTries: 10,
-            numberOfTried: 0,
-            executionResults: [],
-            data: unRegisterActionAttributes
-        };
-
-        return repos.task.save<factory.taskName.UnRegisterProgramMembership>(taskAttributes);
-    };
-}
-
-/**
  * 会員プログラム登録解除
  */
 export function unRegister(params: factory.action.interact.unRegister.programMembership.IAttributes) {

@@ -33,10 +33,15 @@ export class CognitoRepository {
         });
     }
 
-    public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType) {
-        const additionalProperty: factory.person.IAdditionalProperty = userAttributes.map((a) => {
-            return { name: a.Name, value: a.Value };
-        });
+    public static ATTRIBUTE2PROFILE(params: {
+        attributes?: AttributeListType;
+    }) {
+        let additionalProperty: factory.person.IAdditionalProperty = [];
+        if (Array.isArray(params.attributes)) {
+            additionalProperty = params.attributes.map((a) => {
+                return { name: a.Name, value: a.Value };
+            });
+        }
 
         const profile: factory.person.IProfile = {
             givenName: '',
@@ -46,29 +51,31 @@ export class CognitoRepository {
             additionalProperty: additionalProperty
         };
 
-        userAttributes.forEach((userAttribute) => {
-            switch (userAttribute.Name) {
-                case 'given_name':
-                    // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    profile.givenName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
-                    break;
-                case 'family_name':
-                    // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    profile.familyName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
-                    break;
-                case 'email':
-                    // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    profile.email = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
-                    break;
-                case 'phone_number':
-                    // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                    profile.telephone = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
-                    break;
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-            }
-        });
+        if (Array.isArray(params.attributes)) {
+            params.attributes.forEach((userAttribute) => {
+                switch (userAttribute.Name) {
+                    case 'given_name':
+                        // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                        profile.givenName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                        break;
+                    case 'family_name':
+                        // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                        profile.familyName = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                        break;
+                    case 'email':
+                        // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                        profile.email = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                        break;
+                    case 'phone_number':
+                        // tslint:disable-next-line:max-line-length no-single-line-block-comment
+                        profile.telephone = (userAttribute.Value !== undefined) ? userAttribute.Value : /* istanbul ignore next: please write tests */ '';
+                        break;
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore next */
+                    default:
+                }
+            });
+        }
 
         return profile;
     }
@@ -76,9 +83,9 @@ export class CognitoRepository {
     public static ATTRIBUTE2PERSON(params: {
         username?: string;
         userPoolId?: string;
-        attributes: AttributeListType;
+        attributes?: AttributeListType;
     }) {
-        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params.attributes);
+        const profile = CognitoRepository.ATTRIBUTE2PROFILE(params);
 
         const identifier: factory.person.IIdentifier = [];
         if (typeof params.userPoolId === 'string') {
@@ -102,17 +109,19 @@ export class CognitoRepository {
             }
         };
 
-        params.attributes.forEach((a) => {
-            switch (a.Name) {
-                case 'sub':
-                    // tslint:no-single-line-block-comment
-                    person.id = (a.Value !== undefined) ? a.Value : /* istanbul ignore next: please write tests */ '';
-                    break;
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-            }
-        });
+        if (Array.isArray(params.attributes)) {
+            params.attributes.forEach((a) => {
+                switch (a.Name) {
+                    case 'sub':
+                        // tslint:no-single-line-block-comment
+                        person.id = (a.Value !== undefined) ? a.Value : /* istanbul ignore next: please write tests */ '';
+                        break;
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore next */
+                    default:
+                }
+            });
+        }
 
         return person;
     }
@@ -178,13 +187,7 @@ export class CognitoRepository {
                     if (err instanceof Error) {
                         reject(err);
                     } else {
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore if: please write tests */
-                        if (data.UserAttributes === undefined) {
-                            reject(new factory.errors.NotFound('User'));
-                        } else {
-                            resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
-                        }
+                        resolve(CognitoRepository.ATTRIBUTE2PROFILE({ attributes: data.UserAttributes }));
                     }
                 });
         });
@@ -238,14 +241,16 @@ export class CognitoRepository {
                             reject(new factory.errors.NotFound('User'));
                         } else {
                             const user = data.Users.shift();
-                            if (user === undefined || user.Attributes === undefined) {
+                            if (user === undefined) {
                                 reject(new factory.errors.NotFound('User'));
                             } else {
-                                resolve(CognitoRepository.ATTRIBUTE2PERSON({
+                                const person: IPerson = CognitoRepository.ATTRIBUTE2PERSON({
                                     username: user.Username,
                                     userPoolId: this.userPoolId,
                                     attributes: user.Attributes
-                                }));
+                                });
+
+                                resolve({ ...user, ...person });
                             }
                         }
                     }
@@ -266,7 +271,7 @@ export class CognitoRepository {
                     if (err instanceof Error) {
                         reject(err);
                     } else {
-                        resolve(CognitoRepository.ATTRIBUTE2PROFILE(data.UserAttributes));
+                        resolve(CognitoRepository.ATTRIBUTE2PROFILE({ attributes: data.UserAttributes }));
                     }
                 });
         });
@@ -346,22 +351,44 @@ export class CognitoRepository {
      * 無効化する
      */
     public async disable(params: {
-        username: string;
+        userId: string;
     }): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            this.cognitoIdentityServiceProvider.adminDisableUser(
+            this.cognitoIdentityServiceProvider.listUsers(
                 {
                     UserPoolId: this.userPoolId,
-                    Username: params.username
+                    Filter: `sub="${params.userId}"`
                 },
-                (err) => {
-                    if (err instanceof Error) {
-                        reject(err);
+                (listUsersErr, data) => {
+                    if (listUsersErr instanceof Error) {
+                        reject(listUsersErr);
                     } else {
-                        resolve();
+                        // tslint:disable-next-line:no-single-line-block-comment
+                        /* istanbul ignore if: please write tests */
+                        if (data.Users === undefined) {
+                            reject(new factory.errors.NotFound('User'));
+                        } else {
+                            const user = data.Users.shift();
+                            if (user === undefined || user.Username === undefined) {
+                                reject(new factory.errors.NotFound('User'));
+                            } else {
+                                this.cognitoIdentityServiceProvider.adminDisableUser(
+                                    {
+                                        UserPoolId: this.userPoolId,
+                                        Username: user.Username
+                                    },
+                                    (err) => {
+                                        if (err instanceof Error) {
+                                            reject(err);
+                                        } else {
+                                            resolve();
+                                        }
+                                    }
+                                );
+                            }
+                        }
                     }
-                }
-            );
+                });
         });
     }
 
@@ -424,11 +451,15 @@ export class CognitoRepository {
                         if (data.Users === undefined) {
                             reject(new factory.errors.NotFound('User'));
                         } else {
-                            resolve(data.Users.map((u) => CognitoRepository.ATTRIBUTE2PERSON({
-                                username: u.Username,
-                                userPoolId: this.userPoolId,
-                                attributes: <AttributeListType>u.Attributes
-                            })));
+                            resolve(data.Users.map((u) => {
+                                const person: IPerson = CognitoRepository.ATTRIBUTE2PERSON({
+                                    username: u.Username,
+                                    userPoolId: this.userPoolId,
+                                    attributes: u.Attributes
+                                });
+
+                                return { ...u, ...person };
+                            }));
                         }
                     }
                 });
