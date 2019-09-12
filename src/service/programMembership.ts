@@ -34,10 +34,6 @@ export type ICreateRegisterTaskOperation<T> = (repos: {
     seller: SellerRepo;
     task: TaskRepo;
 }) => Promise<T>;
-export type ICreateUnRegisterTaskOperation<T> = (repos: {
-    ownershipInfo: OwnershipInfoRepo;
-    task: TaskRepo;
-}) => Promise<T>;
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;

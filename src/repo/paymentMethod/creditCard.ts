@@ -42,12 +42,12 @@ export class GMORepository {
         creditCard: IUncheckedCardRaw | IUncheckedCardTokenized;
         defaultFlag?: boolean;
     }): Promise<ISearchCardResult> {
-        // GMOカード登録
         let addedCreditCard: ISearchCardResult;
+        const memberId = params.personId;
+        const memberName = params.personId;
+
         try {
             // まずGMO会員登録
-            const memberId = params.personId;
-            const memberName = params.personId;
             try {
                 await this.options.cardService.searchMember({
                     siteId: this.options.siteId,
@@ -114,9 +114,10 @@ export class GMORepository {
         personId: string;
         cardSeq: string;
     }): Promise<void> {
+        const memberId = params.personId;
+
         try {
             // GMOからカード削除
-            const memberId = params.personId;
             await this.options.cardService.deleteCard({
                 siteId: this.options.siteId,
                 sitePass: this.options.sitePass,
@@ -142,10 +143,10 @@ export class GMORepository {
          */
         personId: string;
     }): Promise<void> {
-        try {
-            const memberId = params.personId;
-            let searchResult: GMO.factory.card.ISearchMemberResult | undefined;
+        const memberId = params.personId;
+        let searchResult: GMO.factory.card.ISearchMemberResult | undefined;
 
+        try {
             try {
                 searchResult = await this.options.cardService.searchMember({
                     siteId: this.options.siteId,
@@ -191,11 +192,13 @@ export class GMORepository {
     }): Promise<ISearchCardResult[]> {
         let creditCards: ISearchCardResult[] = [];
         try {
-            // まずGMO会員登録
             const memberId = params.personId;
-            const memberName = params.personId;
+            // const memberName = params.personId;
+            let searchMemberResult: GMO.factory.card.ISearchMemberResult | undefined;
+
             try {
-                await this.options.cardService.searchMember({
+                // まずGMO会員存在確認
+                searchMemberResult = await this.options.cardService.searchMember({
                     siteId: this.options.siteId,
                     sitePass: this.options.sitePass,
                     memberId: memberId
@@ -205,25 +208,23 @@ export class GMORepository {
                 if (Array.isArray(searchMemberError.errors) &&
                     searchMemberError.errors.length === 1 &&
                     searchMemberError.errors[0].info === 'E01390002') {
-                    await this.options.cardService.saveMember({
-                        siteId: this.options.siteId,
-                        sitePass: this.options.sitePass,
-                        memberId: memberId,
-                        memberName: memberName
-                    });
+                    // 存在しなければカードなし
                 } else {
                     throw searchMemberError;
                 }
             }
 
-            creditCards = await this.options.cardService.searchCard({
-                siteId: this.options.siteId,
-                sitePass: this.options.sitePass,
-                memberId: memberId,
-                seqMode: GMO.utils.util.SeqMode.Physics
-                // 未削除のものに絞り込む
-            })
-                .then((results) => results.filter((result) => result.deleteFlag === '0'));
+            // 会員が存在していればカード検索
+            if (searchMemberResult !== undefined) {
+                creditCards = await this.options.cardService.searchCard({
+                    siteId: this.options.siteId,
+                    sitePass: this.options.sitePass,
+                    memberId: memberId,
+                    seqMode: GMO.utils.util.SeqMode.Physics
+                    // 未削除のものに絞り込む
+                })
+                    .then((results) => results.filter((result) => result.deleteFlag === '0'));
+            }
         } catch (error) {
             if (error.name === 'GMOServiceBadRequestError') {
                 // カードが存在しない場合このエラーになる

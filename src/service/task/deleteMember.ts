@@ -22,8 +22,7 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
         const project = await projectRepo.findById({ id: projectId });
         if (project.settings === undefined
             || project.settings.cognito === undefined
-            || project.settings.gmo === undefined
-            || project.settings.cognito === undefined) {
+            || project.settings.gmo === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
