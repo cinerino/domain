@@ -107,7 +107,7 @@ export class GMORepository {
     /**
      * クレジットカード削除
      */
-    public async remove(params: {
+    public async deleteBySequenceNumber(params: {
         /**
          * 会員ID
          */

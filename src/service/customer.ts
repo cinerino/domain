@@ -39,7 +39,7 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
                 });
             }
 
-            // GMO会員削除
+            // 全クレジットカード削除
             let gmoMemberId = customer.id;
             if (USE_USERNAME_AS_GMO_MEMBER_ID) {
                 if (customer.memberOf !== undefined && customer.memberOf.membershipNumber !== undefined) {
@@ -47,7 +47,10 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
                 }
             }
 
-            await repos.creditCard.deleteAll({ personId: gmoMemberId });
+            const creditCards = await repos.creditCard.search({ personId: gmoMemberId });
+            await Promise.all(creditCards.map(async (creditCard) => {
+                await repos.creditCard.deleteBySequenceNumber({ personId: gmoMemberId, cardSeq: creditCard.cardSeq });
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
