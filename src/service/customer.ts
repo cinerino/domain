@@ -2,10 +2,13 @@
  * 顧客サービス
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
+import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as factory from '../factory';
+
+const USE_USERNAME_AS_GMO_MEMBER_ID = process.env.USE_USERNAME_AS_GMO_MEMBER_ID === '1';
 
 /**
  * 会員削除
@@ -15,6 +18,7 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
 }) {
     return async (repos: {
         action: ActionRepo;
+        creditCard: CreditCardRepo;
         person: PersonRepo;
         task: TaskRepo;
     }) => {
@@ -34,6 +38,16 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
                     userId: customer.id
                 });
             }
+
+            // GMO会員削除
+            let gmoMemberId = customer.id;
+            if (USE_USERNAME_AS_GMO_MEMBER_ID) {
+                if (customer.memberOf !== undefined && customer.memberOf.membershipNumber !== undefined) {
+                    gmoMemberId = customer.memberOf.membershipNumber;
+                }
+            }
+
+            await repos.creditCard.deleteAll({ personId: gmoMemberId });
         } catch (error) {
             // actionにエラー結果を追加
             try {

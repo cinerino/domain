@@ -1,9 +1,6 @@
 import * as GMO from '@motionpicture/gmo-service';
-import * as createDebug from 'debug';
 
 import * as factory from '../../factory';
-
-const debug = createDebug('cinerino-domain:repository');
 
 export type IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
 export type IUncheckedCardTokenized = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
@@ -62,19 +59,17 @@ export class GMORepository {
                 if (Array.isArray(searchMemberError.errors) &&
                     searchMemberError.errors.length === 1 &&
                     searchMemberError.errors[0].info === 'E01390002') {
-                    const saveMemberResult = await this.options.cardService.saveMember({
+                    await this.options.cardService.saveMember({
                         siteId: this.options.siteId,
                         sitePass: this.options.sitePass,
                         memberId: memberId,
                         memberName: memberName
                     });
-                    debug('GMO saveMember processed', saveMemberResult);
                 } else {
                     throw searchMemberError;
                 }
             }
 
-            debug('saving a card to GMO...');
             const saveCardResult = await this.options.cardService.saveCard({
                 siteId: this.options.siteId,
                 sitePass: this.options.sitePass,
@@ -88,7 +83,6 @@ export class GMORepository {
                 // tslint:disable-next-line:no-single-line-block-comment
                 defaultFlag: (params.defaultFlag === true) ? /* istanbul ignore next */ '1' : '0'
             });
-            debug('card saved', saveCardResult);
 
             const searchCardResults = await this.options.cardService.searchCard({
                 siteId: this.options.siteId,
@@ -123,14 +117,60 @@ export class GMORepository {
         try {
             // GMOからカード削除
             const memberId = params.personId;
-            const deleteCardResult = await this.options.cardService.deleteCard({
+            await this.options.cardService.deleteCard({
                 siteId: this.options.siteId,
                 sitePass: this.options.sitePass,
                 memberId: memberId,
                 seqMode: GMO.utils.util.SeqMode.Physics,
                 cardSeq: params.cardSeq
             });
-            debug('credit card deleted', deleteCardResult);
+        } catch (error) {
+            if (error.name === 'GMOServiceBadRequestError') {
+                throw new factory.errors.Argument('cardSeq', error.errors[0].content);
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    /**
+     * 会員のクレジットカードを全て削除
+     */
+    public async deleteAll(params: {
+        /**
+         * 会員ID
+         */
+        personId: string;
+    }): Promise<void> {
+        try {
+            const memberId = params.personId;
+            let searchResult: GMO.factory.card.ISearchMemberResult | undefined;
+
+            try {
+                searchResult = await this.options.cardService.searchMember({
+                    siteId: this.options.siteId,
+                    sitePass: this.options.sitePass,
+                    memberId: memberId
+                });
+            } catch (searchMemberError) {
+                // 会員が存在しない場合このエラーになる
+                if (Array.isArray(searchMemberError.errors) &&
+                    searchMemberError.errors.length === 1 &&
+                    searchMemberError.errors[0].info === 'E01390002') {
+                    // すでに存在しなければok
+                } else {
+                    throw searchMemberError;
+                }
+            }
+
+            if (searchResult !== undefined) {
+                // GMOから会員削除
+                await this.options.cardService.deleteMember({
+                    siteId: this.options.siteId,
+                    sitePass: this.options.sitePass,
+                    memberId: memberId
+                });
+            }
         } catch (error) {
             if (error.name === 'GMOServiceBadRequestError') {
                 throw new factory.errors.Argument('cardSeq', error.errors[0].content);
@@ -165,13 +205,12 @@ export class GMORepository {
                 if (Array.isArray(searchMemberError.errors) &&
                     searchMemberError.errors.length === 1 &&
                     searchMemberError.errors[0].info === 'E01390002') {
-                    const saveMemberResult = await this.options.cardService.saveMember({
+                    await this.options.cardService.saveMember({
                         siteId: this.options.siteId,
                         sitePass: this.options.sitePass,
                         memberId: memberId,
                         memberName: memberName
                     });
-                    debug('GMO saveMember processed', saveMemberResult);
                 } else {
                     throw searchMemberError;
                 }
@@ -186,7 +225,6 @@ export class GMORepository {
             })
                 .then((results) => results.filter((result) => result.deleteFlag === '0'));
         } catch (error) {
-            debug(error);
             if (error.name === 'GMOServiceBadRequestError') {
                 // カードが存在しない場合このエラーになる
                 // ErrCode=E01&ErrInfo=E01240002
