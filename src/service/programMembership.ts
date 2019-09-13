@@ -377,48 +377,67 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         ownershipInfo: OwnershipInfoRepo;
         task: TaskRepo;
     }) => {
+        const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
+
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
-            const customer = <factory.person.IPerson>params.object.ownedBy;
-            const programMembershipId = params.object.typeOfGood.id;
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (programMembershipId === undefined) {
-                throw new factory.errors.NotFound('params.object.typeOfGood.id');
+            const programMembershipId = params.object.id;
+            if (programMembershipId !== undefined) {
+                if (Array.isArray(params.object.member)) {
+                    const customers = params.object.member;
+
+                    await Promise.all(customers.map(async (customer) => {
+                        // 会員プログラム更新タスク(継続課金タスク)をキャンセル
+                        await repos.task.taskModel.findOneAndUpdate(
+                            {
+                                // 旧会員プログラム注文タスクへの互換性維持
+                                name: { $in: [factory.taskName.OrderProgramMembership, factory.taskName.RegisterProgramMembership] },
+                                'data.agent.id': {
+                                    $exists: true,
+                                    $eq: customer.id
+                                },
+                                'data.object.itemOffered.id': {
+                                    $exists: true,
+                                    $eq: programMembershipId
+                                },
+                                status: factory.taskStatus.Ready
+                            },
+                            { status: factory.taskStatus.Aborted }
+                        )
+                            .exec();
+
+                        // 現在所有している会員プログラムを全て検索
+                        const now = moment(action.startDate)
+                            .toDate();
+                        const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
+                            typeOfGood: { typeOf: 'ProgramMembership', id: programMembershipId },
+                            ownedBy: { id: customer.id },
+                            ownedFrom: now,
+                            ownedThrough: now
+                        });
+
+                        // 所有権の期限変更
+                        await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
+                            const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
+                                { _id: ownershipInfo.id },
+                                { ownedThrough: now },
+                                { new: true }
+                            )
+                                .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+                                .exec();
+                            if (doc !== null) {
+                                returnedOwnershipInfos.push(doc.toObject());
+                            }
+                        }));
+                    }));
+                }
             }
-
-            // 会員プログラム更新タスク(継続課金タスク)をキャンセル
-            await repos.task.taskModel.findOneAndUpdate(
-                {
-                    // 旧会員プログラム注文タスクへの互換性維持
-                    name: { $in: [factory.taskName.OrderProgramMembership, factory.taskName.RegisterProgramMembership] },
-                    'data.agent.id': {
-                        $exists: true,
-                        $eq: customer.id
-                    },
-                    'data.object.itemOffered.id': {
-                        $exists: true,
-                        $eq: programMembershipId
-                    },
-                    status: factory.taskStatus.Ready
-                },
-                { status: factory.taskStatus.Aborted }
-            )
-                .exec();
-
-            // 所有権の期限変更
-            await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
-                { identifier: params.object.identifier },
-                { ownedThrough: new Date() }
-            )
-                .exec();
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
+                const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
@@ -428,8 +447,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         }
 
         // アクション完了
-        const actionResult: factory.action.interact.unRegister.programMembership.IResult = {};
-
+        const actionResult: factory.action.interact.unRegister.programMembership.IResult = returnedOwnershipInfos;
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
