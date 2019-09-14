@@ -204,8 +204,7 @@ export function orderProgramMembership(
     }) => {
         const now = new Date();
 
-        const projectId = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: params.project.id });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         const customer = await repos.person.findById({

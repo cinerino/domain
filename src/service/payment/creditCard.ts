@@ -309,8 +309,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         invoice: InvoiceRepo;
         project: ProjectRepo;
     }): Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>> => {
-        const projectId = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (project.settings === undefined) {
@@ -406,9 +405,11 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
-        const projectId = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const transaction = await repos.transaction.findById({
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
+        });
+        const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (project.settings === undefined) {
@@ -464,8 +465,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        const projectId = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (project.settings === undefined) {

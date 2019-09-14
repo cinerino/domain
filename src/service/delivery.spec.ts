@@ -201,7 +201,7 @@ describe('ポイントインセンティブ承認取消', () => {
             .once()
             .resolves({});
 
-        const result = await domain.service.delivery.cancelPointAward(<any>{})({
+        const result = await domain.service.delivery.cancelPointAward(<any>{ purpose: {} })({
             action: actionRepo
         });
         assert.equal(result, undefined);

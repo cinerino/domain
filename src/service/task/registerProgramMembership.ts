@@ -30,8 +30,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         }
 
         const projectRepo = new ProjectRepo(settings.connection);
-        const projectId = data.project.id;
-        const project = await projectRepo.findById({ id: projectId });
+        const project = await projectRepo.findById({ id: data.project.id });
         if (project.settings === undefined
             || project.settings.gmo === undefined
             || project.settings.cognito === undefined) {

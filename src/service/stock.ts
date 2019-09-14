@@ -210,16 +210,15 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const projectId = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: params.project.id });
 
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             await repos.action.searchByPurpose({
                 typeOf: factory.actionType.AuthorizeAction,
                 purpose: {
-                    typeOf: factory.transactionType.PlaceOrder,
-                    id: params.transactionId
+                    typeOf: params.purpose.typeOf,
+                    id: params.purpose.id
                 }
             })
                 .then((actions) => actions
@@ -322,8 +321,7 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
             return;
         }
 
-        const projectId = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: params.project.id });
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }

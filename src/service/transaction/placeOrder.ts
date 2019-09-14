@@ -149,8 +149,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
-                        transactionId: transaction.id
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
@@ -163,8 +162,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
-                        transactionId: transaction.id
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
@@ -177,8 +175,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
-                        transactionId: transaction.id
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 const cancelPointAwardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPointAward> = {
@@ -191,8 +188,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
-                        transactionId: transaction.id
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 taskAttributes.push(

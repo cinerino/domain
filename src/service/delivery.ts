@@ -435,8 +435,8 @@ export function cancelPointAward(params: factory.task.IData<factory.taskName.Can
             await repos.action.searchByPurpose({
                 typeOf: factory.actionType.AuthorizeAction,
                 purpose: {
-                    typeOf: factory.transactionType.PlaceOrder,
-                    id: params.transactionId
+                    typeOf: params.purpose.typeOf,
+                    id: params.purpose.id
                 }
             })
                 .then((actions) => actions

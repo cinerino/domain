@@ -65,8 +65,7 @@ export function create(params: {
             id: params.transaction.id
         });
 
-        const projectId = transaction.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: transaction.project.id });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if: please write tests */
@@ -225,8 +224,7 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const projectId = transaction.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: transaction.project.id });
 
         // 取引内のアクションかどうか確認
         let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
