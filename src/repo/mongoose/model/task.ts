@@ -132,6 +132,16 @@ schema.index(
 );
 
 schema.index(
+    { 'data.purpose.id': 1, runsAt: -1 },
+    {
+        name: 'searchByDataPurposeId',
+        partialFilterExpression: {
+            'data.purpose.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { status: 1, name: 1, numberOfTried: 1, runsAt: 1 },
     {
         name: 'executeOneByName'

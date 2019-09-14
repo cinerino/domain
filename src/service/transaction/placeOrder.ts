@@ -149,6 +149,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
                         transactionId: transaction.id
                     }
                 };
@@ -162,6 +163,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
                         transactionId: transaction.id
                     }
                 };
@@ -175,6 +177,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
                         transactionId: transaction.id
                     }
                 };
@@ -188,6 +191,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         project: project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
                         transactionId: transaction.id
                     }
                 };
