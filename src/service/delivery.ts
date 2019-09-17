@@ -67,8 +67,11 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
 
             // 会員プログラムがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
             const programMembershipOwnershipInfos
-                = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<'ProgramMembership'>>[]>
-                ownershipInfos.filter((o) => o.typeOfGood.typeOf === 'ProgramMembership');
+                // tslint:disable-next-line:max-line-length
+                = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.programMembership.ProgramMembershipType.ProgramMembership>>[]>
+                ownershipInfos.filter(
+                    (o) => o.typeOfGood.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership
+                );
             await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
                 const customer = <factory.person.IPerson>o.ownedBy;
                 // const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
@@ -134,7 +137,7 @@ export function createOwnershipInfosFromOrder(params: {
         );
 
         switch (itemOffered.typeOf) {
-            case 'ProgramMembership':
+            case factory.programMembership.ProgramMembershipType.ProgramMembership:
                 // どういう期間でいくらのオファーなのか
                 const eligibleDuration = acceptedOffer.eligibleDuration;
                 if (eligibleDuration === undefined) {

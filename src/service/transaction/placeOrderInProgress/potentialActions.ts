@@ -153,28 +153,30 @@ export async function createPotentialActions(params: {
                         typeOf: factory.chevre.transactionType.Reserve,
                         id: reserveTransaction.id,
                         object: {
-                            reservations: reserveTransaction.object.reservations.map((r) => {
-                                // 購入者や販売者の情報を連携する
-                                return {
-                                    id: r.id,
-                                    reservedTicket: {
-                                        issuedBy: {
-                                            typeOf: params.order.seller.typeOf,
-                                            name: params.order.seller.name
+                            reservations: (Array.isArray(reserveTransaction.object.reservations))
+                                ? reserveTransaction.object.reservations.map((r) => {
+                                    // 購入者や販売者の情報を連携する
+                                    return {
+                                        id: r.id,
+                                        reservedTicket: {
+                                            issuedBy: {
+                                                typeOf: params.order.seller.typeOf,
+                                                name: params.order.seller.name
+                                            }
+                                        },
+                                        underName: {
+                                            typeOf: params.order.customer.typeOf,
+                                            id: params.order.customer.id,
+                                            name: String(params.order.customer.name),
+                                            familyName: params.order.customer.familyName,
+                                            givenName: params.order.customer.givenName,
+                                            email: params.order.customer.email,
+                                            telephone: params.order.customer.telephone,
+                                            identifier: defaultUnderNameIdentifiers
                                         }
-                                    },
-                                    underName: {
-                                        typeOf: params.order.customer.typeOf,
-                                        id: params.order.customer.id,
-                                        name: String(params.order.customer.name),
-                                        familyName: params.order.customer.familyName,
-                                        givenName: params.order.customer.givenName,
-                                        email: params.order.customer.email,
-                                        telephone: params.order.customer.telephone,
-                                        identifier: defaultUnderNameIdentifiers
-                                    }
-                                };
-                            })
+                                    };
+                                })
+                                : []
                         }
                     };
 
@@ -567,7 +569,7 @@ export function createRegisterProgramMembershipActions(params: {
     const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
     const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
         params.order.acceptedOffers.filter(
-            (o) => o.itemOffered.typeOf === <factory.programMembership.ProgramMembershipType>'ProgramMembership'
+            (o) => o.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership
         );
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore if */

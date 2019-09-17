@@ -73,11 +73,21 @@ export function authorize(params: {
             id: transaction.seller.id
         });
 
+        let orderId: string;
+        // GMOオーダーIDはカスタム指定可能
+        orderId = (params.object.orderId !== undefined) ? params.object.orderId : generateOrderId({
+            project: params.project,
+            transaction: params.purpose
+        });
+
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
-            object: params.object,
+            object: {
+                ...params.object,
+                paymentMethodId: orderId
+            },
             agent: transaction.agent,
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -86,7 +96,6 @@ export function authorize(params: {
 
         // GMOオーソリ取得
         let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>;
-        let orderId: string;
         let entryTranArgs: GMO.services.credit.IEntryTranArgs;
         let entryTranResult: GMO.services.credit.IEntryTranResult;
         let execTranArgs: GMO.services.credit.IExecTranArgs;
@@ -191,8 +200,6 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        debug('ending authorize action...');
-
         const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
             accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
             amount: params.object.amount,

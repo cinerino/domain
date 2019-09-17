@@ -19,9 +19,7 @@ export class MongoRepository {
     public async search(params: {
         id?: string;
     }): Promise<factory.programMembership.IProgramMembership[]> {
-        const andConditions: any[] = [
-            { typeOf: <factory.programMembership.ProgramMembershipType>'ProgramMembership' }
-        ];
+        const andConditions: any[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */

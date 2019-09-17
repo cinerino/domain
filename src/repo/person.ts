@@ -101,11 +101,11 @@ export class CognitoRepository {
             id: '',
             identifier: identifier,
             memberOf: {
-                project: <any>{},
-                typeOf: 'ProgramMembership',
+                award: [],
                 membershipNumber: params.username,
                 programName: 'Amazon Cognito',
-                award: []
+                project: <any>{},
+                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
             }
         };
 

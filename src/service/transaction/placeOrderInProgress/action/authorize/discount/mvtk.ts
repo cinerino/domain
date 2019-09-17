@@ -163,10 +163,12 @@ function seatSyncInfoIn2movieTickets(params: {
             });
 
             authorizeActionObjects.push({
-                typeOf: factory.paymentMethodType.MovieTicket,
-                amount: 0,
+                accountId: knyknrNoInfo.knyknrNo,
                 additionalProperty: [],
-                movieTickets: movieTickets
+                amount: 0,
+                movieTickets: movieTickets,
+                paymentMethodId: knyknrNoInfo.knyknrNo,
+                typeOf: factory.paymentMethodType.MovieTicket
             });
         }
     });

@@ -2,7 +2,6 @@
  * 口座決済サービス
  */
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
-import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
@@ -16,8 +15,6 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handlePecorinoError } from '../../errorHandler';
-
-const debug = createDebug('cinerino-domain:service');
 
 const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
     domain: credentials.pecorino.authorizeServerDomain,
@@ -91,7 +88,12 @@ export function authorize<T extends factory.accountType>(params: {
         const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
-            object: params.object,
+            object: {
+                ...params.object,
+                ...(params.object.fromAccount !== undefined)
+                    ? { accountId: params.object.fromAccount.accountNumber }
+                    : {}
+            },
             agent: transaction.agent,
             recipient: recipient,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -110,7 +112,6 @@ export function authorize<T extends factory.accountType>(params: {
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await withdrawService.start({
                     typeOf: factory.pecorino.transactionType.Withdraw,
                     agent: {
@@ -136,13 +137,11 @@ export function authorize<T extends factory.accountType>(params: {
                         }
                     }
                 });
-                debug('pecorinoTransaction started.', pendingTransaction.id);
             } else if (params.object.fromAccount !== undefined && params.object.toAccount !== undefined) {
                 const transferService = new pecorinoapi.service.transaction.Transfer({
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await transferService.start({
                     typeOf: factory.pecorino.transactionType.Transfer,
                     agent: {
@@ -173,13 +172,11 @@ export function authorize<T extends factory.accountType>(params: {
                         }
                     }
                 });
-                debug('pecorinoTransaction started.', pendingTransaction.id);
             } else if (params.object.fromAccount === undefined && params.object.toAccount !== undefined) {
                 const depositService = new pecorinoapi.service.transaction.Deposit({
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                debug('starting pecorino pay transaction...', params.object.amount);
                 pendingTransaction = await depositService.start({
                     typeOf: factory.pecorino.transactionType.Deposit,
                     agent: {
@@ -205,7 +202,6 @@ export function authorize<T extends factory.accountType>(params: {
                         }
                     }
                 });
-                debug('pecorinoTransaction started.', pendingTransaction.id);
             } else {
                 throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
             }
@@ -225,7 +221,6 @@ export function authorize<T extends factory.accountType>(params: {
         }
 
         // アクションを完了
-        debug('ending authorize action...');
         const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
             accountId: (params.object.fromAccount !== undefined)
                 ? params.object.fromAccount.accountNumber
@@ -277,7 +272,6 @@ export function voidTransaction(params: {
         }
 
         // 進行中取引存在確認
-        debug('canceling pecorino authorize action...');
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -404,7 +398,6 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.transfer.moneyTransfer.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
@@ -485,7 +478,6 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
@@ -684,7 +676,6 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         }
 
         // アクション完了
-        debug('ending action...');
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: {} });
 
         // 潜在アクション

@@ -1,5 +1,4 @@
 import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
-import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
@@ -17,8 +16,6 @@ import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 import * as OfferService from '../../../../../offer';
-
-const debug = createDebug('cinerino-domain:service');
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -50,7 +47,7 @@ export function create(params: {
     agent: { id: string };
     transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>> {
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         event: EventRepo;
         action: ActionRepo;
@@ -61,7 +58,6 @@ export function create(params: {
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        debug('creating authorize action...', params);
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transaction.id
@@ -83,6 +79,7 @@ export function create(params: {
         if (offeredThrough === undefined) {
             offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
+        const bookingServiceIdentifier = offeredThrough.identifier;
 
         const acceptedOffers = await validateAcceptedOffers({
             project: params.project,
@@ -90,6 +87,51 @@ export function create(params: {
             event: event,
             seller: seller
         })(repos);
+
+        let reservationNumber: string | undefined;
+        let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
+        let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
+        let reserveService: chevre.service.transaction.Reserve | undefined;
+        let reserveTransaction: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
+
+        switch (bookingServiceIdentifier) {
+            case factory.service.webAPI.Identifier.COA:
+                break;
+
+            case factory.service.webAPI.Identifier.Chevre:
+                // Chevre予約の場合、まず予約取引開始
+                if (project.settings === undefined
+                    || project.settings.chevre === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                }
+
+                reserveService = new chevre.service.transaction.Reserve({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
+                reserveTransaction = await reserveService.start({
+                    project: { typeOf: params.project.typeOf, id: params.project.id },
+                    typeOf: chevre.factory.transactionType.Reserve,
+                    agent: {
+                        typeOf: transaction.agent.typeOf,
+                        name: transaction.agent.id
+                    },
+                    object: {
+                        event: params.object.event,
+                        acceptedOffer: []
+                    },
+                    expires: moment(transaction.expires)
+                        .add(1, 'month')
+                        .toDate() // 余裕を持って
+                });
+
+                reservationNumber = reserveTransaction.object.reservationNumber;
+
+                break;
+
+            default:
+        }
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes<typeof offeredThrough.identifier> = {
@@ -116,7 +158,12 @@ export function create(params: {
                     typeOf: event.typeOf,
                     workPerformed: event.workPerformed
                 },
-                acceptedOffer: acceptedOffers
+                acceptedOffer: acceptedOffers,
+                ...(reservationNumber !== undefined)
+                    ? {
+                        reservationNumber: reservationNumber
+                    }
+                    : {}
             },
             agent: {
                 project: transaction.seller.project,
@@ -135,10 +182,8 @@ export function create(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 座席仮予約
-        let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
-        let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         try {
-            switch (offeredThrough.identifier) {
+            switch (bookingServiceIdentifier) {
                 case factory.service.webAPI.Identifier.COA:
                     let coaInfo: any;
                     if (Array.isArray(event.additionalProperty)) {
@@ -162,42 +207,28 @@ export function create(params: {
                             };
                         })
                     };
-                    debug('updTmpReserveSeat processing...', requestBody);
+
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
                         await COA.services.reserve.updTmpReserveSeat(requestBody);
-                    debug('updTmpReserveSeat processed', responseBody);
+
+                    break;
+
+                case factory.service.webAPI.Identifier.Chevre:
+                    if (reserveService !== undefined && reserveTransaction !== undefined) {
+                        // Chevreで仮予約
+                        responseBody = await reserveService.addReservations({
+                            id: reserveTransaction.id,
+                            object: params.object
+                        });
+                    } else {
+                        // 論理的にありえないフロー
+                        throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transaction not found');
+                    }
 
                     break;
 
                 default:
-                    // 基本的にCHEVREにて予約取引開始
-                    if (project.settings === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                    }
-                    if (project.settings.chevre === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings not found');
-                    }
-
-                    const reserveService = new chevre.service.transaction.Reserve({
-                        endpoint: project.settings.chevre.endpoint,
-                        auth: chevreAuthClient
-                    });
-
-                    debug('starting reserve transaction...');
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
-                        await reserveService.start({
-                            project: { typeOf: params.project.typeOf, id: params.project.id },
-                            typeOf: chevre.factory.transactionType.Reserve,
-                            agent: {
-                                typeOf: transaction.agent.typeOf,
-                                name: transaction.agent.id
-                            },
-                            object: params.object,
-                            expires: moment(transaction.expires)
-                                .add(1, 'month')
-                                .toDate() // 余裕を持って
-                        });
-                    debug('reserve transaction started', responseBody);
+                    throw new factory.errors.Argument('Event', `Unknown booking service '${bookingServiceIdentifier}'`);
             }
         } catch (error) {
             // actionにエラー結果を追加
@@ -245,7 +276,6 @@ export function create(params: {
         });
 
         // アクションを完了
-        debug('ending authorize action...');
         const result: factory.action.authorize.offer.seatReservation.IResult<typeof offeredThrough.identifier> = {
             price: amount,
             priceCurrency: acceptedOffers[0].priceCurrency,

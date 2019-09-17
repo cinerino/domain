@@ -32,7 +32,7 @@ export function createOrder(params: {
     const programMembershipAuthorizeActions = params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === 'Offer')
-        .filter((a) => a.object.itemOffered.typeOf === 'ProgramMembership');
+        .filter((a) => a.object.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership);
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore if */
     if (programMembershipAuthorizeActions.length > 1) {
@@ -231,88 +231,94 @@ export function createOrder(params: {
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                     if (event.name === undefined) {
-                        event = responseBody.object.reservations[0].reservationFor;
+                        if (Array.isArray(responseBody.object.reservations) && responseBody.object.reservations.length > 0) {
+                            event = responseBody.object.reservations[0].reservationFor;
+                        }
                     }
 
                     // 座席仮予約からオファー情報を生成する
-                    acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
-                        const itemOffered: factory.order.IReservation = tmpReserve;
-                        const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
+                    if (Array.isArray(responseBody.object.reservations)) {
+                        acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
+                            const itemOffered: factory.order.IReservation = tmpReserve;
+                            const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
 
-                        const reservation: factory.order.IReservation = {
-                            ...itemOffered,
-                            checkedIn: undefined,
-                            attended: undefined,
-                            modifiedTime: undefined,
-                            reservationStatus: undefined,
-                            price: undefined,
-                            priceCurrency: undefined,
-                            underName: undefined,
-                            reservationFor: {
-                                ...itemOffered.reservationFor,
-                                additionalProperty: undefined,
-                                maximumAttendeeCapacity: undefined,
-                                remainingAttendeeCapacity: undefined,
-                                checkInCount: undefined,
-                                attendeeCount: undefined,
-                                offers: undefined,
-                                superEvent: {
-                                    ...event.superEvent,
+                            const reservation: factory.order.IReservation = {
+                                ...itemOffered,
+                                checkedIn: undefined,
+                                attended: undefined,
+                                modifiedTime: undefined,
+                                reservationStatus: undefined,
+                                price: undefined,
+                                priceCurrency: undefined,
+                                underName: undefined,
+                                reservationFor: {
+                                    ...itemOffered.reservationFor,
                                     additionalProperty: undefined,
                                     maximumAttendeeCapacity: undefined,
                                     remainingAttendeeCapacity: undefined,
+                                    checkInCount: undefined,
+                                    attendeeCount: undefined,
                                     offers: undefined,
-                                    workPerformed: {
-                                        ...event.superEvent.workPerformed,
-                                        offers: undefined
-                                    }
+                                    superEvent: {
+                                        ...event.superEvent,
+                                        additionalProperty: undefined,
+                                        maximumAttendeeCapacity: undefined,
+                                        remainingAttendeeCapacity: undefined,
+                                        offers: undefined,
+                                        workPerformed: {
+                                            ...event.superEvent.workPerformed,
+                                            offers: undefined
+                                        }
+                                    },
+                                    workPerformed: (event.workPerformed !== undefined)
+                                        ? {
+                                            ...event.workPerformed,
+                                            offers: undefined
+                                        }
+                                        : undefined
                                 },
-                                workPerformed: (event.workPerformed !== undefined)
-                                    ? {
-                                        ...event.workPerformed,
-                                        offers: undefined
+                                reservedTicket: {
+                                    ...itemOffered.reservedTicket,
+                                    issuedBy: undefined,
+                                    priceCurrency: undefined,
+                                    totalPrice: undefined,
+                                    underName: undefined,
+                                    ticketType: {
+                                        project: params.project,
+                                        typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                                        id: itemOffered.reservedTicket.ticketType.id,
+                                        identifier: itemOffered.reservedTicket.ticketType.identifier,
+                                        name: itemOffered.reservedTicket.ticketType.name,
+                                        description: itemOffered.reservedTicket.ticketType.description,
+                                        additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
                                     }
-                                    : undefined
-                            },
-                            reservedTicket: {
-                                ...itemOffered.reservedTicket,
-                                issuedBy: undefined,
-                                priceCurrency: undefined,
-                                totalPrice: undefined,
-                                underName: undefined,
-                                ticketType: {
-                                    project: params.project,
-                                    typeOf: itemOffered.reservedTicket.ticketType.typeOf,
-                                    id: itemOffered.reservedTicket.ticketType.id,
-                                    identifier: itemOffered.reservedTicket.ticketType.identifier,
-                                    name: itemOffered.reservedTicket.ticketType.name,
-                                    description: itemOffered.reservedTicket.ticketType.description,
-                                    additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                                    priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
                                 }
-                            }
-                        };
+                            };
 
-                        return {
-                            typeOf: <factory.chevre.offerType>'Offer',
-                            itemOffered: reservation,
-                            offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-                            priceSpecification: {
-                                ...priceSpecification,
-                                priceComponent: priceSpecification.priceComponent.map((c) => {
-                                    return {
-                                        ...c,
-                                        accounting: undefined // accountingはorderに不要な情報
-                                    };
-                                })
-                            },
-                            priceCurrency: (tmpReserve.priceCurrency !== undefined) ? tmpReserve.priceCurrency : factory.priceCurrency.JPY,
-                            seller: {
-                                typeOf: seller.typeOf,
-                                name: seller.name
-                            }
-                        };
-                    }));
+                            return {
+                                typeOf: <factory.chevre.offerType>'Offer',
+                                itemOffered: reservation,
+                                offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
+                                priceSpecification: {
+                                    ...priceSpecification,
+                                    priceComponent: priceSpecification.priceComponent.map((c) => {
+                                        return {
+                                            ...c,
+                                            accounting: undefined // accountingはorderに不要な情報
+                                        };
+                                    })
+                                },
+                                priceCurrency: (tmpReserve.priceCurrency !== undefined)
+                                    ? tmpReserve.priceCurrency
+                                    : factory.priceCurrency.JPY,
+                                seller: {
+                                    typeOf: seller.typeOf,
+                                    name: seller.name
+                                }
+                            };
+                        }));
+                    }
             }
         }
     });

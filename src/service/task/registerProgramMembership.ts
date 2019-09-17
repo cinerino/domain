@@ -65,7 +65,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
 
                 break;
 
-            case 'ProgramMembership':
+            case factory.programMembership.ProgramMembershipType.ProgramMembership:
                 await ProgramMembershipService.register(data)({
                     action: new ActionRepo(settings.connection),
                     person: personRepo,

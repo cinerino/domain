@@ -2,7 +2,6 @@
  * ムビチケ決済サービス
  */
 import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
-import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import { credentials } from '../../credentials';
@@ -19,8 +18,6 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
-
-const debug = createDebug('cinerino-domain:service');
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
@@ -77,6 +74,7 @@ export function authorize(params: {
         if (movieTicketIdentifiers.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of movie ticket identifiers must be 1');
         }
+        const movieTicketIdentifier = movieTicketIdentifiers[0];
 
         // イベント情報取得
         const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventIds[0] });
@@ -92,8 +90,10 @@ export function authorize(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
-                typeOf: factory.paymentMethodType.MovieTicket,
-                amount: 0
+                accountId: movieTicketIdentifier,
+                amount: 0,
+                paymentMethodId: movieTicketIdentifier,
+                typeOf: factory.paymentMethodType.MovieTicket
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -143,7 +143,6 @@ export function authorize(params: {
                 }
             });
         } catch (error) {
-            debug(error);
             // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name, ...checkResult };
@@ -157,13 +156,12 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
-            accountId: params.object.movieTickets[0].identifier,
+            accountId: movieTicketIdentifier,
             amount: 0,
             paymentMethod: factory.paymentMethodType.MovieTicket,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: params.object.movieTickets[0].identifier,
+            paymentMethodId: movieTicketIdentifier,
             name: (typeof params.object.name === 'string') ? params.object.name : String(factory.paymentMethodType.MovieTicket),
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
@@ -203,8 +201,7 @@ export function voidTransaction(params: {
         }
 
         action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        const actionResult = <factory.action.authorize.paymentMethod.movieTicket.IResult>action.result;
-        debug('actionResult:', actionResult);
+        // const actionResult = <factory.action.authorize.paymentMethod.movieTicket.IResult>action.result;
 
         // 承認取消
         try {
@@ -468,7 +465,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
             seatInfoSyncIn: seatInfoSyncIn,
             seatInfoSyncResult: seatInfoSyncResult
@@ -539,7 +535,6 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
             seatInfoSyncIn: seatInfoSyncIn,
             seatInfoSyncResult: seatInfoSyncResult

@@ -232,7 +232,7 @@ export function orderProgramMembership(
 
         const programMemberships = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
             typeOfGood: {
-                typeOf: 'ProgramMembership',
+                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
                 ids: [programMembership.id]
             },
             ownedBy: { id: customer.id },
@@ -251,7 +251,7 @@ export function orderProgramMembership(
         // const programMembershipOwnershipInfos = await repos.ownershipInfo.search<'ProgramMembership'>({
         //     limit: 1,
         //     typeOfGood: {
-        //         typeOf: 'ProgramMembership',
+        //         typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
         //         ids: [programMembership.id]
         //     },
         //     ownedBy: { id: customer.id }
@@ -316,7 +316,7 @@ export function register(
         });
 
         const acceptedOffer = params.object;
-        if (acceptedOffer.typeOf !== 'ProgramMembership') {
+        if (acceptedOffer.typeOf !== factory.programMembership.ProgramMembershipType.ProgramMembership) {
             throw new factory.errors.Argument('Object', 'Object type must be ProgramMembership');
         }
 
@@ -411,7 +411,10 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                         const now = moment(action.startDate)
                             .toDate();
                         const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
-                            typeOfGood: { typeOf: 'ProgramMembership', id: programMembershipId },
+                            typeOfGood: {
+                                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                                id: programMembershipId
+                            },
                             ownedBy: { id: customer.id },
                             ownedFrom: now,
                             ownedThrough: now
@@ -512,14 +515,15 @@ function processPlaceOrder(params: {
         })(repos);
 
         // 新規登録かどうか、所有権で確認
-        const programMembershipOwnershipInfos = await repos.ownershipInfo.search<'ProgramMembership'>({
-            limit: 1,
-            typeOfGood: {
-                typeOf: 'ProgramMembership',
-                ids: [<string>programMembership.id]
-            },
-            ownedBy: { id: customer.id }
-        });
+        const programMembershipOwnershipInfos =
+            await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
+                limit: 1,
+                typeOfGood: {
+                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                    ids: [<string>programMembership.id]
+                },
+                ownedBy: { id: customer.id }
+            });
 
         const isNewRegister = programMembershipOwnershipInfos.length === 0;
 
