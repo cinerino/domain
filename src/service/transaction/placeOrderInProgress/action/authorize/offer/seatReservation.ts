@@ -88,7 +88,6 @@ export function create(params: {
             seller: seller
         })(repos);
 
-        let reservationNumber: string | undefined;
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         let reserveService: chevre.service.transaction.Reserve | undefined;
@@ -126,8 +125,6 @@ export function create(params: {
                         .toDate() // 余裕を持って
                 });
 
-                reservationNumber = reserveTransaction.object.reservationNumber;
-
                 break;
 
             default:
@@ -159,10 +156,8 @@ export function create(params: {
                     workPerformed: event.workPerformed
                 },
                 acceptedOffer: acceptedOffers,
-                ...(reservationNumber !== undefined)
-                    ? {
-                        reservationNumber: reservationNumber
-                    }
+                ...(reserveTransaction !== undefined)
+                    ? { pendingTransaction: reserveTransaction }
                     : {}
             },
             agent: {

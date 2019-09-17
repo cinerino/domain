@@ -2,7 +2,6 @@
  * 在庫管理サービス
  * 在庫仕入れ、在庫調整等
  */
-import * as createDebug from 'debug';
 import { google } from 'googleapis';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
@@ -21,7 +20,6 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as MasterSyncService from './masterSync';
 
-const debug = createDebug('cinerino-domain:service');
 const customsearch = google.customsearch('v1');
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -87,7 +85,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 }
             });
             numData = searchScreeningEventsResult.data.length;
-            debug('numData:', numData);
             events.push(...searchScreeningEventsResult.data);
         }
 
@@ -157,7 +154,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 console.error(error);
             }
         }));
-        debug(`${events.length} events saved`);
     };
 }
 
@@ -182,7 +178,6 @@ export async function findMovieImage(params: {
             (err: any, res: any) => {
                 if (!(err instanceof Error)) {
                     if (typeof res.data === 'object' && Array.isArray(res.data.items) && res.data.items.length > 0) {
-                        debug('custome search result:', res.data);
                         resolve(<string>res.data.items[0].image.thumbnailLink);
                         // resolve(<string>res.data.items[0].link);
 
@@ -205,7 +200,6 @@ export async function findMovieImage(params: {
  * 座席仮予約キャンセル
  */
 export function cancelSeatReservationAuth(params: factory.task.IData<factory.taskName.CancelSeatReservation>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -224,25 +218,22 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
                 );
+
         await Promise.all(authorizeActions.map(async (action) => {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (action.result !== undefined) {
-                const requestBody = action.result.requestBody;
-                let responseBody = action.result.responseBody;
+            if (action.instrument === undefined) {
+                action.instrument = {
+                    typeOf: 'WebAPI',
+                    identifier: WebAPIIdentifier.Chevre
+                };
+            }
 
-                if (action.instrument === undefined) {
-                    action.instrument = {
-                        typeOf: 'WebAPI',
-                        identifier: WebAPIIdentifier.Chevre
-                    };
-                }
+            switch (action.instrument.identifier) {
+                case WebAPIIdentifier.COA:
+                    // COAの場合、resultに連携内容情報が記録されているので、その情報を元に仮予約を取り消す
+                    if (action.result !== undefined) {
+                        const requestBody = action.result.requestBody;
+                        const responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.COA>>action.result.responseBody;
 
-                switch (action.instrument.identifier) {
-                    case WebAPIIdentifier.COA:
-                        responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.COA>>responseBody;
-
-                        // tslint:disable-next-line:no-suspicious-comment
                         // COAで仮予約取消
                         const updTmpReserveSeatArgs = requestBody;
                         const updTmpReserveSeatResult = responseBody;
@@ -277,31 +268,32 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                                 throw error;
                             }
                         }
+                    }
 
-                        break;
+                    break;
 
-                    default:
-                        if (project.settings === undefined) {
-                            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                        }
-                        if (project.settings.chevre === undefined) {
-                            throw new factory.errors.ServiceUnavailable('Project settings not found');
-                        }
+                default:
+                    // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
+                    if (project.settings === undefined
+                        || project.settings.chevre === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                    }
 
-                        const reserveService = new chevre.service.transaction.Reserve({
-                            endpoint: project.settings.chevre.endpoint,
-                            auth: chevreAuthClient
-                        });
+                    const reserveService = new chevre.service.transaction.Reserve({
+                        endpoint: project.settings.chevre.endpoint,
+                        auth: chevreAuthClient
+                    });
 
-                        responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.Chevre>>responseBody;
+                    const pendingTransaction = action.object.pendingTransaction;
+                    // responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.Chevre>>responseBody;
 
+                    if (pendingTransaction !== undefined) {
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
-                        debug('calling reserve transaction...');
-                        await reserveService.cancel({ id: responseBody.id });
-                }
-
-                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+                        await reserveService.cancel({ id: pendingTransaction.id });
+                    }
             }
+
+            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
         }));
     };
 }
