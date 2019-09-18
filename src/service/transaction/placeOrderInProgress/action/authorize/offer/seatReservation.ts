@@ -120,7 +120,10 @@ export function create(params: {
                         typeOf: transaction.agent.typeOf,
                         name: transaction.agent.id
                     },
-                    object: {},
+                    object: {
+                        event: { id: event.id },
+                        acceptedOffer: []
+                    },
                     expires: moment(transaction.expires)
                         .add(1, 'month')
                         .toDate() // 余裕を持って
