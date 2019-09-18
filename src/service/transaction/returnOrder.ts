@@ -524,6 +524,11 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
                 case factory.service.webAPI.Identifier.COA:
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+
+                    if (authorizeSeatReservationAction.object.event === undefined
+                        || authorizeSeatReservationAction.object.event === null) {
+                        throw new factory.errors.ServiceUnavailable('Authorized event undefined');
+                    }
                     const superEventLocationBranchCode = authorizeSeatReservationAction.object.event.superEvent.location.branchCode;
 
                     const phoneUtil = PhoneNumberUtil.getInstance();

@@ -84,6 +84,10 @@ export function createOrder(params: {
                 };
             }
 
+            if (authorizeSeatReservationAction.object.event === undefined
+                || authorizeSeatReservationAction.object.event === null) {
+                throw new factory.errors.ServiceUnavailable('Authorized event undefined');
+            }
             let event: factory.chevre.event.screeningEvent.IEvent = authorizeSeatReservationAction.object.event;
 
             switch (authorizeSeatReservationAction.instrument.identifier) {

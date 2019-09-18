@@ -68,6 +68,10 @@ export function create(params: {
 
         const seller = transaction.seller;
 
+        if (params.object.event === undefined || params.object.event === null) {
+            throw new factory.errors.ArgumentNull('object.event');
+        }
+
         const event = await repos.event.findById({
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: params.object.event.id
@@ -116,10 +120,7 @@ export function create(params: {
                         typeOf: transaction.agent.typeOf,
                         name: transaction.agent.id
                     },
-                    object: {
-                        event: params.object.event,
-                        acceptedOffer: []
-                    },
+                    object: {},
                     expires: moment(transaction.expires)
                         .add(1, 'month')
                         .toDate() // 余裕を持って
@@ -203,18 +204,19 @@ export function create(params: {
                         })
                     };
 
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>>
-                        await COA.services.reserve.updTmpReserveSeat(requestBody);
+                    responseBody = await COA.services.reserve.updTmpReserveSeat(requestBody);
 
                     break;
 
                 case factory.service.webAPI.Identifier.Chevre:
                     if (reserveService !== undefined && reserveTransaction !== undefined) {
                         // Chevreで仮予約
-                        responseBody = await reserveService.addReservations({
+                        requestBody = {
                             id: reserveTransaction.id,
                             object: params.object
-                        });
+                        };
+
+                        responseBody = await reserveService.addReservations(requestBody);
                     } else {
                         // 論理的にありえないフロー
                         throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transaction not found');
@@ -302,7 +304,7 @@ function validateAcceptedOffers(params: {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = await OfferService.searchEventTicketOffers({
             project: params.project,
-            event: params.object.event,
+            event: { id: params.event.id },
             seller: params.seller
         })(repos);
 
@@ -660,7 +662,7 @@ export function cancel(params: {
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
 
                     let coaInfo: any;
-                    if (Array.isArray(event.additionalProperty)) {
+                    if (event !== undefined && Array.isArray(event.additionalProperty)) {
                         const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
                         coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                     }

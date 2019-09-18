@@ -507,6 +507,12 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
     // ムビチケオファーを受け付けた座席予約を検索する
     const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     seatReservationAuthorizeActions.forEach((a) => {
+        if (a.object.event === undefined
+            || a.object.event === null) {
+            throw new factory.errors.ServiceUnavailable('Authorized event undefined');
+        }
+        const event = a.object.event;
+
         const acceptedOffer =
             (<factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>>a.object).acceptedOffer;
         acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
@@ -522,7 +528,7 @@ export function validateMovieTicket(transaction: factory.transaction.placeOrder.
                             accessCode: '',
                             serviceType: component.appliesToMovieTicketType,
                             serviceOutput: {
-                                reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: a.object.event.id },
+                                reservationFor: { typeOf: event.typeOf, id: event.id },
                                 reservedTicket: { ticketedSeat: offeredTicketedSeat }
                             }
                         });
