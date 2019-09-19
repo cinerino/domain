@@ -550,6 +550,7 @@ function processPlaceOrder(params: {
                     agent: { id: transaction.agent.id },
                     transaction: { id: transaction.id },
                     object: {
+                        typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
                         amount: Number(membershipPointsEarned.value),
                         toAccountNumber: toAccount.accountNumber,
                         notes: (typeof membershipPointsEarned.name === 'string')
