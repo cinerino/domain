@@ -7,25 +7,12 @@ import * as GMO from '@motionpicture/gmo-service';
 import * as mvtkreserveapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
-import * as redis from 'redis';
 
 import * as chevre from './chevre';
 import * as errorHandler from './errorHandler';
 import * as factory from './factory';
 import * as repository from './repository';
 import * as service from './service';
-
-/**
- * Redis Cacheクライアント
- * @example
- * const client = domain.redis.createClient({
- *      host: 'xxxx',
- *      port: 1234
- *      password: 'xxxx',
- *      tls: { servername: 'xxxx' }
- * });
- */
-export import redis = redis;
 
 /**
  * COAのAPIクライアント
