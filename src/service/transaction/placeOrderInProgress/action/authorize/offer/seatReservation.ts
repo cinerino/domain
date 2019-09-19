@@ -121,8 +121,8 @@ export function create(params: {
                         name: transaction.agent.id
                     },
                     object: {
-                        event: { id: event.id },
-                        acceptedOffer: []
+                        // event: { id: event.id },
+                        // acceptedOffer: []
                     },
                     expires: moment(transaction.expires)
                         .add(1, 'month')

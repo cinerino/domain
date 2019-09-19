@@ -251,7 +251,7 @@ export function searchScreeningEventReservations(
                     auth: chevreAuthClient
                 });
 
-                const searchReservationsResult = await reservationService.search({
+                const searchReservationsResult = await reservationService.search<factory.chevre.reservationType.EventReservation>({
                     project: { ids: [project.id] },
                     typeOf: factory.chevre.reservationType.EventReservation,
                     ids: reservationIds
