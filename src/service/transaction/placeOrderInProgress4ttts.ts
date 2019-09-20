@@ -20,11 +20,11 @@ import { createOrder } from './placeOrderInProgress/result4ttts';
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
-export type IStartOperation<T> = (
-    transactionRepo: TransactionRepo,
-    sellerRepo: SellerRepo
-) => Promise<T>;
-export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
+export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
+export type IStartOperation<T> = (repos: {
+    seller: SellerRepo;
+    transaction: TransactionRepo;
+}) => Promise<T>;
 export type IConfirmOperation<T> = (repos: {
     action: ActionRepo;
     orderNumber: OrderNumberRepo;
@@ -35,52 +35,60 @@ export type IConfirmOperation<T> = (repos: {
 /**
  * 取引開始パラメーターインターフェース
  */
-export interface IStartParams {
-    /**
-     * 取引期限
-     */
-    expires: Date;
-    /**
-     * 取引主体
-     */
-    agent: factory.person.IPerson;
-    /**
-     * 販売者識別子
-     */
-    sellerIdentifier: string;
-    /**
-     * APIクライアント
-     */
-    clientUser: factory.clientUser.IClientUser;
-    /**
-     * WAITER許可証トークン
-     */
-    passportToken?: waiter.factory.passport.IEncodedPassport;
-}
+// export interface IStartParams {
+//     /**
+//      * 取引期限
+//      */
+//     expires: Date;
+//     /**
+//      * 取引主体
+//      */
+//     agent: factory.person.IPerson;
+//     /**
+//      * 販売者識別子
+//      */
+//     sellerIdentifier: string;
+//     /**
+//      * APIクライアント
+//      */
+//     clientUser: factory.clientUser.IClientUser;
+//     /**
+//      * WAITER許可証トークン
+//      */
+//     passportToken?: waiter.factory.passport.IEncodedPassport;
+// }
+export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
+export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
+    passportValidator?: IPassportValidator;
+};
 
 /**
  * 取引開始
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => {
+    return async (repos: {
+        seller: SellerRepo;
+        transaction: TransactionRepo;
+    }) => {
         // 販売者を取得
-        const doc = await sellerRepo.organizationModel.findOne({
-            identifier: params.sellerIdentifier
-        })
-            .exec();
-        if (doc === null) {
-            throw new factory.errors.NotFound('Seller');
-        }
+        const seller = await repos.seller.findById({ id: params.seller.id });
+        // const doc = await sellerRepo.organizationModel.findOne({
+        //     identifier: params.sellerIdentifier
+        // })
+        //     .exec();
+        // if (doc === null) {
+        //     throw new factory.errors.NotFound('Seller');
+        // }
 
-        const seller = <factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType.Corporation>>>doc.toObject();
+        // const seller = <factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType.Corporation>>>doc.toObject();
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
         // WAITER許可証トークンがあれば検証する
-        if (params.passportToken !== undefined) {
+        if (params.object.passport !== undefined) {
             try {
                 passport = await waiter.service.passport.verify({
-                    token: params.passportToken,
+                    token: params.object.passport.token,
                     secret: <string>process.env.WAITER_SECRET
                 });
             } catch (error) {
@@ -107,9 +115,9 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 url: seller.url
             },
             object: {
-                passportToken: params.passportToken,
+                passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
                 passport: passport,
-                clientUser: params.clientUser,
+                clientUser: params.object.clientUser,
                 authorizeActions: []
             },
             expires: params.expires,
@@ -119,7 +127,8 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
-            transaction = <any>await transactionRepo.start(<any>transactionAttributes);
+            transaction = await repos.transaction.start<factory.transactionType.PlaceOrder>(transactionAttributes);
+            // transaction = <any>await repos.transaction.start(<any>transactionAttributes);
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -166,34 +175,18 @@ function validatePassport(passport: waiter.factory.passport.IPassport, sellerIde
 }
 
 /**
- * 取引に対するアクション
- */
-// export namespace action {
-//     /**
-//      * 取引に対する承認アクション
-//      */
-//     export namespace authorize {
-//         /**
-//          * 座席予約承認アクションサービス
-//          */
-//         export import seatReservation = SeatReservationAuthorizeActionService;
-//     }
-// }
-
-/**
  * 取引中の購入者情報を変更する
  */
-export function setCustomerContact(
-    agentId: string,
-    transactionId: string,
-    contact: factory.transaction.placeOrder.ICustomerProfile
-): ITransactionOperation<factory.transaction.placeOrder.ICustomerProfile> {
-    return async (transactionRepo: TransactionRepo) => {
+export function updateAgent(params: {
+    id: string;
+    agent: factory.transaction.placeOrder.IAgent;
+}): ITransactionOperation<factory.transaction.placeOrder.IAgent> {
+    return async (repos: { transaction: TransactionRepo }) => {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
             // addressが国コード
-            const phoneNumber = phoneUtil.parse(contact.telephone, contact.address);
+            const phoneNumber = phoneUtil.parse(params.agent.telephone, params.agent.address);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
                 throw new Error('invalid phone number format.');
             }
@@ -203,9 +196,12 @@ export function setCustomerContact(
             throw new factory.errors.Argument('contact.telephone', error.message);
         }
 
-        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
 
-        if (transaction.agent.id !== agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
@@ -213,16 +209,16 @@ export function setCustomerContact(
         const newAgent: factory.transaction.placeOrder.IAgent = {
             typeOf: transaction.agent.typeOf,
             id: transaction.agent.id,
-            email: contact.email,
-            age: contact.age,
-            address: contact.address,
-            gender: contact.gender,
-            givenName: contact.givenName,
-            familyName: contact.familyName,
+            email: params.agent.email,
+            age: params.agent.age,
+            address: params.agent.address,
+            gender: params.agent.gender,
+            givenName: params.agent.givenName,
+            familyName: params.agent.familyName,
             telephone: formattedTelephone
         };
 
-        await transactionRepo.updateAgent({
+        await repos.transaction.updateAgent({
             typeOf: transaction.typeOf,
             id: transaction.id,
             agent: newAgent
