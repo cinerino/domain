@@ -13,7 +13,7 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-// import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4ttts';
+import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4ttts';
 
 import { createPotentialActions } from './placeOrderInProgress/potentialActions4ttts';
 import { createOrder } from './placeOrderInProgress/result4ttts';
@@ -373,4 +373,19 @@ function canBeClosed(
     }
 
     return true;
+}
+
+/**
+ * 取引に対するアクション
+ */
+export namespace action {
+    /**
+     * 取引に対する承認アクション
+     */
+    export namespace authorize {
+        /**
+         * 座席予約承認アクションサービス
+         */
+        export import seatReservation = SeatReservationAuthorizeActionService;
+    }
 }
