@@ -23,6 +23,7 @@ import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
+import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
 /**
@@ -113,6 +114,12 @@ export class Task extends TaskRepo { }
  * 測定リポジトリ
  */
 export class Telemetry extends TelemetryRepo { }
+
+/**
+ * トークンリポジトリ
+ */
+export class Token extends TokenRepo { }
+
 /**
  * 取引リポジトリ
  */
