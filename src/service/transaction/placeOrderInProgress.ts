@@ -173,13 +173,15 @@ export namespace action {
  */
 export function updateAgent(params: {
     id: string;
-    agent: factory.transaction.placeOrder.IAgent;
+    agent: factory.transaction.placeOrder.IAgent & {
+        telephoneRegion?: string;
+    };
 }): ITransactionOperation<factory.transaction.placeOrder.IAgent> {
     return async (repos: { transaction: TransactionRepo }) => {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(params.agent.telephone);
+            const phoneNumber = phoneUtil.parse(params.agent.telephone, params.agent.telephoneRegion);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
                 throw new Error('Invalid phone number');
             }
