@@ -391,13 +391,14 @@ describe('start()', () => {
     });
 });
 
-describe('updateCustomerProfile()', () => {
+describe('updateAgent()', () => {
     afterEach(() => {
         sandbox.restore();
     });
 
     it('取引が進行中であれば、エラーにならないはず', async () => {
         const agent = {
+            typeOf: domain.factory.personType.Person,
             id: 'agentId'
         };
         const seller = {
@@ -425,11 +426,11 @@ describe('updateCustomerProfile()', () => {
             .once()
             .resolves(transaction);
         sandbox.mock(transactionRepo)
-            .expects('updateCustomerProfile')
+            .expects('updateAgent')
             .once()
             .resolves();
 
-        const result = await domain.service.transaction.placeOrderInProgress.updateCustomerProfile({
+        const result = await domain.service.transaction.placeOrderInProgress.updateAgent({
             agent: { ...agent, ...contact },
             id: transaction.id
         })({ transaction: transactionRepo });
@@ -440,6 +441,7 @@ describe('updateCustomerProfile()', () => {
 
     it('所有者の取引でなければ、Forbiddenエラーが投げられるはず', async () => {
         const agent = {
+            typeOf: domain.factory.personType.Person,
             id: 'agentId'
         };
         const seller = {
@@ -467,10 +469,10 @@ describe('updateCustomerProfile()', () => {
             .once()
             .resolves(transaction);
         sandbox.mock(transactionRepo)
-            .expects('updateCustomerProfile')
+            .expects('updateAgent')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.updateCustomerProfile({
+        const result = await domain.service.transaction.placeOrderInProgress.updateAgent({
             agent: { ...agent, ...contact },
             id: transaction.id
         })({ transaction: transactionRepo })
@@ -482,6 +484,7 @@ describe('updateCustomerProfile()', () => {
 
     it('電話番号フォーマットが不適切であれば、Argumentエラーが投げられるはず', async () => {
         const agent = {
+            typeOf: domain.factory.personType.Person,
             id: 'agentId'
         };
         const seller = {
@@ -509,10 +512,10 @@ describe('updateCustomerProfile()', () => {
             .never()
             .resolves(transaction);
         sandbox.mock(transactionRepo)
-            .expects('updateCustomerProfile')
+            .expects('updateAgent')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.updateCustomerProfile({
+        const result = await domain.service.transaction.placeOrderInProgress.updateAgent({
             agent: { ...agent, ...contact },
             id: transaction.id
         })({ transaction: transactionRepo })

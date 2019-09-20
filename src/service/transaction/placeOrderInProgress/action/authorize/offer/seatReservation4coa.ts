@@ -367,7 +367,7 @@ export function create(params: {
         });
 
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         // イベントを取得
@@ -534,7 +534,7 @@ export function cancel(params: {
         });
 
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         // 取引内のアクションかどうか確認
@@ -588,7 +588,7 @@ export function changeOffers(params: {
         });
 
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         // 取引内のアクションかどうか確認

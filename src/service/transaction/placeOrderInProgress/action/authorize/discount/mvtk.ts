@@ -38,7 +38,7 @@ export function createMovieTicketPaymentAuthorization(params: {
         });
 
         if (transaction.agent.id !== params.agentId) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         const event = await validate(params)(repos);
@@ -314,7 +314,7 @@ export function cancel(params: {
         });
 
         if (transaction.agent.id !== params.agentId) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         // 取引内のアクションかどうか確認

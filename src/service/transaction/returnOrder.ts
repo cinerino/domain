@@ -217,7 +217,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
 
         if (params.agent !== undefined && params.agent.id !== undefined) {
             if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('A specified transaction is not yours.');
+                throw new factory.errors.Forbidden('Transaction not yours');
             }
         }
 

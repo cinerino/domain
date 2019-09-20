@@ -171,10 +171,10 @@ export namespace action {
 /**
  * 顧客プロフィール更新
  */
-export function updateCustomerProfile(params: {
+export function updateAgent(params: {
     id: string;
-    agent: factory.transaction.placeOrder.ICustomerProfile & { id: string };
-}): ITransactionOperation<factory.transaction.placeOrder.ICustomerProfile> {
+    agent: factory.transaction.placeOrder.IAgent;
+}): ITransactionOperation<factory.transaction.placeOrder.IAgent> {
     return async (repos: { transaction: TransactionRepo }) => {
         let formattedTelephone: string;
         try {
@@ -185,16 +185,8 @@ export function updateCustomerProfile(params: {
             }
             formattedTelephone = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
         } catch (error) {
-            throw new factory.errors.Argument('contact.telephone', error.message);
+            throw new factory.errors.Argument('telephone', error.message);
         }
-
-        // プロフィール作成
-        const profile: factory.transaction.placeOrder.ICustomerProfile = {
-            familyName: params.agent.familyName,
-            givenName: params.agent.givenName,
-            email: params.agent.email,
-            telephone: formattedTelephone
-        };
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -202,16 +194,32 @@ export function updateCustomerProfile(params: {
         });
 
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        await repos.transaction.updateCustomerProfile({
+        // 新プロフィール作成
+        const newAgent: factory.transaction.placeOrder.IAgent = {
+            typeOf: transaction.agent.typeOf,
+            id: transaction.agent.id,
+            ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : {},
+            ...(typeof params.agent.age === 'string') ? { age: params.agent.age } : {},
+            ...(typeof params.agent.address === 'string') ? { address: params.agent.address } : {},
+            ...(typeof params.agent.email === 'string') ? { email: params.agent.email } : {},
+            ...(typeof params.agent.familyName === 'string') ? { familyName: params.agent.familyName } : {},
+            ...(typeof params.agent.gender === 'string') ? { gender: params.agent.gender } : {},
+            ...(typeof params.agent.givenName === 'string') ? { givenName: params.agent.givenName } : {},
+            ...(typeof params.agent.name === 'string') ? { name: params.agent.name } : {},
+            ...(typeof formattedTelephone === 'string') ? { telephone: formattedTelephone } : {},
+            ...(typeof params.agent.url === 'string') ? { url: params.agent.url } : {}
+        };
+
+        await repos.transaction.updateAgent({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.id,
-            agent: profile
+            agent: newAgent
         });
 
-        return profile;
+        return newAgent;
     };
 }
 
@@ -278,7 +286,7 @@ export function confirm(params: IConfirmParams) {
 
         if (params.agent !== undefined && typeof params.agent.id === 'string') {
             if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('A specified transaction is not yours');
+                throw new factory.errors.Forbidden('Transaction not yours');
             }
         }
 

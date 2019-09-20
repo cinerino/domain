@@ -53,7 +53,7 @@ export function create(params: {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if: please write tests */
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         if (transaction.agent.memberOf === undefined) {
@@ -198,7 +198,7 @@ export function cancel(params: {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         const project = await repos.project.findById({ id: transaction.project.id });

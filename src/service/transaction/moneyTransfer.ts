@@ -141,7 +141,7 @@ export function confirm<T extends factory.accountType>(params: {
         }
 
         // if (transaction.agent.id !== params.agent.id) {
-        //     throw new factory.errors.Forbidden('A specified transaction is not yours');
+        //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
         // 取引に対する全ての承認アクションをマージ

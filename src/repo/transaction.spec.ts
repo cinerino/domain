@@ -35,7 +35,7 @@ describe('start()', () => {
     });
 });
 
-describe('updateCustomerProfile()', () => {
+describe('updateAgent()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -50,7 +50,7 @@ describe('updateCustomerProfile()', () => {
             .chain('exec')
             .resolves(new repository.transactionModel());
 
-        const result = await repository.updateCustomerProfile({
+        const result = await repository.updateAgent({
             typeOf: domain.factory.transactionType.PlaceOrder,
             id: transactionId,
             agent: <any>contact
@@ -71,7 +71,7 @@ describe('updateCustomerProfile()', () => {
             .chain('exec')
             .resolves(null);
 
-        const result = await repository.updateCustomerProfile({
+        const result = await repository.updateAgent({
             typeOf: domain.factory.transactionType.PlaceOrder,
             id: transactionId,
             agent: <any>contact

@@ -63,7 +63,7 @@ export function create(params: {
             id: params.transaction.id
         });
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         const seller = transaction.seller;
@@ -644,7 +644,7 @@ export function cancel(params: {
             id: params.transaction.id
         });
         if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
         // MongoDBでcompleteステータスであるにも関わらず、Chevreでは削除されている、というのが最悪の状況
         // それだけは回避するためにMongoDBを先に変更

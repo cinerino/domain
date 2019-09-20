@@ -597,7 +597,7 @@ function processPlaceOrder(params: {
             purpose: transaction
         })(repos);
 
-        await PlaceOrderService.updateCustomerProfile({
+        await PlaceOrderService.updateAgent({
             id: transaction.id,
             agent: customer
         })(repos);

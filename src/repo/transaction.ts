@@ -306,12 +306,12 @@ export class MongoRepository {
     }
 
     /**
-     * 取引の顧客プロフィールを更新
+     * 取引進行者プロフィールを更新
      */
-    public async updateCustomerProfile<T extends factory.transactionType>(params: {
+    public async updateAgent<T extends factory.transactionType>(params: {
         typeOf: T;
         id: string;
-        agent: factory.transaction.placeOrder.ICustomerProfile;
+        agent: factory.transaction.placeOrder.IAgent;
     }): Promise<void> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
@@ -320,10 +320,26 @@ export class MongoRepository {
                 status: factory.transactionStatusType.InProgress
             },
             {
-                'agent.email': params.agent.email,
-                'agent.familyName': params.agent.familyName,
-                'agent.givenName': params.agent.givenName,
-                'agent.telephone': params.agent.telephone
+                $set: {
+                    id: params.agent.id,
+                    ...(Array.isArray(params.agent.additionalProperty))
+                        ? { 'agent.additionalProperty': params.agent.additionalProperty }
+                        : {},
+                    ...(typeof params.agent.age === 'string') ? { 'agent.age': params.agent.age } : {},
+                    ...(typeof params.agent.address === 'string') ? { 'agent.address': params.agent.address } : {},
+                    ...(typeof params.agent.email === 'string') ? { 'agent.email': params.agent.email } : {},
+                    ...(typeof params.agent.familyName === 'string') ? { 'agent.familyName': params.agent.familyName } : {},
+                    ...(typeof params.agent.gender === 'string') ? { 'agent.gender': params.agent.gender } : {},
+                    ...(typeof params.agent.givenName === 'string') ? { 'agent.givenName': params.agent.givenName } : {},
+                    ...(typeof params.agent.name === 'string') ? { 'agent.name': params.agent.name } : {},
+                    ...(typeof params.agent.telephone === 'string') ? { 'agent.telephone': params.agent.telephone } : {},
+                    ...(typeof params.agent.url === 'string') ? { 'agent.url': params.agent.url } : {}
+                }
+                // $addToSet: {
+                //     ...(Array.isArray(params.agent.additionalProperty))
+                //         ? { 'agent.additionalProperty': { $each: params.agent.additionalProperty } }
+                //         : {}
+                // }
             }
         )
             .exec();
