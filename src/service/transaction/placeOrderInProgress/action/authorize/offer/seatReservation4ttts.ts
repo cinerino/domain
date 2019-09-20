@@ -14,8 +14,6 @@ import * as factory from '../../../../../../factory';
 
 const debug = createDebug('ttts-domain:service');
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
-
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -302,6 +300,7 @@ function validateOffers(
  */
 // tslint:disable-next-line:max-func-body-length
 export function create(
+    project: factory.chevre.project.IProject,
     agentId: string,
     transactionId: string,
     perfomanceId: string,
@@ -652,6 +651,7 @@ export function create(
  * 座席予約承認アクションをキャンセルする
  */
 export function cancel(
+    project: factory.chevre.project.IProject,
     agentId: string,
     transactionId: string,
     actionId: string

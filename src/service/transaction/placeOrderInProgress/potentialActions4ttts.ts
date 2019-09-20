@@ -1,7 +1,5 @@
 import * as factory from '../../../factory';
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
-
 export type IAuthorizeSeatReservationOffer =
     factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 
@@ -49,7 +47,7 @@ export async function createPotentialActions(params: {
                 }],
                 agent: params.transaction.agent,
                 purpose: {
-                    project: project,
+                    project: params.order.project,
                     typeOf: params.order.typeOf,
                     seller: params.order.seller,
                     customer: params.order.customer,
@@ -197,7 +195,7 @@ export async function createPotentialActions(params: {
                         object: confirmReservationObject,
                         agent: params.transaction.agent,
                         purpose: {
-                            project: project,
+                            project: params.order.project,
                             typeOf: params.order.typeOf,
                             seller: params.order.seller,
                             customer: params.order.customer,

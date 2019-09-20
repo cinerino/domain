@@ -2,8 +2,6 @@ import * as moment from 'moment-timezone';
 
 import * as factory from '../../../factory';
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
-
 /**
  * 注文取引結果を作成する
  */
@@ -135,7 +133,7 @@ export function createOrder(
 
     return {
         order: {
-            project: project,
+            project: transaction.project,
             typeOf: 'Order',
             seller: {
                 id: transaction.seller.id,
