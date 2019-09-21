@@ -335,7 +335,7 @@ export function create(
         const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         if (transaction.agent.id !== agentId) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         // パフォーマンスを取得
@@ -675,7 +675,7 @@ export function cancel(
             const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
             if (transaction.agent.id !== agentId) {
-                throw new factory.errors.Forbidden('A specified transaction is not yours.');
+                throw new factory.errors.Forbidden('Transaction not yours');
             }
 
             // アクションではcompleteステータスであるにも関わらず、在庫は有になっている、というのが最悪の状況

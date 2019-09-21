@@ -61,7 +61,7 @@ export function confirm(params: {
 
         if (params.agent !== undefined && typeof params.agent.id === 'string') {
             if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('A specified transaction is not yours');
+                throw new factory.errors.Forbidden('Transaction not yours');
             }
         }
 
@@ -102,19 +102,12 @@ export function confirm(params: {
 
         // 注文作成
         const { order } = createOrder(confirmationNumber, orderNumber, transaction);
-
         const result: factory.transaction.placeOrder.IResult = { order };
-
         const potentialActions = await createPotentialActions({
             transaction: transaction,
             order: order,
             potentialActions: params.potentialActions
         });
-
-        // 印刷トークンを発行
-        const printToken = await repos.token.createPrintToken(
-            order.acceptedOffers.map((o) => (<factory.order.IReservation>o.itemOffered).id)
-        );
 
         // ステータス変更
         try {
@@ -140,10 +133,7 @@ export function confirm(params: {
             throw error;
         }
 
-        return {
-            order: order,
-            printToken: printToken
-        };
+        return result;
     };
 }
 
