@@ -80,10 +80,6 @@ export function confirm(params: {
 
         // 取引の確定条件が全て整っているかどうか確認
         PlaceOrderInProgressService.validateTransaction(transaction);
-        // 注文取引成立条件を満たしているかどうか
-        // if (!canBeClosed(transaction)) {
-        //     throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
-        // }
 
         const orderNumber = await repos.orderNumber.publishByTimestamp({
             project: transaction.project,
@@ -136,31 +132,6 @@ export function confirm(params: {
         return result;
     };
 }
-
-/**
- * 取引が確定可能な状態かどうかをチェックする
- */
-// function canBeClosed(
-//     transaction: factory.transaction.placeOrder.ITransaction
-// ) {
-//     // customerとsellerで、承認アクションの金額が合うかどうか
-//     const priceByAgent = transaction.object.authorizeActions
-//         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-//         .filter((a) => a.agent.id === transaction.agent.id)
-//         .reduce((a, b) => a + Number((<factory.action.authorize.paymentMethod.creditCard.IResult>b.result).amount), 0);
-//     const priceBySeller = transaction.object.authorizeActions
-//         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-//         .filter((a) => a.agent.id === transaction.seller.id)
-//         // tslint:disable-next-line:max-line-length
-// tslint:disable-next-line:max-line-length
-//         .reduce((a, b) => a + (<factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre>>b.result).price, 0);
-
-//     if (priceByAgent !== priceBySeller) {
-//         throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
-//     }
-
-//     return true;
-// }
 
 /**
  * 取引に対するアクション

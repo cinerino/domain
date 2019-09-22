@@ -112,11 +112,11 @@ export async function createPotentialActions(params: {
                                         return {
                                             id: r.id,
                                             additionalTicketText: r.additionalTicketText,
-                                            reservedTicket: {
-                                                issuedBy: r.reservedTicket.issuedBy,
-                                                ticketToken: r.reservedTicket.ticketToken,
-                                                underName: r.reservedTicket.underName
-                                            },
+                                            // reservedTicket: {
+                                            //     issuedBy: r.reservedTicket.issuedBy,
+                                            //     ticketToken: r.reservedTicket.ticketToken,
+                                            //     underName: r.reservedTicket.underName
+                                            // },
                                             underName: r.underName,
                                             additionalProperty: r.additionalProperty
                                         };
