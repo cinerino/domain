@@ -11,7 +11,8 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4ttts';
 
-import { createPotentialActions } from './placeOrderInProgress/potentialActions4ttts';
+// import { createPotentialActions } from './placeOrderInProgress/potentialActions4ttts';
+import { createPotentialActions } from './placeOrderInProgress/potentialActions';
 import { createOrder } from './placeOrderInProgress/result4ttts';
 
 import * as PlaceOrderInProgressService from './placeOrderInProgress';
@@ -100,9 +101,10 @@ export function confirm(params: {
         const { order } = createOrder(confirmationNumber, orderNumber, transaction);
         const result: factory.transaction.placeOrder.IResult = { order };
         const potentialActions = await createPotentialActions({
-            transaction: transaction,
             order: order,
-            potentialActions: params.potentialActions
+            potentialActions: params.potentialActions,
+            seller: transaction.seller,
+            transaction: transaction
         });
 
         // ステータス変更
