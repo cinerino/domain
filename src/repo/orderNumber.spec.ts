@@ -24,10 +24,9 @@ describe('注文番号を発行する', () => {
     it('Redisが正常であれば発行できるはず', async () => {
         const orderNumberRepo = new domain.repository.OrderNumber(redis.createClient());
 
-        const result = await orderNumberRepo.publish({
-            orderDate: new Date(),
-            sellerType: domain.factory.organizationType.MovieTheater,
-            sellerBranchCode: 'sellerBranchCode'
+        const result = await orderNumberRepo.publishByTimestamp({
+            project: { id: 'projectid' },
+            orderDate: new Date()
         });
         assert.equal(typeof result, 'string');
         sandbox.verify();

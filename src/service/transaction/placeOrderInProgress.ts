@@ -295,7 +295,6 @@ export function confirm(params: IConfirmParams) {
         const project: factory.project.IProject = transaction.project;
 
         const seller = await repos.seller.findById({ id: transaction.seller.id });
-        debug('seller found.', seller.id);
 
         // 取引に対する全ての承認アクションをマージ
         let authorizeActions = await repos.action.searchByPurpose({
@@ -354,13 +353,6 @@ export function confirm(params: IConfirmParams) {
         }
 
         // 注文番号を発行
-        // order.orderNumber = await repos.orderNumber.publish({
-        //     orderDate: params.result.order.orderDate,
-        //     sellerType: seller.typeOf,
-        //     sellerBranchCode: (seller.location !== undefined && seller.location.branchCode !== undefined)
-        //         ? seller.location.branchCode
-        //         : ''
-        // });
         order.orderNumber = await repos.orderNumber.publishByTimestamp({
             project: project,
             orderDate: params.result.order.orderDate
@@ -408,7 +400,6 @@ export function confirm(params: IConfirmParams) {
         });
 
         // ステータス変更
-        debug('finally confirming transaction...');
         transaction = await repos.transaction.confirm({
             typeOf: transaction.typeOf,
             id: transaction.id,

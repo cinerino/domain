@@ -333,22 +333,6 @@ export function createOrder(params: {
     }
 
     const discounts: factory.order.IDiscount[] = [];
-    // params.transaction.object.authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk)
-    //     .forEach((mvtkAuthorizeAction: factory.action.authorize.discount.mvtk.IAction) => {
-    //         const discountCode = mvtkAuthorizeAction.object.seatInfoSyncIn.knyknrNoInfo
-    //             .map((knshInfo) => knshInfo.knyknrNo)
-    //             .join(',');
-
-    //         discounts.push({
-    //             typeOf: 'Discount',
-    //             name: 'ムビチケカード',
-    //             discount: (<factory.action.authorize.discount.mvtk.IResult>mvtkAuthorizeAction.result).price,
-    //             discountCode: discountCode,
-    //             discountCurrency: factory.priceCurrency.JPY
-    //         });
-    //     });
 
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
 
@@ -372,25 +356,6 @@ export function createOrder(params: {
                     });
                 });
         });
-
-    // ムビチケ割引があれば決済方法に追加
-    // params.transaction.object.authorizeActions
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((a) => a.object.typeOf === factory.action.authorize.discount.mvtk.ObjectType.Mvtk)
-    //     .forEach((mvtkAuthorizeAction: factory.action.authorize.discount.mvtk.IAction) => {
-    //         // ムビチケ購入管理番号を決済IDに指定
-    //         paymentMethods.push(...mvtkAuthorizeAction.object.seatInfoSyncIn.knyknrNoInfo.map(
-    //             (knshInfo) => {
-    //                 return {
-    //                     name: 'ムビチケ',
-    //                     typeOf: factory.paymentMethodType.MovieTicket,
-    //                     paymentMethod: factory.paymentMethodType.MovieTicket,
-    //                     paymentMethodId: knshInfo.knyknrNo,
-    //                     additionalProperty: []
-    //                 };
-    //             }
-    //         ));
-    //     });
 
     const url = '';
 
