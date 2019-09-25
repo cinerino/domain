@@ -172,36 +172,36 @@ function temporaryReservation2confirmed(params: {
     bookingTime: Date;
     paymentMethodName: string;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
-    const transaction = params.transaction;
-    const customer = params.customer;
+    // const transaction = params.transaction;
+    // const customer = params.customer;
 
-    const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
-        typeOf: factory.personType.Person,
-        id: params.transaction.agent.id,
-        name: `${customer.givenName} ${customer.familyName}`,
-        familyName: customer.familyName,
-        givenName: customer.givenName,
-        email: customer.email,
-        telephone: customer.telephone,
-        gender: customer.gender,
-        identifier: [
-            { name: 'orderNumber', value: params.orderNumber },
-            { name: 'paymentNo', value: params.paymentNo },
-            { name: 'transaction', value: transaction.id },
-            { name: 'gmoOrderId', value: params.gmoOrderId },
-            ...(typeof customer.age === 'string')
-                ? [{ name: 'age', value: customer.age }]
-                : [],
-            ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
-            ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
-                ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
-                : [],
-            ...(params.paymentMethodName !== undefined)
-                ? [{ name: 'paymentMethod', value: params.paymentMethodName }]
-                : []
-        ],
-        ...{ address: customer.address }
-    };
+    // const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
+    //     typeOf: factory.personType.Person,
+    //     id: params.transaction.agent.id,
+    //     name: `${customer.givenName} ${customer.familyName}`,
+    //     familyName: customer.familyName,
+    //     givenName: customer.givenName,
+    //     email: customer.email,
+    //     telephone: customer.telephone,
+    //     gender: customer.gender,
+    //     identifier: [
+    //         { name: 'orderNumber', value: params.orderNumber },
+    //         { name: 'paymentNo', value: params.paymentNo },
+    //         { name: 'transaction', value: transaction.id },
+    //         { name: 'gmoOrderId', value: params.gmoOrderId },
+    //         ...(typeof customer.age === 'string')
+    //             ? [{ name: 'age', value: customer.age }]
+    //             : [],
+    //         ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
+    //         ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
+    //             ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
+    //             : [],
+    //         ...(params.paymentMethodName !== undefined)
+    //             ? [{ name: 'paymentMethod', value: params.paymentMethodName }]
+    //             : []
+    //     ],
+    //     ...{ address: customer.address }
+    // };
 
     return {
         ...params.chevreReservation,
@@ -215,14 +215,15 @@ function temporaryReservation2confirmed(params: {
             startDate: moment(params.chevreReservation.reservationFor.startDate)
                 .toDate()
         },
-        bookingTime: moment(params.bookingTime)
-            .toDate(),
-        reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed,
-        underName: underName,
-        additionalProperty: [
-            ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
-            { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
-        ],
-        additionalTicketText: params.tmpReservation.additionalTicketText
+        reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed
+        // 以下おそらく不要なので削除する...
+        // bookingTime: moment(params.bookingTime)
+        //     .toDate(),
+        // underName: underName,
+        // additionalProperty: [
+        //     ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
+        //     { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
+        // ],
+        // additionalTicketText: params.tmpReservation.additionalTicketText
     };
 }
