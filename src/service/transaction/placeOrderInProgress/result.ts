@@ -20,7 +20,7 @@ export function createOrder(params: {
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
-    seller: ISeller;
+    // seller: ISeller;
 }): factory.order.IOrder {
     // 座席予約に対する承認アクション取り出す
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
@@ -58,7 +58,7 @@ export function createOrder(params: {
         ...profile,
         id: params.transaction.agent.id,
         typeOf: params.transaction.agent.typeOf,
-        name: `${profile.familyName} ${profile.givenName}`,
+        name: `${profile.givenName} ${profile.familyName}`,
         url: '',
         identifier: customerIdentifier
     };

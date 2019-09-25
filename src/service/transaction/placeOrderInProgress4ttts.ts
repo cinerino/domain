@@ -30,6 +30,7 @@ export import updateAgent = PlaceOrderInProgressService.updateAgent;
  * 取引確定
  */
 export function confirm(params: {
+    project: factory.chevre.project.IProject;
     id: string;
     agent?: {
         id?: string;
@@ -97,7 +98,15 @@ export function confirm(params: {
         }
 
         // 注文作成
-        const { order } = createOrder(confirmationNumber, orderNumber, transaction);
+        const { order } = createOrder({
+            project: params.project,
+            transaction: transaction,
+            orderDate: params.result.order.orderDate,
+            orderStatus: factory.orderStatus.OrderProcessing,
+            isGift: false,
+            confirmationNumber: confirmationNumber,
+            orderNumber: orderNumber
+        });
         const result: factory.transaction.placeOrder.IResult = { order };
         const potentialActions = await createPotentialActions({
             order: order,

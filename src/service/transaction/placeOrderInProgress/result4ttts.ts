@@ -2,27 +2,34 @@ import * as moment from 'moment-timezone';
 
 import * as factory from '../../../factory';
 
+export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
+
 /**
  * 注文取引結果を作成する
  */
 // tslint:disable-next-line:max-func-body-length
-export function createOrder(
-    confirmationNumber: string,
-    orderNumber: string,
-    transaction: factory.transaction.placeOrder.ITransaction
-): factory.transaction.placeOrder.IResult {
+export function createOrder(params: {
+    project: factory.chevre.project.IProject;
+    transaction: factory.transaction.placeOrder.ITransaction;
+    orderDate: Date;
+    orderStatus: factory.orderStatus;
+    isGift: boolean;
+    // seller: ISeller;
+    confirmationNumber: string;
+    orderNumber: string;
+}): factory.transaction.placeOrder.IResult {
     // tslint:disable-next-line:no-magic-numbers
-    const paymentNo = confirmationNumber.slice(-6);
+    // const paymentNo = confirmationNumber.slice(-6);
 
     const seatReservationAuthorizeAction =
         <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>>
-        transaction.object.authorizeActions
+        params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .find((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-    const creditCardAuthorizeAction = <factory.action.authorize.paymentMethod.creditCard.IAction | undefined>
-        transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .find((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
+    // const creditCardAuthorizeAction = <factory.action.authorize.paymentMethod.creditCard.IAction | undefined>
+    //     transaction.object.authorizeActions
+    //         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+    //         .find((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
     const authorizeSeatReservationResult =
         <factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre>>
@@ -37,15 +44,22 @@ export function createOrder(
     tmpReservations = (Array.isArray(tmpReservations)) ? tmpReservations : [];
     const chevreReservations = (Array.isArray(reserveTransaction.object.reservations)) ? reserveTransaction.object.reservations : [];
 
-    const profile = transaction.agent;
+    const profile = params.transaction.agent;
 
-    const orderDate = new Date();
+    const seller: factory.order.ISeller = {
+        id: params.transaction.seller.id,
+        identifier: params.transaction.seller.identifier,
+        name: params.transaction.seller.name.ja,
+        legalName: params.transaction.seller.legalName,
+        typeOf: params.transaction.seller.typeOf,
+        telephone: params.transaction.seller.telephone,
+        url: params.transaction.seller.url
+    };
 
-    // 注文番号を作成
-    let paymentMethodId = '';
-    if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
-        paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
-    }
+    // let paymentMethodId = '';
+    // if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
+    //     paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
+    // }
 
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
 
@@ -53,7 +67,7 @@ export function createOrder(
     Object.keys(factory.paymentMethodType)
         .forEach((key) => {
             const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-            transaction.object.authorizeActions
+            params.transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.result !== undefined && a.result.paymentMethod === paymentMethodType)
                 .forEach((a: any) => {
@@ -73,23 +87,23 @@ export function createOrder(
         });
 
     // 予約データを作成
-    const eventReservations = tmpReservations.map((tmpReservation, index) => {
+    const eventReservations = tmpReservations.map((tmpReservation, _) => {
         const chevreReservation = chevreReservations.find((r) => r.id === tmpReservation.id);
         if (chevreReservation === undefined) {
             throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
         }
 
         return temporaryReservation2confirmed({
-            tmpReservation: tmpReservation,
-            chevreReservation: chevreReservation,
-            transaction: transaction,
-            orderNumber: orderNumber,
-            paymentNo: paymentNo,
-            gmoOrderId: paymentMethodId,
-            paymentSeatIndex: index.toString(),
-            customer: profile,
-            bookingTime: orderDate,
-            paymentMethodName: paymentMethods[0].name
+            // tmpReservation: tmpReservation,
+            chevreReservation: chevreReservation
+            // transaction: transaction,
+            // orderNumber: orderNumber,
+            // paymentNo: paymentNo,
+            // gmoOrderId: paymentMethodId,
+            // paymentSeatIndex: index.toString(),
+            // customer: profile,
+            // bookingTime: orderDate,
+            // paymentMethodName: paymentMethods[0].name
         });
     });
 
@@ -104,8 +118,8 @@ export function createOrder(
             price: unitPrice,
             priceCurrency: factory.priceCurrency.JPY,
             seller: {
-                typeOf: transaction.seller.typeOf,
-                name: transaction.seller.name.ja
+                typeOf: params.transaction.seller.typeOf,
+                name: params.transaction.seller.name.ja
             }
         };
     });
@@ -121,11 +135,11 @@ export function createOrder(
         0
     );
 
-    const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
+    const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
         ...profile,
-        id: transaction.agent.id,
-        typeOf: transaction.agent.typeOf,
+        id: params.transaction.agent.id,
+        typeOf: params.transaction.agent.typeOf,
         name: `${profile.givenName} ${profile.familyName}`,
         url: '',
         identifier: customerIdentifier
@@ -133,26 +147,21 @@ export function createOrder(
 
     return {
         order: {
-            project: transaction.project,
+            project: params.project,
             typeOf: 'Order',
-            seller: {
-                id: transaction.seller.id,
-                typeOf: transaction.seller.typeOf,
-                name: transaction.seller.name.ja,
-                url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''
-            },
+            seller: seller,
             customer: customer,
             acceptedOffers: acceptedOffers,
-            confirmationNumber: confirmationNumber,
-            orderNumber: orderNumber,
+            confirmationNumber: params.confirmationNumber,
+            orderNumber: params.orderNumber,
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
             paymentMethods: paymentMethods,
             discounts: [],
             url: '',
-            orderStatus: factory.orderStatus.OrderDelivered,
-            orderDate: orderDate,
-            isGift: false
+            orderStatus: params.orderStatus,
+            orderDate: params.orderDate,
+            isGift: params.isGift
         }
     };
 }
@@ -161,16 +170,16 @@ export function createOrder(
  * 仮予約から確定予約を生成する
  */
 function temporaryReservation2confirmed(params: {
-    tmpReservation: factory.action.authorize.offer.seatReservation.ITmpReservation;
+    // tmpReservation: factory.action.authorize.offer.seatReservation.ITmpReservation;
     chevreReservation: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
-    transaction: factory.transaction.placeOrder.ITransaction;
-    orderNumber: string;
-    paymentNo: string;
-    gmoOrderId: string;
-    paymentSeatIndex: string;
-    customer: factory.transaction.placeOrder.IAgent;
-    bookingTime: Date;
-    paymentMethodName: string;
+    // transaction: factory.transaction.placeOrder.ITransaction;
+    // orderNumber: string;
+    // paymentNo: string;
+    // gmoOrderId: string;
+    // paymentSeatIndex: string;
+    // customer: factory.transaction.placeOrder.IAgent;
+    // bookingTime: Date;
+    // paymentMethodName: string;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     // const transaction = params.transaction;
     // const customer = params.customer;
