@@ -1,6 +1,7 @@
-import * as COA from '@motionpicture/coa-service';
+// import * as COA from '@motionpicture/coa-service';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
+import { format } from 'util';
 
 import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
@@ -57,19 +58,22 @@ export async function createPotentialActions(params: {
                 case factory.service.webAPI.Identifier.COA:
                     // tslint:disable-next-line:max-line-length
                     responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+                    const price = Number(actionResult.price);
+                    const acceptedOffers = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4COA[]>a.object.acceptedOffer;
+                    const customer = params.order.customer;
 
                     const updTmpReserveSeatArgs = requestBody;
                     const updTmpReserveSeatResult = responseBody;
 
                     // 電話番号のフォーマットを日本人にリーダブルに調整(COAではこのフォーマットで扱うので)
                     const phoneUtil = PhoneNumberUtil.getInstance();
-                    const phoneNumber = phoneUtil.parse(params.order.customer.telephone, 'JP');
+                    const phoneNumber = phoneUtil.parse(customer.telephone, 'JP');
                     let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
 
                     // COAでは数字のみ受け付けるので数字以外を除去
                     telNum = telNum.replace(/[^\d]/g, '');
 
-                    const mailAddr = params.order.customer.email;
+                    const mailAddr = customer.email;
                     if (mailAddr === undefined) {
                         throw new factory.errors.Argument('order', 'order.customer.email undefined');
                     }
@@ -82,41 +86,42 @@ export async function createPotentialActions(params: {
                         timeBegin: updTmpReserveSeatArgs.timeBegin,
                         tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum,
                         // tslint:disable-next-line:no-irregular-whitespace
-                        reserveName: `${params.order.customer.familyName}　${params.order.customer.givenName}`,
+                        reserveName: format('%s　%s', customer.familyName, customer.givenName),
                         // tslint:disable-next-line:no-irregular-whitespace
-                        reserveNameJkana: `${params.order.customer.familyName}　${params.order.customer.givenName}`,
+                        reserveNameJkana: format('%s　%s', customer.familyName, customer.givenName),
                         telNum: telNum,
                         mailAddr: mailAddr,
-                        reserveAmount: params.order.price, // デフォルトのpriceCurrencyがJPYなのでこれでよし
-                        listTicket: params.order.acceptedOffers.map(
-                            // tslint:disable-next-line:max-line-length
-                            (offer) => {
-                                const itemOffered = <factory.order.IReservation>offer.itemOffered;
+                        reserveAmount: price, // デフォルトのpriceCurrencyがJPYなのでこれでよし
+                        listTicket: acceptedOffers.map((o) => o.ticketInfo)
+                        // listTicket: params.order.acceptedOffers.map(
+                        //     // tslint:disable-next-line:max-line-length
+                        //     (offer) => {
+                        //         const itemOffered = <factory.order.IReservation>offer.itemOffered;
 
-                                let coaTicketInfo: COA.services.reserve.IUpdReserveTicket | undefined;
-                                if (itemOffered.reservedTicket.coaTicketInfo !== undefined) {
-                                    coaTicketInfo = itemOffered.reservedTicket.coaTicketInfo;
-                                } else {
-                                    const additionalProperty = itemOffered.reservedTicket.ticketType.additionalProperty;
-                                    if (additionalProperty === undefined) {
-                                        throw new factory.errors.NotFound('ticketType.additionalProperty');
-                                    }
+                        //         let coaTicketInfo: COA.services.reserve.IUpdReserveTicket | undefined;
+                        //         if (itemOffered.reservedTicket.coaTicketInfo !== undefined) {
+                        //             coaTicketInfo = itemOffered.reservedTicket.coaTicketInfo;
+                        //         } else {
+                        //             const additionalProperty = itemOffered.reservedTicket.ticketType.additionalProperty;
+                        //             if (additionalProperty === undefined) {
+                        //                 throw new factory.errors.NotFound('ticketType.additionalProperty');
+                        //             }
 
-                                    const coaInfoProperty = additionalProperty.find((p) => p.name === 'coaInfo');
-                                    if (coaInfoProperty === undefined) {
-                                        throw new factory.errors.NotFound('coaInfo');
-                                    }
+                        //             const coaInfoProperty = additionalProperty.find((p) => p.name === 'coaInfo');
+                        //             if (coaInfoProperty === undefined) {
+                        //                 throw new factory.errors.NotFound('coaInfo');
+                        //             }
 
-                                    coaTicketInfo = JSON.parse(coaInfoProperty.value);
-                                }
+                        //             coaTicketInfo = JSON.parse(coaInfoProperty.value);
+                        //         }
 
-                                if (coaTicketInfo === undefined) {
-                                    throw new factory.errors.NotFound('COA Ticket Info');
-                                }
+                        //         if (coaTicketInfo === undefined) {
+                        //             throw new factory.errors.NotFound('COA Ticket Info');
+                        //         }
 
-                                return coaTicketInfo;
-                            }
-                        )
+                        //         return coaTicketInfo;
+                        //     }
+                        // )
                     };
 
                     confirmReservationActions.push({
