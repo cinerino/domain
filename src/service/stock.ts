@@ -285,7 +285,6 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                     });
 
                     const pendingTransaction = action.object.pendingTransaction;
-                    // responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.Chevre>>responseBody;
 
                     if (pendingTransaction !== undefined) {
                         // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)

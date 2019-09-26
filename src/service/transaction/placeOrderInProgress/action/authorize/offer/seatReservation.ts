@@ -650,19 +650,18 @@ export function cancel(params: {
         // それだけは回避するためにMongoDBを先に変更
         const action = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>>
             await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        if (action.result !== undefined) {
-            const actionResult = action.result;
-            let responseBody = actionResult.responseBody;
-            const event = action.object.event;
 
-            if (action.instrument === undefined || action.instrument === null) {
-                action.instrument = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
-            }
+        if (action.instrument === undefined || action.instrument === null) {
+            action.instrument = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+        }
 
-            switch (action.instrument.identifier) {
-                case factory.service.webAPI.Identifier.COA:
+        switch (action.instrument.identifier) {
+            case factory.service.webAPI.Identifier.COA:
+                if (action.result !== undefined) {
+                    const actionResult = action.result;
                     // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+                    const responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>actionResult.responseBody;
+                    const event = action.object.event;
 
                     let coaInfo: any;
                     if (event !== undefined && Array.isArray(event.additionalProperty)) {
@@ -674,28 +673,27 @@ export function cancel(params: {
                         ...coaInfo,
                         tmpReserveNum: responseBody.tmpReserveNum
                     });
+                }
 
-                    break;
+                break;
 
-                default:
-                    // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+            default:
+                if (project.settings === undefined
+                    || project.settings.chevre === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                }
 
-                    if (project.settings === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                    }
-                    if (project.settings.chevre === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings not found');
-                    }
+                const reserveService = new chevre.service.transaction.Reserve({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
 
-                    const reserveService = new chevre.service.transaction.Reserve({
-                        endpoint: project.settings.chevre.endpoint,
-                        auth: chevreAuthClient
-                    });
+                const pendingTransaction = action.object.pendingTransaction;
 
-                    // 座席予約キャンセル
-                    await reserveService.cancel({ id: responseBody.id });
-            }
+                if (pendingTransaction !== undefined) {
+                    // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
+                    await reserveService.cancel({ id: pendingTransaction.id });
+                }
         }
     };
 }
