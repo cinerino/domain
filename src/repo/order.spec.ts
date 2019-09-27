@@ -135,7 +135,7 @@ describe('注文を検索する', () => {
         sandbox.mock(orderRepo.orderModel)
             .expects('find')
             .once()
-            // .chain('sort')
+            .chain('select')
             .chain('exec')
             .resolves([new orderRepo.orderModel()]);
         const result = await orderRepo.search({
