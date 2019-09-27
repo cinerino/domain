@@ -1,10 +1,7 @@
-import * as createDebug from 'debug';
-import { Connection, Model } from 'mongoose';
+import { Connection, Document, Model, QueryCursor } from 'mongoose';
 
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/order';
-
-const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 注文リポジトリ
@@ -478,15 +475,8 @@ export class MongoRepository {
      */
     public async search(params: factory.order.ISearchConditions): Promise<factory.order.IOrder[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-        debug('searching orders...', conditions);
-        const query = this.orderModel.find(
-            (conditions.length > 0) ? { $and: conditions } : {},
-            {
-                __v: 0,
-                createdAt: 0,
-                updatedAt: 0
-            }
-        );
+        const query = this.orderModel.find((conditions.length > 0) ? { $and: conditions } : {})
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.limit !== undefined && params.page !== undefined) {
@@ -505,5 +495,26 @@ export class MongoRepository {
         return query.setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
+    }
+
+    public stream(params: factory.order.ISearchConditions): QueryCursor<Document> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+        const query = this.orderModel.find((conditions.length > 0) ? { $and: conditions } : {})
+            .select({ __v: 0, createdAt: 0, updatedAt: 0 });
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.sort !== undefined) {
+            query.sort(params.sort);
+        }
+
+        return query.cursor();
     }
 }
