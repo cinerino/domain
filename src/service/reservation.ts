@@ -26,7 +26,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
 
 type IOwnershipInfoWithDetail =
-    factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType>>;
+    factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType.EventReservation>>;
 
 export type ISearchEventReservationsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
@@ -238,7 +238,7 @@ export function searchScreeningEventReservations(
                     return o.typeOfGood.bookingService === undefined
                         || o.typeOfGood.bookingService.identifier === factory.service.webAPI.Identifier.Chevre;
                 })
-                .map((o) => o.typeOfGood.id);
+                .map((o) => <string>o.typeOfGood.id);
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
