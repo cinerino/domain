@@ -2,10 +2,14 @@ import * as moment from 'moment-timezone';
 
 import * as factory from '../../../factory';
 
+export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
+export type IReservationPriceSpecification =
+    factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
+
 /**
- * 注文取引結果を作成する
+ * 注文を作成する
  */
 // tslint:disable-next-line:max-func-body-length
 export function createOrder(params: {
@@ -14,7 +18,6 @@ export function createOrder(params: {
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
-    // seller: ISeller;
     confirmationNumber: string;
     orderNumber: string;
 }): factory.transaction.placeOrder.IResult {
@@ -76,53 +79,119 @@ export function createOrder(params: {
 
     // 予約データを作成
     const eventReservations = tmpReservations.map((tmpReservation, _) => {
-        const chevreReservation = chevreReservations.find((r) => r.id === tmpReservation.id);
-        if (chevreReservation === undefined) {
+        const itemOffered = chevreReservations.find((r) => r.id === tmpReservation.id);
+        if (itemOffered === undefined) {
             throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
         }
 
+        const reservationFor:
+            factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
+            ...itemOffered.reservationFor,
+            doorTime: moment(itemOffered.reservationFor.doorTime)
+                .toDate(),
+            endDate: moment(itemOffered.reservationFor.endDate)
+                .toDate(),
+            startDate: moment(itemOffered.reservationFor.startDate)
+                .toDate(),
+            // additionalProperty: undefined,
+            maximumAttendeeCapacity: undefined,
+            remainingAttendeeCapacity: undefined,
+            checkInCount: undefined,
+            attendeeCount: undefined,
+            offers: undefined,
+            superEvent: {
+                ...itemOffered.reservationFor.superEvent,
+                additionalProperty: undefined,
+                maximumAttendeeCapacity: undefined,
+                remainingAttendeeCapacity: undefined,
+                offers: undefined,
+                workPerformed: {
+                    ...itemOffered.reservationFor.superEvent.workPerformed,
+                    offers: undefined
+                }
+            },
+            workPerformed: (itemOffered.reservationFor.workPerformed !== undefined)
+                ? {
+                    ...itemOffered.reservationFor.workPerformed,
+                    offers: undefined
+                }
+                : undefined
+        };
+
         return {
-            ...chevreReservation,
-            reservationFor: {
-                ...chevreReservation.reservationFor,
-                doorTime: moment(chevreReservation.reservationFor.doorTime)
-                    .toDate(),
-                endDate: moment(chevreReservation.reservationFor.endDate)
-                    .toDate(),
-                startDate: moment(chevreReservation.reservationFor.startDate)
-                    .toDate()
+            ...itemOffered,
+            checkedIn: undefined,
+            attended: undefined,
+            modifiedTime: undefined,
+            reservationStatus: undefined,
+            // price: undefined,
+            priceCurrency: undefined,
+            underName: undefined,
+            reservationFor: reservationFor,
+            reservedTicket: {
+                ...itemOffered.reservedTicket,
+                issuedBy: undefined,
+                priceCurrency: undefined,
+                totalPrice: undefined,
+                underName: undefined,
+                ticketType: {
+                    project: params.project,
+                    typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                    id: itemOffered.reservedTicket.ticketType.id,
+                    identifier: itemOffered.reservedTicket.ticketType.identifier,
+                    name: itemOffered.reservedTicket.ticketType.name,
+                    description: itemOffered.reservedTicket.ticketType.description,
+                    additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                    priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency,
+                    priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification
+                }
             }
-            // reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed
         };
     });
 
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = eventReservations.map((r) => {
+        const priceSpecification = <IReservationPriceSpecification>r.price;
         const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
             ? r.reservedTicket.ticketType.priceSpecification.price
             : 0;
 
         return {
-            typeOf: 'Offer',
+            typeOf: <factory.chevre.offerType>'Offer',
             itemOffered: r,
+            offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
             price: unitPrice,
+            priceSpecification: {
+                ...priceSpecification,
+                priceComponent: priceSpecification.priceComponent.map((c) => {
+                    return {
+                        ...c,
+                        accounting: undefined // accountingはorderに不要な情報
+                    };
+                })
+            },
             priceCurrency: factory.priceCurrency.JPY,
             seller: {
-                typeOf: params.transaction.seller.typeOf,
-                name: params.transaction.seller.name.ja
+                typeOf: seller.typeOf,
+                name: seller.name
             }
         };
     });
 
-    const price: number = eventReservations.reduce(
-        (a, b) => {
-            const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
-                ? b.reservedTicket.ticketType.priceSpecification.price
-                : 0;
+    // 決済方法から注文金額の計算
+    let price = 0;
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            price += params.transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.object.typeOf === paymentMethodType)
+                .filter((a) => {
+                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
 
-            return a + unitPrice;
-        },
-        0
-    );
+                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
+                })
+                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+        });
 
     const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {

@@ -1,3 +1,5 @@
+import * as moment from 'moment-timezone';
+
 import * as factory from '../../../factory';
 
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
@@ -20,7 +22,6 @@ export function createOrder(params: {
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
-    // seller: ISeller;
 }): factory.order.IOrder {
     // 座席予約に対する承認アクション取り出す
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
@@ -242,9 +243,44 @@ export function createOrder(params: {
 
                     // 座席仮予約からオファー情報を生成する
                     if (Array.isArray(responseBody.object.reservations)) {
+                        // tslint:disable-next-line:max-func-body-length
                         acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
                             const itemOffered: factory.order.IReservation = tmpReserve;
                             const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
+
+                            const reservationFor:
+                                factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
+                                ...itemOffered.reservationFor,
+                                doorTime: moment(itemOffered.reservationFor.doorTime)
+                                    .toDate(),
+                                endDate: moment(itemOffered.reservationFor.endDate)
+                                    .toDate(),
+                                startDate: moment(itemOffered.reservationFor.startDate)
+                                    .toDate(),
+                                additionalProperty: undefined,
+                                maximumAttendeeCapacity: undefined,
+                                remainingAttendeeCapacity: undefined,
+                                checkInCount: undefined,
+                                attendeeCount: undefined,
+                                offers: undefined,
+                                superEvent: {
+                                    ...event.superEvent,
+                                    additionalProperty: undefined,
+                                    maximumAttendeeCapacity: undefined,
+                                    remainingAttendeeCapacity: undefined,
+                                    offers: undefined,
+                                    workPerformed: {
+                                        ...event.superEvent.workPerformed,
+                                        offers: undefined
+                                    }
+                                },
+                                workPerformed: (event.workPerformed !== undefined)
+                                    ? {
+                                        ...event.workPerformed,
+                                        offers: undefined
+                                    }
+                                    : undefined
+                            };
 
                             const reservation: factory.order.IReservation = {
                                 ...itemOffered,
@@ -255,32 +291,7 @@ export function createOrder(params: {
                                 price: undefined,
                                 priceCurrency: undefined,
                                 underName: undefined,
-                                reservationFor: {
-                                    ...itemOffered.reservationFor,
-                                    additionalProperty: undefined,
-                                    maximumAttendeeCapacity: undefined,
-                                    remainingAttendeeCapacity: undefined,
-                                    checkInCount: undefined,
-                                    attendeeCount: undefined,
-                                    offers: undefined,
-                                    superEvent: {
-                                        ...event.superEvent,
-                                        additionalProperty: undefined,
-                                        maximumAttendeeCapacity: undefined,
-                                        remainingAttendeeCapacity: undefined,
-                                        offers: undefined,
-                                        workPerformed: {
-                                            ...event.superEvent.workPerformed,
-                                            offers: undefined
-                                        }
-                                    },
-                                    workPerformed: (event.workPerformed !== undefined)
-                                        ? {
-                                            ...event.workPerformed,
-                                            offers: undefined
-                                        }
-                                        : undefined
-                                },
+                                reservationFor: reservationFor,
                                 reservedTicket: {
                                     ...itemOffered.reservedTicket,
                                     issuedBy: undefined,
