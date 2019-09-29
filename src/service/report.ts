@@ -1,10 +1,12 @@
 /**
  * レポートサービス
  */
-import * as Telemetry from './report/telemetry';
+import * as OrderService from './report/order';
+import * as TelemetryService from './report/telemetry';
 import * as TransactionService from './report/transaction';
 
 export {
-    Telemetry as telemetry,
+    OrderService as order,
+    TelemetryService as telemetry,
     TransactionService as transaction
 };
