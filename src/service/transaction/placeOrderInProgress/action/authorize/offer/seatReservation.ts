@@ -33,6 +33,8 @@ export type ICreateOperation<T> = (repos: {
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+export type IReservationPriceSpecification =
+    factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
 export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
 export type IMovieTicketTypeChargeSpecification =
@@ -96,6 +98,7 @@ export function create(params: {
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         let reserveService: chevre.service.transaction.Reserve | undefined;
         let reserveTransaction: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
+        let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
 
         switch (bookingServiceIdentifier) {
             case factory.service.webAPI.Identifier.COA:
@@ -220,6 +223,99 @@ export function create(params: {
                         };
 
                         responseBody = await reserveService.addReservations(requestBody);
+
+                        // 座席仮予約からオファー情報を生成する
+                        if (Array.isArray(responseBody.object.reservations)) {
+                            acceptedOffers4result = responseBody.object.reservations.map((tmpReserve) => {
+                                const itemOffered: factory.order.IReservation = tmpReserve;
+                                const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
+
+                                const reservationFor:
+                                    factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
+                                    ...itemOffered.reservationFor,
+                                    doorTime: moment(itemOffered.reservationFor.doorTime)
+                                        .toDate(),
+                                    endDate: moment(itemOffered.reservationFor.endDate)
+                                        .toDate(),
+                                    startDate: moment(itemOffered.reservationFor.startDate)
+                                        .toDate(),
+                                    additionalProperty: undefined,
+                                    maximumAttendeeCapacity: undefined,
+                                    remainingAttendeeCapacity: undefined,
+                                    checkInCount: undefined,
+                                    attendeeCount: undefined,
+                                    offers: undefined,
+                                    superEvent: {
+                                        ...event.superEvent,
+                                        additionalProperty: undefined,
+                                        maximumAttendeeCapacity: undefined,
+                                        remainingAttendeeCapacity: undefined,
+                                        offers: undefined,
+                                        workPerformed: {
+                                            ...event.superEvent.workPerformed,
+                                            offers: undefined
+                                        }
+                                    },
+                                    workPerformed: (event.workPerformed !== undefined)
+                                        ? {
+                                            ...event.workPerformed,
+                                            offers: undefined
+                                        }
+                                        : undefined
+                                };
+
+                                const reservation: factory.order.IReservation = {
+                                    ...itemOffered,
+                                    checkedIn: undefined,
+                                    attended: undefined,
+                                    modifiedTime: undefined,
+                                    reservationStatus: undefined,
+                                    price: undefined,
+                                    priceCurrency: undefined,
+                                    underName: undefined,
+                                    reservationFor: reservationFor,
+                                    reservedTicket: {
+                                        ...itemOffered.reservedTicket,
+                                        issuedBy: undefined,
+                                        priceCurrency: undefined,
+                                        totalPrice: undefined,
+                                        underName: undefined,
+                                        ticketType: {
+                                            project: params.project,
+                                            typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                                            id: itemOffered.reservedTicket.ticketType.id,
+                                            identifier: itemOffered.reservedTicket.ticketType.identifier,
+                                            name: itemOffered.reservedTicket.ticketType.name,
+                                            description: itemOffered.reservedTicket.ticketType.description,
+                                            additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                                            priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
+                                        }
+                                    }
+                                };
+
+                                return {
+                                    typeOf: <factory.chevre.offerType>'Offer',
+                                    itemOffered: reservation,
+                                    offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
+                                    priceSpecification: {
+                                        ...priceSpecification,
+                                        priceComponent: priceSpecification.priceComponent.map((c) => {
+                                            return {
+                                                ...c,
+                                                accounting: undefined // accountingはorderに不要な情報
+                                            };
+                                        })
+                                    },
+                                    priceCurrency: (tmpReserve.priceCurrency !== undefined)
+                                        ? tmpReserve.priceCurrency
+                                        : factory.priceCurrency.JPY,
+                                    seller: {
+                                        typeOf: seller.typeOf,
+                                        name: seller.name.ja
+                                    }
+                                };
+                            });
+                        }
                     } else {
                         // 論理的にありえないフロー
                         throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transaction not found');
@@ -281,7 +377,8 @@ export function create(params: {
             priceCurrency: acceptedOffers[0].priceCurrency,
             point: 0,
             requestBody: requestBody,
-            responseBody: responseBody
+            responseBody: responseBody,
+            ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });

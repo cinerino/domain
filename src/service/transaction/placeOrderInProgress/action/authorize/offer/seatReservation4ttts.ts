@@ -71,6 +71,9 @@ enum SeatingType {
     Wheelchair = 'Wheelchair'
 }
 
+export type IReservationPriceSpecification =
+    factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
+
 /**
  * オファーのバリデーション
  * 座席の自動選択を含む
@@ -409,6 +412,7 @@ export function create(
 
         // 在庫から仮予約
         let tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[] = [];
+        let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
 
         const performanceStartDate = moment(performance.startDate)
             .toDate();
@@ -541,6 +545,106 @@ export function create(
                     };
                 });
             debug(tmpReservations.length, 'tmp reservation(s) created');
+
+            // 予約データを作成
+            const eventReservations = tmpReservations.map((tmpReservation, _) => {
+                const itemOffered = reservations.find((r) => r.id === tmpReservation.id);
+                if (itemOffered === undefined) {
+                    throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
+                }
+
+                const reservationFor:
+                    factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
+                    ...itemOffered.reservationFor,
+                    doorTime: moment(itemOffered.reservationFor.doorTime)
+                        .toDate(),
+                    endDate: moment(itemOffered.reservationFor.endDate)
+                        .toDate(),
+                    startDate: moment(itemOffered.reservationFor.startDate)
+                        .toDate(),
+                    // additionalProperty: undefined,
+                    maximumAttendeeCapacity: undefined,
+                    remainingAttendeeCapacity: undefined,
+                    checkInCount: undefined,
+                    attendeeCount: undefined,
+                    offers: undefined,
+                    superEvent: {
+                        ...itemOffered.reservationFor.superEvent,
+                        additionalProperty: undefined,
+                        maximumAttendeeCapacity: undefined,
+                        remainingAttendeeCapacity: undefined,
+                        offers: undefined,
+                        workPerformed: {
+                            ...itemOffered.reservationFor.superEvent.workPerformed,
+                            offers: undefined
+                        }
+                    },
+                    workPerformed: (itemOffered.reservationFor.workPerformed !== undefined)
+                        ? {
+                            ...itemOffered.reservationFor.workPerformed,
+                            offers: undefined
+                        }
+                        : undefined
+                };
+
+                return {
+                    ...itemOffered,
+                    checkedIn: undefined,
+                    attended: undefined,
+                    modifiedTime: undefined,
+                    reservationStatus: undefined,
+                    // price: undefined,
+                    priceCurrency: undefined,
+                    underName: undefined,
+                    reservationFor: reservationFor,
+                    reservedTicket: {
+                        ...itemOffered.reservedTicket,
+                        issuedBy: undefined,
+                        priceCurrency: undefined,
+                        totalPrice: undefined,
+                        underName: undefined,
+                        ticketType: {
+                            project: { typeOf: projectDetails.typeOf, id: projectDetails.id },
+                            typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                            id: itemOffered.reservedTicket.ticketType.id,
+                            identifier: itemOffered.reservedTicket.ticketType.identifier,
+                            name: itemOffered.reservedTicket.ticketType.name,
+                            description: itemOffered.reservedTicket.ticketType.description,
+                            additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                            priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency,
+                            priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification
+                        }
+                    }
+                };
+            });
+
+            acceptedOffers4result = eventReservations.map((r) => {
+                const priceSpecification = <IReservationPriceSpecification>r.price;
+                const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+                    ? r.reservedTicket.ticketType.priceSpecification.price
+                    : 0;
+
+                return {
+                    typeOf: <factory.chevre.offerType>'Offer',
+                    itemOffered: r,
+                    offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
+                    price: unitPrice,
+                    priceSpecification: {
+                        ...priceSpecification,
+                        priceComponent: priceSpecification.priceComponent.map((c) => {
+                            return {
+                                ...c,
+                                accounting: undefined // accountingはorderに不要な情報
+                            };
+                        })
+                    },
+                    priceCurrency: factory.priceCurrency.JPY,
+                    seller: {
+                        typeOf: transaction.seller.typeOf,
+                        name: transaction.seller.name.ja
+                    }
+                };
+            });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -639,7 +743,8 @@ export function create(
             priceCurrency: factory.priceCurrency.JPY,
             tmpReservations: tmpReservations,
             requestBody: requestBody,
-            responseBody: responseBody
+            responseBody: responseBody,
+            ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined
         };
 
         return <Promise<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>>>
