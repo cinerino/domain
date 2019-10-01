@@ -82,7 +82,17 @@ export function confirm(params: {
         // 取引の確定条件が全て整っているかどうか確認
         PlaceOrderInProgressService.validateTransaction(transaction);
 
-        const orderNumber = await repos.orderNumber.publishByTimestamp({
+        // 注文作成
+        const { order } = createOrder({
+            project: params.project,
+            transaction: transaction,
+            orderDate: params.result.order.orderDate,
+            orderStatus: factory.orderStatus.OrderProcessing,
+            isGift: false
+        });
+
+        // 注文番号を発行
+        order.orderNumber = await repos.orderNumber.publishByTimestamp({
             project: transaction.project,
             orderDate: params.result.order.orderDate
         });
@@ -96,17 +106,8 @@ export function confirm(params: {
         if (typeof params.result.order.confirmationNumber === 'string') {
             confirmationNumber = params.result.order.confirmationNumber;
         }
+        order.confirmationNumber = confirmationNumber.toString();
 
-        // 注文作成
-        const { order } = createOrder({
-            project: params.project,
-            transaction: transaction,
-            orderDate: params.result.order.orderDate,
-            orderStatus: factory.orderStatus.OrderProcessing,
-            isGift: false,
-            confirmationNumber: confirmationNumber,
-            orderNumber: orderNumber
-        });
         const result: factory.transaction.placeOrder.IResult = { order };
         const potentialActions = await createPotentialActions({
             order: order,

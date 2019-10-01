@@ -18,8 +18,6 @@ export function createOrder(params: {
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
-    confirmationNumber: string;
-    orderNumber: string;
 }): factory.transaction.placeOrder.IResult {
     const seatReservationAuthorizeAction =
         <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>>
@@ -40,8 +38,6 @@ export function createOrder(params: {
     // tmpReservations = (Array.isArray(tmpReservations)) ? tmpReservations : [];
     // const chevreReservations = (Array.isArray(reserveTransaction.object.reservations)) ? reserveTransaction.object.reservations : [];
 
-    const profile = params.transaction.agent;
-
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
@@ -52,30 +48,16 @@ export function createOrder(params: {
         url: params.transaction.seller.url
     };
 
-    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
-
-    // 決済方法をセット
-    Object.keys(factory.paymentMethodType)
-        .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-            params.transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.result !== undefined && a.result.paymentMethod === paymentMethodType)
-                .forEach((a: any) => {
-                    const authorizePaymentMethodAction =
-                        <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>>a;
-                    const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>
-                        authorizePaymentMethodAction.result);
-                    paymentMethods.push({
-                        accountId: result.accountId,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
-                        name: result.name,
-                        paymentMethodId: result.paymentMethodId,
-                        totalPaymentDue: result.totalPaymentDue,
-                        typeOf: paymentMethodType
-                    });
-                });
-        });
+    const profile = params.transaction.agent;
+    const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
+    const customer: factory.order.ICustomer = {
+        ...profile,
+        id: params.transaction.agent.id,
+        typeOf: params.transaction.agent.typeOf,
+        name: `${profile.givenName} ${profile.familyName}`,
+        url: '',
+        identifier: customerIdentifier
+    };
 
     // 予約データを作成
     // const eventReservations = tmpReservations.map((tmpReservation, _) => {
@@ -183,6 +165,31 @@ export function createOrder(params: {
     //     };
     // });
 
+    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
+
+    // 決済方法をセット
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            params.transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.result !== undefined)
+                .filter((a) => a.result.paymentMethod === paymentMethodType)
+                .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
+                    const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                    paymentMethods.push({
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: paymentMethodType
+                    });
+                });
+        });
+
+    const url = '';
+
     // 決済方法から注文金額の計算
     let price = 0;
     Object.keys(factory.paymentMethodType)
@@ -199,30 +206,20 @@ export function createOrder(params: {
                 .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
         });
 
-    const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
-    const customer: factory.order.ICustomer = {
-        ...profile,
-        id: params.transaction.agent.id,
-        typeOf: params.transaction.agent.typeOf,
-        name: `${profile.givenName} ${profile.familyName}`,
-        url: '',
-        identifier: customerIdentifier
-    };
-
     return {
         order: {
             project: params.project,
             typeOf: 'Order',
             seller: seller,
             customer: customer,
-            acceptedOffers: acceptedOffers,
-            confirmationNumber: params.confirmationNumber,
-            orderNumber: params.orderNumber,
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
             paymentMethods: paymentMethods,
             discounts: [],
-            url: '',
+            confirmationNumber: '',
+            orderNumber: '',
+            acceptedOffers: acceptedOffers,
+            url: url,
             orderStatus: params.orderStatus,
             orderDate: params.orderDate,
             isGift: params.isGift

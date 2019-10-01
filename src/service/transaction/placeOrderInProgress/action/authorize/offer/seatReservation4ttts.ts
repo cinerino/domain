@@ -73,6 +73,7 @@ enum SeatingType {
 
 export type IReservationPriceSpecification =
     factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
+export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
 
 /**
  * オファーのバリデーション
@@ -553,10 +554,10 @@ export function create(
                     throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
                 }
 
-                const reservationFor:
-                    factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
+                const reservationFor: IReservationFor = {
                     project: itemOffered.reservationFor.project,
                     typeOf: itemOffered.reservationFor.typeOf,
+                    additionalProperty: itemOffered.reservationFor.additionalProperty,
                     eventStatus: itemOffered.reservationFor.eventStatus,
                     id: itemOffered.reservationFor.id,
                     location: itemOffered.reservationFor.location,

@@ -323,7 +323,6 @@ export function confirm(params: IConfirmParams) {
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
             isGift: false
-            // seller: seller
         });
 
         validateEventOffers({

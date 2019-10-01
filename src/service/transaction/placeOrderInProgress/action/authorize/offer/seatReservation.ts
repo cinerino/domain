@@ -33,6 +33,8 @@ export type ICreateOperation<T> = (repos: {
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
+export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
 export type IReservationPriceSpecification =
     factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
 export type IUnitPriceSpecification =
@@ -227,15 +229,13 @@ export function create(params: {
                         // 座席仮予約からオファー情報を生成する
                         if (Array.isArray(responseBody.object.reservations)) {
                             // tslint:disable-next-line:max-func-body-length
-                            acceptedOffers4result = responseBody.object.reservations.map((tmpReserve) => {
-                                const itemOffered: factory.order.IReservation = tmpReserve;
-                                const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
+                            acceptedOffers4result = responseBody.object.reservations.map((itemOffered) => {
+                                const priceSpecification = <IReservationPriceSpecification>itemOffered.price;
 
-                                const reservationFor:
-                                    factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>
-                                    = {
+                                const reservationFor: IReservationFor = {
                                     project: itemOffered.reservationFor.project,
                                     typeOf: itemOffered.reservationFor.typeOf,
+                                    additionalProperty: itemOffered.reservationFor.additionalProperty,
                                     eventStatus: itemOffered.reservationFor.eventStatus,
                                     id: itemOffered.reservationFor.id,
                                     location: itemOffered.reservationFor.location,
@@ -321,8 +321,8 @@ export function create(params: {
                                             };
                                         })
                                     },
-                                    priceCurrency: (tmpReserve.priceCurrency !== undefined)
-                                        ? tmpReserve.priceCurrency
+                                    priceCurrency: (itemOffered.priceCurrency !== undefined)
+                                        ? itemOffered.priceCurrency
                                         : factory.priceCurrency.JPY,
                                     seller: {
                                         typeOf: seller.typeOf,

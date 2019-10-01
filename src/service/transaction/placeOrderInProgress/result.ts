@@ -41,8 +41,6 @@ export function createOrder(params: {
     }
     const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
 
-    const profile = params.transaction.agent;
-
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
@@ -54,6 +52,7 @@ export function createOrder(params: {
     };
 
     // 購入者を識別する情報をまとめる
+    const profile = params.transaction.agent;
     const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
         ...profile,
@@ -63,9 +62,9 @@ export function createOrder(params: {
         url: '',
         identifier: customerIdentifier
     };
-    if (params.transaction.agent.memberOf !== undefined) {
-        customer.memberOf = params.transaction.agent.memberOf;
-    }
+    // if (params.transaction.agent.memberOf !== undefined) {
+    //     customer.memberOf = params.transaction.agent.memberOf;
+    // }
 
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = [];
 
