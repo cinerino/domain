@@ -1,4 +1,4 @@
-import * as moment from 'moment-timezone';
+// import * as moment from 'moment-timezone';
 
 import * as factory from '../../../factory';
 
@@ -89,7 +89,7 @@ export function createOrder(params: {
                 || authorizeSeatReservationAction.object.event === null) {
                 throw new factory.errors.ServiceUnavailable('Authorized event undefined');
             }
-            let event: factory.chevre.event.screeningEvent.IEvent = authorizeSeatReservationAction.object.event;
+            const event: factory.chevre.event.screeningEvent.IEvent = authorizeSeatReservationAction.object.event;
 
             switch (authorizeSeatReservationAction.instrument.identifier) {
                 case factory.service.webAPI.Identifier.COA:
@@ -232,108 +232,112 @@ export function createOrder(params: {
                     break;
 
                 default:
-                    // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
-
-                    if (event.name === undefined) {
-                        if (Array.isArray(responseBody.object.reservations) && responseBody.object.reservations.length > 0) {
-                            event = responseBody.object.reservations[0].reservationFor;
-                        }
+                    if (Array.isArray(authorizeSeatReservationAction.result.acceptedOffers)) {
+                        acceptedOffers.push(...authorizeSeatReservationAction.result.acceptedOffers);
                     }
 
-                    // 座席仮予約からオファー情報を生成する
-                    if (Array.isArray(responseBody.object.reservations)) {
-                        // tslint:disable-next-line:max-func-body-length
-                        acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
-                            const itemOffered: factory.order.IReservation = tmpReserve;
-                            const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
+                // tslint:disable-next-line:max-line-length
+                // responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
-                            const reservationFor:
-                                factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
-                                ...itemOffered.reservationFor,
-                                doorTime: moment(itemOffered.reservationFor.doorTime)
-                                    .toDate(),
-                                endDate: moment(itemOffered.reservationFor.endDate)
-                                    .toDate(),
-                                startDate: moment(itemOffered.reservationFor.startDate)
-                                    .toDate(),
-                                additionalProperty: undefined,
-                                maximumAttendeeCapacity: undefined,
-                                remainingAttendeeCapacity: undefined,
-                                checkInCount: undefined,
-                                attendeeCount: undefined,
-                                offers: undefined,
-                                superEvent: {
-                                    ...event.superEvent,
-                                    additionalProperty: undefined,
-                                    maximumAttendeeCapacity: undefined,
-                                    remainingAttendeeCapacity: undefined,
-                                    offers: undefined,
-                                    workPerformed: {
-                                        ...event.superEvent.workPerformed,
-                                        offers: undefined
-                                    }
-                                },
-                                workPerformed: (event.workPerformed !== undefined)
-                                    ? {
-                                        ...event.workPerformed,
-                                        offers: undefined
-                                    }
-                                    : undefined
-                            };
+                // if (event.name === undefined) {
+                //     if (Array.isArray(responseBody.object.reservations) && responseBody.object.reservations.length > 0) {
+                //         event = responseBody.object.reservations[0].reservationFor;
+                //     }
+                // }
 
-                            const reservation: factory.order.IReservation = {
-                                ...itemOffered,
-                                checkedIn: undefined,
-                                attended: undefined,
-                                modifiedTime: undefined,
-                                reservationStatus: undefined,
-                                price: undefined,
-                                priceCurrency: undefined,
-                                underName: undefined,
-                                reservationFor: reservationFor,
-                                reservedTicket: {
-                                    ...itemOffered.reservedTicket,
-                                    issuedBy: undefined,
-                                    priceCurrency: undefined,
-                                    totalPrice: undefined,
-                                    underName: undefined,
-                                    ticketType: {
-                                        project: params.project,
-                                        typeOf: itemOffered.reservedTicket.ticketType.typeOf,
-                                        id: itemOffered.reservedTicket.ticketType.id,
-                                        identifier: itemOffered.reservedTicket.ticketType.identifier,
-                                        name: itemOffered.reservedTicket.ticketType.name,
-                                        description: itemOffered.reservedTicket.ticketType.description,
-                                        additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
-                                    }
-                                }
-                            };
+                // // 座席仮予約からオファー情報を生成する
+                // if (Array.isArray(responseBody.object.reservations)) {
+                //     // tslint:disable-next-line:max-func-body-length
+                //     acceptedOffers.push(...responseBody.object.reservations.map((tmpReserve) => {
+                //         const itemOffered: factory.order.IReservation = tmpReserve;
+                //         const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
 
-                            return {
-                                typeOf: <factory.chevre.offerType>'Offer',
-                                itemOffered: reservation,
-                                offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-                                priceSpecification: {
-                                    ...priceSpecification,
-                                    priceComponent: priceSpecification.priceComponent.map((c) => {
-                                        return {
-                                            ...c,
-                                            accounting: undefined // accountingはorderに不要な情報
-                                        };
-                                    })
-                                },
-                                priceCurrency: (tmpReserve.priceCurrency !== undefined)
-                                    ? tmpReserve.priceCurrency
-                                    : factory.priceCurrency.JPY,
-                                seller: {
-                                    typeOf: seller.typeOf,
-                                    name: seller.name
-                                }
-                            };
-                        }));
-                    }
+                //         const reservationFor:
+                //             factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
+                //             ...itemOffered.reservationFor,
+                //             doorTime: moment(itemOffered.reservationFor.doorTime)
+                //                 .toDate(),
+                //             endDate: moment(itemOffered.reservationFor.endDate)
+                //                 .toDate(),
+                //             startDate: moment(itemOffered.reservationFor.startDate)
+                //                 .toDate(),
+                //             additionalProperty: undefined,
+                //             maximumAttendeeCapacity: undefined,
+                //             remainingAttendeeCapacity: undefined,
+                //             checkInCount: undefined,
+                //             attendeeCount: undefined,
+                //             offers: undefined,
+                //             superEvent: {
+                //                 ...event.superEvent,
+                //                 additionalProperty: undefined,
+                //                 maximumAttendeeCapacity: undefined,
+                //                 remainingAttendeeCapacity: undefined,
+                //                 offers: undefined,
+                //                 workPerformed: {
+                //                     ...event.superEvent.workPerformed,
+                //                     offers: undefined
+                //                 }
+                //             },
+                //             workPerformed: (event.workPerformed !== undefined)
+                //                 ? {
+                //                     ...event.workPerformed,
+                //                     offers: undefined
+                //                 }
+                //                 : undefined
+                //         };
+
+                //         const reservation: factory.order.IReservation = {
+                //             ...itemOffered,
+                //             checkedIn: undefined,
+                //             attended: undefined,
+                //             modifiedTime: undefined,
+                //             reservationStatus: undefined,
+                //             price: undefined,
+                //             priceCurrency: undefined,
+                //             underName: undefined,
+                //             reservationFor: reservationFor,
+                //             reservedTicket: {
+                //                 ...itemOffered.reservedTicket,
+                //                 issuedBy: undefined,
+                //                 priceCurrency: undefined,
+                //                 totalPrice: undefined,
+                //                 underName: undefined,
+                //                 ticketType: {
+                //                     project: params.project,
+                //                     typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                //                     id: itemOffered.reservedTicket.ticketType.id,
+                //                     identifier: itemOffered.reservedTicket.ticketType.identifier,
+                //                     name: itemOffered.reservedTicket.ticketType.name,
+                //                     description: itemOffered.reservedTicket.ticketType.description,
+                //                     additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                //                     priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
+                //                 }
+                //             }
+                //         };
+
+                //         return {
+                //             typeOf: <factory.chevre.offerType>'Offer',
+                //             itemOffered: reservation,
+                //             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
+                //             priceSpecification: {
+                //                 ...priceSpecification,
+                //                 priceComponent: priceSpecification.priceComponent.map((c) => {
+                //                     return {
+                //                         ...c,
+                //                         accounting: undefined // accountingはorderに不要な情報
+                //                     };
+                //                 })
+                //             },
+                //             priceCurrency: (tmpReserve.priceCurrency !== undefined)
+                //                 ? tmpReserve.priceCurrency
+                //                 : factory.priceCurrency.JPY,
+                //             seller: {
+                //                 typeOf: seller.typeOf,
+                //                 name: seller.name
+                //             }
+                //         };
+                //     }));
+                // }
             }
         }
     });

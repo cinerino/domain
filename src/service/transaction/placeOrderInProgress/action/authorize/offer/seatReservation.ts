@@ -226,71 +226,86 @@ export function create(params: {
 
                         // 座席仮予約からオファー情報を生成する
                         if (Array.isArray(responseBody.object.reservations)) {
+                            // tslint:disable-next-line:max-func-body-length
                             acceptedOffers4result = responseBody.object.reservations.map((tmpReserve) => {
                                 const itemOffered: factory.order.IReservation = tmpReserve;
                                 const priceSpecification = <IReservationPriceSpecification>tmpReserve.price;
 
                                 const reservationFor:
-                                    factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
-                                    ...itemOffered.reservationFor,
+                                    factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>
+                                    = {
+                                    project: itemOffered.reservationFor.project,
+                                    typeOf: itemOffered.reservationFor.typeOf,
+                                    eventStatus: itemOffered.reservationFor.eventStatus,
+                                    id: itemOffered.reservationFor.id,
+                                    location: itemOffered.reservationFor.location,
+                                    name: itemOffered.reservationFor.name,
                                     doorTime: moment(itemOffered.reservationFor.doorTime)
                                         .toDate(),
                                     endDate: moment(itemOffered.reservationFor.endDate)
                                         .toDate(),
                                     startDate: moment(itemOffered.reservationFor.startDate)
                                         .toDate(),
-                                    additionalProperty: undefined,
-                                    maximumAttendeeCapacity: undefined,
-                                    remainingAttendeeCapacity: undefined,
-                                    checkInCount: undefined,
-                                    attendeeCount: undefined,
-                                    offers: undefined,
                                     superEvent: {
-                                        ...event.superEvent,
-                                        additionalProperty: undefined,
-                                        maximumAttendeeCapacity: undefined,
-                                        remainingAttendeeCapacity: undefined,
-                                        offers: undefined,
+                                        project: event.superEvent.project,
+                                        typeOf: event.superEvent.typeOf,
+                                        duration: event.superEvent.duration,
+                                        eventStatus: event.superEvent.eventStatus,
+                                        headline: event.superEvent.headline,
+                                        id: event.superEvent.id,
+                                        kanaName: event.superEvent.kanaName,
+                                        location: event.superEvent.location,
+                                        name: event.superEvent.name,
+                                        soundFormat: event.superEvent.soundFormat,
+                                        videoFormat: event.superEvent.videoFormat,
                                         workPerformed: {
-                                            ...event.superEvent.workPerformed,
-                                            offers: undefined
+                                            project: event.superEvent.workPerformed.project,
+                                            typeOf: event.superEvent.workPerformed.typeOf,
+                                            duration: event.superEvent.workPerformed.duration,
+                                            headline: event.superEvent.workPerformed.headline,
+                                            id: event.superEvent.workPerformed.id,
+                                            identifier: event.superEvent.workPerformed.identifier,
+                                            name: event.superEvent.workPerformed.name
                                         }
                                     },
                                     workPerformed: (event.workPerformed !== undefined)
                                         ? {
-                                            ...event.workPerformed,
-                                            offers: undefined
+                                            project: event.workPerformed.project,
+                                            typeOf: event.workPerformed.typeOf,
+                                            duration: event.workPerformed.duration,
+                                            headline: event.workPerformed.headline,
+                                            id: event.workPerformed.id,
+                                            identifier: event.workPerformed.identifier,
+                                            name: event.workPerformed.name
                                         }
                                         : undefined
                                 };
 
+                                const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation>
+                                    = {
+                                    typeOf: itemOffered.reservedTicket.typeOf,
+                                    ticketType: {
+                                        project: params.project,
+                                        typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                                        id: itemOffered.reservedTicket.ticketType.id,
+                                        identifier: itemOffered.reservedTicket.ticketType.identifier,
+                                        name: itemOffered.reservedTicket.ticketType.name,
+                                        description: itemOffered.reservedTicket.ticketType.description,
+                                        additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
+                                    },
+                                    ...(itemOffered.reservedTicket.ticketedSeat !== undefined)
+                                        ? { ticketedSeat: itemOffered.reservedTicket.ticketedSeat }
+                                        : undefined
+                                };
+
                                 const reservation: factory.order.IReservation = {
-                                    ...itemOffered,
-                                    checkedIn: undefined,
-                                    attended: undefined,
-                                    modifiedTime: undefined,
-                                    reservationStatus: undefined,
-                                    price: undefined,
-                                    priceCurrency: undefined,
-                                    underName: undefined,
+                                    project: itemOffered.project,
+                                    typeOf: itemOffered.typeOf,
+                                    id: itemOffered.id,
+                                    reservationNumber: itemOffered.reservationNumber,
                                     reservationFor: reservationFor,
-                                    reservedTicket: {
-                                        ...itemOffered.reservedTicket,
-                                        issuedBy: undefined,
-                                        priceCurrency: undefined,
-                                        totalPrice: undefined,
-                                        underName: undefined,
-                                        ticketType: {
-                                            project: params.project,
-                                            typeOf: itemOffered.reservedTicket.ticketType.typeOf,
-                                            id: itemOffered.reservedTicket.ticketType.id,
-                                            identifier: itemOffered.reservedTicket.ticketType.identifier,
-                                            name: itemOffered.reservedTicket.ticketType.name,
-                                            description: itemOffered.reservedTicket.ticketType.description,
-                                            additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                                            priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
-                                        }
-                                    }
+                                    reservedTicket: reservedTicket
                                 };
 
                                 return {

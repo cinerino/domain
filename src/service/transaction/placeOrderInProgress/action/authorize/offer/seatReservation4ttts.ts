@@ -555,66 +555,80 @@ export function create(
 
                 const reservationFor:
                     factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation> = {
-                    ...itemOffered.reservationFor,
+                    project: itemOffered.reservationFor.project,
+                    typeOf: itemOffered.reservationFor.typeOf,
+                    eventStatus: itemOffered.reservationFor.eventStatus,
+                    id: itemOffered.reservationFor.id,
+                    location: itemOffered.reservationFor.location,
+                    name: itemOffered.reservationFor.name,
                     doorTime: moment(itemOffered.reservationFor.doorTime)
                         .toDate(),
                     endDate: moment(itemOffered.reservationFor.endDate)
                         .toDate(),
                     startDate: moment(itemOffered.reservationFor.startDate)
                         .toDate(),
-                    // additionalProperty: undefined,
-                    maximumAttendeeCapacity: undefined,
-                    remainingAttendeeCapacity: undefined,
-                    checkInCount: undefined,
-                    attendeeCount: undefined,
-                    offers: undefined,
                     superEvent: {
-                        ...itemOffered.reservationFor.superEvent,
-                        additionalProperty: undefined,
-                        maximumAttendeeCapacity: undefined,
-                        remainingAttendeeCapacity: undefined,
-                        offers: undefined,
+                        project: performance.superEvent.project,
+                        typeOf: performance.superEvent.typeOf,
+                        duration: performance.superEvent.duration,
+                        eventStatus: performance.superEvent.eventStatus,
+                        headline: performance.superEvent.headline,
+                        id: performance.superEvent.id,
+                        kanaName: performance.superEvent.kanaName,
+                        location: performance.superEvent.location,
+                        name: performance.superEvent.name,
+                        soundFormat: performance.superEvent.soundFormat,
+                        videoFormat: performance.superEvent.videoFormat,
                         workPerformed: {
-                            ...itemOffered.reservationFor.superEvent.workPerformed,
-                            offers: undefined
+                            project: performance.superEvent.workPerformed.project,
+                            typeOf: performance.superEvent.workPerformed.typeOf,
+                            duration: performance.superEvent.workPerformed.duration,
+                            headline: performance.superEvent.workPerformed.headline,
+                            id: performance.superEvent.workPerformed.id,
+                            identifier: performance.superEvent.workPerformed.identifier,
+                            name: performance.superEvent.workPerformed.name
                         }
                     },
-                    workPerformed: (itemOffered.reservationFor.workPerformed !== undefined)
+                    workPerformed: (performance.workPerformed !== undefined)
                         ? {
-                            ...itemOffered.reservationFor.workPerformed,
-                            offers: undefined
+                            project: performance.workPerformed.project,
+                            typeOf: performance.workPerformed.typeOf,
+                            duration: performance.workPerformed.duration,
+                            headline: performance.workPerformed.headline,
+                            id: performance.workPerformed.id,
+                            identifier: performance.workPerformed.identifier,
+                            name: performance.workPerformed.name
                         }
                         : undefined
                 };
 
+                const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation>
+                    = {
+                    typeOf: itemOffered.reservedTicket.typeOf,
+                    ticketType: {
+                        project: { typeOf: projectDetails.typeOf, id: projectDetails.id },
+                        typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                        id: itemOffered.reservedTicket.ticketType.id,
+                        identifier: itemOffered.reservedTicket.ticketType.identifier,
+                        name: itemOffered.reservedTicket.ticketType.name,
+                        description: itemOffered.reservedTicket.ticketType.description,
+                        additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency,
+                        priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification
+                    },
+                    ...(itemOffered.reservedTicket.ticketedSeat !== undefined)
+                        ? { ticketedSeat: itemOffered.reservedTicket.ticketedSeat }
+                        : undefined
+                };
+
                 return {
-                    ...itemOffered,
-                    checkedIn: undefined,
-                    attended: undefined,
-                    modifiedTime: undefined,
-                    reservationStatus: undefined,
-                    // price: undefined,
-                    priceCurrency: undefined,
-                    underName: undefined,
+                    project: itemOffered.project,
+                    typeOf: itemOffered.typeOf,
+                    id: itemOffered.id,
+                    price: itemOffered.price,
+                    reservationNumber: itemOffered.reservationNumber,
                     reservationFor: reservationFor,
-                    reservedTicket: {
-                        ...itemOffered.reservedTicket,
-                        issuedBy: undefined,
-                        priceCurrency: undefined,
-                        totalPrice: undefined,
-                        underName: undefined,
-                        ticketType: {
-                            project: { typeOf: projectDetails.typeOf, id: projectDetails.id },
-                            typeOf: itemOffered.reservedTicket.ticketType.typeOf,
-                            id: itemOffered.reservedTicket.ticketType.id,
-                            identifier: itemOffered.reservedTicket.ticketType.identifier,
-                            name: itemOffered.reservedTicket.ticketType.name,
-                            description: itemOffered.reservedTicket.ticketType.description,
-                            additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                            priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency,
-                            priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification
-                        }
-                    }
+                    reservedTicket: reservedTicket
                 };
             });
 
