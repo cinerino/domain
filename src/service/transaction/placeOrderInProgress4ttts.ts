@@ -12,7 +12,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4ttts';
 
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
-import { createOrder } from './placeOrderInProgress/result4ttts';
+import { createOrder } from './placeOrderInProgress/result';
 
 import * as PlaceOrderInProgressService from './placeOrderInProgress';
 
@@ -83,7 +83,7 @@ export function confirm(params: {
         PlaceOrderInProgressService.validateTransaction(transaction);
 
         // 注文作成
-        const { order } = createOrder({
+        const order = createOrder({
             project: params.project,
             transaction: transaction,
             orderDate: params.result.order.orderDate,
