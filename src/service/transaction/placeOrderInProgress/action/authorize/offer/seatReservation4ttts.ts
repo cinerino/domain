@@ -31,7 +31,6 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
-    // performanceRepo: PerformanceRepo,
     actionRepo: ActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     taskRepo: TaskRepo,
@@ -81,24 +80,23 @@ export type IReservationFor = factory.chevre.reservation.IReservationFor<factory
  */
 // tslint:disable-next-line:max-func-body-length
 function validateOffers(
-    projectDetails: factory.project.IProject,
-    // performance: factory.performance.IPerformanceWithDetails,
+    project: factory.project.IProject,
     performance: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>,
     acceptedOffers: IAcceptedOffer[],
     transactionId: string
 ): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
     return async () => {
-        if (projectDetails.settings === undefined) {
+        if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
-        if (projectDetails.settings.chevre === undefined) {
+        if (project.settings.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
         const acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[] = [];
 
         const eventService = new chevre.service.Event({
-            endpoint: projectDetails.settings.chevre.endpoint,
+            endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -299,61 +297,67 @@ function validateOffers(
 }
 
 /**
- * 座席を仮予約する
- * 承認アクションオブジェクトが返却されます。
+ * 座席予約承認
  */
-// tslint:disable-next-line:max-func-body-length
-export function create(
-    project: factory.chevre.project.IProject,
-    agentId: string,
-    transactionId: string,
-    perfomanceId: string,
-    acceptedOffers: IAcceptedOffer[]
-): ICreateOpetaiton<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>> {
+export function create(params: {
+    project: factory.project.IProject;
+    object: {
+        acceptedOffers: IAcceptedOffer[];
+        event: { id: string };
+    };
+    agent: { id: string };
+    transaction: { id: string };
+}): ICreateOpetaiton<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>> {
     // tslint:disable-next-line:max-func-body-length
     return async (
         transactionRepo: TransactionRepo,
-        // _: PerformanceRepo,
         actionRepo: ActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
         projectRepo: ProjectRepo
     ): Promise<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>> => {
-        debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
+        debug('creating seatReservation authorizeAction...acceptedOffers:', params.object.acceptedOffers.length);
 
-        const projectDetails = await projectRepo.findById({ id: project.id });
-        if (projectDetails.settings === undefined
-            || projectDetails.settings.chevre === undefined) {
+        const project = await projectRepo.findById({ id: params.project.id });
+        if (project.settings === undefined
+            || project.settings.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
         const eventService = new chevre.service.Event({
-            endpoint: projectDetails.settings.chevre.endpoint,
+            endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
         const reserveService = new chevre.service.transaction.Reserve({
-            endpoint: projectDetails.settings.chevre.endpoint,
+            endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
 
-        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+        const transaction = await transactionRepo.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.transaction.id
+        });
 
-        if (transaction.agent.id !== agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        // パフォーマンスを取得
-        const performance = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: perfomanceId });
-        // const performance = await performanceRepo.findById(perfomanceId);
+        // Chevreからイベント情報取得
+        const performance = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: params.object.event.id });
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithSeatNumber = await validateOffers(projectDetails, performance, acceptedOffers, transactionId)();
+        const acceptedOffersWithSeatNumber = await validateOffers(
+            project,
+            performance,
+            params.object.acceptedOffers,
+            params.transaction.id
+        )();
 
         let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
         let responseBody: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
 
         requestBody = {
-            project: project,
+            project: { typeOf: project.typeOf, id: project.id },
             typeOf: chevre.factory.transactionType.Reserve,
             agent: {
                 typeOf: transaction.agent.typeOf,
@@ -400,7 +404,7 @@ export function create(
                 ...(reserveTransaction !== undefined)
                     ? { pendingTransaction: reserveTransaction }
                     : {},
-                ...{ offers: acceptedOffers }
+                ...{ offers: params.object.acceptedOffers }
             },
             agent: transaction.seller,
             recipient: {
@@ -548,7 +552,8 @@ export function create(
             debug(tmpReservations.length, 'tmp reservation(s) created');
 
             // 予約データを作成
-            const eventReservations = tmpReservations.map((tmpReservation, _) => {
+            // tslint:disable-next-line:max-func-body-length
+            acceptedOffers4result = tmpReservations.map((tmpReservation) => {
                 const itemOffered = reservations.find((r) => r.id === tmpReservation.id);
                 if (itemOffered === undefined) {
                     throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
@@ -607,7 +612,7 @@ export function create(
                     = {
                     typeOf: itemOffered.reservedTicket.typeOf,
                     ticketType: {
-                        project: { typeOf: projectDetails.typeOf, id: projectDetails.id },
+                        project: { typeOf: project.typeOf, id: project.id },
                         typeOf: itemOffered.reservedTicket.ticketType.typeOf,
                         id: itemOffered.reservedTicket.ticketType.id,
                         identifier: itemOffered.reservedTicket.ticketType.identifier,
@@ -622,26 +627,26 @@ export function create(
                         : undefined
                 };
 
-                return {
+                const reservation: factory.order.IReservation = {
                     project: itemOffered.project,
                     typeOf: itemOffered.typeOf,
+                    additionalProperty: tmpReservation.additionalProperty,
+                    additionalTicketText: tmpReservation.additionalTicketText,
                     id: itemOffered.id,
                     price: itemOffered.price,
                     reservationNumber: itemOffered.reservationNumber,
                     reservationFor: reservationFor,
                     reservedTicket: reservedTicket
                 };
-            });
 
-            acceptedOffers4result = eventReservations.map((r) => {
-                const priceSpecification = <IReservationPriceSpecification>r.price;
-                const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
-                    ? r.reservedTicket.ticketType.priceSpecification.price
+                const priceSpecification = <IReservationPriceSpecification>itemOffered.price;
+                const unitPrice = (itemOffered.reservedTicket.ticketType.priceSpecification !== undefined)
+                    ? itemOffered.reservedTicket.ticketType.priceSpecification.price
                     : 0;
 
                 return {
                     typeOf: <factory.chevre.offerType>'Offer',
-                    itemOffered: r,
+                    itemOffered: reservation,
                     offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                     price: unitPrice,
                     priceSpecification: {
@@ -711,7 +716,7 @@ export function create(
             // 集計タスク作成
             const aggregateTask: factory.task.IAttributes<factory.taskName.AggregateEventReservations> = {
                 name: <any>factory.taskName.AggregateEventReservations,
-                project: project,
+                project: { typeOf: project.typeOf, id: project.id },
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 runsAt: moment()
@@ -722,7 +727,7 @@ export function create(
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     id: performance.id
                 }
             };
@@ -731,30 +736,17 @@ export function create(
             // no op
         }
 
+        const amount = acceptedOffers4result.reduce(
+            (a, b) => {
+                return a + (<IReservationPriceSpecification>b.priceSpecification).priceComponent.reduce((a2, b2) => a2 + b2.price, 0);
+            },
+            0
+        );
+
         // アクションを完了
         const result: factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre> = {
             point: 0,
-            price: tmpReservations
-                .filter((r) => {
-                    // 余分確保分を除く
-                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    if (r.additionalProperty !== undefined) {
-                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                    }
-
-                    return r.additionalProperty === undefined
-                        || extraProperty === undefined
-                        || extraProperty.value !== '1';
-                })
-                .reduce(
-                    (a, b) => {
-                        const unitPriceSpec = b.reservedTicket.ticketType.priceSpecification;
-                        const unitPrice = (unitPriceSpec !== undefined) ? unitPriceSpec.price : 0;
-
-                        return a + unitPrice;
-                    },
-                    0
-                ),
+            price: amount,
             priceCurrency: factory.priceCurrency.JPY,
             tmpReservations: tmpReservations,
             requestBody: requestBody,
@@ -770,12 +762,21 @@ export function create(
 /**
  * 座席予約承認アクションをキャンセルする
  */
-export function cancel(
-    project: factory.chevre.project.IProject,
-    agentId: string,
-    transactionId: string,
-    actionId: string
-): ICancelOpetaiton<void> {
+export function cancel(params: {
+    project: factory.project.IProject;
+    /**
+     * 承認アクションID
+     */
+    id: string;
+    /**
+     * 取引進行者
+     */
+    agent: { id: string };
+    /**
+     * 取引
+     */
+    transaction: { id: string };
+}): ICancelOpetaiton<void> {
     return async (
         transactionRepo: TransactionRepo,
         actionRepo: ActionRepo,
@@ -784,24 +785,27 @@ export function cancel(
         projectRepo: ProjectRepo
     ) => {
         try {
-            const projectDetails = await projectRepo.findById({ id: project.id });
-            if (projectDetails.settings === undefined) {
+            const project = await projectRepo.findById({ id: params.project.id });
+            if (project.settings === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings undefined');
             }
-            if (projectDetails.settings.chevre === undefined) {
+            if (project.settings.chevre === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
-            const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+            const transaction = await transactionRepo.findInProgressById({
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.transaction.id
+            });
 
-            if (transaction.agent.id !== agentId) {
+            if (transaction.agent.id !== params.agent.id) {
                 throw new factory.errors.Forbidden('Transaction not yours');
             }
 
             // アクションではcompleteステータスであるにも関わらず、在庫は有になっている、というのが最悪の状況
             // それだけは回避するためにアクションを先に変更
             const action = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>>
-                await actionRepo.cancel({ typeOf: factory.actionType.AuthorizeAction, id: actionId });
+                await actionRepo.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
             const actionResult = <factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre>>
                 action.result;
 
@@ -810,7 +814,7 @@ export function cancel(
                 // 在庫から仮予約削除
                 debug('removing tmp reservations...');
                 const reserveService = new chevre.service.transaction.Reserve({
-                    endpoint: projectDetails.settings.chevre.endpoint,
+                    endpoint: project.settings.chevre.endpoint,
                     auth: chevreAuthClient
                 });
 
@@ -819,11 +823,13 @@ export function cancel(
                 // レート制限があれば解除
                 const performanceStartDate = moment(performance.startDate)
                     .toDate();
-                if (Array.isArray(actionResult.tmpReservations)) {
-                    await Promise.all(actionResult.tmpReservations.map(async (tmpReservation) => {
+                if (Array.isArray(actionResult.acceptedOffers)) {
+                    await Promise.all(actionResult.acceptedOffers.map(async (acceptedOffer) => {
+                        const reservation = acceptedOffer.itemOffered;
+
                         let ticketTypeCategory = TicketTypeCategory.Normal;
-                        if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
-                            const categoryProperty = tmpReservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                        if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
+                            const categoryProperty = reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
                             if (categoryProperty !== undefined) {
                                 ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
                             }
@@ -848,7 +854,7 @@ export function cancel(
                 // 集計タスク作成
                 const aggregateTask: factory.task.IAttributes<factory.taskName.AggregateEventReservations> = {
                     name: <any>factory.taskName.AggregateEventReservations,
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     status: factory.taskStatus.Ready,
                     // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                     runsAt: moment()
@@ -859,7 +865,7 @@ export function cancel(
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        project: project,
+                        project: { typeOf: project.typeOf, id: project.id },
                         id: performance.id
                     }
                 };

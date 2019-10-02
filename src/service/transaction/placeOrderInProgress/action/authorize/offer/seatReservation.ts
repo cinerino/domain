@@ -46,7 +46,7 @@ export type IMovieTicketTypeChargeSpecification =
  * 座席予約承認
  */
 export function create(params: {
-    project: factory.chevre.project.IProject;
+    project: factory.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     agent: { id: string };
     transaction: { id: string };
@@ -730,7 +730,7 @@ function validateAcceptedOffers(params: {
  * 座席予約承認アクションをキャンセルする
  */
 export function cancel(params: {
-    project: factory.chevre.project.IProject;
+    project: factory.project.IProject;
     /**
      * 承認アクションID
      */
