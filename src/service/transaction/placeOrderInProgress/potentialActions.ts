@@ -93,35 +93,6 @@ export async function createPotentialActions(params: {
                         mailAddr: mailAddr,
                         reserveAmount: price, // デフォルトのpriceCurrencyがJPYなのでこれでよし
                         listTicket: acceptedOffers.map((o) => o.ticketInfo)
-                        // listTicket: params.order.acceptedOffers.map(
-                        //     // tslint:disable-next-line:max-line-length
-                        //     (offer) => {
-                        //         const itemOffered = <factory.order.IReservation>offer.itemOffered;
-
-                        //         let coaTicketInfo: COA.services.reserve.IUpdReserveTicket | undefined;
-                        //         if (itemOffered.reservedTicket.coaTicketInfo !== undefined) {
-                        //             coaTicketInfo = itemOffered.reservedTicket.coaTicketInfo;
-                        //         } else {
-                        //             const additionalProperty = itemOffered.reservedTicket.ticketType.additionalProperty;
-                        //             if (additionalProperty === undefined) {
-                        //                 throw new factory.errors.NotFound('ticketType.additionalProperty');
-                        //             }
-
-                        //             const coaInfoProperty = additionalProperty.find((p) => p.name === 'coaInfo');
-                        //             if (coaInfoProperty === undefined) {
-                        //                 throw new factory.errors.NotFound('coaInfo');
-                        //             }
-
-                        //             coaTicketInfo = JSON.parse(coaInfoProperty.value);
-                        //         }
-
-                        //         if (coaTicketInfo === undefined) {
-                        //             throw new factory.errors.NotFound('COA Ticket Info');
-                        //         }
-
-                        //         return coaTicketInfo;
-                        //     }
-                        // )
                     };
 
                     confirmReservationActions.push({
@@ -146,8 +117,6 @@ export async function createPotentialActions(params: {
                     break;
 
                 default:
-                    // tslint:disable-next-line:max-line-length
-                    // responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
                     // tslint:disable-next-line:max-line-length
                     const reserveTransaction = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
                     const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
