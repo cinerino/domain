@@ -264,7 +264,7 @@ export interface IConfirmParams extends factory.transaction.placeOrder.IConfirmP
  * 注文取引を確定する
  */
 export function confirm(params: IConfirmParams) {
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -399,13 +399,28 @@ export function confirm(params: IConfirmParams) {
         });
 
         // ステータス変更
-        transaction = await repos.transaction.confirm({
-            typeOf: transaction.typeOf,
-            id: transaction.id,
-            authorizeActions: authorizeActions,
-            result: result,
-            potentialActions: potentialActions
-        });
+        try {
+            transaction = await repos.transaction.confirm({
+                typeOf: transaction.typeOf,
+                id: transaction.id,
+                authorizeActions: authorizeActions,
+                result: result,
+                potentialActions: potentialActions
+            });
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
+                // name: 'MongoError',
+                // message: 'E11000 duplicate key error collection: prodttts.transactions index:result.order.orderNumber_1 dup key:...',
+                // code: 11000,
+                // tslint:disable-next-line:no-magic-numbers
+                if (error.code === 11000) {
+                    throw new factory.errors.AlreadyInUse('transaction', ['result.order.orderNumber']);
+                }
+            }
+
+            throw error;
+        }
 
         return <factory.transaction.placeOrder.IResult>transaction.result;
     };

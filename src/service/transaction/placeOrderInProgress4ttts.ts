@@ -25,11 +25,12 @@ export type IConfirmOperation<T> = (repos: {
 
 export import start = PlaceOrderInProgressService.start;
 export import updateAgent = PlaceOrderInProgressService.updateAgent;
+export import confirm = PlaceOrderInProgressService.confirm;
 
 /**
  * 取引確定
  */
-export function confirm(params: {
+export function confirm4ttts(params: {
     project: factory.chevre.project.IProject;
     id: string;
     agent?: {
