@@ -6,7 +6,6 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 // import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4ttts';
@@ -20,7 +19,6 @@ export type IConfirmOperation<T> = (repos: {
     action: ActionRepo;
     orderNumber: OrderNumberRepo;
     transaction: TransactionRepo;
-    token: TokenRepo;
 }) => Promise<T>;
 
 export import start = PlaceOrderInProgressService.start;
@@ -30,30 +28,12 @@ export import confirm = PlaceOrderInProgressService.confirm;
 /**
  * 取引確定
  */
-export function confirm4ttts(params: {
-    project: factory.chevre.project.IProject;
-    id: string;
-    agent?: {
-        id?: string;
-    };
-    /**
-     * 取引確定後アクション
-     */
-    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
-    result: {
-        order: {
-            orderDate: Date;
-            /**
-             * 確認番号のカスタム指定
-             */
-            confirmationNumber?: string;
-        };
-    };
-}): IConfirmOperation<factory.transaction.placeOrder.IResult> {
+export function confirm4ttts(
+    params: PlaceOrderInProgressService.IConfirmParams
+): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
-        token: TokenRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
