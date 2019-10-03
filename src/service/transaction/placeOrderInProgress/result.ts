@@ -53,14 +53,15 @@ export function createOrder(params: {
 
     // 購入者を識別する情報をまとめる
     const profile = params.transaction.agent;
-    const customerIdentifier = (Array.isArray(params.transaction.agent.identifier)) ? params.transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
         ...profile,
-        id: params.transaction.agent.id,
-        typeOf: params.transaction.agent.typeOf,
-        name: `${profile.givenName} ${profile.familyName}`,
-        url: '',
-        identifier: customerIdentifier
+        name: (typeof profile.name === 'string')
+            ? profile.name
+            : `${profile.givenName} ${profile.familyName}`,
+        url: (typeof profile.url === 'string')
+            ? profile.url
+            : '',
+        identifier: (Array.isArray(profile.identifier)) ? profile.identifier : []
     };
 
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = [];
