@@ -280,7 +280,6 @@ export class MongoRepository {
                         andConditions.push({
                             'acceptedOffers.itemOffered.reservationFor.endDate': {
                                 $exists: true,
-                                // $gt: reservationForConditions.inSessionFrom.toISOString()
                                 $gt: reservationForConditions.inSessionFrom
                             }
                         });
@@ -291,7 +290,6 @@ export class MongoRepository {
                         andConditions.push({
                             'acceptedOffers.itemOffered.reservationFor.startDate': {
                                 $exists: true,
-                                // $lt: reservationForConditions.inSessionThrough.toISOString()
                                 $lt: reservationForConditions.inSessionThrough
                             }
                         });
@@ -302,7 +300,6 @@ export class MongoRepository {
                         andConditions.push({
                             'acceptedOffers.itemOffered.reservationFor.startDate': {
                                 $exists: true,
-                                // $gte: reservationForConditions.startFrom.toISOString()
                                 $gte: reservationForConditions.startFrom
                             }
                         });
@@ -313,7 +310,6 @@ export class MongoRepository {
                         andConditions.push({
                             'acceptedOffers.itemOffered.reservationFor.startDate': {
                                 $exists: true,
-                                // $lt: reservationForConditions.startThrough.toISOString()
                                 $lt: reservationForConditions.startThrough
                             }
                         });

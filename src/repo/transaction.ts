@@ -451,7 +451,7 @@ export class MongoRepository {
                 updatedAt: {
                     $lt: moment()
                         .add(-params.intervalInMinutes, 'minutes')
-                        .toISOString()
+                        .toDate()
                 }
             },
             {
