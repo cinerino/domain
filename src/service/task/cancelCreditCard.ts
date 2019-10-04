@@ -4,6 +4,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as PaymentService from '../payment';
@@ -15,11 +16,13 @@ export function call(data: factory.task.IData<factory.taskName.CancelCreditCard>
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
         const projectRepo = new ProjectRepo(settings.connection);
+        const sellerRepo = new SellerRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
 
         await PaymentService.creditCard.cancelCreditCardAuth(data)({
             action: actionRepo,
             project: projectRepo,
+            seller: sellerRepo,
             transaction: transactionRepo
         });
     };
