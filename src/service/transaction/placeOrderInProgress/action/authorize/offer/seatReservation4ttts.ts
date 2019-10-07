@@ -619,8 +619,8 @@ export function create(params: {
                         name: itemOffered.reservedTicket.ticketType.name,
                         description: itemOffered.reservedTicket.ticketType.description,
                         additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency,
-                        priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification
+                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
+                        // priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification // 必要ないことが確実になったら削除
                     },
                     ...(itemOffered.reservedTicket.ticketedSeat !== undefined)
                         ? { ticketedSeat: itemOffered.reservedTicket.ticketedSeat }
@@ -748,7 +748,7 @@ export function create(params: {
             point: 0,
             price: amount,
             priceCurrency: factory.priceCurrency.JPY,
-            tmpReservations: tmpReservations,
+            // tmpReservations: tmpReservations, // 必要ないことが確実になったら削除
             requestBody: requestBody,
             responseBody: responseBody,
             ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined
