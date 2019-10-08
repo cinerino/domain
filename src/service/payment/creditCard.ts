@@ -261,8 +261,8 @@ export function voidTransaction(params: {
                 orderId: orderId
             });
 
-            // 取消済でなければ取消
-            if (gmoTrade.status !== GMO.utils.util.JobCd.Void) {
+            // 仮売上であれば取消
+            if (gmoTrade.status === GMO.utils.util.JobCd.Auth) {
                 await creditCardService.alterTran({
                     shopId: shopId,
                     shopPass: shopPass,
@@ -424,11 +424,9 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         });
         authorizeActions = authorizeActions
             .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
-        // .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
         await Promise.all(authorizeActions.map(async (action) => {
             const orderId = action.object.paymentMethodId;
-            // const orderId = action.result.entryTranArgs.orderId;
 
             if (typeof orderId === 'string') {
                 // GMO取引が発生していれば取消
@@ -438,8 +436,8 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
                     orderId: orderId
                 });
 
-                // 取消済でなければ取消
-                if (gmoTrade.status !== GMO.utils.util.JobCd.Void) {
+                // 仮売上であれば取消
+                if (gmoTrade.status === GMO.utils.util.JobCd.Auth) {
                     await creditCardService.alterTran({
                         shopId: shopId,
                         shopPass: shopPass,
