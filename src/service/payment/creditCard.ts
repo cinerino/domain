@@ -245,10 +245,10 @@ export function voidTransaction(params: {
             throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
         }
 
-        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        const actionResult = <factory.action.authorize.paymentMethod.creditCard.IResult>action.result;
+        action = <factory.action.authorize.paymentMethod.creditCard.IAction>
+            await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
-        const orderId = actionResult.entryTranArgs.orderId;
+        const orderId = action.object.paymentMethodId;
         const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
 
         // オーソリ取消
@@ -427,32 +427,26 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         // .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
         await Promise.all(authorizeActions.map(async (action) => {
-            if (action.result !== undefined) {
-                const amount = action.object.amount;
-                // const orderId = action.object.paymentMethodId;
-                const orderId = action.result.entryTranArgs.orderId;
+            const orderId = action.object.paymentMethodId;
+            // const orderId = action.result.entryTranArgs.orderId;
 
-                if (typeof orderId === 'string') {
-                    // GMO取引が発生していれば取消
-                    const gmoTrade = await creditCardService.searchTrade({
+            if (typeof orderId === 'string') {
+                // GMO取引が発生していれば取消
+                const gmoTrade = await creditCardService.searchTrade({
+                    shopId: shopId,
+                    shopPass: shopPass,
+                    orderId: orderId
+                });
+
+                // 取消済でなければ取消
+                if (gmoTrade.status !== GMO.utils.util.JobCd.Void) {
+                    await creditCardService.alterTran({
                         shopId: shopId,
                         shopPass: shopPass,
-                        orderId: orderId
+                        accessId: gmoTrade.accessId,
+                        accessPass: gmoTrade.accessPass,
+                        jobCd: GMO.utils.util.JobCd.Void
                     });
-
-                    // 取消済でなければ取消
-                    if (gmoTrade.status !== GMO.utils.util.JobCd.Void) {
-                        await creditCardService.alterTran({
-                            shopId: shopId,
-                            shopPass: shopPass,
-                            accessId: gmoTrade.accessId,
-                            accessPass: gmoTrade.accessPass,
-                            // accessId: action.result.execTranArgs.accessId,
-                            // accessPass: action.result.execTranArgs.accessPass,
-                            jobCd: GMO.utils.util.JobCd.Void,
-                            amount: amount
-                        });
-                    }
                 }
             }
 
