@@ -10,6 +10,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
+import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -463,6 +464,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
 export function refundCreditCard(params: factory.task.IData<factory.taskName.RefundCreditCard>) {
     return async (repos: {
         action: ActionRepo;
+        order: OrderRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         task: TaskRepo;
@@ -487,6 +489,10 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
 
         const refundActionAttributes = params;
         const payAction = refundActionAttributes.object;
+
+        const order = await repos.order.findByOrderNumber({
+            orderNumber: refundActionAttributes.purpose.orderNumber
+        });
 
         const action = await repos.action.start(refundActionAttributes);
         const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
@@ -542,7 +548,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
 
         // 潜在アクション
-        await onRefund(refundActionAttributes)({ task: repos.task });
+        await onRefund(refundActionAttributes, order)({ task: repos.task });
     };
 }
 
@@ -602,7 +608,10 @@ function getGMOInfoFromSeller(params: {
 /**
  * 返金後のアクション
  */
-function onRefund(refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>) {
+function onRefund(
+    refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>,
+    order: factory.order.IOrder
+) {
     return async (repos: { task: TaskRepo }) => {
         const potentialActions = refundActionAttributes.potentialActions;
         const now = new Date();
@@ -630,6 +639,27 @@ function onRefund(refundActionAttributes: factory.action.trade.refund.IAttribute
                 });
             }
 
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map(
+                    (a: any): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
+            }
         }
 
         // タスク保管
