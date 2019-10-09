@@ -25,8 +25,12 @@ export async function createSendOrderMessage(params: {
     return new Promise<factory.creativeWork.message.email.ICreativeWork>(async (resolve, reject) => {
         // テンプレートからEメールメッセージを作成
         const emailTemplate = (params.email !== undefined) ? params.email.template : undefined;
+        const emailText = (params.email !== undefined) ? params.email.text : undefined;
         let emailMessageText: string;
-        if (emailTemplate !== undefined) {
+
+        if (typeof emailText === 'string') {
+            emailMessageText = emailText;
+        } else if (typeof emailTemplate === 'string') {
             emailMessageText = await new Promise<string>((resolveRender) => {
                 pug.render(
                     emailTemplate,
@@ -237,8 +241,12 @@ export async function createRefundMessage(params: {
     return new Promise<factory.creativeWork.message.email.ICreativeWork>(async (resolve, reject) => {
         // テンプレートからEメールメッセージを作成
         const emailTemplate = (params.email !== undefined) ? params.email.template : undefined;
+        const emailText = (params.email !== undefined) ? params.email.text : undefined;
         let emailMessageText: string;
-        if (emailTemplate !== undefined) {
+
+        if (typeof emailText === 'string') {
+            emailMessageText = emailText;
+        } else if (typeof emailTemplate === 'string') {
             emailMessageText = await new Promise<string>((resolveRender) => {
                 pug.render(
                     emailTemplate,

@@ -402,9 +402,10 @@ export async function createPotentialActions(params: {
                     const object =
                         <factory.transaction.returnOrder.ICancelReservationObject<factory.service.webAPI.Identifier.Chevre>>p.object;
 
-                    return object !== undefined
-                        && object.typeOf === factory.chevre.transactionType.Reserve
-                        && object.id === reserveTransaction.id;
+                    return object === undefined
+                        || (object !== undefined
+                            && object.typeOf === factory.chevre.transactionType.Reserve
+                            && object.id === reserveTransaction.id);
                 });
 
                 if (cancelReservationObjectParams !== undefined) {
