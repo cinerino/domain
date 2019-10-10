@@ -9,6 +9,7 @@ import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
 
 import * as chevre from './chevre';
+import { credentials as cred } from './credentials';
 import * as errorHandler from './errorHandler';
 import * as factory from './factory';
 import * as repository from './repository';
@@ -41,6 +42,7 @@ export import mvtkreserveapi = mvtkreserveapi;
  */
 export import AWS = AWS;
 
+export const credentials = cred;
 export import errorHandler = errorHandler;
 export import factory = factory;
 export import repository = repository;
