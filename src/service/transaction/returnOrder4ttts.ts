@@ -28,9 +28,76 @@ export type ITaskAndTransactionOperation<T> = (
 export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export import start = ReturnOrderService.start;
-export import confirm = ReturnOrderService.confirm;
+// export import confirm = ReturnOrderService.confirm;
 export import exportTasks = ReturnOrderService.exportTasks;
 export import exportTasksById = ReturnOrderService.exportTasksById;
+
+/**
+ * 取引確定
+ */
+export function confirm(params: factory.transaction.returnOrder.IConfirmParams) {
+    return async (repos: {
+        action: ActionRepo;
+        transaction: TransactionRepo;
+        seller: SellerRepo;
+    }) => {
+        let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
+        if (transaction.status === factory.transactionStatusType.Confirmed) {
+            // すでに確定済の場合
+            return transaction.result;
+        } else if (transaction.status === factory.transactionStatusType.Expired) {
+            throw new factory.errors.Argument('transaction', 'Transaction already expired');
+        } else if (transaction.status === factory.transactionStatusType.Canceled) {
+            throw new factory.errors.Argument('transaction', 'Transaction already canceled');
+        }
+
+        if (params.agent !== undefined && params.agent.id !== undefined) {
+            if (transaction.agent.id !== params.agent.id) {
+                throw new factory.errors.Forbidden('Transaction not yours');
+            }
+        }
+
+        const order = transaction.object.order;
+        const seller = await repos.seller.findById(
+            { id: order.seller.id },
+            { paymentAccepted: 0 } // 決済情報は不要
+        );
+
+        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+            limit: 1,
+            typeOf: factory.transactionType.PlaceOrder,
+            result: {
+                order: { orderNumbers: [order.orderNumber] }
+            }
+        });
+        const placeOrderTransaction = placeOrderTransactions.shift();
+        if (placeOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('Transaction');
+        }
+
+        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
+
+        const result: factory.transaction.returnOrder.IResult = {};
+        const potentialActions = await createPotentialActions({
+            actionsOnOrder: actionsOnOrder,
+            potentialActions: params.potentialActions,
+            seller: seller,
+            transaction: transaction,
+            placeOrderTransaction: placeOrderTransaction
+        });
+
+        // ステータス変更
+        transaction = await repos.transaction.confirm({
+            typeOf: transaction.typeOf,
+            id: transaction.id,
+            authorizeActions: [],
+            result: result,
+            potentialActions: potentialActions
+        });
+
+        return transaction.result;
+    };
+}
 
 /**
  * 予約キャンセル処理
