@@ -12,7 +12,8 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as ReturnOrderService from './returnOrder';
 
-import { createPotentialActions } from './returnOrder/potentialActions4ttts';
+import { createPotentialActions } from './returnOrder/potentialActions';
+// import { createPotentialActions } from './returnOrder/potentialActions4ttts';
 
 export type IConfirmOperation<T> = (repos: {
     action: ActionRepo;

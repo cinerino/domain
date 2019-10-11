@@ -66,14 +66,14 @@ export async function createPotentialActions(params: {
                             if (informOrderParams.recipient !== undefined) {
                                 if (typeof informOrderParams.recipient.url === 'string') {
                                     informOrderActionsOnRefund.push({
-                                        agent: placeOrderTransaction.seller,
+                                        agent: transaction.seller,
                                         object: order,
-                                        project: placeOrderTransaction.project,
+                                        project: transaction.project,
                                         // purpose: params.transaction,
                                         recipient: {
-                                            id: placeOrderTransaction.agent.id,
-                                            name: placeOrderTransaction.agent.name,
-                                            typeOf: placeOrderTransaction.agent.typeOf,
+                                            id: transaction.agent.id,
+                                            name: transaction.agent.name,
+                                            typeOf: transaction.agent.typeOf,
                                             url: informOrderParams.recipient.url
                                         },
                                         typeOf: factory.actionType.InformAction
@@ -90,16 +90,11 @@ export async function createPotentialActions(params: {
                     email: emailCustomization
                 });
                 const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
-                    project: placeOrderTransaction.project,
+                    project: transaction.project,
                     typeOf: factory.actionType.SendAction,
-                    object: {
-                        ...emailMessage,
-                        ...(emailCustomization !== undefined && typeof (<any>emailCustomization).text === 'string')
-                            ? { text: (<any>emailCustomization).text }
-                            : undefined
-                    },
+                    object: emailMessage,
                     agent: {
-                        project: placeOrderTransaction.project,
+                        project: transaction.project,
                         typeOf: seller.typeOf,
                         id: seller.id,
                         name: seller.name,
@@ -120,11 +115,11 @@ export async function createPotentialActions(params: {
                 };
 
                 return {
-                    project: placeOrderTransaction.project,
+                    project: transaction.project,
                     typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                     object: a,
                     agent: {
-                        project: placeOrderTransaction.project,
+                        project: transaction.project,
                         typeOf: seller.typeOf,
                         id: seller.id,
                         name: seller.name,
@@ -132,7 +127,7 @@ export async function createPotentialActions(params: {
                     },
                     recipient: order.customer,
                     purpose: {
-                        project: placeOrderTransaction.project,
+                        project: order.project,
                         typeOf: order.typeOf,
                         seller: order.seller,
                         customer: order.customer,
@@ -186,10 +181,10 @@ export async function createPotentialActions(params: {
                 const reserveTransaction = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
 
                 const cancelReservationAction: factory.task.IData<factory.taskName.CancelReservation> = {
-                    project: placeOrderTransaction.project,
+                    project: transaction.project,
                     typeOf: factory.actionType.CancelAction,
                     object: reserveTransaction,
-                    agent: placeOrderTransaction.agent,
+                    agent: transaction.agent,
                     potentialActions: {},
                     purpose: {
                         typeOf: order.typeOf,
@@ -247,14 +242,14 @@ export async function createPotentialActions(params: {
                         if (a.recipient !== undefined) {
                             if (typeof a.recipient.url === 'string') {
                                 informOrderActionsOnReturn.push({
-                                    agent: placeOrderTransaction.seller,
+                                    agent: transaction.seller,
                                     object: order,
-                                    project: placeOrderTransaction.project,
+                                    project: transaction.project,
                                     // purpose: params.transaction,
                                     recipient: {
-                                        id: placeOrderTransaction.agent.id,
-                                        name: placeOrderTransaction.agent.name,
-                                        typeOf: placeOrderTransaction.agent.typeOf,
+                                        id: transaction.agent.id,
+                                        name: transaction.agent.name,
+                                        typeOf: transaction.agent.typeOf,
                                         url: a.recipient.url
                                     },
                                     typeOf: factory.actionType.InformAction
@@ -282,7 +277,7 @@ export async function createPotentialActions(params: {
             orderDate: order.orderDate
         },
         agent: order.customer,
-        recipient: placeOrderTransaction.seller,
+        recipient: seller,
         potentialActions: {
             cancelReservation: cancelReservationActions,
             informOrder: informOrderActionsOnReturn,

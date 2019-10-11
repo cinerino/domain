@@ -129,7 +129,7 @@ export async function createPotentialActions(params: {
                     },
                     recipient: order.customer,
                     purpose: {
-                        project: transaction.project,
+                        project: order.project,
                         typeOf: order.typeOf,
                         seller: order.seller,
                         customer: order.customer,
@@ -399,8 +399,9 @@ export async function createPotentialActions(params: {
                 };
 
                 const cancelReservationObjectParams = cancelReservationParams.find((p) => {
-                    const object =
-                        <factory.transaction.returnOrder.ICancelReservationObject<factory.service.webAPI.Identifier.Chevre>>p.object;
+                    // tslint:disable-next-line:max-line-length
+                    const object = <factory.transaction.returnOrder.ICancelReservationObject<factory.service.webAPI.Identifier.Chevre>>
+                        p.object;
 
                     return object === undefined
                         || (object !== undefined
