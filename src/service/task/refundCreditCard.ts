@@ -7,6 +7,7 @@ import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as PaymentService from '../payment';
 
@@ -20,13 +21,15 @@ export function call(data: factory.task.IData<factory.taskName.RefundCreditCard>
         const projectRepo = new ProjectRepo(settings.connection);
         const sellerRepo = new SellerRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
+        const transactionRepo = new TransactionRepo(settings.connection);
 
         await PaymentService.creditCard.refundCreditCard(data)({
             action: actionRepo,
             order: orderRepo,
             project: projectRepo,
             seller: sellerRepo,
-            task: taskRepo
+            task: taskRepo,
+            transaction: transactionRepo
         });
     };
 }

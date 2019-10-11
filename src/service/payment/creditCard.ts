@@ -256,19 +256,19 @@ export function voidTransaction(params: {
         // 現時点では、ここで失敗したらオーソリ取消をあきらめる
         // GMO混雑エラーはここでも発生する(取消処理でも混雑エラーが発生することは確認済)
         try {
-            const gmoTrade = await creditCardService.searchTrade({
+            const searchTradeResult = await creditCardService.searchTrade({
                 shopId: shopId,
                 shopPass: shopPass,
                 orderId: orderId
             });
 
             // 仮売上であれば取消
-            if (gmoTrade.status === GMO.utils.util.JobCd.Auth) {
+            if (searchTradeResult.status === GMO.utils.util.JobCd.Auth) {
                 await creditCardService.alterTran({
                     shopId: shopId,
                     shopPass: shopPass,
-                    accessId: gmoTrade.accessId,
-                    accessPass: gmoTrade.accessPass,
+                    accessId: searchTradeResult.accessId,
+                    accessPass: searchTradeResult.accessPass,
                     jobCd: GMO.utils.util.JobCd.Void
                 });
                 debug('alterTran processed', GMO.utils.util.JobCd.Void);
@@ -318,21 +318,21 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
                 const entryTranArgs = paymentMethod.entryTranArgs;
 
                 // 取引状態参照
-                const gmoTrade = await creditCardService.searchTrade({
+                const searchTradeResult = await creditCardService.searchTrade({
                     shopId: entryTranArgs.shopId,
                     shopPass: entryTranArgs.shopPass,
                     orderId: entryTranArgs.orderId
                 });
 
-                if (gmoTrade.jobCd === GMO.utils.util.JobCd.Sales) {
+                if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
                     debug('already in SALES');
                     // すでに実売上済み
                     alterTranResults.push({
-                        accessId: gmoTrade.accessId,
-                        accessPass: gmoTrade.accessPass,
-                        forward: gmoTrade.forward,
-                        approve: gmoTrade.approve,
-                        tranId: gmoTrade.tranId,
+                        accessId: searchTradeResult.accessId,
+                        accessPass: searchTradeResult.accessPass,
+                        forward: searchTradeResult.forward,
+                        approve: searchTradeResult.approve,
+                        tranId: searchTradeResult.tranId,
                         tranDate: ''
                     });
                 } else {
@@ -340,8 +340,8 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
                     alterTranResults.push(await creditCardService.alterTran({
                         shopId: entryTranArgs.shopId,
                         shopPass: entryTranArgs.shopPass,
-                        accessId: gmoTrade.accessId,
-                        accessPass: gmoTrade.accessPass,
+                        accessId: searchTradeResult.accessId,
+                        accessPass: searchTradeResult.accessPass,
                         jobCd: GMO.utils.util.JobCd.Sales,
                         amount: paymentMethod.price
                     }));
@@ -462,23 +462,20 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
  * クレジットカード返金処理を実行する
  */
 export function refundCreditCard(params: factory.task.IData<factory.taskName.RefundCreditCard>) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         task: TaskRepo;
+        transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        if (project.settings === undefined || project.settings.gmo === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
         // const seller = await repos.seller.findById({
@@ -489,6 +486,16 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
 
         const refundActionAttributes = params;
         const payAction = refundActionAttributes.object;
+
+        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+            limit: 1,
+            typeOf: factory.transactionType.ReturnOrder,
+            object: { order: { orderNumbers: [refundActionAttributes.purpose.orderNumber] } }
+        });
+        const returnOrderTransaction = returnOrderTransactions.shift();
+        if (returnOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('ReturnOrderTransaction');
+        }
 
         const order = await repos.order.findByOrderNumber({
             orderNumber: refundActionAttributes.purpose.orderNumber
@@ -503,31 +510,51 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
                 const entryTranArgs = paymentMethod.entryTranArgs;
 
                 // 取引状態参照
-                const gmoTrade = await creditCardService.searchTrade({
+                const searchTradeResult = await creditCardService.searchTrade({
                     shopId: entryTranArgs.shopId,
                     shopPass: entryTranArgs.shopPass,
                     orderId: entryTranArgs.orderId
                 });
-                debug('gmoTrade is', gmoTrade);
+                debug('searchTradeResult is', searchTradeResult);
 
-                // 実売上状態であれば取消
-                // 手数料がかかるのであれば、ChangeTran、かからないのであれば、AlterTran
-                if (gmoTrade.status === GMO.utils.util.Status.Sales) {
-                    alterTranResult.push(await creditCardService.alterTran({
-                        shopId: entryTranArgs.shopId,
-                        shopPass: entryTranArgs.shopPass,
-                        accessId: gmoTrade.accessId,
-                        accessPass: gmoTrade.accessPass,
-                        jobCd: GMO.utils.util.JobCd.Void
-                    }));
-                    debug('GMO alterTranResult is', alterTranResult);
+                let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined;
+                if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
+                    creditCardSalesBefore = payAction.result.creditCardSales[0];
+                }
+                if (creditCardSalesBefore === undefined) {
+                    throw new Error('Credit Card Sales not found');
+                }
+
+                // GMO取引状態に変更がなければ金額変更
+                if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
+                    // 手数料0円であれば、決済取り消し(返品)処理
+                    if (returnOrderTransaction.object.cancellationFee === 0) {
+                        alterTranResult.push(await creditCardService.alterTran({
+                            shopId: entryTranArgs.shopId,
+                            shopPass: entryTranArgs.shopPass,
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            jobCd: GMO.utils.util.JobCd.Void
+                        }));
+                        debug('GMO alterTranResult is', alterTranResult);
+                    } else {
+                        const changeTranResult = await GMO.services.credit.changeTran({
+                            shopId: entryTranArgs.shopId,
+                            shopPass: entryTranArgs.shopPass,
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            jobCd: GMO.utils.util.JobCd.Capture,
+                            amount: returnOrderTransaction.object.cancellationFee
+                        });
+                        alterTranResult.push(changeTranResult);
+                    }
                 } else {
                     alterTranResult.push({
-                        accessId: gmoTrade.accessId,
-                        accessPass: gmoTrade.accessPass,
-                        forward: gmoTrade.forward,
-                        approve: gmoTrade.approve,
-                        tranId: gmoTrade.tranId,
+                        accessId: searchTradeResult.accessId,
+                        accessPass: searchTradeResult.accessPass,
+                        forward: searchTradeResult.forward,
+                        approve: searchTradeResult.approve,
+                        tranId: searchTradeResult.tranId,
                         tranDate: ''
                     });
                 }
