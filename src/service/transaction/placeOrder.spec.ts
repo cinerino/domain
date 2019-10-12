@@ -88,8 +88,8 @@ describe('exportTasksById()', () => {
         sandbox.restore();
     });
 
-    it('確定取引であれば2つのタスクがエクスポートされるはず', async () => {
-        const numberOfTasks = 2;
+    it('確定取引であればタスクがエクスポートされるはず', async () => {
+        const numberOfTasks = 1;
         const transaction = {
             project: { id: 'id' },
             id: 'transactionId',

@@ -11,6 +11,10 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
+const transactionWebhooks = (process.env.TRANSACTION_WEBHOOK_URL !== undefined)
+    ? process.env.TRANSACTION_WEBHOOK_URL.split(',')
+    : [];
+
 export type ITaskAndTransactionOperation<T> = (repos: {
     task: TaskRepo;
     transaction: TransactionRepo;
@@ -84,35 +88,64 @@ export function exportTasksById(params: {
         }
 
         // ウェブフックタスクを追加
-        const webhookUrl =
-            // tslint:disable-next-line:max-line-length
-            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${project.id}/tasks/analyzePlaceOrder`;
-        const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
-            project: project,
-            name: factory.taskName.TriggerWebhook,
-            status: factory.taskStatus.Ready,
-            runsAt: taskRunsAt,
-            remainingNumberOfTries: 3,
-            numberOfTried: 0,
-            executionResults: [],
-            data: {
-                agent: transaction.seller,
-                object: { transaction: transaction },
-                project: transaction.project,
-                purpose: { typeOf: transaction.typeOf, id: transaction.id },
-                recipient: {
-                    project: transaction.project,
-                    id: '',
-                    name: { ja: 'Cinerino Telemetry', en: 'Cinerino Telemetry' },
-                    typeOf: factory.organizationType.Corporation,
-                    url: webhookUrl
-                },
-                typeOf: factory.actionType.InformAction
-            }
-        };
-        taskAttributes.push(
-            triggerWebhookTaskAttributes
-        );
+        // const webhookUrl =
+        //     // tslint:disable-next-line:max-line-length
+        //     `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${project.id}/tasks/analyzePlaceOrder`;
+        // const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook> = {
+        //     project: project,
+        //     name: factory.taskName.TriggerWebhook,
+        //     status: factory.taskStatus.Ready,
+        //     runsAt: taskRunsAt,
+        //     remainingNumberOfTries: 3,
+        //     numberOfTried: 0,
+        //     executionResults: [],
+        //     data: {
+        //         agent: transaction.seller,
+        //         object: { transaction: transaction },
+        //         project: transaction.project,
+        //         purpose: { typeOf: transaction.typeOf, id: transaction.id },
+        //         recipient: {
+        //             project: transaction.project,
+        //             id: '',
+        //             name: { ja: 'Cinerino Telemetry', en: 'Cinerino Telemetry' },
+        //             typeOf: factory.organizationType.Corporation,
+        //             url: webhookUrl
+        //         },
+        //         typeOf: factory.actionType.InformAction
+        //     }
+        // };
+        // taskAttributes.push(
+        //     triggerWebhookTaskAttributes
+        // );
+
+        const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook>[] =
+            transactionWebhooks.map((webhookUrl) => {
+                return {
+                    project: project,
+                    name: factory.taskName.TriggerWebhook,
+                    status: factory.taskStatus.Ready,
+                    runsAt: taskRunsAt,
+                    remainingNumberOfTries: 3,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        agent: transaction.seller,
+                        object: { transaction: transaction },
+                        project: transaction.project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id },
+                        recipient: {
+                            project: transaction.project,
+                            id: '',
+                            name: { ja: '', en: '' },
+                            typeOf: factory.organizationType.Corporation,
+                            url: webhookUrl
+                        },
+                        typeOf: factory.actionType.InformAction
+                    }
+                };
+            });
+
+        taskAttributes.push(...triggerWebhookTaskAttributes);
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
