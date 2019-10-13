@@ -17,6 +17,7 @@ import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
 import { MongoRepository as PaymentMethodRepo } from './repo/paymentMethod';
 import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard';
 import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTicket';
+import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
 import { MongoRepository as ProjectRepo } from './repo/project';
@@ -91,6 +92,12 @@ export namespace paymentMethod {
      */
     export class MovieTicket extends MovieTicketRepo { }
 }
+
+/**
+ * 購入番号リポジトリ
+ */
+export class PaymentNo extends PaymentNoRepo { }
+
 /**
  * 顧客リポジトリ
  */
