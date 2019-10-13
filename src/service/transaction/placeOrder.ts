@@ -130,10 +130,7 @@ export function exportTasksById(params: {
                     executionResults: [],
                     data: {
                         agent: transaction.seller,
-                        object: {
-                            ...transaction,
-                            transaction: transaction // Cinerino Telemetryへの互換性維持のため
-                        },
+                        object: transaction,
                         project: transaction.project,
                         purpose: { typeOf: transaction.typeOf, id: transaction.id },
                         recipient: {
