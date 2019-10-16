@@ -538,7 +538,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
                         }));
                         debug('GMO alterTranResult is', alterTranResult);
                     } else {
-                        const changeTranResult = await GMO.services.credit.changeTran({
+                        const changeTranResult = await creditCardService.changeTran({
                             shopId: entryTranArgs.shopId,
                             shopPass: entryTranArgs.shopPass,
                             accessId: searchTradeResult.accessId,
