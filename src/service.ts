@@ -19,9 +19,7 @@ import * as TaskService from './service/task';
 import * as MoneyTransferTransactionService from './service/transaction/moneyTransfer';
 import * as PlaceOrderTransactionService from './service/transaction/placeOrder';
 import * as PlaceOrderInProgressTransactionService from './service/transaction/placeOrderInProgress';
-import * as PlaceOrderInProgress4tttsTransactionService from './service/transaction/placeOrderInProgress4ttts';
 import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
-import * as ReturnOrder4tttsTransactionService from './service/transaction/returnOrder4ttts';
 import * as UtilService from './service/util';
 
 export import account = AccountService;
@@ -44,8 +42,6 @@ export namespace transaction {
     export import moneyTransfer = MoneyTransferTransactionService;
     export import placeOrder = PlaceOrderTransactionService;
     export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
-    export import placeOrderInProgress4ttts = PlaceOrderInProgress4tttsTransactionService;
     export import returnOrder = ReturnOrderTransactionService;
-    export import returnOrder4ttts = ReturnOrder4tttsTransactionService;
 }
 export import util = UtilService;
