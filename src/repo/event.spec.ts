@@ -40,7 +40,7 @@ describe('save()', () => {
     });
 });
 
-describe('searchScreeningEvents()', () => {
+describe('search()', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -76,7 +76,7 @@ describe('searchScreeningEvents()', () => {
             .chain('exec')
             .resolves(docs);
 
-        const result = await repository.searchScreeningEvents(<any>conditions);
+        const result = await repository.search(<any>conditions);
         assert(Array.isArray(result));
         sandbox.verify();
     });

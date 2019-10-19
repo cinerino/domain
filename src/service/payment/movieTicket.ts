@@ -77,7 +77,7 @@ export function authorize(params: {
         const movieTicketIdentifier = movieTicketIdentifiers[0];
 
         // イベント情報取得
-        const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventIds[0] });
+        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
 
         // ショップ情報取得
         const movieTheater = await repos.seller.findById({
@@ -242,7 +242,7 @@ export function checkMovieTicket(
             }
 
             // イベント情報取得
-            const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventIds[0] });
+            const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
 
             // ショップ情報取得
             const movieTheater = await repos.seller.findById({
@@ -346,7 +346,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const eventId = eventIds[0];
 
             // イベント情報取得
-            const screeningEvent = await repos.event.findById({ typeOf: factory.chevre.eventType.ScreeningEvent, id: eventId });
+            const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
 
             const order = params.purpose;
 

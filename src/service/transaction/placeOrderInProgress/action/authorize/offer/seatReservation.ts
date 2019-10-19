@@ -76,8 +76,7 @@ export function create(params: {
             throw new factory.errors.ArgumentNull('object.event');
         }
 
-        const event = await repos.event.findById({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
+        const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 

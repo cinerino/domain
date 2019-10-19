@@ -214,7 +214,7 @@ describe('importScreeningEvents()', () => {
             .once()
             .resolves([seller]);
         sandbox.mock(eventRepo)
-            .expects('searchScreeningEvents')
+            .expects('search')
             .once()
             .resolves(screeningEventsInMongo);
         sandbox.mock(eventRepo)
@@ -330,7 +330,7 @@ describe('importScreeningEvents()', () => {
             .once()
             .resolves([seller]);
         sandbox.mock(eventRepo)
-            .expects('searchScreeningEvents')
+            .expects('search')
             .once()
             .resolves([]);
         sandbox.mock(eventRepo)
@@ -416,7 +416,7 @@ describe('importScreeningEvents()', () => {
             .once()
             .resolves([seller]);
         sandbox.mock(eventRepo)
-            .expects('searchScreeningEvents')
+            .expects('search')
             .once()
             .resolves([]);
 
@@ -506,7 +506,7 @@ describe('importScreeningEvents()', () => {
             .once()
             .resolves([seller]);
         sandbox.mock(eventRepo)
-            .expects('searchScreeningEvents')
+            .expects('search')
             .never();
 
         const result = await MasterSyncService.importScreeningEvents({

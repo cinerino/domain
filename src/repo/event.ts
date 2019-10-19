@@ -15,8 +15,8 @@ export class MongoRepository {
     }
 
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-    public static CREATE_SCREENING_EVENT_MONGO_CONDITIONS(
-        params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>
+    public static CREATE_MONGO_CONDITIONS<T extends factory.chevre.eventType>(
+        params: factory.event.ISearchConditions<T>
     ) {
         // dayプロパティがあればstartFrom & startThroughに変換(互換性維持のため)
         // tslint:disable-next-line:no-single-line-block-comment
@@ -29,10 +29,13 @@ export class MongoRepository {
                 .toDate();
         }
 
+        // デフォルト値セット
+        if (typeof params.typeOf !== 'string') {
+            params.typeOf = factory.chevre.eventType.ScreeningEvent;
+        }
+
         const andConditions: any[] = [
-            {
-                typeOf: factory.chevre.eventType.ScreeningEvent
-            }
+            { typeOf: params.typeOf }
         ];
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -101,40 +104,6 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.superEvent !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(params.superEvent.ids)) {
-                andConditions.push({
-                    'superEvent.id': {
-                        $exists: true,
-                        $in: params.superEvent.ids
-                    }
-                });
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(params.superEvent.locationBranchCodes)) {
-                andConditions.push({
-                    'superEvent.location.branchCode': {
-                        $exists: true,
-                        $in: params.superEvent.locationBranchCodes
-                    }
-                });
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(params.superEvent.workPerformedIdentifiers)) {
-                andConditions.push({
-                    'superEvent.workPerformed.identifier': {
-                        $exists: true,
-                        $in: params.superEvent.workPerformedIdentifiers
-                    }
-                });
-            }
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
         if (Array.isArray(params.eventStatuses)) {
             andConditions.push({
                 eventStatus: { $in: params.eventStatuses }
@@ -182,59 +151,106 @@ export class MongoRepository {
                 endDate: { $lte: params.endThrough }
             });
         }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.offers !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.offers.availableFrom instanceof Date) {
-                andConditions.push({
-                    'offers.availabilityEnds': {
-                        $exists: true,
-                        $gte: params.offers.availableFrom
+
+        switch (params.typeOf) {
+            case factory.chevre.eventType.ScreeningEvent:
+                const superEventParams = (<factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>>params).superEvent;
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (superEventParams !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(superEventParams.ids)) {
+                        andConditions.push({
+                            'superEvent.id': {
+                                $exists: true,
+                                $in: superEventParams.ids
+                            }
+                        });
                     }
-                });
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.offers.availableThrough instanceof Date) {
-                andConditions.push({
-                    'offers.availabilityStarts': {
-                        $exists: true,
-                        $lte: params.offers.availableThrough
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(superEventParams.locationBranchCodes)) {
+                        andConditions.push({
+                            'superEvent.location.branchCode': {
+                                $exists: true,
+                                $in: superEventParams.locationBranchCodes
+                            }
+                        });
                     }
-                });
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.offers.validFrom instanceof Date) {
-                andConditions.push({
-                    'offers.validThrough': {
-                        $exists: true,
-                        $gte: params.offers.validFrom
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(superEventParams.workPerformedIdentifiers)) {
+                        andConditions.push({
+                            'superEvent.workPerformed.identifier': {
+                                $exists: true,
+                                $in: superEventParams.workPerformedIdentifiers
+                            }
+                        });
                     }
-                });
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.offers.validThrough instanceof Date) {
-                andConditions.push({
-                    'offers.validFrom': {
-                        $exists: true,
-                        $lte: params.offers.validThrough
+                }
+
+                const offersParams = (<factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>>params).offers;
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (offersParams !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (offersParams.availableFrom instanceof Date) {
+                        andConditions.push({
+                            'offers.availabilityEnds': {
+                                $exists: true,
+                                $gte: offersParams.availableFrom
+                            }
+                        });
                     }
-                });
-            }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(params.offers.ids)) {
-                andConditions.push({
-                    'offers.id': {
-                        $exists: true,
-                        $in: params.offers.ids
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (offersParams.availableThrough instanceof Date) {
+                        andConditions.push({
+                            'offers.availabilityStarts': {
+                                $exists: true,
+                                $lte: offersParams.availableThrough
+                            }
+                        });
                     }
-                });
-            }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (offersParams.validFrom instanceof Date) {
+                        andConditions.push({
+                            'offers.validThrough': {
+                                $exists: true,
+                                $gte: offersParams.validFrom
+                            }
+                        });
+                    }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (offersParams.validThrough instanceof Date) {
+                        andConditions.push({
+                            'offers.validFrom': {
+                                $exists: true,
+                                $lte: offersParams.validThrough
+                            }
+                        });
+                    }
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(offersParams.ids)) {
+                        andConditions.push({
+                            'offers.id': {
+                                $exists: true,
+                                $in: offersParams.ids
+                            }
+                        });
+                    }
+                }
+
+                break;
+
+            default:
         }
 
         return andConditions;
@@ -243,15 +259,11 @@ export class MongoRepository {
     /**
      * イベントをキャンセルする
      */
-    public async cancel<T extends factory.chevre.eventType>(params: {
-        typeOf: T;
+    public async cancel(params: {
         id: string;
     }) {
         await this.eventModel.findOneAndUpdate(
-            {
-                _id: params.id,
-                typeOf: params.typeOf
-            },
+            { _id: params.id },
             { eventStatus: factory.chevre.eventStatusType.EventCancelled },
             { new: true }
         )
@@ -273,8 +285,8 @@ export class MongoRepository {
             .exec();
     }
 
-    public async countScreeningEvents(params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>): Promise<number> {
-        const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
+    public async count<T extends factory.chevre.eventType>(params: factory.event.ISearchConditions<T>): Promise<number> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.eventModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
@@ -284,10 +296,10 @@ export class MongoRepository {
     /**
      * イベントを検索する
      */
-    public async searchScreeningEvents(
-        params: factory.event.ISearchConditions<factory.chevre.eventType.ScreeningEvent>
-    ): Promise<factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[]> {
-        const conditions = MongoRepository.CREATE_SCREENING_EVENT_MONGO_CONDITIONS(params);
+    public async search<T extends factory.chevre.eventType>(
+        params: factory.event.ISearchConditions<T>
+    ): Promise<factory.event.IEvent<T>[]> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.eventModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},
             {
@@ -311,13 +323,13 @@ export class MongoRepository {
      * 特定イベント検索
      */
     public async findById<T extends factory.chevre.eventType>(params: {
-        typeOf: T;
+        // typeOf: T;
         id: string;
     }): Promise<factory.event.IEvent<T>> {
         const doc = await this.eventModel.findOne(
             {
-                _id: params.id,
-                typeOf: params.typeOf
+                _id: params.id
+                // typeOf: params.typeOf
             },
             {
                 __v: 0,
@@ -327,7 +339,7 @@ export class MongoRepository {
         )
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Event');
+            throw new factory.errors.NotFound(this.eventModel.modelName);
         }
 
         return doc.toObject();

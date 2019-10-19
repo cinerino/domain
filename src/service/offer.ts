@@ -54,7 +54,7 @@ export function searchEvents(
         event: EventRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
-        const events = await repos.event.searchScreeningEvents(searchConditions);
+        const events = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(searchConditions);
 
         let capacities: IEventCapacity[] = [];
         if (repos.attendeeCapacity !== undefined) {
@@ -86,8 +86,7 @@ export function searchEventOffers(params: {
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        const event = await repos.event.findById({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
+        const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.event.id
         });
         const eventOffers = event.offers;
@@ -208,8 +207,7 @@ export function searchEventTicketOffers(params: {
         });
 
         debug('searching screeninf event offers...', params);
-        const event = await repos.event.findById({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
+        const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.event.id
         });
 
@@ -515,7 +513,7 @@ export function searchEvents4cinemasunshine(
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
         debug('finding screeningEvents...', searchConditions);
-        const events = await repos.event.searchScreeningEvents(searchConditions);
+        const events = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(searchConditions);
 
         let capacities: IEventCapacity[] = [];
         if (repos.attendeeCapacity !== undefined) {
@@ -560,8 +558,7 @@ export function findEventById4cinemasunshine(
         event: EventRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
     }) => {
-        const event = await repos.event.findById({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
+        const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: id
         });
 

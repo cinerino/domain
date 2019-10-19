@@ -34,7 +34,7 @@ describe('searchEvents4cinemasunshine()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
 
         sandbox.mock(eventRepo)
-            .expects('searchScreeningEvents')
+            .expects('search')
             .once()
             .resolves(events);
 

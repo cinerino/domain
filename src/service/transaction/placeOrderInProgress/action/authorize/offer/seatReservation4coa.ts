@@ -371,8 +371,7 @@ export function create(params: {
         }
 
         // イベントを取得
-        const screeningEvent = await repos.event.findById({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
+        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 
@@ -625,8 +624,7 @@ export function changeOffers(params: {
         }
 
         // イベントを取得
-        const screeningEvent = await repos.event.findById({
-            typeOf: factory.chevre.eventType.ScreeningEvent,
+        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 
