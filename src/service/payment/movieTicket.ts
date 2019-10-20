@@ -6,6 +6,8 @@ import * as moment from 'moment-timezone';
 
 import { credentials } from '../../credentials';
 
+import * as chevre from '../../chevre';
+
 import { handleMvtkReserveError } from '../../errorHandler';
 import * as factory from '../../factory';
 
@@ -19,9 +21,18 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
-    event: EventRepo;
+    event?: EventRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
     movieTicket: MovieTicketRepo;
@@ -29,7 +40,8 @@ export type IAuthorizeOperation<T> = (repos: {
 
 export type ICheckMovieTicketOperation<T> = (repos: {
     action: ActionRepo;
-    event: EventRepo;
+    event?: EventRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
     movieTicket: MovieTicketRepo;
     paymentMethod: PaymentMethodRepo;
@@ -46,7 +58,8 @@ export function authorize(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
+        event?: EventRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         movieTicket: MovieTicketRepo;
@@ -63,6 +76,8 @@ export function authorize(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
+        const project = await repos.project.findById({ id: transaction.project.id });
+
         // イベント1つのみ許可
         const eventIds = [...new Set(params.object.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
         if (eventIds.length !== 1) {
@@ -77,7 +92,23 @@ export function authorize(params: {
         const movieTicketIdentifier = movieTicketIdentifiers[0];
 
         // イベント情報取得
-        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
+        let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+        if (repos.event !== undefined) {
+            screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
+        } else {
+            if (project.settings === undefined || project.settings.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
+            const eventService = new chevre.service.Event({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: eventIds[0]
+            });
+        }
 
         // ショップ情報取得
         const movieTheater = await repos.seller.findById({
@@ -221,7 +252,8 @@ export function checkMovieTicket(
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
+        event?: EventRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
         movieTicket: MovieTicketRepo;
         paymentMethod: PaymentMethodRepo;
@@ -242,7 +274,25 @@ export function checkMovieTicket(
             }
 
             // イベント情報取得
-            const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
+            let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+            if (repos.event !== undefined) {
+                screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
+            } else {
+                const project = await repos.project.findById({ id: params.project.id });
+
+                if (project.settings === undefined || project.settings.chevre === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+                }
+
+                const eventService = new chevre.service.Event({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
+                screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                    id: eventIds[0]
+                });
+            }
 
             // ショップ情報取得
             const movieTheater = await repos.seller.findById({
@@ -317,17 +367,14 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
+        event?: EventRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (project.settings.mvtkReserve === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        if (project.settings === undefined || project.settings.mvtkReserve === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
         // アクション開始
@@ -346,7 +393,23 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const eventId = eventIds[0];
 
             // イベント情報取得
-            const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
+            let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+            if (repos.event !== undefined) {
+                screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
+            } else {
+                if (project.settings === undefined || project.settings.chevre === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+                }
+
+                const eventService = new chevre.service.Event({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
+                screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                    id: eventId
+                });
+            }
 
             const order = params.purpose;
 
@@ -458,7 +521,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
@@ -484,8 +546,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 export function refundMovieTicket(params: factory.task.IData<factory.taskName.RefundMovieTicket>) {
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
-        invoice: InvoiceRepo;
         project: ProjectRepo;
         task: TaskRepo;
     }) => {

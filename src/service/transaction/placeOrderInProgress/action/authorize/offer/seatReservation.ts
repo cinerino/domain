@@ -26,7 +26,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ICreateOperation<T> = (repos: {
-    event: EventRepo;
+    event?: EventRepo;
     action: ActionRepo;
     movieTicket: MovieTicketRepo;
     project: ProjectRepo;
@@ -53,7 +53,7 @@ export function create(params: {
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
-        event: EventRepo;
+        event?: EventRepo;
         action: ActionRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
@@ -76,9 +76,25 @@ export function create(params: {
             throw new factory.errors.ArgumentNull('object.event');
         }
 
-        const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-            id: params.object.event.id
-        });
+        let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+        if (repos.event !== undefined) {
+            event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: params.object.event.id
+            });
+        } else {
+            if (project.settings === undefined || project.settings.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
+            const eventService = new chevre.service.Event({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: params.object.event.id
+            });
+        }
 
         const offers = event.offers;
         if (offers === undefined) {
@@ -413,7 +429,7 @@ function validateAcceptedOffers(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
+        event?: EventRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
         seller: SellerRepo;
