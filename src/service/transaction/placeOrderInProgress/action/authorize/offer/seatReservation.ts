@@ -81,6 +81,9 @@ export function create(params: {
         });
 
         const offers = event.offers;
+        if (offers === undefined) {
+            throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
+        }
 
         let offeredThrough = offers.offeredThrough;
         if (offeredThrough === undefined) {
@@ -444,6 +447,9 @@ function validateAcceptedOffers(params: {
             };
 
             const offers = params.event.offers;
+            if (offers === undefined) {
+                throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
+            }
 
             let offeredThrough = offers.offeredThrough;
             if (offeredThrough === undefined) {

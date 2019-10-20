@@ -90,6 +90,9 @@ export function searchEventOffers(params: {
             id: params.event.id
         });
         const eventOffers = event.offers;
+        if (eventOffers === undefined) {
+            throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
+        }
 
         if (eventOffers.offeredThrough === undefined) {
             eventOffers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
@@ -213,6 +216,9 @@ export function searchEventTicketOffers(params: {
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[];
         const eventOffers = event.offers;
+        if (eventOffers === undefined) {
+            throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
+        }
 
         if (eventOffers.offeredThrough === undefined) {
             eventOffers.offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
@@ -456,6 +462,9 @@ function coaSalesTicket2offer(params: {
     // TODO メガネ単価を変換
 
     const eventOffers = params.event.offers;
+    if (eventOffers === undefined) {
+        throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
+    }
 
     // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
     // const includeGlasses = (params.salesTicket.addGlasses > 0);
@@ -525,13 +534,16 @@ export function searchEvents4cinemasunshine(
             const capacity = capacities.find((c) => c.id === e.id);
 
             // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-            const offers = {
-                ...e.offers,
-                // tslint:disable-next-line:no-magic-numbers
-                availability: (e.offers !== undefined && e.offers.availability !== undefined) ? e.offers.availability : 100
-            };
+            const offers = (e.offers !== undefined)
+                ? {
+                    ...e.offers,
+                    // tslint:disable-next-line:no-magic-numbers
+                    availability: (e.offers !== undefined && e.offers.availability !== undefined) ? e.offers.availability : 100
+                }
+                : undefined;
 
-            if (capacity !== undefined
+            if (offers !== undefined
+                && capacity !== undefined
                 && capacity.remainingAttendeeCapacity !== undefined
                 && e.maximumAttendeeCapacity !== undefined) {
                 // tslint:disable-next-line:no-magic-numbers
@@ -541,8 +553,12 @@ export function searchEvents4cinemasunshine(
             return {
                 ...e,
                 ...capacity,
-                offer: offers, // 本来不要だが、互換性維持のため
-                offers: offers
+                ...(offers !== undefined)
+                    ? {
+                        offer: offers, // 本来不要だが、互換性維持のため
+                        offers: offers
+                    }
+                    : undefined
             };
         });
     };
@@ -571,12 +587,15 @@ export function findEventById4cinemasunshine(
         const capacity = capacities.find((c) => c.id === event.id);
 
         // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-        const offers = {
-            ...event.offers,
-            availability: 100
-        };
+        const offers = (event.offers !== undefined)
+            ? {
+                ...event.offers,
+                availability: 100
+            }
+            : undefined;
 
-        if (capacity !== undefined
+        if (offers !== undefined
+            && capacity !== undefined
             && capacity.remainingAttendeeCapacity !== undefined
             && event.maximumAttendeeCapacity !== undefined) {
             // tslint:disable-next-line:no-magic-numbers
@@ -586,8 +605,12 @@ export function findEventById4cinemasunshine(
         return {
             ...event,
             ...capacity,
-            offer: offers, // 本来不要だが、互換性維持のため
-            offers: offers
+            ...(offers !== undefined)
+                ? {
+                    offer: offers, // 本来不要だが、互換性維持のため
+                    offers: offers
+                }
+                : undefined
         };
     };
 }

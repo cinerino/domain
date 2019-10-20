@@ -323,13 +323,11 @@ export class MongoRepository {
      * 特定イベント検索
      */
     public async findById<T extends factory.chevre.eventType>(params: {
-        // typeOf: T;
         id: string;
     }): Promise<factory.event.IEvent<T>> {
         const doc = await this.eventModel.findOne(
             {
                 _id: params.id
-                // typeOf: params.typeOf
             },
             {
                 __v: 0,
