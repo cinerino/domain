@@ -45,29 +45,36 @@ export type IEventOperation4cinemasunshine<T> = (repos: {
     attendeeCapacity?: EventAttendeeCapacityRepo;
 }) => Promise<T>;
 
+export interface ISearchEventsResult {
+    data: factory.event.screeningEvent.IEvent[];
+    totalCount: number;
+}
+
 /**
  * 残席数情報も含めてイベントを検索する
  */
 export function searchEvents(params: {
     project: factory.project.IProject;
     conditions: factory.event.screeningEvent.ISearchConditions;
-}): ISearchEventsOperation<factory.event.screeningEvent.IEvent[]> {
+}): ISearchEventsOperation<ISearchEventsResult> {
     return async (repos: {
         event?: EventRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
         project: ProjectRepo;
     }) => {
-        let events: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
+        let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
+        let totalCount: number;
+
         if (repos.event !== undefined) {
-            events = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
+            data = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
 
             let capacities: IEventCapacity[] = [];
             if (repos.attendeeCapacity !== undefined) {
-                const eventIds = events.map((e) => e.id);
+                const eventIds = data.map((e) => e.id);
                 capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
             }
 
-            events = events.map((e) => {
+            data = data.map((e) => {
                 const capacity = capacities.find((c) => c.id === e.id);
 
                 return {
@@ -75,6 +82,8 @@ export function searchEvents(params: {
                     ...capacity
                 };
             });
+
+            totalCount = await repos.event.count(params.conditions);
         } else {
             const project = await repos.project.findById({ id: params.project.id });
 
@@ -88,10 +97,14 @@ export function searchEvents(params: {
             });
 
             const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
-            events = searchEventsResult.data;
+            data = searchEventsResult.data;
+            totalCount = searchEventsResult.totalCount;
         }
 
-        return events;
+        return {
+            data: data,
+            totalCount: totalCount
+        };
     };
 }
 
