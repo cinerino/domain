@@ -475,7 +475,7 @@ export async function createPotentialActions(params: {
             priceCurrency: order.priceCurrency,
             orderDate: order.orderDate
         },
-        agent: order.customer,
+        agent: transaction.agent,
         recipient: seller,
         potentialActions: {
             cancelReservation: cancelReservationActions,

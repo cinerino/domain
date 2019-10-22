@@ -61,6 +61,7 @@ const schema = new mongoose.Schema(
         },
         seller: sellerSchema,
         customer: customerSchema,
+        returner: mongoose.SchemaTypes.Mixed,
         confirmationNumber: String,
         orderNumber: String,
         price: Number,

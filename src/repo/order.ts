@@ -418,12 +418,14 @@ export class MongoRepository {
     public async returnOrder(params: {
         orderNumber: string;
         dateReturned: Date;
+        returner: factory.action.IParticipant;
     }): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOneAndUpdate(
             { orderNumber: params.orderNumber },
             {
                 orderStatus: factory.orderStatus.OrderReturned,
-                dateReturned: params.dateReturned
+                dateReturned: params.dateReturned,
+                returner: params.returner
             },
             {
                 new: true,

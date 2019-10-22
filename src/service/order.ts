@@ -321,7 +321,8 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             // 注文ステータス変更
             order = await repos.order.returnOrder({
                 orderNumber: order.orderNumber,
-                dateReturned: dateReturned
+                dateReturned: dateReturned,
+                returner: returnOrderActionAttributes.agent
             });
         } catch (error) {
             // actionにエラー結果を追加
