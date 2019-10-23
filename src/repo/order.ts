@@ -418,7 +418,7 @@ export class MongoRepository {
     public async returnOrder(params: {
         orderNumber: string;
         dateReturned: Date;
-        returner: factory.action.IParticipant;
+        returner: factory.order.IReturner;
     }): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOneAndUpdate(
             { orderNumber: params.orderNumber },

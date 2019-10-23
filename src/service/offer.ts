@@ -96,7 +96,10 @@ export function searchEvents(params: {
                 auth: chevreAuthClient
             });
 
-            const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
+            const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
+                ...params.conditions,
+                project: { ids: [project.id] }
+            });
             data = searchEventsResult.data;
             totalCount = searchEventsResult.totalCount;
         }
