@@ -301,7 +301,8 @@ function validateOffers(
  */
 export function create(params: {
     project: factory.project.IProject;
-    object: {
+    // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
+    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre> & {
         acceptedOffers: IAcceptedOffer[];
         event: { id: string };
     };
@@ -363,7 +364,17 @@ export function create(params: {
                 typeOf: transaction.agent.typeOf,
                 name: transaction.agent.id
             },
-            object: {},
+            object: {
+                onReservationStatusChanged: {
+                    informReservation: (params.object !== undefined
+                        && params.object !== null
+                        && params.object.onReservationStatusChanged !== undefined
+                        && params.object.onReservationStatusChanged !== null
+                        && Array.isArray(params.object.onReservationStatusChanged.informReservation))
+                        ? params.object.onReservationStatusChanged.informReservation
+                        : []
+                }
+            },
             expires: moment(performance.endDate)
                 .add(1, 'month')
                 .toDate()

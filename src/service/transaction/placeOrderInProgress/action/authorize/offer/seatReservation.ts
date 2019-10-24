@@ -143,14 +143,14 @@ export function create(params: {
                         typeOf: transaction.agent.typeOf,
                         name: transaction.agent.id
                     },
-                    object: <any>{
+                    object: {
                         onReservationStatusChanged: {
                             informReservation: (params.object !== undefined
                                 && params.object !== null
-                                && (<any>params.object).onReservationStatusChanged !== undefined
-                                && (<any>params.object).onReservationStatusChanged !== null
-                                && Array.isArray((<any>params.object).onReservationStatusChanged.informReservation))
-                                ? (<any>params.object).onReservationStatusChanged.informReservation
+                                && params.object.onReservationStatusChanged !== undefined
+                                && params.object.onReservationStatusChanged !== null
+                                && Array.isArray(params.object.onReservationStatusChanged.informReservation))
+                                ? params.object.onReservationStatusChanged.informReservation
                                 : []
                         }
                     },
