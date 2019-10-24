@@ -426,7 +426,13 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         authorizeActions = authorizeActions
             .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
-        await Promise.all(authorizeActions.map(async (action) => {
+        // GMO流入量制限を考慮して、直列にゆっくり処理
+        // await Promise.all(authorizeActions.map(async (action) => {
+        // }));
+        for (const action of authorizeActions) {
+            // tslint:disable-next-line:no-magic-numbers
+            await new Promise((resolve) => setTimeout(() => { resolve(); }, 1000));
+
             const orderId = action.object.paymentMethodId;
 
             if (typeof orderId === 'string') {
@@ -450,7 +456,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
             }
 
             await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
-        }));
+        }
 
         // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
         // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
