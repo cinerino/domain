@@ -4,7 +4,6 @@ import * as moment from 'moment-timezone';
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../../repo/rateLimit/ticketTypeCategory';
-import { MongoRepository as TaskRepo } from '../../../../../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 import { credentials } from '../../../../../../credentials';
@@ -33,7 +32,6 @@ export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     actionRepo: ActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    taskRepo: TaskRepo,
     projectRepo: ProjectRepo
 ) => Promise<T>;
 
@@ -41,7 +39,6 @@ export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     actionRepo: ActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    taskRepo: TaskRepo,
     projectRepo: ProjectRepo
 ) => Promise<T>;
 
@@ -314,7 +311,6 @@ export function create(params: {
         transactionRepo: TransactionRepo,
         actionRepo: ActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo,
         projectRepo: ProjectRepo
     ): Promise<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', params.object.acceptedOffers.length);
@@ -723,30 +719,6 @@ export function create(params: {
             throw error;
         }
 
-        try {
-            // 集計タスク作成
-            const aggregateTask: factory.task.IAttributes<factory.taskName.AggregateEventReservations> = {
-                name: <any>factory.taskName.AggregateEventReservations,
-                project: { typeOf: project.typeOf, id: project.id },
-                status: factory.taskStatus.Ready,
-                // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
-                runsAt: moment()
-                    // tslint:disable-next-line:no-magic-numbers
-                    .add(5, 'seconds')
-                    .toDate(),
-                remainingNumberOfTries: 3,
-                numberOfTried: 0,
-                executionResults: [],
-                data: {
-                    project: { typeOf: project.typeOf, id: project.id },
-                    id: performance.id
-                }
-            };
-            await taskRepo.save(<any>aggregateTask);
-        } catch (error) {
-            // no op
-        }
-
         const amount = acceptedOffers4result.reduce(
             (a, b) => {
                 return a + (<IReservationPriceSpecification>b.priceSpecification).priceComponent.reduce((a2, b2) => a2 + b2.price, 0);
@@ -792,7 +764,6 @@ export function cancel(params: {
         transactionRepo: TransactionRepo,
         actionRepo: ActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo,
         projectRepo: ProjectRepo
     ) => {
         try {
@@ -861,26 +832,6 @@ export function cancel(params: {
                         }
                     }));
                 }
-
-                // 集計タスク作成
-                const aggregateTask: factory.task.IAttributes<factory.taskName.AggregateEventReservations> = {
-                    name: <any>factory.taskName.AggregateEventReservations,
-                    project: { typeOf: project.typeOf, id: project.id },
-                    status: factory.taskStatus.Ready,
-                    // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
-                    runsAt: moment()
-                        // tslint:disable-next-line:no-magic-numbers
-                        .add(5, 'seconds')
-                        .toDate(),
-                    remainingNumberOfTries: 3,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        project: { typeOf: project.typeOf, id: project.id },
-                        id: performance.id
-                    }
-                };
-                await taskRepo.save(<any>aggregateTask);
             }
         } catch (error) {
             // no op
