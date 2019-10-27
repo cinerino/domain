@@ -17,7 +17,7 @@ export type IReservationPriceSpecification =
  */
 // tslint:disable-next-line:max-func-body-length
 export function createOrder(params: {
-    project: factory.chevre.project.IProject;
+    project: factory.project.IProject;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderDate: Date;
     orderStatus: factory.orderStatus;
@@ -153,7 +153,7 @@ export function createOrder(params: {
                         // }
 
                         const reservation: factory.order.IReservation = {
-                            project: params.project,
+                            project: { typeOf: params.project.typeOf, id: params.project.id },
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
                             additionalTicketText: '',
@@ -215,7 +215,7 @@ export function createOrder(params: {
                                 ticketNumber: ticketToken,
                                 ticketToken: ticketToken,
                                 ticketType: {
-                                    project: params.project,
+                                    project: { typeOf: params.project.typeOf, id: params.project.id },
                                     typeOf: <'Offer'>'Offer',
                                     id: requestedOffer.id,
                                     identifier: <string>requestedOffer.identifier,

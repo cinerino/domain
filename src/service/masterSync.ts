@@ -446,7 +446,7 @@ export function createScreeningEventFromCOA(params: {
         },
         itemOffered: {
             serviceType: {
-                project: params.project,
+                project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: 'ServiceType',
                 id: '',
                 identifier: '',
@@ -460,7 +460,7 @@ export function createScreeningEventFromCOA(params: {
     };
 
     return {
-        project: params.project,
+        project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.eventType.ScreeningEvent,
         id: id,
         identifier: id,
@@ -468,7 +468,7 @@ export function createScreeningEventFromCOA(params: {
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         workPerformed: params.superEvent.workPerformed,
         location: {
-            project: params.project,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: <factory.chevre.placeType.ScreeningRoom>params.screenRoom.typeOf,
             branchCode: params.screenRoom.branchCode,
             name: params.screenRoom.name
@@ -548,7 +548,7 @@ export function createScreeningEventSeriesFromCOA(params: {
     }
 
     return {
-        project: params.project,
+        project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.eventType.ScreeningEventSeries,
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
         id: id,
@@ -560,7 +560,7 @@ export function createScreeningEventSeriesFromCOA(params: {
         kanaName: params.filmFromCOA.titleNameKana,
         alternativeHeadline: params.filmFromCOA.titleNameShort,
         location: {
-            project: params.project,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             id: (params.movieTheater.id !== undefined) ? params.movieTheater.id : '',
             branchCode: params.movieTheater.branchCode,
             name: params.movieTheater.name,
@@ -575,7 +575,7 @@ export function createScreeningEventSeriesFromCOA(params: {
         videoFormat: params.eizouKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnEizou)[0],
         soundFormat: [],
         workPerformed: {
-            project: params.project,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             id: `${params.movieTheater.branchCode}-${params.filmFromCOA.titleCode}`,
             identifier: params.filmFromCOA.titleCode,
             name: params.filmFromCOA.titleNameOrig,
@@ -656,7 +656,7 @@ export function createMovieTheaterFromCOA(
     const id = `MovieTheater-${theaterFromCOA.theaterCode}`;
 
     return {
-        project: project,
+        project: { typeOf: project.typeOf, id: project.id },
         id: id,
         screenCount: screensFromCOA.length,
         branchCode: theaterFromCOA.theaterCode,
@@ -688,7 +688,7 @@ export function createScreeningRoomFromCOA(
         if (sectionCodes.indexOf(seat.seatSection) < 0) {
             sectionCodes.push(seat.seatSection);
             sections.push({
-                project: project,
+                project: { typeOf: project.typeOf, id: project.id },
                 branchCode: seat.seatSection,
                 name: {
                     ja: `セクション${seat.seatSection}`,
@@ -700,14 +700,14 @@ export function createScreeningRoomFromCOA(
         }
 
         sections[sectionCodes.indexOf(seat.seatSection)].containsPlace.push({
-            project: project,
+            project: { typeOf: project.typeOf, id: project.id },
             branchCode: seat.seatNum,
             typeOf: factory.chevre.placeType.Seat
         });
     });
 
     return {
-        project: project,
+        project: { typeOf: project.typeOf, id: project.id },
         containsPlace: sections,
         branchCode: screenFromCOA.screenCode,
         name: {

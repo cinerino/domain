@@ -108,7 +108,7 @@ export function create(params: {
         const bookingServiceIdentifier = offeredThrough.identifier;
 
         const acceptedOffers = await validateAcceptedOffers({
-            project: params.project,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             object: params.object,
             event: event,
             seller: seller
@@ -310,7 +310,7 @@ export function create(params: {
                                     = {
                                     typeOf: itemOffered.reservedTicket.typeOf,
                                     ticketType: {
-                                        project: params.project,
+                                        project: { typeOf: params.project.typeOf, id: params.project.id },
                                         typeOf: itemOffered.reservedTicket.ticketType.typeOf,
                                         id: itemOffered.reservedTicket.ticketType.id,
                                         identifier: itemOffered.reservedTicket.ticketType.identifier,
@@ -443,7 +443,7 @@ function validateAcceptedOffers(params: {
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = await OfferService.searchEventTicketOffers({
-            project: params.project,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             event: { id: params.event.id },
             seller: params.seller
         })(repos);
@@ -523,7 +523,7 @@ function validateAcceptedOffers(params: {
                         // ムビチケ認証
                         const checkResult = await repos.movieTicket.checkByIdentifier({
                             movieTickets: [{
-                                project: params.project,
+                                project: { typeOf: params.project.typeOf, id: params.project.id },
                                 typeOf: movieTicket.typeOf,
                                 identifier: movieTicket.identifier,
                                 accessCode: movieTicket.accessCode,

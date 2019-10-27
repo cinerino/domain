@@ -424,7 +424,7 @@ function coaSalesTicket2offer(params: {
 
     const priceSpecification: factory.chevre.event.screeningEvent.ITicketPriceSpecification
         = {
-        project: params.project,
+        project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
         valueAddedTaxIncluded: true,
         priceCurrency: factory.chevre.priceCurrency.JPY,
@@ -434,7 +434,7 @@ function coaSalesTicket2offer(params: {
     // 人数制限仕様を単価仕様へ変換
     const unitPriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>
         = {
-        project: params.project,
+        project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
         price: params.salesTicket.stdPrice,
         priceCurrency: factory.chevre.priceCurrency.JPY,
@@ -557,7 +557,7 @@ function coaSalesTicket2offer(params: {
         },
         itemOffered: {
             serviceType: {
-                project: params.project,
+                project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: 'ServiceType',
                 id: '',
                 identifier: '',
