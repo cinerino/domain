@@ -141,7 +141,10 @@ export function create(params: {
                     typeOf: chevre.factory.transactionType.Reserve,
                     agent: {
                         typeOf: transaction.agent.typeOf,
-                        name: transaction.agent.id
+                        name: transaction.agent.id,
+                        ...{
+                            identifier: [{ name: 'transaction', value: transaction.id }]
+                        }
                     },
                     object: {
                         onReservationStatusChanged: {
