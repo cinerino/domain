@@ -42,6 +42,7 @@ export function start(
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
         const seller = await repos.seller.findById({ id: params.seller.id });
 
         // 返品対象の取引取得
@@ -72,12 +73,31 @@ export function start(
             }
         }
 
-        // 検証
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        // if (!params.forcibly) {
-        //     validateRequest();
-        // }
+        const informOrderParams: factory.transaction.returnOrder.IInformOrderParams[] = [];
+
+        if (project.settings !== undefined
+            && project.settings !== null
+            && project.settings.onOrderStatusChanged !== undefined
+            && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
+            informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
+        }
+
+        if (params.object !== undefined
+            && params.object.onOrderStatusChanged !== undefined
+            && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
+            informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
+        }
+
+        const transactionObject: factory.transaction.returnOrder.IObject = {
+            clientUser: params.object.clientUser,
+            order: order,
+            cancellationFee: params.object.cancellationFee,
+            pendingCancelReservationTransactions: [],
+            reason: params.object.reason,
+            onOrderStatusChanged: {
+                informOrder: informOrderParams
+            }
+        };
 
         const returnOrderAttributes: factory.transaction.IStartParams<factory.transactionType.ReturnOrder> = {
             project: params.project,
@@ -93,12 +113,7 @@ export function start(
                 url: seller.url,
                 image: seller.image
             },
-            object: {
-                clientUser: params.object.clientUser,
-                order: order,
-                cancellationFee: params.object.cancellationFee,
-                reason: params.object.reason
-            },
+            object: transactionObject,
             expires: params.expires
         };
 

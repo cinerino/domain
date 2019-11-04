@@ -461,6 +461,29 @@ export async function createPotentialActions(params: {
         }
     }
 
+    // 取引に注文ステータス変更時イベントの指定があれば設定
+    if (transaction.object !== undefined && transaction.object.onOrderStatusChanged !== undefined) {
+        if (Array.isArray(transaction.object.onOrderStatusChanged.informOrder)) {
+            informOrderActionsOnReturn.push(...transaction.object.onOrderStatusChanged.informOrder.map(
+                (a): factory.action.interact.inform.IAttributes<any, any> => {
+                    return {
+                        agent: transaction.seller,
+                        object: order,
+                        project: transaction.project,
+                        // purpose: params.transaction,
+                        recipient: {
+                            id: transaction.agent.id,
+                            name: transaction.agent.name,
+                            typeOf: transaction.agent.typeOf,
+                            ...a.recipient
+                        },
+                        typeOf: factory.actionType.InformAction
+                    };
+                })
+            );
+        }
+    }
+
     const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
         project: order.project,
         typeOf: factory.actionType.ReturnAction,
@@ -490,5 +513,4 @@ export async function createPotentialActions(params: {
     return {
         returnOrder: returnOrderActionAttributes
     };
-
 }
