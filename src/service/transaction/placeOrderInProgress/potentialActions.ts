@@ -495,6 +495,33 @@ export async function createPotentialActions(params: {
         }
     }
 
+    // 取引に注文ステータス変更時イベントの指定があれば設定
+    if (params.transaction.object !== undefined && params.transaction.object.onOrderStatusChanged !== undefined) {
+        if (Array.isArray(params.transaction.object.onOrderStatusChanged.informOrder)) {
+            const informOrderActionAttributes: factory.action.interact.inform.IAttributes<any, any>[]
+                = params.transaction.object.onOrderStatusChanged.informOrder.map(
+                    (a) => {
+                        return {
+                            agent: params.transaction.seller,
+                            object: params.order,
+                            project: params.transaction.project,
+                            // purpose: params.transaction,
+                            recipient: {
+                                id: params.transaction.agent.id,
+                                name: params.transaction.agent.name,
+                                typeOf: params.transaction.agent.typeOf,
+                                ...a.recipient
+                            },
+                            typeOf: factory.actionType.InformAction
+                        };
+                    }
+                );
+
+            informOrderActionsOnPlaceOrder.push(...informOrderActionAttributes);
+            informOrderActionsOnSentOrder.push(...informOrderActionAttributes);
+        }
+    }
+
     const sendOrderActionAttributes: factory.action.transfer.send.order.IAttributes = {
         project: params.transaction.project,
         typeOf: factory.actionType.SendAction,

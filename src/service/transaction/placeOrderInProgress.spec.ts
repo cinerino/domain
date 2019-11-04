@@ -48,9 +48,14 @@ describe('start()', () => {
             issueUnit: {}
         };
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ typeOf: 'Project', id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -78,6 +83,7 @@ describe('start()', () => {
             agent: agent,
             seller: seller
         })({
+            project: projectRepo,
             transaction: transactionRepo,
             seller: sellerRepo
         });
@@ -114,9 +120,14 @@ describe('start()', () => {
             issueUnit: {}
         };
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ typeOf: 'Project', id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -144,6 +155,7 @@ describe('start()', () => {
             agent: agent,
             seller: seller
         })({
+            project: projectRepo,
             transaction: transactionRepo,
             seller: sellerRepo
         });
@@ -176,9 +188,14 @@ describe('start()', () => {
             issueUnit: {}
         };
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ typeOf: 'Project', id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -206,6 +223,7 @@ describe('start()', () => {
             agent: agent,
             seller: seller
         })({
+            project: projectRepo,
             transaction: transactionRepo,
             seller: sellerRepo
         });
@@ -231,9 +249,14 @@ describe('start()', () => {
         const passportToken = 'passportToken';
         const verifyResult = new Error('verifyError');
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ typeOf: 'Project', id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -260,6 +283,7 @@ describe('start()', () => {
             agent: agent,
             seller: seller
         })({
+            project: projectRepo,
             transaction: transactionRepo,
             seller: sellerRepo
         })
@@ -291,9 +315,14 @@ describe('start()', () => {
             issueUnit: {}
         };
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ typeOf: 'Project', id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -321,6 +350,7 @@ describe('start()', () => {
             agent: agent,
             seller: seller
         })({
+            project: projectRepo,
             transaction: transactionRepo,
             seller: sellerRepo
         })
@@ -352,9 +382,14 @@ describe('start()', () => {
             issueUnit: {}
         };
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ typeOf: 'Project', id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -382,6 +417,7 @@ describe('start()', () => {
             agent: agent,
             seller: seller
         })({
+            project: projectRepo,
             transaction: transactionRepo,
             seller: sellerRepo
         })

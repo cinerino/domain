@@ -11,6 +11,7 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -27,6 +28,7 @@ import { createOrder } from './placeOrderInProgress/result';
 const debug = createDebug('cinerino-domain:service');
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type IStartOperation<T> = (repos: {
+    project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -54,12 +56,14 @@ export type IUnitPriceSpecification =
 /**
  * 取引開始
  */
+// tslint:disable-next-line:max-func-body-length
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
+        project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
-        // 売り手を取得
+        const project = await repos.project.findById({ id: params.project.id });
         const seller = await repos.seller.findById({ id: params.seller.id });
 
         let passport: factory.waiter.passport.IPassport | undefined;
@@ -82,6 +86,32 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             }
         }
 
+        // 注文通知パラメータ作成
+        const informOrderParams: factory.transaction.placeOrder.IInformOrderParams[] = [];
+
+        if (project.settings !== undefined
+            && project.settings !== null
+            && project.settings.onOrderStatusChanged !== undefined
+            && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
+            informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
+        }
+
+        if (params.object !== undefined
+            && params.object.onOrderStatusChanged !== undefined
+            && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
+            informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
+        }
+
+        const transactionObject: factory.transaction.placeOrder.IObject = {
+            passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
+            passport: passport,
+            clientUser: params.object.clientUser,
+            authorizeActions: [],
+            onOrderStatusChanged: {
+                informOrder: informOrderParams
+            }
+        };
+
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
             project: { typeOf: 'Project', id: params.project.id },
@@ -98,12 +128,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 url: seller.url,
                 image: seller.image
             },
-            object: {
-                passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
-                passport: passport,
-                clientUser: params.object.clientUser,
-                authorizeActions: []
-            },
+            object: transactionObject,
             expires: params.expires,
             startDate: new Date(),
             tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
