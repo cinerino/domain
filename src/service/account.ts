@@ -352,28 +352,9 @@ export function openWithoutOwnershipInfo<T extends factory.accountType>(params: 
  */
 export function deposit(params: {
     project: factory.project.IProject;
-    agent: {
-        id: string;
-        name: string;
-        url: string;
-    };
-    recipient: {
-        id: string;
-        name: string;
-        url: string;
-    };
-    /**
-     * 入金先口座番号
-     */
-    toAccountNumber: string;
-    /**
-     * 入金金額
-     */
-    amount: number;
-    /**
-     * 入金説明
-     */
-    notes: string;
+    agent: pecorinoapi.factory.transaction.deposit.IAgent;
+    object: pecorinoapi.factory.transaction.deposit.IObject<factory.accountType.Point>;
+    recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
 }) {
     return async (repos: {
         project: ProjectRepo;
@@ -394,28 +375,22 @@ export function deposit(params: {
             const transaction = await depositService.start({
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
-                    typeOf: factory.personType.Person,
-                    id: params.agent.id,
-                    name: params.agent.name,
-                    url: params.agent.url
+                    ...params.agent
                 },
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
                 object: {
-                    amount: params.amount,
+                    amount: params.object.amount,
                     toLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
                         accountType: factory.accountType.Point,
-                        accountNumber: params.toAccountNumber
+                        accountNumber: params.object.toLocation.accountNumber
                     },
-                    description: params.notes
+                    description: params.object.description
                 },
                 recipient: {
-                    typeOf: factory.personType.Person,
-                    id: params.recipient.id,
-                    name: params.recipient.name,
-                    url: params.recipient.url
+                    ...params.recipient
                 }
             });
 
