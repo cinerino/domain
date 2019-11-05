@@ -484,6 +484,49 @@ export async function createPotentialActions(params: {
         }
     }
 
+    // 返品後のEメール送信アクション
+    const sendEmailMessaegActionsOnReturn: factory.action.transfer.send.message.email.IAttributes[] = [];
+    if (params.potentialActions !== undefined
+        && params.potentialActions.returnOrder !== undefined
+        && params.potentialActions.returnOrder.potentialActions !== undefined
+        && Array.isArray(params.potentialActions.returnOrder.potentialActions.sendEmailMessage)) {
+        sendEmailMessaegActionsOnReturn.push(
+            ...await Promise.all(params.potentialActions.returnOrder.potentialActions.sendEmailMessage.map(
+                async (sendEmailMessageParams): Promise<factory.action.transfer.send.message.email.IAttributes> => {
+                    const emailMessage = await emailMessageBuilder.createReturnOrderMessage({
+                        order,
+                        email: sendEmailMessageParams.object
+                    });
+
+                    return {
+                        project: params.transaction.project,
+                        typeOf: factory.actionType.SendAction,
+                        object: emailMessage,
+                        agent: {
+                            project: transaction.project,
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        potentialActions: {},
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        }
+                    };
+                }
+            ))
+        );
+    }
+
     const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
         project: order.project,
         typeOf: factory.actionType.ReturnAction,
@@ -506,7 +549,8 @@ export async function createPotentialActions(params: {
             refundCreditCard: refundCreditCardActions,
             refundAccount: refundAccountActions,
             refundMovieTicket: refundMovieTicketActions,
-            returnPointAward: returnPointAwardActions
+            returnPointAward: returnPointAwardActions,
+            sendEmailMessage: sendEmailMessaegActionsOnReturn
         }
     };
 

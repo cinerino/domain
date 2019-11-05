@@ -480,6 +480,26 @@ export function onReturn(
                     })
                 );
             }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.sendEmailMessage)) {
+                potentialActions.sendEmailMessage.forEach((s) => {
+                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                        project: s.project,
+                        name: factory.taskName.SendEmailMessage,
+                        status: factory.taskStatus.Ready,
+                        runsAt: now, // なるはやで実行
+                        remainingNumberOfTries: 3,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: {
+                            actionAttributes: s
+                        }
+                    };
+                    taskAttributes.push(sendEmailMessageTask);
+                });
+            }
         }
 
         // タスク保管
