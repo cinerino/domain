@@ -112,10 +112,12 @@ describe('ポイントを入金する', () => {
         const result = await domain.service.account.deposit({
             project: <any>project,
             agent: <any>{},
-            recipient: <any>{},
-            toAccountNumber: '',
-            amount: 0,
-            notes: ''
+            object: {
+                amount: 0,
+                description: '',
+                toLocation: <any>{ accountNumber: '12345' }
+            },
+            recipient: <any>{}
         })({
             project: projectRepo
         });
@@ -144,10 +146,12 @@ describe('ポイントを入金する', () => {
         const result = await domain.service.account.deposit({
             project: <any>project,
             agent: <any>{},
-            recipient: <any>{},
-            toAccountNumber: '',
-            amount: 0,
-            notes: ''
+            object: {
+                amount: 0,
+                description: '',
+                toLocation: <any>{ accountNumber: '12345' }
+            },
+            recipient: <any>{}
         })({
             project: projectRepo
         })
