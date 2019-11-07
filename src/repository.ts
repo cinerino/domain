@@ -25,17 +25,18 @@ import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateL
 import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
-import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
 /**
  * 口座番号リポジトリ
  */
 export class AccountNumber extends AccountNumberRepo { }
+
 /**
  * アクションリポジトリ
  */
 export class Action extends ActionRepo { }
+
 export namespace action {
     export class RegisterProgramMembershipInProgress extends RegisterProgramMembershipActionInProgress { }
 }
@@ -49,9 +50,11 @@ export class Code extends CodeRepo { }
  * 確認番号リポジトリ
  */
 export class ConfirmationNumber extends ConfirmationNumberRepo { }
+
 export namespace event {
     export class AttendeeCapacityRepo extends EventAttendeeCapacityRepo { }
 }
+
 /**
  * イベントリポジトリ
  */
@@ -66,22 +69,27 @@ export class Invoice extends InvoiceRepo { }
  * オファーリポジトリ
  */
 export class Offer extends OfferRepo { }
+
 /**
  * 注文リポジトリ
  */
 export class Order extends OrderRepo { }
+
 /**
  * 注文番号リポジトリ
  */
 export class OrderNumber extends OrderNumberRepo { }
+
 /**
  * 所有権リポジトリ
  */
 export class OwnershipInfo extends OwnershipInfoRepo { }
+
 /**
  * 決済方法リポジトリ
  */
 export class PaymentMethod extends PaymentMethodRepo { }
+
 export namespace paymentMethod {
     /**
      * クレジットカードリポジトリ
@@ -102,10 +110,12 @@ export class PaymentNo extends PaymentNoRepo { }
  * 顧客リポジトリ
  */
 export class Person extends PersonRepo { }
+
 /**
  * 会員プログラムリポジトリ
  */
 export class ProgramMembership extends ProgramMembershipRepo { }
+
 /**
  * プロジェクトリポジトリ
  */
@@ -122,19 +132,16 @@ export namespace rateLimit {
  * 販売者リポジトリ
  */
 export class Seller extends SellerRepo { }
+
 /**
  * タスクリポジトリ
  */
 export class Task extends TaskRepo { }
+
 /**
  * 測定リポジトリ
  */
 export class Telemetry extends TelemetryRepo { }
-
-/**
- * トークンリポジトリ
- */
-export class Token extends TokenRepo { }
 
 /**
  * 取引リポジトリ
