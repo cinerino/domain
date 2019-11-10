@@ -20,9 +20,10 @@ async function main() {
         {
             'project.id': { $exists: true, $eq: 'ttts-production' },
             orderDate: {
-                $gte: moment('2019-09-01T00:00:00+09:00').toDate(),
-                $lt: moment('2019-09-01T03:00:00+09:00').toDate()
-            }
+                $gte: moment('2019-08-01T00:00:00+09:00').toDate(),
+                // $lt: moment('2019-11-10T00:00:00+09:00').toDate()
+            },
+            orderStatus: { $in: [domain.factory.orderStatus.OrderReturned] }
         },
         { createdAt: 0, updatedAt: 0 }
     )
@@ -70,43 +71,123 @@ async function main() {
         });
         console.log(payActions.length, 'payActions found');
 
+        // 注文アクション検索
+        const orderActions = await oldActionRepo.search({
+            typeOf: domain.factory.actionType.OrderAction,
+            object: {
+                orderNumber: {
+                    $in: [orderNumber]
+                }
+            }
+        });
+        console.log(orderActions.length, 'orderActions found');
 
-        // 注文移行
+        // 返品アクション検索
+        const returnActions = await oldActionRepo.search({
+            typeOf: domain.factory.actionType.ReturnAction,
+            object: {
+                orderNumber: {
+                    $in: [orderNumber]
+                }
+            }
+        });
+        console.log(returnActions.length, 'returnActions found');
+
+
+        // 注文移行(ステータス変更されるので要調整)
+        delete order._id;
+        delete order.id;
         await orderRepo.orderModel.updateOne(
-            { orderNumber: order.orderNumber },
-            { $setOnInsert: { ...order, _id: undefined, id: undefined } },
+            { orderNumber: orderNumber },
+            // { $setOnInsert: { ...order } },
+            order,
             { upsert: true }
         ).exec();
 
         // 注文取引移行
         await Promise.all(placeOrderTransactions.map(async (t) => {
+            delete t._id;
+            delete t.id;
             await transactionRepo.transactionModel.updateOne(
                 {
                     typeOf: domain.factory.transactionType.PlaceOrder,
                     'result.order.orderNumber': { $exists: true, $eq: orderNumber }
                 },
-                { $setOnInsert: { ...t, _id: undefined, id: undefined } },
+                { $setOnInsert: { ...t } },
                 { upsert: true }
             ).exec();
         }));
 
         // 注文返品取引移行
         await Promise.all(returnOrderTransactions.map(async (t) => {
+            delete t._id;
+            delete t.id;
             await transactionRepo.transactionModel.updateOne(
                 {
                     typeOf: domain.factory.transactionType.ReturnOrder,
                     'object.order.orderNumber': { $exists: true, $eq: orderNumber }
                 },
-                { $setOnInsert: { ...t, _id: undefined, id: undefined } },
+                { $setOnInsert: { ...t } },
                 { upsert: true }
             ).exec();
         }));
 
         // インボイス移行
+        await Promise.all(invoices.map(async (invoice) => {
+            delete invoice._id;
+            delete invoice.id;
+            await invoiceRepo.invoiceModel.updateOne(
+                {
+                    'referencesOrder.orderNumber': { $exists: true, $eq: orderNumber }
+                },
+                { $setOnInsert: { ...invoice } },
+                { upsert: true }
+            ).exec();
+        }));
 
         // 決済アクション移行
+        await Promise.all(payActions.map(async (payAction) => {
+            delete payAction._id;
+            delete payAction.id;
+            await actionRepo.actionModel.updateOne(
+                {
+                    typeOf: domain.factory.actionType.PayAction,
+                    'purpose.orderNumber': { $exists: true, $eq: orderNumber }
+                },
+                { $setOnInsert: { ...payAction } },
+                { upsert: true }
+            ).exec();
+        }));
 
-        console.log('added', order.orderNumber, i);
+        // 注文アクション移行
+        await Promise.all(orderActions.map(async (orderAction) => {
+            delete orderAction._id;
+            delete orderAction.id;
+            await actionRepo.actionModel.updateOne(
+                {
+                    typeOf: domain.factory.actionType.OrderAction,
+                    'object.orderNumber': { $exists: true, $eq: orderNumber }
+                },
+                { $setOnInsert: { ...orderAction } },
+                { upsert: true }
+            ).exec();
+        }));
+
+        // 返品アクション移行
+        await Promise.all(returnActions.map(async (returnAction) => {
+            delete returnAction._id;
+            delete returnAction.id;
+            await actionRepo.actionModel.updateOne(
+                {
+                    typeOf: domain.factory.actionType.ReturnAction,
+                    'object.orderNumber': { $exists: true, $eq: orderNumber }
+                },
+                { $setOnInsert: { ...returnAction } },
+                { upsert: true }
+            ).exec();
+        }));
+
+        console.log('added', orderNumber, i);
     });
 
     console.log(i, 'orders migrated');

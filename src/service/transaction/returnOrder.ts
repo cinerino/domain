@@ -89,7 +89,6 @@ export function start(
         }
 
         const transactionObject: factory.transaction.returnOrder.IObject = {
-            clientUser: params.object.clientUser,
             order: order,
             cancellationFee: params.object.cancellationFee,
             pendingCancelReservationTransactions: [],

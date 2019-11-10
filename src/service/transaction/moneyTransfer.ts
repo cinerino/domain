@@ -79,7 +79,6 @@ export function start(
                 image: seller.image
             },
             object: {
-                clientUser: params.object.clientUser,
                 // amount: params.object.amount,
                 // toLocation: (toLocation.typeOf === factory.pecorino.account.TypeOf.Account)
                 //     ? {

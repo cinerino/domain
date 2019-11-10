@@ -201,6 +201,19 @@ export function transaction2report(params: {
     // checkinActions?: factory.action.IAction<factory.action.IAttributes<any, any>>[];
     transaction: factory.transaction.placeOrder.ITransaction;
 }): ITransactionReport {
+    let tokenIssuer = '';
+    let clientId = '';
+    if (Array.isArray(params.transaction.agent.identifier)) {
+        const tokenIssuerProperty = params.transaction.agent.identifier.find((p) => p.name === 'tokenIssuer');
+        const clientIdProperty = params.transaction.agent.identifier.find((p) => p.name === 'clientId');
+        if (tokenIssuerProperty !== undefined) {
+            tokenIssuer = tokenIssuerProperty.value;
+        }
+        if (clientIdProperty !== undefined) {
+            clientId = clientIdProperty.value;
+        }
+    }
+
     if (params.transaction.result !== undefined) {
         // 注文データがまだ存在しなければ取引結果から参照
         const order = (params.order !== undefined) ? params.order : params.transaction.result.order;
@@ -291,8 +304,8 @@ export function transaction2report(params: {
                 email: String(order.customer.email),
                 telephone: String(order.customer.telephone),
                 memberOf: order.customer.memberOf,
-                tokenIssuer: (params.transaction.object.clientUser !== undefined) ? params.transaction.object.clientUser.iss : '',
-                clientId: (params.transaction.object.clientUser !== undefined) ? params.transaction.object.clientUser.client_id : ''
+                tokenIssuer: tokenIssuer,
+                clientId: clientId
             },
             items: items,
             orderNumber: order.orderNumber,
@@ -332,8 +345,8 @@ export function transaction2report(params: {
                         params.transaction.agent.memberOf.membershipNumber :
                         ''
                 },
-                tokenIssuer: (params.transaction.object.clientUser !== undefined) ? params.transaction.object.clientUser.iss : '',
-                clientId: (params.transaction.object.clientUser !== undefined) ? params.transaction.object.clientUser.client_id : ''
+                tokenIssuer: tokenIssuer,
+                clientId: clientId
             },
             items: [],
             orderNumber: '',

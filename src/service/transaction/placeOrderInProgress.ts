@@ -105,7 +105,6 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         const transactionObject: factory.transaction.placeOrder.IObject = {
             passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
             passport: passport,
-            clientUser: params.object.clientUser,
             authorizeActions: [],
             onOrderStatusChanged: {
                 informOrder: informOrderParams
