@@ -108,7 +108,10 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             authorizeActions: [],
             onOrderStatusChanged: {
                 informOrder: informOrderParams
-            }
+            },
+            ...((<any>params.object).clientUser !== undefined && (<any>params.object).clientUser !== null)
+                ? { clientUser: (<any>params.object).clientUser }
+                : undefined
         };
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
