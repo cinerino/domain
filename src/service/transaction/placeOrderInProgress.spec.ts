@@ -77,8 +77,7 @@ describe('start()', () => {
                     issuer: '',
                     token: passportToken,
                     secret: ''
-                },
-                clientUser: <any>{}
+                }
             },
             agent: agent,
             seller: seller
@@ -90,77 +89,6 @@ describe('start()', () => {
 
         assert.deepEqual(result, transaction);
         // assert.equal(result.expires, transaction.expires);
-        sandbox.verify();
-    });
-
-    it('クライアントユーザーにusernameが存在すれば、会員として開始できるはず', async () => {
-        process.env.WAITER_PASSPORT_ISSUER = 'https://example.com';
-        const agent = {
-            typeOf: domain.factory.personType.Person,
-            id: 'agentId'
-        };
-        const seller = {
-            typeOf: domain.factory.organizationType.MovieTheater,
-            id: 'sellerId',
-            name: { ja: 'ja', en: 'ne' },
-            identifier: 'sellerIdentifier'
-        };
-        const transaction = {
-            expires: new Date()
-        };
-        const clientUser = {
-            username: 'username'
-        };
-        const passportToken = 'passportToken';
-        const passport = {
-            scope: `placeOrderTransaction.${seller.identifier}`,
-            iat: 123,
-            exp: 123,
-            iss: process.env.WAITER_PASSPORT_ISSUER,
-            issueUnit: {}
-        };
-
-        const projectRepo = new domain.repository.Project(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
-        const transactionRepo = new domain.repository.Transaction(mongoose.connection);
-
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves({ typeOf: 'Project', id: 'projectId' });
-        sandbox.mock(sellerRepo)
-            .expects('findById')
-            .once()
-            .resolves(seller);
-        sandbox.mock(transactionRepo)
-            .expects('start')
-            .once()
-            .resolves(transaction);
-        sandbox.mock(waiter.service.passport)
-            .expects('verify')
-            .once()
-            .resolves(passport);
-
-        const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: 'Project', id: 'id' },
-            expires: transaction.expires,
-            object: {
-                passport: {
-                    issuer: '',
-                    token: passportToken,
-                    secret: ''
-                },
-                clientUser: <any>clientUser
-            },
-            agent: agent,
-            seller: seller
-        })({
-            project: projectRepo,
-            transaction: transactionRepo,
-            seller: sellerRepo
-        });
-
-        assert.deepEqual(result, transaction);
         sandbox.verify();
     });
 
@@ -217,8 +145,7 @@ describe('start()', () => {
                     issuer: '',
                     token: passportToken,
                     secret: ''
-                },
-                clientUser: <any>{}
+                }
             },
             agent: agent,
             seller: seller
@@ -277,8 +204,7 @@ describe('start()', () => {
                     issuer: '',
                     token: passportToken,
                     secret: ''
-                },
-                clientUser: <any>{}
+                }
             },
             agent: agent,
             seller: seller
@@ -344,8 +270,7 @@ describe('start()', () => {
                     issuer: '',
                     token: passportToken,
                     secret: ''
-                },
-                clientUser: <any>{}
+                }
             },
             agent: agent,
             seller: seller
@@ -411,8 +336,7 @@ describe('start()', () => {
                     issuer: '',
                     token: passportToken,
                     secret: ''
-                },
-                clientUser: <any>{}
+                }
             },
             agent: agent,
             seller: seller
