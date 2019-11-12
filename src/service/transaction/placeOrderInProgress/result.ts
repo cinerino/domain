@@ -313,6 +313,7 @@ export function createOrder(params: {
         url: url,
         orderStatus: params.orderStatus,
         orderDate: params.orderDate,
+        identifier: [],
         isGift: params.isGift
     };
 }

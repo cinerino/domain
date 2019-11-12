@@ -257,9 +257,11 @@ export function updateAgent(params: {
     };
 }
 
-export type IOrderConfirmationNumberGenerator = (order: factory.order.IOrder) => string;
+export type IConfirmationNumberGenerator = (order: factory.order.IOrder) => string;
+
 export type IOrderURLGenerator = (order: factory.order.IOrder) => string;
-export interface IConfirmResultOrderParams {
+
+export type IResultOrderParams = factory.transaction.placeOrder.IResultOrderParams & {
     /**
      * 注文日時
      */
@@ -267,7 +269,7 @@ export interface IConfirmResultOrderParams {
     /**
      * 確認番号のカスタム指定
      */
-    confirmationNumber?: string | IOrderConfirmationNumberGenerator;
+    confirmationNumber?: string | IConfirmationNumberGenerator;
     /**
      * 注文確認URLのカスタム指定
      */
@@ -279,18 +281,18 @@ export interface IConfirmResultOrderParams {
         maxValue?: number;
         minValue?: number;
     };
-}
+};
 
-export interface IConfirmParams extends factory.transaction.placeOrder.IConfirmParams {
+export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
     project: factory.chevre.project.IProject;
     result: {
-        order: IConfirmResultOrderParams;
+        order: IResultOrderParams;
     };
     /**
      * ムビチケバリデーションを適用するかどうか
      */
     validateMovieTicket?: boolean;
-}
+};
 
 /**
  * 注文取引を確定する
@@ -418,6 +420,13 @@ export function confirm(params: IConfirmParams) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
             order.url = params.result.order.url(order);
+        }
+
+        // 識別子の指定があれば上書き
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (Array.isArray(params.result.order.identifier)) {
+            order.identifier = params.result.order.identifier;
         }
 
         const result: factory.transaction.placeOrder.IResult = { order };

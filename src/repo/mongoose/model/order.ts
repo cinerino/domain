@@ -59,6 +59,7 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
+        identifier: [mongoose.SchemaTypes.Mixed],
         seller: sellerSchema,
         customer: customerSchema,
         returner: mongoose.SchemaTypes.Mixed,
@@ -116,6 +117,16 @@ schema.index(
         name: 'searchByProjectId',
         partialFilterExpression: {
             'project.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { identifier: 1, orderDate: -1 },
+    {
+        name: 'searchByIdentifier',
+        partialFilterExpression: {
+            identifier: { $exists: true }
         }
     }
 );
