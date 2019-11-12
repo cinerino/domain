@@ -35,6 +35,17 @@ export class MongoRepository {
         if (params.identifier !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
+            if (Array.isArray(params.identifier.$all)) {
+                andConditions.push({
+                    identifier: {
+                        $exists: true,
+                        $all: params.identifier.$all
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (Array.isArray(params.identifier.$in)) {
                 andConditions.push({
                     identifier: {
@@ -102,6 +113,33 @@ export class MongoRepository {
                     }
                 });
             }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.customer.identifier !== undefined) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.customer.identifier.$all)) {
+                    andConditions.push({
+                        'customer.identifier': {
+                            $exists: true,
+                            $all: params.customer.identifier.$all
+                        }
+                    });
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.customer.identifier.$in)) {
+                    andConditions.push({
+                        'customer.identifier': {
+                            $exists: true,
+                            $in: params.customer.identifier.$in
+                        }
+                    });
+                }
+            }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(params.customer.membershipNumbers)) {
