@@ -2,7 +2,6 @@ import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { RedisRepository as PaymentNoRepo } from '../../../../../../repo/paymentNo';
 import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
@@ -31,7 +30,6 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 export type ICreateOpetaiton<T> = (
     actionRepo: ActionRepo,
-    paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     transactionRepo: TransactionRepo,
     projectRepo: ProjectRepo
@@ -311,7 +309,6 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (
         actionRepo: ActionRepo,
-        paymentNoRepo: PaymentNoRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         transactionRepo: TransactionRepo,
         projectRepo: ProjectRepo
@@ -353,12 +350,6 @@ export function create(params: {
             params.transaction.id
         )();
 
-        // 確認番号を事前生成
-        const eventStartDateStr = moment(performance.startDate)
-            .tz('Asia/Tokyo')
-            .format('YYYYMMDD');
-        const paymentNo = await paymentNoRepo.publish(eventStartDateStr);
-
         let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
         let responseBody: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
 
@@ -370,7 +361,6 @@ export function create(params: {
                 name: transaction.agent.id,
                 ...{
                     identifier: [
-                        { name: 'paymentNo', value: paymentNo },
                         { name: 'transaction', value: transaction.id }
                     ]
                 }
