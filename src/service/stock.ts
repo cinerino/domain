@@ -162,13 +162,13 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
  */
 export async function findMovieImage(params: {
     query: string;
-}) {
-    return new Promise<string | undefined>((resolve) => {
-        // カスタム検索エンジンIDの指定がなければ検索しない
-        if (typeof credentials.customSearch.engineId !== 'string') {
-            return;
-        }
+}): Promise<string | undefined> {
+    // カスタム検索エンジンIDの指定がなければ検索しない
+    if (typeof credentials.customSearch.engineId !== 'string' || typeof credentials.customSearch.apiKey !== 'string') {
+        return;
+    }
 
+    return new Promise<string | undefined>((resolve) => {
         customsearch.cse.list(
             {
                 cx: credentials.customSearch.engineId,
