@@ -89,16 +89,21 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         }
 
         // 各作品画像を検索
-        const movies = events
-            .map((e) => e.superEvent.workPerformed)
-            .filter((movie, pos, arr) => arr.map((mapObj) => mapObj.identifier)
-                .indexOf(movie.identifier) === pos);
-        const thumbnailsByMovie = await Promise.all(movies.map(async (movie) => {
-            return {
-                identifier: movie.identifier,
-                thumbnail: await findMovieImage({ query: movie.name })
-            };
-        }));
+        // いったん停止
+        // const movies = events
+        //     .map((e) => e.superEvent.workPerformed)
+        //     .filter((movie, pos, arr) => arr.map((mapObj) => mapObj.identifier)
+        //         .indexOf(movie.identifier) === pos);
+        // const thumbnailsByMovie = await Promise.all(movies.map(async (movie) => {
+        //     return {
+        //         identifier: movie.identifier,
+        //         thumbnail: await findMovieImage({ query: movie.name })
+        //     };
+        // }));
+        const thumbnailsByMovie: {
+            identifier: string;
+            thumbnail?: string;
+        }[] = [];
 
         // イベントごとに永続化トライ
         await Promise.all(events.map(async (e) => {

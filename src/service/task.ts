@@ -71,6 +71,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IOperation<
             await call(task.data)(settings);
             const result = {
                 executedAt: now,
+                endDate: new Date(),
                 error: ''
             };
             await taskRepo.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
@@ -78,6 +79,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IOperation<
             // 実行結果追加
             const result = {
                 executedAt: now,
+                endDate: new Date(),
                 error: {
                     ...error,
                     code: error.code,
