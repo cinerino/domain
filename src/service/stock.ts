@@ -164,6 +164,11 @@ export async function findMovieImage(params: {
     query: string;
 }) {
     return new Promise<string | undefined>((resolve) => {
+        // カスタム検索エンジンIDの指定がなければ検索しない
+        if (typeof credentials.customSearch.engineId !== 'string') {
+            return;
+        }
+
         customsearch.cse.list(
             {
                 cx: credentials.customSearch.engineId,
@@ -190,7 +195,7 @@ export async function findMovieImage(params: {
                     }
                 }
 
-                resolve(undefined);
+                resolve();
             }
         );
     });
