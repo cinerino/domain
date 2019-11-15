@@ -34,12 +34,12 @@ export import IPlaceOrderTransaction = factory.transaction.placeOrder.ITransacti
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
     factory.action.authorize.offer.seatReservation.IResponseBody<T>;
+export type IScreeningEvent = factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
 /**
  * イベントをインポートする
  */
 export function importScreeningEvents(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -48,7 +48,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         // COAイベントの場合、masterSyncサービスを使用
         if (params.offeredThrough !== undefined && params.offeredThrough.identifier === WebAPIIdentifier.COA) {
             await MasterSyncService.importScreeningEvents(params)(repos);
-            // await importScreeningEventsFromCOA(params)(repos);
 
             return;
         }
@@ -66,11 +65,11 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             auth: chevreAuthClient
         });
 
-        // 上映スケジュール取得
+        // Chevreでイベント検索
         const limit = 100;
         let page = 0;
         let numData: number = limit;
-        const events: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
+        const events: IScreeningEvent[] = [];
         while (numData === limit) {
             page += 1;
             const searchScreeningEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
@@ -87,6 +86,27 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             numData = searchScreeningEventsResult.data.length;
             events.push(...searchScreeningEventsResult.data);
         }
+
+        // 一定量ずつ順に保管する
+        // tslint:disable-next-line:prefer-array-literal
+        for (const key of [...Array(page)].keys()) {
+            const savingEvents = events.slice(limit * key, limit * (key + 1));
+            await saveEvents({ events: savingEvents })(repos);
+        }
+        // await saveEvents({ events })(repos);
+    };
+}
+
+/**
+ * イベントを保管する
+ */
+function saveEvents(params: {
+    events: IScreeningEvent[];
+}) {
+    return async (repos: {
+        event: EventRepo;
+    }) => {
+        const events = params.events;
 
         // 各作品画像を検索
         // いったん停止
@@ -161,7 +181,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         }));
     };
 }
-
 /**
  * Googleで作品画像を検索する
  */
@@ -339,7 +358,7 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
         const limit = 100;
         let page = 0;
         let numData: number = limit;
-        const events: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>[] = [];
+        const events: IScreeningEvent[] = [];
         while (numData === limit) {
             page += 1;
             const searchScreeningEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
