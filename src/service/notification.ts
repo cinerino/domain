@@ -182,7 +182,10 @@ export function triggerWebhook(params: factory.task.IData<factory.taskName.Trigg
                                     case CREATED:
                                     case ACCEPTED:
                                     case NO_CONTENT:
-                                        result = body;
+                                        result = {
+                                            statusCode: response.statusCode
+                                            // body: body
+                                        };
                                         resolve();
                                         break;
 
