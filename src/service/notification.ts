@@ -21,6 +21,9 @@ export type Operation<T> = () => Promise<T>;
 
 const debug = createDebug('cinerino-domain:service');
 
+// tslint:disable-next-line:no-magic-numbers
+const TRIGGER_WEBHOOK_TIMEOUT = (process.env.TRIGGER_WEBHOOK_TIMEOUT !== undefined) ? Number(process.env.TRIGGER_WEBHOOK_TIMEOUT) : 15000;
+
 /**
  * Eメールメッセージを送信する
  * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
@@ -171,7 +174,8 @@ export function triggerWebhook(params: factory.task.IData<factory.taskName.Trigg
                             body: {
                                 data: params.object
                             },
-                            json: true
+                            json: true,
+                            timeout: TRIGGER_WEBHOOK_TIMEOUT
                         },
                         (error, response, body) => {
                             if (error instanceof Error) {
