@@ -116,6 +116,7 @@ describe('ポイントインセンティブを返却する', () => {
                     pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
                 },
                 purpose: {
+                    project: {},
                     customer: {},
                     seller: { name: {} }
                 }
@@ -159,6 +160,7 @@ describe('ポイントインセンティブを返却する', () => {
                     pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
                 },
                 purpose: {
+                    project: {},
                     customer: {},
                     seller: { name: {} }
                 }

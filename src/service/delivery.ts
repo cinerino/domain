@@ -380,6 +380,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 auth: pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
+                project: { typeOf: 'Project', id: order.project.id },
                 typeOf: factory.pecorino.transactionType.Withdraw,
                 agent: {
                     typeOf: params.agent.typeOf,

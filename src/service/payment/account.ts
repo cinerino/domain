@@ -112,7 +112,8 @@ export function authorize<T extends factory.accountType>(params: {
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                pendingTransaction = await withdrawService.start({
+                pendingTransaction = await withdrawService.start<T>({
+                    project: { typeOf: 'Project', id: project.id },
                     typeOf: factory.pecorino.transactionType.Withdraw,
                     agent: {
                         typeOf: transaction.agent.typeOf,
@@ -142,7 +143,8 @@ export function authorize<T extends factory.accountType>(params: {
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                pendingTransaction = await transferService.start({
+                pendingTransaction = await transferService.start<T>({
+                    project: { typeOf: 'Project', id: project.id },
                     typeOf: factory.pecorino.transactionType.Transfer,
                     agent: {
                         typeOf: transaction.agent.typeOf,
@@ -177,7 +179,8 @@ export function authorize<T extends factory.accountType>(params: {
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                pendingTransaction = await depositService.start({
+                pendingTransaction = await depositService.start<T>({
+                    project: { typeOf: 'Project', id: project.id },
                     typeOf: factory.pecorino.transactionType.Deposit,
                     agent: {
                         typeOf: transaction.agent.typeOf,
@@ -586,6 +589,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             auth: pecorinoAuthClient
                         });
                         const withdrawTransaction = await withdrawService.start({
+                            project: { typeOf: 'Project', id: project.id },
                             typeOf: factory.pecorino.transactionType.Withdraw,
                             agent: pendingTransaction.recipient,
                             expires: moment()
@@ -611,6 +615,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             auth: pecorinoAuthClient
                         });
                         const transferTransaction = await transferService.start({
+                            project: { typeOf: 'Project', id: project.id },
                             typeOf: factory.pecorino.transactionType.Transfer,
                             agent: pendingTransaction.recipient,
                             expires: moment()
@@ -636,6 +641,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             auth: pecorinoAuthClient
                         });
                         const depositTransaction = await depositService.start({
+                            project: { typeOf: 'Project', id: project.id },
                             typeOf: factory.pecorino.transactionType.Deposit,
                             agent: pendingTransaction.recipient,
                             expires: moment()

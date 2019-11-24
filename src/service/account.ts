@@ -69,6 +69,7 @@ export function open<T extends factory.accountType>(params: {
                 auth: pecorinoAuthClient
             });
             const account = await accountService.open({
+                project: { typeOf: 'Project', id: project.id },
                 accountType: params.accountType,
                 accountNumber: accountNumber,
                 name: params.name
@@ -222,6 +223,7 @@ export function search(params: {
                     auth: pecorinoAuthClient
                 });
                 const accounts = await accountService.search({
+                    project: { id: { $eq: project.id } },
                     accountType: typeOfGood.accountType,
                     accountNumbers: accountNumbers,
                     statuses: [],
@@ -291,7 +293,10 @@ export function searchMoneyTransferActions<T extends factory.accountType>(params
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
             });
-            actions = await accountService.searchMoneyTransferActions(params.conditions);
+            actions = await accountService.searchMoneyTransferActions({
+                ...params.conditions,
+                project: { id: { $eq: project.id } }
+            });
         } catch (error) {
             error = handlePecorinoError(error);
             throw error;
@@ -334,6 +339,7 @@ export function openWithoutOwnershipInfo<T extends factory.accountType>(params: 
                 auth: pecorinoAuthClient
             });
             account = await accountService.open({
+                project: { typeOf: 'Project', id: project.id },
                 accountType: params.accountType,
                 accountNumber: accountNumber,
                 name: params.name
@@ -373,6 +379,7 @@ export function deposit(params: {
                 auth: pecorinoAuthClient
             });
             const transaction = await depositService.start({
+                project: { typeOf: 'Project', id: project.id },
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
                     ...params.agent
