@@ -6,7 +6,6 @@ import * as json2csv from 'json2csv';
 import * as JSONStream from 'JSONStream';
 import * as moment from 'moment';
 import { Stream } from 'stream';
-import * as util from 'util';
 
 import * as factory from '../../factory';
 import { MongoRepository as OrderRepo } from '../../repo/order';
@@ -45,6 +44,7 @@ export interface IOrderReport {
         typeOf: string;
         name: string;
         numItems: number;
+        id: string;
         event: {
             typeOf: string;
             id: string;
@@ -111,6 +111,7 @@ export function stream(params: {
                     { label: '確認番号', default: '', value: 'confirmationNumber' },
                     { label: '注文アイテムタイプ', default: '', value: 'items.typeOf' },
                     // { label: '注文アイテムチケット金額', default: '', value: 'items.totalPrice' },
+                    { label: '注文アイテムID', default: '', value: 'items.id' },
                     { label: '注文アイテム名', default: '', value: 'items.name' },
                     { label: '注文アイテム数', default: '', value: 'items.numItems' },
                     { label: '注文アイテムイベントタイプ', default: '', value: 'items.event.typeOf' },
@@ -169,12 +170,14 @@ export function order2report(params: {
     const order = params.order;
     let event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> | undefined;
     const items = order.acceptedOffers.map(
+        // tslint:disable-next-line:cyclomatic-complexity
         (orderItem) => {
             const offer = orderItem.itemOffered;
             let item = {
                 typeOf: String(offer.typeOf),
                 name: '',
                 numItems: 1,
+                id: '',
                 event: {
                     typeOf: '',
                     id: '',
@@ -192,17 +195,15 @@ export function order2report(params: {
                     event = offer.reservationFor;
                     const ticket = offer.reservedTicket;
                     const ticketedSeat = ticket.ticketedSeat;
+
                     let name = '';
                     let numItems = 1;
-                    if (ticketedSeat !== undefined) {
-                        name = util.format(
-                            '%s %s',
-                            (offer.reservedTicket.ticketedSeat !== undefined)
-                                ? offer.reservedTicket.ticketedSeat.seatNumber
-                                : '',
-                            offer.reservedTicket.ticketType.name.ja
-                        );
-                    }
+
+                    name = [
+                        (ticketedSeat !== undefined) ? ticketedSeat.seatNumber : '',
+                        offer.reservedTicket.ticketType.name.ja
+                    ].join(' ');
+
                     if (offer.numSeats !== undefined) {
                         // tslint:disable-next-line:max-line-length
                         numItems = offer.numSeats;
@@ -212,6 +213,7 @@ export function order2report(params: {
                         typeOf: offer.typeOf,
                         name: name,
                         numItems: numItems,
+                        id: offer.id,
                         event: {
                             typeOf: (event !== undefined) ? event.typeOf : '',
                             id: (event !== undefined) ? event.id : '',
@@ -223,6 +225,25 @@ export function order2report(params: {
                             location: (event !== undefined) ? event.location.name.ja : '',
                             superEventLocationBranchCode: (event !== undefined) ? event.superEvent.location.branchCode : '',
                             superEventLocation: (event !== undefined) ? event.superEvent.location.name.ja : ''
+                        }
+                    };
+                    break;
+
+                case factory.programMembership.ProgramMembershipType.ProgramMembership:
+                    item = {
+                        typeOf: String(offer.typeOf),
+                        name: (typeof offer.name === 'string') ? offer.name : '',
+                        numItems: 1,
+                        id: (typeof offer.id === 'string') ? offer.id : '',
+                        event: {
+                            typeOf: '',
+                            id: '',
+                            name: '',
+                            startDate: '',
+                            endDate: '',
+                            location: '',
+                            superEventLocationBranchCode: '',
+                            superEventLocation: ''
                         }
                     };
                     break;
