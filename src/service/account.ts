@@ -218,19 +218,21 @@ export function search(params: {
                 if (project.settings.pecorino === undefined) {
                     throw new factory.errors.ServiceUnavailable('Project settings not found');
                 }
+
                 const accountService = new pecorinoapi.service.Account({
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
-                const accounts = await accountService.search({
+                const searchAccountResult = await accountService.search({
                     project: { id: { $eq: project.id } },
                     accountType: typeOfGood.accountType,
                     accountNumbers: accountNumbers,
                     statuses: [],
                     limit: 100
                 });
+
                 ownershipInfosWithDetail = ownershipInfos.map((o) => {
-                    const account = accounts.find((a) => a.accountNumber === o.typeOfGood.accountNumber);
+                    const account = searchAccountResult.data.find((a) => a.accountNumber === o.typeOfGood.accountNumber);
                     if (account === undefined) {
                         throw new factory.errors.NotFound('Account');
                     }
@@ -293,10 +295,11 @@ export function searchMoneyTransferActions<T extends factory.accountType>(params
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
             });
-            actions = await accountService.searchMoneyTransferActions({
+            const searchMoneyTransferActionsResult = await accountService.searchMoneyTransferActions({
                 ...params.conditions,
                 project: { id: { $eq: project.id } }
             });
+            actions = searchMoneyTransferActionsResult.data;
         } catch (error) {
             error = handlePecorinoError(error);
             throw error;
