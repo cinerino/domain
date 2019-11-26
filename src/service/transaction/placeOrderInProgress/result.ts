@@ -229,6 +229,8 @@ export function createOrder(params: {
 
                         return {
                             typeOf: <factory.chevre.offerType>'Offer',
+                            id: requestedOffer.id,
+                            name: <factory.multilingualString>requestedOffer.name,
                             itemOffered: reservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
                             priceSpecification: requestedOffer.priceSpecification,

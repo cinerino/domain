@@ -658,6 +658,8 @@ export function create(params: {
 
                 return {
                     typeOf: <factory.chevre.offerType>'Offer',
+                    id: itemOffered.reservedTicket.ticketType.id,
+                    name: itemOffered.reservedTicket.ticketType.name,
                     itemOffered: reservation,
                     offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
                     price: unitPrice,
