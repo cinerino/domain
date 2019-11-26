@@ -10,11 +10,11 @@
   ],
   "dependencies": {
     "@chevre/api-nodejs-client": "^2.1.0",
-    "@cinerino/factory": "1.0.0-alpha.197",
+    "@cinerino/factory": "1.0.0-alpha.198",
     "@motionpicture/coa-service": "^7.0.0",
     "@motionpicture/gmo-service": "^4.3.0",
     "@movieticket/reserve-api-nodejs-client": "^1.0.1",
-    "@pecorino/api-nodejs-client": "4.0.0-alpha.1",
+    "@pecorino/api-nodejs-client": "^4.0.0",
     "@sendgrid/mail": "^6.4.0",
     "@waiter/domain": "^3.0.0",
     "JSONStream": "^1.3.5",
@@ -46,7 +46,7 @@
     "@types/lodash.difference": "^4.5.6",
     "@types/mocha": "^5.2.7",
     "@types/moment-timezone": "^0.5.12",
-    "@types/mongoose": "^5.5.17",
+    "@types/mongoose": "^5.5.32",
     "@types/nock": "^9.3.1",
     "@types/node": "^8.10.53",
     "@types/power-assert": "^1.5.0",
@@ -60,7 +60,7 @@
     "@types/validator": "^9.4.4",
     "coveralls": "^3.0.6",
     "mocha": "^5.2.0",
-    "mongoose": "^5.6.12",
+    "mongoose": "^5.7.12",
     "nock": "^9.6.1",
     "nyc": "^13.3.0",
     "power-assert": "^1.6.1",
@@ -69,17 +69,17 @@
     "rimraf": "^2.7.1",
     "sinon": "^4.5.0",
     "sinon-mongoose": "^2.3.0",
-    "ts-node": "^7.0.1",
-    "tslint": "^5.19.0",
+    "ts-node": "^8.5.2",
+    "tslint": "^5.20.1",
     "tslint-microsoft-contrib": "^6.2.0",
-    "typescript": "^3.6.2"
+    "typescript": "^3.7.2"
   },
   "peerDependencies": {
     "mongoose": "^5.4.9",
     "redis": "^2.8.0"
   },
   "engines": {
-    "node": ">=6.9.1",
+    "node": ">=8.0.0",
     "npm": ">=5.3.0"
   },
   "keywords": [

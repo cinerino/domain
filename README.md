@@ -40,12 +40,10 @@ npm install @cinerino/domain
 | `MVTK_RESERVE_AUTHORIZE_SERVER_DOMAIN` | true     |                   | Mvtk Reserve credentials       |
 | `MVTK_RESERVE_CLIENT_ID`               | true     |                   | Mvtk Reserve credentials       |
 | `MVTK_RESERVE_CLIENT_SECRET`           | true     |                   | Mvtk Reserve credentials       |
-| `NODE_ENV`                             | true     |                   | Environment name               |
 | `PECORINO_AUTHORIZE_SERVER_DOMAIN`     | true     |                   | Pecorino credentials           |
 | `PECORINO_CLIENT_ID`                   | true     |                   | Pecorino credentials           |
 | `PECORINO_CLIENT_SECRET`               | true     |                   | Pecorino credentials           |
 | `SENDGRID_API_KEY`                     | true     |                   | SendGrid API key               |
-| `TELEMETRY_API_ENDPOINT`               | true     |                   | Telemetry API endpoint         |
 
 ## Code Samples
 
