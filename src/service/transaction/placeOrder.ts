@@ -6,16 +6,14 @@ import * as moment from 'moment';
 
 import * as factory from '../../factory';
 
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
-const transactionWebhooks = (process.env.TRANSACTION_WEBHOOK_URL !== undefined)
-    ? process.env.TRANSACTION_WEBHOOK_URL.split(',')
-    : [];
-
 export type ITaskAndTransactionOperation<T> = (repos: {
+    project: ProjectRepo;
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -32,6 +30,7 @@ export function exportTasks(params: {
     runsTasksAfterInSeconds?: number;
 }) {
     return async (repos: {
+        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
@@ -67,6 +66,7 @@ export function exportTasksById(params: {
 }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
+        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
@@ -75,7 +75,7 @@ export function exportTasksById(params: {
             id: params.id
         });
 
-        const project: factory.project.IProject = transaction.project;
+        const project = await repos.project.findById({ id: transaction.project.id });
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
@@ -87,6 +87,9 @@ export function exportTasksById(params: {
                 .toDate();
         }
 
+        const transactionWebhooks = (project.settings !== undefined && typeof project.settings.transactionWebhookUrl === 'string')
+            ? project.settings.transactionWebhookUrl.split(',')
+            : [];
         const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook>[] =
             transactionWebhooks.map((webhookUrl) => {
                 return {
@@ -124,7 +127,7 @@ export function exportTasksById(params: {
                 }
                 const orderActionAttributes = potentialActions.order;
                 const placeOrderTaskAttributes: factory.task.IAttributes<factory.taskName.PlaceOrder> = {
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.PlaceOrder,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
@@ -142,7 +145,7 @@ export function exportTasksById(params: {
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
                 const cancelSeatReservationTaskAttributes: factory.task.IAttributes<factory.taskName.CancelSeatReservation> = {
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.CancelSeatReservation,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
@@ -150,12 +153,12 @@ export function exportTasksById(params: {
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        project: project,
+                        project: { typeOf: project.typeOf, id: project.id },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.CancelCreditCard,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
@@ -163,12 +166,12 @@ export function exportTasksById(params: {
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        project: project,
+                        project: { typeOf: project.typeOf, id: project.id },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.CancelAccount,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
@@ -176,12 +179,12 @@ export function exportTasksById(params: {
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        project: project,
+                        project: { typeOf: project.typeOf, id: project.id },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
                 const cancelPointAwardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPointAward> = {
-                    project: project,
+                    project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.CancelPointAward,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
@@ -189,7 +192,7 @@ export function exportTasksById(params: {
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        project: project,
+                        project: { typeOf: project.typeOf, id: project.id },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
@@ -221,6 +224,7 @@ export function sendEmail(
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
 ): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName.SendEmailMessage>> {
     return async (repos: {
+        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {

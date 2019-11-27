@@ -123,6 +123,7 @@ describe('sendEmailMessage()', () => {
 
     it('SendGridの状態が正常であればエラーにならないはず', async () => {
         const sendEamilMessageActionAttributets = {
+            project: { id: 'projectId' },
             typeOf: domain.factory.actionType.SendAction,
             object: {
                 identifier: 'identifier',
@@ -136,7 +137,12 @@ describe('sendEmailMessage()', () => {
             typeOf: domain.factory.actionType.SendAction
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ id: '', settings: { sendgridApiKey: '' } });
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -150,15 +156,18 @@ describe('sendEmailMessage()', () => {
             .once()
             .resolves(sendResponse);
 
-        const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({ action: actionRepo });
+        const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({
+            action: actionRepo,
+            project: projectRepo
+        });
 
         assert.equal(result, undefined);
         sandbox.verify();
     });
 
-    it('SendGridAPIのステータスコードがACCEPTEDでなｋれば、エラーになるはず', async () => {
-
+    it('SendGridAPIのステータスコードがACCEPTEDでなければ、エラーになるはず', async () => {
         const sendEamilMessageActionAttributets = {
+            project: { id: 'projectId' },
             typeOf: domain.factory.actionType.SendAction,
             object: {
                 identifier: 'identifier',
@@ -172,7 +181,12 @@ describe('sendEmailMessage()', () => {
             typeOf: domain.factory.actionType.SendAction
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ id: '', settings: { sendgridApiKey: '' } });
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -189,7 +203,10 @@ describe('sendEmailMessage()', () => {
             .once()
             .resolves(sendResponse);
 
-        const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({ action: actionRepo })
+        const result = await domain.service.notification.sendEmailMessage(<any>sendEamilMessageActionAttributets)({
+            action: actionRepo,
+            project: projectRepo
+        })
             .catch((err) => err);
 
         assert(result instanceof Error);

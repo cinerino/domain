@@ -21,8 +21,10 @@ describe('exportTasks()', () => {
     });
 
     it('タスクエクスポート待ちの取引があれば、エクスポートされるはず', async () => {
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
+
         const status = domain.factory.transactionStatusType.Confirmed;
         const task = {};
         const transaction = {
@@ -32,6 +34,11 @@ describe('exportTasks()', () => {
             result: {},
             potentialActions: {}
         };
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ id: '' });
         sandbox.mock(transactionRepo)
             .expects('startExportTasks')
             .once()
@@ -50,6 +57,7 @@ describe('exportTasks()', () => {
             .resolves();
 
         const result = await domain.service.transaction.placeOrder.exportTasks({ status: status })({
+            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -59,9 +67,14 @@ describe('exportTasks()', () => {
 
     it('タスクエクスポート待ちの取引がなければ、何もしないはず', async () => {
         const status = domain.factory.transactionStatusType.Confirmed;
+
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .never();
         sandbox.mock(transactionRepo)
             .expects('startExportTasks')
             .once()
@@ -74,6 +87,7 @@ describe('exportTasks()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrder.exportTasks({ status: status })({
+            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -97,9 +111,15 @@ describe('exportTasksById()', () => {
             result: {},
             potentialActions: {}
         };
+
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ id: '' });
         sandbox.mock(transactionRepo)
             .expects('findById')
             .once()
@@ -110,6 +130,7 @@ describe('exportTasksById()', () => {
             .resolves();
 
         const result = await domain.service.transaction.placeOrder.exportTasksById(transaction)({
+            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -125,9 +146,15 @@ describe('exportTasksById()', () => {
             id: 'transactionId',
             status: domain.factory.transactionStatusType.InProgress
         };
+
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves({ id: '' });
         sandbox.mock(transactionRepo)
             .expects('findById')
             .once()
@@ -137,6 +164,7 @@ describe('exportTasksById()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrder.exportTasksById(transaction)({
+            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         })
@@ -168,6 +196,7 @@ describe('sendEmail', () => {
         };
         const task = {};
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
@@ -184,6 +213,7 @@ describe('sendEmail', () => {
             transaction.id,
             <any>emailMessageAttributes
         )({
+            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -207,6 +237,7 @@ describe('sendEmail', () => {
             text: 'text'
         };
 
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
@@ -222,6 +253,7 @@ describe('sendEmail', () => {
             transaction.id,
             <any>emailMessageAttributes
         )({
+            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         })

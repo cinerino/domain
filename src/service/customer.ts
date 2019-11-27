@@ -4,11 +4,10 @@
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as factory from '../factory';
-
-const USE_USERNAME_AS_GMO_MEMBER_ID = process.env.USE_USERNAME_AS_GMO_MEMBER_ID === '1';
 
 /**
  * 会員削除
@@ -20,8 +19,11 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
         action: ActionRepo;
         creditCard: CreditCardRepo;
         person: PersonRepo;
+        project: ProjectRepo;
         task: TaskRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         // アクション開始
         const action = await repos.action.start(params);
 
@@ -41,7 +43,8 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
 
             // 全クレジットカード削除
             let gmoMemberId = customer.id;
-            if (USE_USERNAME_AS_GMO_MEMBER_ID) {
+            const useUsernameAsGMOMemberId = project.settings !== undefined && project.settings.useUsernameAsGMOMemberId === true;
+            if (useUsernameAsGMOMemberId) {
                 if (customer.memberOf !== undefined && customer.memberOf.membershipNumber !== undefined) {
                     gmoMemberId = customer.memberOf.membershipNumber;
                 }

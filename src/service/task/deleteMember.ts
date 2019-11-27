@@ -39,6 +39,7 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
             action: new ActionRepo(settings.connection),
             creditCard: creditCardRepo,
             person: personRepo,
+            project: projectRepo,
             task: new TaskRepo(settings.connection)
         });
     };

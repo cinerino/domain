@@ -16,6 +16,7 @@ import { credentials } from '../credentials';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 
 export type Operation<T> = () => Promise<T>;
 
@@ -28,17 +29,27 @@ const TRIGGER_WEBHOOK_TIMEOUT = (process.env.TRIGGER_WEBHOOK_TIMEOUT !== undefin
  * Eメールメッセージを送信する
  * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
  */
-export function sendEmailMessage(actionAttributes: factory.action.transfer.send.message.email.IAttributes) {
+export function sendEmailMessage(params: factory.action.transfer.send.message.email.IAttributes) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         // アクション開始
-        const action = await repos.action.start(actionAttributes);
+        const action = await repos.action.start(params);
         let result: any = {};
 
         try {
-            sgMail.setApiKey(credentials.sendGrid.apiKey);
-            const emailMessage = actionAttributes.object;
+            const apiKey = (project.settings !== undefined && typeof project.settings.sendgridApiKey === 'string')
+                ? project.settings.sendgridApiKey
+                : undefined;
+            if (apiKey === undefined) {
+                throw new factory.errors.ServiceUnavailable('API Key not found');
+            }
+
+            sgMail.setApiKey(apiKey);
+            const emailMessage = params.object;
             const msg: MailData = {
                 to: {
                     name: emailMessage.toRecipient.name,
@@ -74,7 +85,7 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
             // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: actionAttributes.typeOf, id: action.id, error: actionError });
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -84,7 +95,7 @@ export function sendEmailMessage(actionAttributes: factory.action.transfer.send.
 
         // アクション完了
         debug('ending action...');
-        await repos.action.complete({ typeOf: actionAttributes.typeOf, id: action.id, result: result });
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
 

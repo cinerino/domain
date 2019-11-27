@@ -1,7 +1,9 @@
 import { IConnectionSettings, IOperation } from '../task';
 
 import * as factory from '../../factory';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 import * as NotificationService from '../notification';
 
@@ -10,7 +12,9 @@ import * as NotificationService from '../notification';
  */
 export function call(data: factory.task.IData<factory.taskName.SendEmailMessage>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        const actionRepo = new ActionRepo(settings.connection);
-        await NotificationService.sendEmailMessage(data.actionAttributes)({ action: actionRepo });
+        await NotificationService.sendEmailMessage(data.actionAttributes)({
+            action: new ActionRepo(settings.connection),
+            project: new ProjectRepo(settings.connection)
+        });
     };
 }

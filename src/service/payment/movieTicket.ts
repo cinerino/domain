@@ -367,7 +367,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event?: EventRepo;
+        event: EventRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
         seller: SellerRepo;
@@ -376,6 +376,8 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         if (project.settings === undefined || project.settings.mvtkReserve === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         // アクション開始
         const action = await repos.action.start(params);
@@ -394,7 +396,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             // イベント情報取得
             let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-            if (repos.event !== undefined) {
+            if (useEventRepo) {
                 screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
             } else {
                 if (project.settings === undefined || project.settings.chevre === undefined) {

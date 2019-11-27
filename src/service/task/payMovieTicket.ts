@@ -9,8 +9,6 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 
 import * as PaymentService from '../payment';
 
-const USE_EVENT_REPO = process.env.USE_EVENT_REPO === '1';
-
 /**
  * タスク実行関数
  */
@@ -27,9 +25,7 @@ export function call(data: factory.task.IData<factory.taskName.PayMovieTicket>):
             invoice: invoiceRepo,
             project: projectRepo,
             seller: sellerRepo,
-            ...(USE_EVENT_REPO)
-                ? { event: eventRepo }
-                : undefined
+            event: eventRepo
         });
     };
 }

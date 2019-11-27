@@ -284,14 +284,10 @@ export type IResultOrderParams = factory.transaction.placeOrder.IResultOrderPara
 };
 
 export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
-    project: factory.chevre.project.IProject;
+    project: { id: string };
     result: {
         order: IResultOrderParams;
     };
-    /**
-     * ムビチケバリデーションを適用するかどうか
-     */
-    validateMovieTicket?: boolean;
 };
 
 /**
@@ -301,6 +297,7 @@ export function confirm(params: IConfirmParams) {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
         seller: SellerRepo;
         orderNumber: OrderNumberRepo;
@@ -326,7 +323,7 @@ export function confirm(params: IConfirmParams) {
             }
         }
 
-        const project: factory.project.IProject = transaction.project;
+        const project = await repos.project.findById({ id: transaction.project.id });
 
         const seller = await repos.seller.findById({ id: transaction.seller.id });
 
@@ -346,13 +343,14 @@ export function confirm(params: IConfirmParams) {
         validateTransaction(transaction);
 
         // ムビチケ条件が整っているかどうか確認
-        if (params.validateMovieTicket === true) {
-            validateMovieTicket(transaction);
+        const validateMovieTicket = project.settings !== undefined && project.settings.validateMovieTicket === true;
+        if (validateMovieTicket) {
+            processValidateMovieTicket(transaction);
         }
 
         // 注文作成
         const order = createOrder({
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            project: { typeOf: project.typeOf, id: project.id },
             transaction: transaction,
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
@@ -387,7 +385,7 @@ export function confirm(params: IConfirmParams) {
 
         // 注文番号を発行
         order.orderNumber = await repos.orderNumber.publishByTimestamp({
-            project: project,
+            project: { id: project.id },
             orderDate: params.result.order.orderDate
         });
 
@@ -548,7 +546,7 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
 /**
  * 座席予約オファー承認に対してムビチケ承認条件が整っているかどうか検証する
  */
-export function validateMovieTicket(transaction: factory.transaction.placeOrder.ITransaction) {
+export function processValidateMovieTicket(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
 
     const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>authorizeActions

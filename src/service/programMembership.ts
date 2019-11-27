@@ -22,11 +22,6 @@ import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
 import * as factory from '../factory';
 
-/**
- * GMOメンバーIDにユーザーネームを使用するかどうか
- */
-const USE_USERNAME_AS_GMO_MEMBER_ID = process.env.USE_USERNAME_AS_GMO_MEMBER_ID === '1';
-const EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP = process.env.EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP;
 const RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH = `${__dirname}/../../emails/renewProgramMembership/text.pug`;
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
@@ -490,10 +485,11 @@ function processPlaceOrder(params: {
     }) => {
         const now = new Date();
 
+        const project = await repos.project.findById({ id: params.project.id });
+
         const acceptedOffer = params.acceptedOffer;
         const programMembership = acceptedOffer.itemOffered;
         const customer = params.customer;
-        const project = params.project;
         const seller = params.seller;
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -574,7 +570,8 @@ function processPlaceOrder(params: {
         })(repos);
 
         // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)
-        const gmoMemberId = (USE_USERNAME_AS_GMO_MEMBER_ID) ? customer.memberOf.membershipNumber : customer.id;
+        const useUsernameAsGMOMemberId = project.settings !== undefined && project.settings.useUsernameAsGMOMemberId === true;
+        const gmoMemberId = (useUsernameAsGMOMemberId) ? customer.memberOf.membershipNumber : customer.id;
         const creditCards = await repos.creditCard.search({ personId: gmoMemberId });
         // creditCards = creditCards.filter((c) => c.defaultFlag === '1');
         const creditCard = creditCards.shift();
@@ -583,7 +580,7 @@ function processPlaceOrder(params: {
         }
 
         await CreditCardPaymentService.authorize({
-            project: project,
+            project: { id: project.id },
             agent: customer,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,
@@ -622,8 +619,13 @@ function processPlaceOrder(params: {
         }
 
         // プログラム更新の場合、管理者宛のメール送信を自動設定
+        const emailInformUpdateProgrammembership =
+            (project.settings !== undefined && typeof project.settings.emailInformUpdateProgrammembership === 'string')
+                ? project.settings.emailInformUpdateProgrammembership
+                : undefined;
+
         if (!isNewRegister
-            && EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP !== undefined
+            && emailInformUpdateProgrammembership !== undefined
             && params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.length === 0) {
             const template = await new Promise<string | undefined>((resolve) => {
                 // tslint:disable-next-line:non-literal-fs-path
@@ -637,7 +639,7 @@ function processPlaceOrder(params: {
             });
             const email: factory.creativeWork.message.email.ICustomization = {
                 about: `ProgramMembership Renewed [${project.id}]`,
-                toRecipient: { name: 'administrator', email: EMAIL_INFORM_UPDATE_PROGRAMMEMBERSHIP },
+                toRecipient: { name: 'administrator', email: emailInformUpdateProgrammembership },
                 template: template
             };
 
@@ -648,7 +650,7 @@ function processPlaceOrder(params: {
 
         // 取引確定
         return PlaceOrderService.confirm({
-            project: { typeOf: project.typeOf, id: project.id },
+            project: { id: project.id },
             id: transaction.id,
             agent: { id: customer.id },
             result: {
