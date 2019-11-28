@@ -24,18 +24,18 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ISearchEventsOperation<T> = (repos: {
-    event?: EventRepo;
+    event: EventRepo;
     attendeeCapacity?: EventAttendeeCapacityRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
 export type ISearchEventOffersOperation<T> = (repos: {
-    event?: EventRepo;
+    event: EventRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
 export type ISearchEventTicketOffersOperation<T> = (repos: {
-    event?: EventRepo;
+    event: EventRepo;
     project: ProjectRepo;
     seller: SellerRepo;
 }) => Promise<T>;
@@ -58,14 +58,17 @@ export function searchEvents(params: {
     conditions: factory.event.screeningEvent.ISearchConditions;
 }): ISearchEventsOperation<ISearchEventsResult> {
     return async (repos: {
-        event?: EventRepo;
+        event: EventRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
         project: ProjectRepo;
     }) => {
         let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
         let totalCount: number;
 
-        if (repos.event !== undefined) {
+        const project = await repos.project.findById({ id: params.project.id });
+        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
+
+        if (useEventRepo) {
             data = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
 
             let capacities: IEventCapacity[] = [];
@@ -85,8 +88,6 @@ export function searchEvents(params: {
 
             totalCount = await repos.event.count(params.conditions);
         } else {
-            const project = await repos.project.findById({ id: params.project.id });
-
             if (project.settings === undefined || project.settings.chevre === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
@@ -120,13 +121,14 @@ export function searchEventOffers(params: {
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
     return async (repos: {
-        event?: EventRepo;
+        event: EventRepo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (repos.event !== undefined) {
+        if (useEventRepo) {
             event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
                 id: params.event.id
             });
@@ -241,7 +243,7 @@ export function searchEventTicketOffers(params: {
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event?: EventRepo;
+        event: EventRepo;
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
@@ -249,6 +251,8 @@ export function searchEventTicketOffers(params: {
         if (project.settings === undefined || project.settings.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
@@ -261,7 +265,7 @@ export function searchEventTicketOffers(params: {
 
         debug('searching screeninf event offers...', params);
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (repos.event !== undefined) {
+        if (useEventRepo) {
             event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
                 id: params.event.id
             });

@@ -21,11 +21,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS !== undefined)
-    ? Number(process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS)
-    // tslint:disable-next-line:no-magic-numbers
-    : 6;
-
+const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = 6;
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 export type ICreateOpetaiton<T> = (

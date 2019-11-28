@@ -24,9 +24,9 @@ before(() => {
 describe('report2developers()', () => {
     beforeEach(() => {
         process.env.LINE_NOTIFY_URL = `${LINE_NOTIFY_URL_BASE_PATH}${LINE_NOTIFY_URI}`;
-        process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN = 'accessToken';
+        process.env.LINE_NOTIFY_ACCESS_TOKEN = 'accessToken';
         credentials.lineNotify.url = process.env.LINE_NOTIFY_URL;
-        credentials.lineNotify.accessToken = process.env.DEVELOPER_LINE_NOTIFY_ACCESS_TOKEN;
+        credentials.lineNotify.accessToken = process.env.LINE_NOTIFY_ACCESS_TOKEN;
         nock.cleanAll();
         sandbox.restore();
     });

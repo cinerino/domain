@@ -26,7 +26,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ICreateOperation<T> = (repos: {
-    event?: EventRepo;
+    event: EventRepo;
     action: ActionRepo;
     movieTicket: MovieTicketRepo;
     project: ProjectRepo;
@@ -53,7 +53,7 @@ export function create(params: {
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
-        event?: EventRepo;
+        event: EventRepo;
         action: ActionRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
@@ -61,6 +61,7 @@ export function create(params: {
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -77,7 +78,7 @@ export function create(params: {
         }
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (repos.event !== undefined) {
+        if (useEventRepo) {
             event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
                 id: params.object.event.id
             });
@@ -441,7 +442,7 @@ function validateAcceptedOffers(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event?: EventRepo;
+        event: EventRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
         seller: SellerRepo;
