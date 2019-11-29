@@ -116,7 +116,7 @@ export function verifyToken<T>(params: {
     agent: factory.action.check.token.IAgent;
     token: string;
     secret: string;
-    issuer: string;
+    issuer: string | string[];
 }) {
     return async (repos: {
         action: ActionRepo;
