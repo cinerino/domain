@@ -709,7 +709,7 @@ export function create(params: {
                         const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                         if (holder === transaction.id) {
                             debug('resetting wheelchair rate limit...');
-                            await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
+                            // await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
                             debug('wheelchair rate limit reset.');
                         }
                     }
@@ -829,7 +829,7 @@ export function cancel(params: {
                             const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                             if (holder === transaction.id) {
                                 debug('resetting wheelchair rate limit...');
-                                await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
+                                // await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
                                 debug('wheelchair rate limit reset.');
                             }
                         }
