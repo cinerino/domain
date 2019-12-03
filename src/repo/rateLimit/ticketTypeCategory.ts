@@ -65,35 +65,35 @@ export class RedisRepository {
      * @param now 現在日時
      * @param aggregationUnitInSeconds 集計単位(秒)
      */
-    public async unlock(ratelimitKey: IRateLimitKey) {
-        return new Promise<void>((resolve, reject) => {
-            const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
+    // public async unlock(ratelimitKey: IRateLimitKey) {
+    //     return new Promise<void>((resolve, reject) => {
+    //         const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
 
-            this.redisClient.del(key, (err, _) => {
-                if (err !== null) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
-    }
+    //         this.redisClient.del(key, (err, _) => {
+    //             if (err !== null) {
+    //                 reject(err);
+    //             } else {
+    //                 resolve();
+    //             }
+    //         });
+    //     });
+    // }
 
     /**
      * 保持者を取得する
      */
-    public async getHolder(ratelimitKey: IRateLimitKey): Promise<string | null> {
-        return new Promise<string | null>((resolve, reject) => {
-            const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
+    // public async getHolder(ratelimitKey: IRateLimitKey): Promise<string | null> {
+    //     return new Promise<string | null>((resolve, reject) => {
+    //         const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
 
-            this.redisClient.get(key, (err, result) => {
-                if (err !== null) {
-                    reject(err);
-                } else {
-                    // tslint:disable-next-line:no-magic-numbers
-                    resolve(result);
-                }
-            });
-        });
-    }
+    //         this.redisClient.get(key, (err, result) => {
+    //             if (err !== null) {
+    //                 reject(err);
+    //             } else {
+    //                 // tslint:disable-next-line:no-magic-numbers
+    //                 resolve(result);
+    //             }
+    //         });
+    //     });
+    // }
 }

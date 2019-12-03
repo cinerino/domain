@@ -3,7 +3,7 @@ import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../../repo/rateLimit/ticketTypeCategory';
+// import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
 
 import { credentials } from '../../../../../../credentials';
@@ -22,11 +22,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = 6;
-const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+// const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 export type ICreateOpetaiton<T> = (
     actionRepo: ActionRepo,
-    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+    // ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     transactionRepo: TransactionRepo,
     projectRepo: ProjectRepo
 ) => Promise<T>;
@@ -34,7 +34,6 @@ export type ICreateOpetaiton<T> = (
 export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     actionRepo: ActionRepo,
-    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     projectRepo: ProjectRepo
 ) => Promise<T>;
 
@@ -305,7 +304,7 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (
         actionRepo: ActionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        // ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         transactionRepo: TransactionRepo,
         projectRepo: ProjectRepo
     ): Promise<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>> => {
@@ -427,47 +426,47 @@ export function create(params: {
         let tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[] = [];
         let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
 
-        const performanceStartDate = moment(performance.startDate)
-            .toDate();
+        // const performanceStartDate = moment(performance.startDate)
+        //     .toDate();
 
         try {
             // 車椅子予約がある場合、レート制限
-            await Promise.all(acceptedOffersWithSeatNumber
-                .filter((o) => {
-                    const r = o.itemOffered;
-                    // 余分確保分を除く
-                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    if (r.additionalProperty !== undefined) {
-                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                    }
+            // await Promise.all(acceptedOffersWithSeatNumber
+            //     .filter((o) => {
+            //         const r = o.itemOffered;
+            //         // 余分確保分を除く
+            //         let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            //         if (r.additionalProperty !== undefined) {
+            //             extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            //         }
 
-                    return r.additionalProperty === undefined
-                        || extraProperty === undefined
-                        || extraProperty.value !== '1';
-                })
-                .map(async (offer) => {
-                    let ticketTypeCategory = TicketTypeCategory.Normal;
-                    if (Array.isArray(offer.additionalProperty)) {
-                        const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
-                        if (categoryProperty !== undefined) {
-                            ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
-                        }
-                    }
+            //         return r.additionalProperty === undefined
+            //             || extraProperty === undefined
+            //             || extraProperty.value !== '1';
+            //     })
+            //     .map(async (offer) => {
+            //         let ticketTypeCategory = TicketTypeCategory.Normal;
+            //         if (Array.isArray(offer.additionalProperty)) {
+            //             const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
+            //             if (categoryProperty !== undefined) {
+            //                 ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
+            //             }
+            //         }
 
-                    if (ticketTypeCategory === TicketTypeCategory.Wheelchair) {
-                        // 車椅子レート制限枠確保(取引IDを保持者に指定)
-                        await ticketTypeCategoryRateLimitRepo.lock(
-                            {
-                                performanceStartDate: performanceStartDate,
-                                ticketTypeCategory: ticketTypeCategory,
-                                unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                            },
-                            transaction.id
-                        );
-                        debug('wheelchair rate limit checked.');
-                    }
-                })
-            );
+            //         if (ticketTypeCategory === TicketTypeCategory.Wheelchair) {
+            //             // 車椅子レート制限枠確保(取引IDを保持者に指定)
+            //             await ticketTypeCategoryRateLimitRepo.lock(
+            //                 {
+            //                     performanceStartDate: performanceStartDate,
+            //                     ticketTypeCategory: ticketTypeCategory,
+            //                     unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+            //                 },
+            //                 transaction.id
+            //             );
+            //             debug('wheelchair rate limit checked.');
+            //         }
+            //     })
+            // );
 
             responseBody = await reserveService.addReservations({
                 id: reserveTransaction.id,
@@ -689,31 +688,6 @@ export function create(params: {
                 if (responseBody !== undefined) {
                     await reserveService.cancel({ id: responseBody.id });
                 }
-
-                // 車椅子レート制限解放
-                await Promise.all(acceptedOffersWithSeatNumber.map(async (offer) => {
-                    let ticketTypeCategory = TicketTypeCategory.Normal;
-                    if (Array.isArray(offer.additionalProperty)) {
-                        const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
-                        if (categoryProperty !== undefined) {
-                            ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
-                        }
-                    }
-
-                    if (ticketTypeCategory === TicketTypeCategory.Wheelchair) {
-                        const rateLimitKey = {
-                            performanceStartDate: performanceStartDate,
-                            ticketTypeCategory: ticketTypeCategory,
-                            unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                        };
-                        const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
-                        if (holder === transaction.id) {
-                            debug('resetting wheelchair rate limit...');
-                            // await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
-                            debug('wheelchair rate limit reset.');
-                        }
-                    }
-                }));
             } catch (error) {
                 // no op
                 // 失敗したら仕方ない
@@ -766,7 +740,6 @@ export function cancel(params: {
     return async (
         transactionRepo: TransactionRepo,
         actionRepo: ActionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         projectRepo: ProjectRepo
     ) => {
         try {
@@ -804,37 +777,6 @@ export function cancel(params: {
                 });
 
                 await reserveService.cancel({ id: (<any>actionResult).responseBody.id });
-
-                // レート制限があれば解除
-                const performanceStartDate = moment(performance.startDate)
-                    .toDate();
-                if (Array.isArray(actionResult.acceptedOffers)) {
-                    await Promise.all(actionResult.acceptedOffers.map(async (acceptedOffer) => {
-                        const reservation = acceptedOffer.itemOffered;
-
-                        let ticketTypeCategory = TicketTypeCategory.Normal;
-                        if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
-                            const categoryProperty = reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
-                            if (categoryProperty !== undefined) {
-                                ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
-                            }
-                        }
-
-                        if (ticketTypeCategory === TicketTypeCategory.Wheelchair) {
-                            const rateLimitKey = {
-                                performanceStartDate: performanceStartDate,
-                                ticketTypeCategory: ticketTypeCategory,
-                                unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                            };
-                            const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
-                            if (holder === transaction.id) {
-                                debug('resetting wheelchair rate limit...');
-                                // await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
-                                debug('wheelchair rate limit reset.');
-                            }
-                        }
-                    }));
-                }
             }
         } catch (error) {
             // no op
