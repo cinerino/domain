@@ -21,7 +21,6 @@ import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTic
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
 import { MongoRepository as ProjectRepo } from './repo/project';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
@@ -122,10 +121,6 @@ export class ProgramMembership extends ProgramMembershipRepo { }
 export class Project extends ProjectRepo { }
 
 export namespace rateLimit {
-    /**
-     * 券種カテゴリーレート制限リポジトリ
-     */
-    export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
 }
 
 /**
