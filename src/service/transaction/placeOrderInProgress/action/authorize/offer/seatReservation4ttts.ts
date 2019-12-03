@@ -356,7 +356,12 @@ export function create(params: {
                 name: transaction.agent.id,
                 ...{
                     identifier: [
-                        { name: 'transaction', value: transaction.id }
+                        { name: 'transaction', value: transaction.id },
+                        {
+                            name: 'transactionExpires',
+                            value: moment(transaction.expires)
+                                .toISOString()
+                        }
                     ]
                 }
             },

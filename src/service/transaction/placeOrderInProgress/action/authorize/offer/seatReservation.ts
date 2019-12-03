@@ -144,7 +144,14 @@ export function create(params: {
                         typeOf: transaction.agent.typeOf,
                         name: transaction.agent.id,
                         ...{
-                            identifier: [{ name: 'transaction', value: transaction.id }]
+                            identifier: [
+                                { name: 'transaction', value: transaction.id },
+                                {
+                                    name: 'transactionExpires',
+                                    value: moment(transaction.expires)
+                                        .toISOString()
+                                }
+                            ]
                         }
                     },
                     object: {
