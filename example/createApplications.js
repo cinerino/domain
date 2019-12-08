@@ -10,10 +10,14 @@ async function main() {
 
     const applicationRepo = new domain.repository.Application(mongoose.connection);
     await Promise.all(applications.map(async (application) => {
-        const result = await applicationRepo.applicationModel.create({
-            ...application,
-            _id: application.id
-        });
+        const replacement = { ...application };
+        delete replacement.id;
+        const result = await applicationRepo.applicationModel.findOneAndUpdate(
+            { _id: application.id },
+            replacement,
+            { upsert: true }
+        )
+            .exec();
         console.log(result);
     }));
 

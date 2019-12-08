@@ -22,10 +22,11 @@ describe('会員プログラムを検索する', () => {
     });
 
     it('MongoDBが正常であれば配列を取得できるはず', async () => {
-        const searchConditions = { id: 'id' };
+        const searchConditions = { id: { $eq: 'id' } };
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
-        sandbox.mock(programMembershipRepo.programMembershipModel).expects('find').once()
-            .chain('sort')
+        sandbox.mock(programMembershipRepo.programMembershipModel)
+            .expects('find')
+            .once()
             .chain('exec')
             .resolves([new programMembershipRepo.programMembershipModel()]);
 

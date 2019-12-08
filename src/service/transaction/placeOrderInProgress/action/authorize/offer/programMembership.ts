@@ -42,7 +42,7 @@ export function create(params: {
         }
 
         // 会員プログラム検索
-        const programMemberships = await repos.programMembership.search({ id: params.acceptedOffer.itemOffered.id });
+        const programMemberships = await repos.programMembership.search({ id: { $eq: params.acceptedOffer.itemOffered.id } });
         const programMembership = programMemberships.shift();
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */

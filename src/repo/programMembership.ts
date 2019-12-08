@@ -13,22 +13,80 @@ export class MongoRepository {
         this.programMembershipModel = connection.model(modelName);
     }
 
-    /**
-     * 検索する
-     */
-    public async search(params: {
-        id?: string;
-    }): Promise<factory.programMembership.IProgramMembership[]> {
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+    public static CREATE_MONGO_CONDITIONS(params: factory.programMembership.ISearchConditions) {
         const andConditions: any[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.id !== undefined) {
-            andConditions.push({ _id: params.id });
+        if (params.id !== undefined && params.id !== null) {
+            if (typeof params.id.$eq === 'string') {
+                andConditions.push({
+                    _id: {
+                        $eq: params.id.$eq
+                    }
+                });
+            }
         }
 
-        return this.programMembershipModel.find((andConditions.length > 0) ? { $and: andConditions } : {})
-            .sort({ programName: 1 })
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.project !== undefined && params.project !== null) {
+            if (params.project.id !== undefined && params.project.id !== null) {
+                if (typeof params.project.id.$eq === 'string') {
+                    andConditions.push({
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id.$eq
+                        }
+                    });
+                }
+            }
+        }
+
+        return andConditions;
+    }
+
+    public async count(params: factory.programMembership.ISearchConditions): Promise<number> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+
+        return this.programMembershipModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
+            .setOptions({ maxTimeMS: 10000 })
+            .exec();
+    }
+
+    /**
+     * 検索する
+     */
+    public async search(params: factory.programMembership.ISearchConditions): Promise<factory.programMembership.IProgramMembership[]> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+
+        const query = this.programMembershipModel.find(
+            (conditions.length > 0) ? { $and: conditions } : {},
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0
+            }
+        );
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if ((<any>params).sort !== undefined) {
+            query.sort((<any>params).sort);
+        }
+
+        // const explainResult = await (<any>query).explain();
+        // console.log(explainResult[0].executionStats.allPlansExecution.map((e: any) => e.executionStages.inputStage));
+
+        return query.setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }

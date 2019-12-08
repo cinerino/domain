@@ -83,7 +83,7 @@ export function createRegisterTask(params: {
         task: TaskRepo;
     }) => {
         const now = new Date();
-        const programMemberships = await repos.programMembership.search({ id: params.programMembershipId });
+        const programMemberships = await repos.programMembership.search({ id: { $eq: params.programMembershipId } });
         const programMembership = programMemberships.shift();
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
