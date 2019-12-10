@@ -12,6 +12,8 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { createPotentialActions } from './moneyTransfer/potentialActions';
+
 const debug = createDebug('cinerino-domain:service');
 
 export type IStartOperation<T> = (repos: {
@@ -160,99 +162,16 @@ export function confirm<T extends factory.accountType>(params: {
         transaction.object.authorizeActions = authorizeActions;
 
         // まずは1承認アクションのみ対応(順次拡張)
-        const completedAuthorizeActions = authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-        if (completedAuthorizeActions.length !== 1) {
-            throw new factory.errors.Argument('Transaction', 'Number of authorize actions must be 1');
-        }
-
-        // 取引で指定された転送先口座への転送取引承認金額が合致しているかどうか確認
-        type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType>;
-        let authorizeAccountPaymentActions: factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[] = [];
-
-        // if (transaction.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
-        //     const toLocation = <factory.action.transfer.moneyTransfer.IAccount<factory.accountType>>transaction.object.toLocation;
-        //     authorizeAccountPaymentActions =
-        //         (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
-        //             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        //             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-        //             // .filter((a) => (<IFromAccount>a.object.fromAccount).accountType === toLocation.accountType)
-        //             .filter((a) => {
-        //                 return a.object.toAccount !== undefined
-        //                     && a.object.toAccount.accountType === toLocation.accountType
-        //                     && a.object.toAccount.accountNumber === toLocation.accountNumber;
-        //             });
-        // } else {
-        //     authorizeAccountPaymentActions =
-        //         (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
-        //             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        //             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-        //             .filter((a) => {
-        //                 return a.object.toAccount === undefined
-        //                     && a.object.fromAccount !== undefined;
-        //             });
+        // const completedAuthorizeActions = transaction.object.authorizeActions
+        //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+        // if (completedAuthorizeActions.length !== 1) {
+        //     throw new factory.errors.Argument('Transaction', 'Number of authorize actions must be 1');
         // }
 
-        authorizeAccountPaymentActions =
-            (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>transaction.object.authorizeActions)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-        // const authorizedAmount = authorizeAccountPaymentActions.reduce((a, b) => a + b.object.amount, 0);
-
-        // 通貨転送アクション属性作成
-        const moneyTransferActionAttributesList: factory.action.transfer.moneyTransfer.IAttributes<T>[] =
-            authorizeAccountPaymentActions.map((a) => {
-                const fromLocationName = (a.agent.name !== undefined)
-                    ? (typeof a.agent.name === 'string') ? a.agent.name : a.agent.name.ja
-                    : undefined;
-                const toLocationName = (a.recipient.name !== undefined)
-                    ? (typeof a.recipient.name === 'string') ? a.recipient.name : a.recipient.name.ja
-                    : undefined;
-
-                const actionResult = <factory.action.authorize.paymentMethod.account.IResult<T>>a.result;
-
-                return {
-                    project: transaction.project,
-                    typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
-                    ...(typeof a.object.notes === 'string') ? { description: a.object.notes } : {},
-                    result: {},
-                    object: {
-                        pendingTransaction: actionResult.pendingTransaction
-                    },
-                    agent: a.agent,
-                    recipient: a.recipient,
-                    amount: a.object.amount,
-                    fromLocation: (a.object.fromAccount !== undefined)
-                        ? {
-                            typeOf: factory.pecorino.account.TypeOf.Account,
-                            accountType: (<IFromAccount>a.object.fromAccount).accountType,
-                            accountNumber: (<IFromAccount>a.object.fromAccount).accountNumber,
-                            name: fromLocationName
-                        }
-                        : {
-                            typeOf: a.agent.typeOf,
-                            name: fromLocationName
-                        },
-                    toLocation: (a.object.toAccount !== undefined)
-                        ? {
-                            typeOf: factory.pecorino.account.TypeOf.Account,
-                            accountType: a.object.toAccount.accountType,
-                            accountNumber: a.object.toAccount.accountNumber,
-                            name: toLocationName
-                        }
-                        : {
-                            typeOf: a.recipient.typeOf,
-                            name: toLocationName
-                        },
-                    purpose: {
-                        typeOf: transaction.typeOf,
-                        id: transaction.id
-                    }
-                };
-            });
-
-        const potentialActions: factory.transaction.IPotentialActions<factory.transactionType.MoneyTransfer> = {
-            moneyTransfer: moneyTransferActionAttributesList
-        };
+        // ポストアクションを作成
+        const potentialActions = await createPotentialActions<T>({
+            transaction: transaction
+        });
 
         // 取引確定
         await repos.transaction.confirm({

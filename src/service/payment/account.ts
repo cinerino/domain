@@ -68,12 +68,27 @@ export function authorize<T extends factory.accountType>(params: {
         } else if (transaction.typeOf === factory.transactionType.MoneyTransfer) {
             recipient = transaction.recipient;
         } else {
-            // `現時点で、他取引タイプは未想定
+            // 現時点で、他取引タイプは未想定
             throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
         }
 
         let recipientName = (recipient.typeOf === factory.personType.Person) ? recipient.name : recipient.name.ja;
         recipientName = (recipientName === undefined) ? recipient.id : recipientName;
+
+        let agent: factory.action.authorize.paymentMethod.any.IAgent = transaction.agent;
+        if (params.object.fromAccount === undefined && params.object.toAccount !== undefined) {
+            // 入金先口座のみの指定の場合、承認者は販売者
+            agent = {
+                project: transaction.seller.project,
+                id: transaction.seller.id,
+                typeOf: transaction.seller.typeOf,
+                name: transaction.seller.name,
+                location: transaction.seller.location,
+                telephone: transaction.seller.telephone,
+                url: transaction.seller.url,
+                image: transaction.seller.image
+            };
+        }
 
         const agentName = `${transaction.typeOf} Transaction ${transaction.id}`;
 
@@ -94,7 +109,7 @@ export function authorize<T extends factory.accountType>(params: {
                     ? { accountId: params.object.fromAccount.accountNumber }
                     : {}
             },
-            agent: transaction.agent,
+            agent: agent,
             recipient: recipient,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
         };
