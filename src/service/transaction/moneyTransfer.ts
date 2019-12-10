@@ -216,10 +216,12 @@ export function exportTasks(params: {
  * 取引のタスク出力
  */
 export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
+        const now = new Date();
 
         const transaction = await repos.transaction.findById({
             typeOf: factory.transactionType.MoneyTransfer,
@@ -242,7 +244,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                                 project: transaction.project,
                                 name: <factory.taskName.MoneyTransfer>factory.taskName.MoneyTransfer,
                                 status: factory.taskStatus.Ready,
-                                runsAt: new Date(), // なるはやで実行
+                                runsAt: now, // なるはやで実行
                                 remainingNumberOfTries: 10,
                                 numberOfTried: 0,
                                 executionResults: [],
@@ -250,29 +252,69 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                             };
                         }));
                     }
+
+                    // クレジットカード決済
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(potentialActions.payCreditCard)) {
+                        taskAttributes.push(...potentialActions.payCreditCard.map(
+                            (a): factory.task.IAttributes<factory.taskName.PayCreditCard> => {
+                                return {
+                                    project: a.project,
+                                    name: factory.taskName.PayCreditCard,
+                                    status: factory.taskStatus.Ready,
+                                    runsAt: now, // なるはやで実行
+                                    remainingNumberOfTries: 10,
+                                    numberOfTried: 0,
+                                    executionResults: [],
+                                    data: a
+                                };
+                            }));
+                    }
                 }
+
                 break;
 
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                // const cancelMoneyTransferTask: factory.task.cancelMoneyTransfer.IAttributes = {
-                //     name: factory.taskName.CancelMoneyTransfer,
-                //     status: factory.taskStatus.Ready,
-                //     runsAt: new Date(), // なるはやで実行
-                //     remainingNumberOfTries: 10,
-                //     numberOfTried: 0,
-                //     executionResults: [],
-                //     data: {
-                //         transaction: { typeOf: transaction.typeOf, id: transaction.id }
-                //     }
-                // };
-                // taskAttributes.push(cancelMoneyTransferTask);
+                const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
+                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                    name: factory.taskName.CancelCreditCard,
+                    status: factory.taskStatus.Ready,
+                    runsAt: now,
+                    remainingNumberOfTries: 10,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    }
+                };
+
+                const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
+                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                    name: factory.taskName.CancelAccount,
+                    status: factory.taskStatus.Ready,
+                    runsAt: now,
+                    remainingNumberOfTries: 10,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    }
+                };
+
+                taskAttributes.push(
+                    cancelCreditCardTaskAttributes,
+                    cancelAccountTaskAttributes
+                );
+
                 break;
 
             default:
                 throw new factory.errors.NotImplemented(`Transaction status "${transaction.status}" not implemented.`);
         }
-        debug('taskAttributes prepared', taskAttributes);
 
         return Promise.all(taskAttributes.map(async (a) => repos.task.save(a)));
     };

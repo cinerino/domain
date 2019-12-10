@@ -180,6 +180,8 @@ export async function createPotentialActions<T extends factory.accountType>(para
 
     // 決済承認を確認
     Object.keys(factory.paymentMethodType)
+        // 口座決済は除外
+        .filter((key) => (<any>factory.paymentMethodType)[key] !== factory.paymentMethodType.Account)
         .forEach((key) => {
             const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
             priceByAgent += params.transaction.object.authorizeActions
