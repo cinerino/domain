@@ -59,55 +59,50 @@ export async function createPotentialActions<T extends factory.accountType>(para
     });
 
     // 口座支払いアクション
-    // const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
-    //     params.transaction.object.authorizeActions
-    //         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //         .filter((a) => a.result !== undefined)
-    //         .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
-    // const payAccountActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[] =
-    //     authorizeAccountActions.map((a) => {
-    //         const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
+    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.agent.id === params.transaction.agent.id)
+            .filter((a) => a.result !== undefined)
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
+    const payAccountActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[] =
+        authorizeAccountActions.map((a) => {
+            const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
 
-    //         return {
-    //             project: params.transaction.project,
-    //             typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-    //             object: [{
-    //                 typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
-    //                 paymentMethod: {
-    //                     accountId: result.accountId,
-    //                     additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
-    //                     name: result.name,
-    //                     paymentMethodId: result.paymentMethodId,
-    //                     totalPaymentDue: result.totalPaymentDue,
-    //                     typeOf: <factory.paymentMethodType.Account>result.paymentMethod
-    //                 },
-    //                 pendingTransaction:
-    //                     (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
-    //             }],
-    //             agent: params.transaction.agent,
-    //             purpose: {
-    //                 project: params.order.project,
-    //                 typeOf: params.order.typeOf,
-    //                 seller: params.order.seller,
-    //                 customer: params.order.customer,
-    //                 confirmationNumber: params.order.confirmationNumber,
-    //                 orderNumber: params.order.orderNumber,
-    //                 price: params.order.price,
-    //                 priceCurrency: params.order.priceCurrency,
-    //                 orderDate: params.order.orderDate
-    //             }
-    //         };
-    //     });
+            return {
+                project: params.transaction.project,
+                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+                object: [{
+                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    paymentMethod: {
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: <factory.paymentMethodType.Account>result.paymentMethod
+                    },
+                    pendingTransaction:
+                        (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
+                }],
+                agent: params.transaction.agent,
+                purpose: <any>{
+                    typeOf: params.transaction.typeOf,
+                    id: params.transaction.id
+                }
+            };
+        });
 
     // 通貨転送アクション属性作成
     type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType>;
-    const authorizeAccountPaymentActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+    const authorizeAccountDepositActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.agent.id === params.transaction.seller.id)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
     const moneyTransferActionAttributesList: factory.action.transfer.moneyTransfer.IAttributes<T>[] =
-        authorizeAccountPaymentActions.map((a) => {
+        authorizeAccountDepositActions.map((a) => {
             const fromLocationName = (a.agent.name !== undefined)
                 ? (typeof a.agent.name === 'string') ? a.agent.name : a.agent.name.ja
                 : undefined;
@@ -181,7 +176,7 @@ export async function createPotentialActions<T extends factory.accountType>(para
     // 決済承認を確認
     Object.keys(factory.paymentMethodType)
         // 口座決済は除外
-        .filter((key) => (<any>factory.paymentMethodType)[key] !== factory.paymentMethodType.Account)
+        // .filter((key) => (<any>factory.paymentMethodType)[key] !== factory.paymentMethodType.Account)
         .forEach((key) => {
             const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
             priceByAgent += params.transaction.object.authorizeActions
@@ -206,8 +201,9 @@ export async function createPotentialActions<T extends factory.accountType>(para
         throw new factory.errors.Argument('Transaction', 'Transaction cannot be confirmed because amount not matched');
     }
 
-    return {
+    return <any>{
         moneyTransfer: moneyTransferActionAttributesList,
+        payAccount: payAccountActions,
         payCreditCard: payCreditCardActions
     };
 }
