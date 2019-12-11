@@ -7,6 +7,7 @@ import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
 
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.moneyTransfer.IAction<factory.accountType>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
@@ -220,6 +221,62 @@ export async function createPotentialActions(params: {
                         instrument: a.instrument
                     });
             }
+        }
+    });
+
+    // 通貨転送アクション
+    const authorizeMoneyTransferActions = <IAuthorizeMoneyTransferOffer[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
+    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[] = [];
+
+    const paymentMethod = params.order.paymentMethods[0];
+    authorizeMoneyTransferActions.forEach((a) => {
+        const actionResult = a.result;
+
+        if (a.instrument === undefined) {
+            a.instrument = {
+                typeOf: 'WebAPI',
+                identifier: factory.service.webAPI.Identifier.Chevre
+            };
+        }
+
+        if (actionResult !== undefined) {
+            moneyTransferActions.push({
+                project: params.transaction.project,
+                typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
+                object: {
+                    pendingTransaction: actionResult.responseBody
+                },
+                agent: params.transaction.agent,
+                amount: a.object.amount,
+                fromLocation: (paymentMethod !== undefined)
+                    ? {
+                        accountId: paymentMethod.accountId,
+                        typeOf: paymentMethod.typeOf,
+                        name: paymentMethod.name,
+                        paymentMethodId: paymentMethod.paymentMethodId,
+                        additionalProperty: paymentMethod.additionalProperty
+                    }
+                    : {
+                        typeOf: params.transaction.agent.typeOf,
+                        id: params.transaction.agent.id,
+                        name: params.transaction.agent.name
+                    },
+                toLocation: a.object.toLocation,
+                purpose: {
+                    project: params.order.project,
+                    typeOf: params.order.typeOf,
+                    seller: params.order.seller,
+                    customer: params.order.customer,
+                    confirmationNumber: params.order.confirmationNumber,
+                    orderNumber: params.order.orderNumber,
+                    price: params.order.price,
+                    priceCurrency: params.order.priceCurrency,
+                    orderDate: params.order.orderDate
+                }
+            });
         }
     });
 
@@ -531,6 +588,7 @@ export async function createPotentialActions(params: {
         potentialActions: {
             confirmReservation: confirmReservationActions,
             informOrder: informOrderActionsOnSentOrder,
+            moneyTransfer: moneyTransferActions,
             registerProgramMembership: registerProgramMembershipActions,
             sendEmailMessage: sendEmailMessageActions
         }

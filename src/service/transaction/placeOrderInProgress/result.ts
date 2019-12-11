@@ -5,6 +5,7 @@ import * as factory from '../../../factory';
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.moneyTransfer.IAction<factory.accountType>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
@@ -40,6 +41,12 @@ export function createOrder(params: {
         throw new factory.errors.NotImplemented('Number of programMembership authorizeAction must be 1');
     }
     const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
+
+    // 通貨転送承認アクション
+    const authorizeMoneyTansferActions = <IAuthorizeMoneyTransferOffer[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
 
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
@@ -256,6 +263,33 @@ export function createOrder(params: {
     if (programMembershipAuthorizeAction !== undefined) {
         acceptedOffers.push(programMembershipAuthorizeAction.object);
     }
+
+    // 通貨転送がある場合
+    authorizeMoneyTansferActions.forEach((authorizeMoneyTansferAction) => {
+        if (authorizeMoneyTansferAction.result === undefined) {
+            throw new factory.errors.Argument('Transaction', 'authorize money transfer offer result does not exist');
+        }
+
+        // let responseBody = authorizeMoneyTansferAction.result.responseBody;
+
+        acceptedOffers.push({
+            typeOf: 'Offer',
+            // id: '',
+            // name: '',
+            itemOffered: {
+                typeOf: authorizeMoneyTansferAction.object.typeOf,
+                amount: authorizeMoneyTansferAction.object.amount,
+                toLocation: authorizeMoneyTansferAction.object.toLocation
+            },
+            // priceSpecification: requestedOffer.priceSpecification,
+            priceCurrency: factory.priceCurrency.JPY,
+            seller: {
+                typeOf: seller.typeOf,
+                name: seller.name
+            }
+        });
+
+    });
 
     const discounts: factory.order.IDiscount[] = [];
 

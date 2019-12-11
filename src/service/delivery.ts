@@ -110,10 +110,12 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
 export function createOwnershipInfosFromOrder(params: {
     order: factory.order.IOrder;
 }): IOwnershipInfo[] {
+    const ownershipInfos: IOwnershipInfo[] = [];
+
     // tslint:disable-next-line:max-func-body-length
-    return params.order.acceptedOffers.map((acceptedOffer, offerIndex) => {
+    params.order.acceptedOffers.forEach((acceptedOffer, offerIndex) => {
         const itemOffered = acceptedOffer.itemOffered;
-        let ownershipInfo: IOwnershipInfo;
+        let ownershipInfo: IOwnershipInfo | undefined;
         const ownedFrom = params.order.orderDate;
         const seller = params.order.seller;
         let ownedThrough: Date;
@@ -213,12 +215,21 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
+            case factory.actionType.MoneyTransfer:
+                // no op
+                break;
+
             default:
                 throw new factory.errors.NotImplemented(`Offered item type ${(<any>itemOffered).typeOf} not implemented`);
         }
 
-        return ownershipInfo;
+        if (ownershipInfo !== undefined) {
+            ownershipInfos.push(ownershipInfo);
+
+        }
     });
+
+    return ownershipInfos;
 }
 
 /**
