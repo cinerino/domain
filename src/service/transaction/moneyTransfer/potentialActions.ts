@@ -181,6 +181,7 @@ export async function createPotentialActions<T extends factory.accountType>(para
             const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
             priceByAgent += params.transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.agent.id === params.transaction.agent.id)
                 .filter((a) => a.object.typeOf === paymentMethodType)
                 .filter((a) => {
                     const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
