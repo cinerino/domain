@@ -267,6 +267,25 @@ export function onSend(
                     }));
             }
 
+            // 通貨転送
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.moneyTransfer)) {
+                taskAttributes.push(...potentialActions.moneyTransfer.map(
+                    (a): factory.task.IAttributes<factory.taskName.MoneyTransfer> => {
+                        return {
+                            project: a.project,
+                            name: <factory.taskName.MoneyTransfer>factory.taskName.MoneyTransfer,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
+            }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.sendEmailMessage)) {
