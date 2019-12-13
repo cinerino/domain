@@ -350,9 +350,24 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     }
                 };
 
+                const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
+                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                    name: factory.taskName.VoidMoneyTransfer,
+                    status: factory.taskStatus.Ready,
+                    runsAt: now,
+                    remainingNumberOfTries: 10,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    }
+                };
+
                 taskAttributes.push(
                     cancelCreditCardTaskAttributes,
-                    cancelAccountTaskAttributes
+                    cancelAccountTaskAttributes,
+                    voidMoneyTransferTaskAttributes
                 );
 
                 break;

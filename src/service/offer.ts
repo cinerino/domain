@@ -5,6 +5,8 @@ import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo 
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
+import * as MoneyTransferOfferService from './offer/moneyTransfer';
+
 import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
@@ -14,6 +16,8 @@ import * as factory from '../factory';
 import * as MasterSync from './masterSync';
 
 const debug = createDebug('cinerino-domain:service');
+
+export import moneyTransfer = MoneyTransferOfferService;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,

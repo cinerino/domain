@@ -346,82 +346,6 @@ export function voidTransaction(params: {
 }
 
 /**
- * 口座取引決済
- */
-export function settleTransaction(params: factory.task.IData<factory.taskName.MoneyTransfer>) {
-    return async (repos: {
-        action: ActionRepo;
-        project: ProjectRepo;
-    }) => {
-        // アクション開始
-        const action = await repos.action.start(params);
-
-        try {
-            const project = await repos.project.findById({ id: params.project.id });
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-
-            const pendingTransaction = params.object.pendingTransaction;
-
-            switch (pendingTransaction.typeOf) {
-                case pecorinoapi.factory.transactionType.Deposit:
-                    const depositService = new pecorinoapi.service.transaction.Deposit({
-                        endpoint: project.settings.pecorino.endpoint,
-                        auth: pecorinoAuthClient
-                    });
-                    await depositService.confirm({ id: pendingTransaction.id });
-
-                    break;
-
-                case pecorinoapi.factory.transactionType.Transfer:
-                    const transferService = new pecorinoapi.service.transaction.Transfer({
-                        endpoint: project.settings.pecorino.endpoint,
-                        auth: pecorinoAuthClient
-                    });
-                    await transferService.confirm({ id: pendingTransaction.id });
-
-                    break;
-
-                case pecorinoapi.factory.transactionType.Withdraw:
-                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                        endpoint: project.settings.pecorino.endpoint,
-                        auth: pecorinoAuthClient
-                    });
-                    await withdrawService.confirm({ id: pendingTransaction.id });
-
-                    break;
-
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-                    throw new factory.errors.NotImplemented(
-                        `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                    );
-            }
-        } catch (error) {
-            // actionにエラー結果を追加
-            try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
-            }
-
-            throw error;
-        }
-
-        // アクション完了
-        const actionResult: factory.action.transfer.moneyTransfer.IResult = {};
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-    };
-}
-
-/**
  * 口座支払実行
  */
 export function payAccount(params: factory.task.IData<factory.taskName.PayAccount>) {
@@ -510,13 +434,11 @@ export function cancelAccountAuth(params: factory.task.IData<factory.taskName.Ca
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined) {
+        if (project.settings === undefined
+            || project.settings.pecorino === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
         const pecorinoSettings = project.settings.pecorino;
-        if (pecorinoSettings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
 
         // 口座承認アクションを取得
         const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>

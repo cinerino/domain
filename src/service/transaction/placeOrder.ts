@@ -196,11 +196,25 @@ export function exportTasksById(params: {
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
+                const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
+                    project: { typeOf: project.typeOf, id: project.id },
+                    name: factory.taskName.VoidMoneyTransfer,
+                    status: factory.taskStatus.Ready,
+                    runsAt: taskRunsAt,
+                    remainingNumberOfTries: 10,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        project: { typeOf: project.typeOf, id: project.id },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    }
+                };
                 taskAttributes.push(
                     cancelSeatReservationTaskAttributes,
                     cancelCreditCardTaskAttributes,
                     cancelAccountTaskAttributes,
-                    cancelPointAwardTaskAttributes
+                    cancelPointAwardTaskAttributes,
+                    voidMoneyTransferTaskAttributes
                 );
                 break;
 

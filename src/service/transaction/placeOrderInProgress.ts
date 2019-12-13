@@ -17,7 +17,6 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
 import * as AuthorizeMvtkDiscountActionService from './placeOrderInProgress/action/authorize/discount/mvtk';
-import * as AuthorizeMoneyTransferActionService from './placeOrderInProgress/action/authorize/offer/moneyTransfer';
 import * as ProgramMembershipAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/programMembership';
 import * as AuthorizeSeatReservationActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
 import * as AuthorizeSeatReservation4coaActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4coa';
@@ -181,10 +180,6 @@ export namespace action {
             export import mvtk = AuthorizeMvtkDiscountActionService;
         }
         export namespace offer {
-            /**
-             * 通貨転送承認サービス
-             */
-            export import moneyTransfer = AuthorizeMoneyTransferActionService;
             /**
              * 会員プログラム承認アクションサービス
              */
