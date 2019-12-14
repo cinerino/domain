@@ -27,6 +27,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+const coaAuthClient = new COA.auth.RefreshToken({
+    endpoint: credentials.coa.endpoint,
+    refreshToken: credentials.coa.refreshToken
+});
+
 export type ISearchEventsOperation<T> = (repos: {
     event: EventRepo;
     attendeeCapacity?: EventAttendeeCapacityRepo;
@@ -119,11 +124,11 @@ export function searchEvents(params: {
 /**
  * イベントに対する座席オファーを検索する
  */
-// tslint:disable-next-line:max-func-body-length
 export function searchEventOffers(params: {
     project: factory.project.IProject;
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -162,6 +167,15 @@ export function searchEventOffers(params: {
 
         switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
+                const masterService = new COA.service.Master({
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                });
+                const reserveService = new COA.service.Reserve({
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                });
+
                 let coaInfo: any;
                 if (Array.isArray(event.additionalProperty)) {
                     const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
@@ -169,12 +183,12 @@ export function searchEventOffers(params: {
                 }
 
                 // イベント提供者がCOAであればCOAへ空席状況確認
-                const stateReserveSeatResult = await COA.services.reserve.stateReserveSeat(coaInfo);
+                const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
 
                 const movieTheater = MasterSync.createMovieTheaterFromCOA(
                     params.project,
-                    await COA.services.master.theater(coaInfo),
-                    await COA.services.master.screen(coaInfo)
+                    await masterService.theater(coaInfo),
+                    await masterService.screen(coaInfo)
                 );
                 const screeningRoom = <chevre.factory.place.movieTheater.IScreeningRoom>movieTheater.containsPlace.find(
                     (p) => p.branchCode === event.location.branchCode
@@ -310,9 +324,13 @@ export function searchEventTicketOffers(params: {
                 const theaterCode = coaInfo.theaterCode;
 
                 // COA販売可能券種検索
-                const salesTickets = await COA.services.reserve.salesTicket({
+                const reserveService = new COA.service.Reserve({
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                });
+                const salesTickets = await reserveService.salesTicket({
                     ...coaInfo,
-                    flgMember: COA.services.reserve.FlgMember.Member
+                    flgMember: COA.factory.reserve.FlgMember.Member
                 });
 
                 const searchOffersResult = await offerService.searchTicketTypes({
@@ -404,7 +422,7 @@ export function searchEventTicketOffers(params: {
 function coaSalesTicket2offer(params: {
     project: factory.project.IProject;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    salesTicket: COA.services.reserve.ISalesTicketResult;
+    salesTicket: COA.factory.reserve.ISalesTicketResult;
     coaInfo: factory.event.screeningEvent.ICOAInfo;
     superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo;
 }): factory.chevre.event.screeningEvent.ITicketOffer {

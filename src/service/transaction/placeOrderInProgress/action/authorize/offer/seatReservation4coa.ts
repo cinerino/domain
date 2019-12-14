@@ -2,6 +2,8 @@ import * as COA from '@motionpicture/coa-service';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 
+import { credentials } from '../../../../../../credentials';
+
 import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
 import { MongoRepository as EventRepo } from '../../../../../../repo/event';
 import { InMemoryRepository as OfferRepo } from '../../../../../../repo/offer';
@@ -10,6 +12,11 @@ import { MongoRepository as TransactionRepo } from '../../../../../../repo/trans
 import * as factory from '../../../../../../factory';
 
 const debug = createDebug('cinerino-domain:service');
+
+const coaAuthClient = new COA.auth.RefreshToken({
+    endpoint: credentials.coa.endpoint,
+    refreshToken: credentials.coa.refreshToken
+});
 
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
@@ -27,7 +34,7 @@ export type IActionAndTransactionOperation<T> = (repos: {
 /**
  * ムビチケ券種インターフェース
  */
-export type ICOAMvtkTicket = COA.services.master.IMvtkTicketcodeResult & {
+export type ICOAMvtkTicket = COA.factory.master.IMvtkTicketcodeResult & {
     stdPrice: number;
     salePrice: number;
     addGlasses: number;
@@ -53,38 +60,48 @@ async function validateOffers(
     isMember: boolean,
     screeningEvent: factory.event.screeningEvent.IEvent,
     offers: IAcceptedOfferWithoutDetail[],
-    coaTickets?: COA.services.master.ITicketResult[]
+    coaTickets?: COA.factory.master.ITicketResult[]
 ): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> {
+    const masterService = new COA.service.Master({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+
+    const reserveService = new COA.service.Reserve({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+
     // 詳細情報ありの供給情報リストを初期化
     // 要求された各供給情報について、バリデーションをかけながら、このリストに追加していく
     const offersWithDetails: factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[] = [];
 
     // 供給情報が適切かどうか確認
-    const availableSalesTickets: COA.services.reserve.ISalesTicketResult[] = [];
+    const availableSalesTickets: COA.factory.reserve.ISalesTicketResult[] = [];
 
     // 必ず定義されている前提
     const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
 
     // COA券種取得(非会員)
-    const salesTickets4nonMember = await COA.services.reserve.salesTicket({
+    const salesTickets4nonMember = await reserveService.salesTicket({
         theaterCode: coaInfo.theaterCode,
         dateJouei: coaInfo.dateJouei,
         titleCode: coaInfo.titleCode,
         titleBranchNum: coaInfo.titleBranchNum,
         timeBegin: coaInfo.timeBegin,
-        flgMember: COA.services.reserve.FlgMember.NonMember
+        flgMember: COA.factory.reserve.FlgMember.NonMember
     });
     availableSalesTickets.push(...salesTickets4nonMember);
 
     // COA券種取得(会員)
     if (isMember) {
-        const salesTickets4member = await COA.services.reserve.salesTicket({
+        const salesTickets4member = await reserveService.salesTicket({
             theaterCode: coaInfo.theaterCode,
             dateJouei: coaInfo.dateJouei,
             titleCode: coaInfo.titleCode,
             titleBranchNum: coaInfo.titleBranchNum,
             timeBegin: coaInfo.timeBegin,
-            flgMember: COA.services.reserve.FlgMember.Member
+            flgMember: COA.factory.reserve.FlgMember.Member
         });
         availableSalesTickets.push(...salesTickets4member);
     }
@@ -94,8 +111,8 @@ async function validateOffers(
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     await Promise.all(offers.map(async (offer, offerIndex) => {
         let offerWithDetails: factory.offer.seatReservation.IOfferWithDetails;
-        let availableSalesTicket: COA.services.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
-        let coaPointTicket: COA.services.master.ITicketResult | undefined;
+        let availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
+        let coaPointTicket: COA.factory.master.ITicketResult | undefined;
 
         // ポイント消費鑑賞券の場合
         if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
@@ -104,7 +121,7 @@ async function validateOffers(
             // 販売可能チケット情報に販売金額
             // を持っているので、処理が少し冗長になってしまうが、しょうがない
             try {
-                let availableTickets: COA.services.master.ITicketResult[] | undefined = coaTickets;
+                let availableTickets: COA.factory.master.ITicketResult[] | undefined = coaTickets;
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (availableTickets === undefined) {
@@ -119,7 +136,7 @@ async function validateOffers(
                         titleCode: coaInfo.titleCode,
                         titleBranchNum: coaInfo.titleBranchNum
                     });
-                    availableTickets = await COA.services.master.ticket({
+                    availableTickets = await masterService.ticket({
                         theaterCode: coaInfo.theaterCode
                     });
                 }
@@ -174,7 +191,7 @@ async function validateOffers(
                     titleCode: coaInfo.titleCode,
                     titleBranchNum: coaInfo.titleBranchNum
                 });
-                const mvtkTicketcodeResult = await COA.services.master.mvtkTicketcode({
+                const mvtkTicketcodeResult = await masterService.mvtkTicketcode({
                     theaterCode: coaInfo.theaterCode,
                     kbnDenshiken: offer.ticketInfo.mvtkKbnDenshiken,
                     kbnMaeuriken: offer.ticketInfo.mvtkKbnMaeuriken,
@@ -379,7 +396,12 @@ export function create(params: {
         const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
 
         // 座席空席状況取得
-        const { listSeat } = await COA.services.reserve.stateReserveSeat(coaInfo);
+        const reserveService = new COA.service.Reserve({
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        });
+
+        const { listSeat } = await reserveService.stateReserveSeat(coaInfo);
 
         // 供給情報の有効性を確認
         const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = params.object.acceptedOffer.map((offer) => {
@@ -452,10 +474,10 @@ export function create(params: {
                 };
             })
         };
-        let updTmpReserveSeatResult: COA.services.reserve.IUpdTmpReserveSeatResult;
+        let updTmpReserveSeatResult: COA.factory.reserve.IUpdTmpReserveSeatResult;
         try {
             debug('updTmpReserveSeat processing...', updTmpReserveSeatArgs);
-            updTmpReserveSeatResult = await COA.services.reserve.updTmpReserveSeat(updTmpReserveSeatArgs);
+            updTmpReserveSeatResult = await reserveService.updTmpReserveSeat(updTmpReserveSeatArgs);
             debug('updTmpReserveSeat processed', updTmpReserveSeatResult);
         } catch (error) {
             // actionにエラー結果を追加
@@ -551,8 +573,13 @@ export function cancel(params: {
         /* istanbul ignore else */
         if (actionResult.requestBody !== undefined && actionResult.responseBody !== undefined) {
             // 座席仮予約削除
+            const reserveService = new COA.service.Reserve({
+                endpoint: credentials.coa.endpoint,
+                auth: coaAuthClient
+            });
+
             debug('delTmpReserve processing...', action);
-            await COA.services.reserve.delTmpReserve({
+            await reserveService.delTmpReserve({
                 theaterCode: actionResult.requestBody.theaterCode,
                 dateJouei: actionResult.requestBody.dateJouei,
                 titleCode: actionResult.requestBody.titleCode,

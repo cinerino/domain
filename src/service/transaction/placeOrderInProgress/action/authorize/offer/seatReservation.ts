@@ -25,6 +25,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+const coaAuthClient = new COA.auth.RefreshToken({
+    endpoint: credentials.coa.endpoint,
+    refreshToken: credentials.coa.refreshToken
+});
+
 export type ICreateOperation<T> = (repos: {
     event: EventRepo;
     action: ActionRepo;
@@ -117,7 +122,7 @@ export function create(params: {
 
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
-        let reserveService: chevre.service.transaction.Reserve | undefined;
+        let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve | undefined;
         let reserveTransaction: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
         let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
 
@@ -233,6 +238,11 @@ export function create(params: {
                     }
 
                     // COAにて仮予約
+                    reserveService = new COA.service.Reserve({
+                        endpoint: credentials.coa.endpoint,
+                        auth: coaAuthClient
+                    });
+
                     requestBody = {
                         theaterCode: coaInfo.theaterCode,
                         dateJouei: coaInfo.dateJouei,
@@ -248,13 +258,23 @@ export function create(params: {
                         })
                     };
 
-                    responseBody = await COA.services.reserve.updTmpReserveSeat(requestBody);
+                    responseBody = await reserveService.updTmpReserveSeat(requestBody);
 
                     break;
 
                 case factory.service.webAPI.Identifier.Chevre:
-                    if (reserveService !== undefined && reserveTransaction !== undefined) {
+                    if (reserveTransaction !== undefined) {
+                        if (project.settings === undefined
+                            || project.settings.chevre === undefined) {
+                            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+                        }
+
                         // Chevreで仮予約
+                        reserveService = new chevre.service.transaction.Reserve({
+                            endpoint: project.settings.chevre.endpoint,
+                            auth: chevreAuthClient
+                        });
+
                         requestBody = {
                             id: reserveTransaction.id,
                             object: params.object
@@ -454,6 +474,11 @@ function validateAcceptedOffers(params: {
         project: ProjectRepo;
         seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
+        const masterService = new COA.service.Master({
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        });
+
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = await OfferService.searchEventTicketOffers({
             project: { typeOf: params.project.typeOf, id: params.project.id },
@@ -569,8 +594,8 @@ function validateAcceptedOffers(params: {
                         }
 
                         // ムビチケ認証結果を使ってCOA券種に変換
-                        let mvtkTicketCodeIn: COA.services.master.IMvtkTicketcodeArgs;
-                        let availableSalesTicket: COA.services.master.IMvtkTicketcodeResult;
+                        let mvtkTicketCodeIn: COA.factory.master.IMvtkTicketcodeArgs;
+                        let availableSalesTicket: COA.factory.master.IMvtkTicketcodeResult;
                         try {
                             mvtkTicketCodeIn = {
                                 theaterCode: eventCOAInfo.theaterCode,
@@ -584,7 +609,7 @@ function validateAcceptedOffers(params: {
                                 titleBranchNum: eventCOAInfo.titleBranchNum,
                                 dateJouei: eventCOAInfo.dateJouei
                             };
-                            availableSalesTicket = await COA.services.master.mvtkTicketcode(mvtkTicketCodeIn);
+                            availableSalesTicket = await masterService.mvtkTicketcode(mvtkTicketCodeIn);
                         } catch (error) {
                             // COAサービスエラーの場合ハンドリング
                             if (error.name === 'COAServiceError') {
@@ -822,7 +847,12 @@ export function cancel(params: {
                         coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                     }
 
-                    await COA.services.reserve.delTmpReserve({
+                    const coaReserveService = new COA.service.Reserve({
+                        endpoint: credentials.coa.endpoint,
+                        auth: coaAuthClient
+                    });
+
+                    await coaReserveService.delTmpReserve({
                         ...coaInfo,
                         tmpReserveNum: responseBody.tmpReserveNum
                     });

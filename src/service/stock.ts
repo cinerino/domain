@@ -30,6 +30,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+const coaAuthClient = new COA.auth.RefreshToken({
+    endpoint: credentials.coa.endpoint,
+    refreshToken: credentials.coa.refreshToken
+});
+
 export import IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
@@ -228,6 +233,7 @@ export async function findMovieImage(params: {
 /**
  * 座席仮予約キャンセル
  */
+// tslint:disable-next-line:max-func-body-length
 export function cancelSeatReservationAuth(params: factory.task.IData<factory.taskName.CancelSeatReservation>) {
     return async (repos: {
         action: ActionRepo;
@@ -247,6 +253,8 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
                 );
+
+        let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
 
         await Promise.all(authorizeActions.map(async (action) => {
             if (action.instrument === undefined) {
@@ -268,7 +276,12 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                         const updTmpReserveSeatResult = responseBody;
 
                         try {
-                            await COA.services.reserve.delTmpReserve({
+                            reserveService = new COA.service.Reserve({
+                                endpoint: credentials.coa.endpoint,
+                                auth: coaAuthClient
+                            });
+
+                            await reserveService.delTmpReserve({
                                 theaterCode: updTmpReserveSeatArgs.theaterCode,
                                 dateJouei: updTmpReserveSeatArgs.dateJouei,
                                 titleCode: updTmpReserveSeatArgs.titleCode,
@@ -308,7 +321,7 @@ export function cancelSeatReservationAuth(params: factory.task.IData<factory.tas
                         throw new factory.errors.ServiceUnavailable('Project settings undefined');
                     }
 
-                    const reserveService = new chevre.service.transaction.Reserve({
+                    reserveService = new chevre.service.transaction.Reserve({
                         endpoint: project.settings.chevre.endpoint,
                         auth: chevreAuthClient
                     });

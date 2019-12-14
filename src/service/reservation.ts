@@ -23,6 +23,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+const coaAuthClient = new COA.auth.RefreshToken({
+    endpoint: credentials.coa.endpoint,
+    refreshToken: credentials.coa.refreshToken
+});
+
 type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
 
 type IOwnershipInfoWithDetail =
@@ -36,6 +41,7 @@ export type ISearchEventReservationsOperation<T> = (repos: {
 /**
  * 予約取消
  */
+// tslint:disable-next-line:max-func-body-length
 export function cancelReservation(params: factory.task.IData<factory.taskName.CancelReservation>) {
     return async (repos: {
         action: ActionRepo;
@@ -58,12 +64,16 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
 
             switch (params.instrument.identifier) {
                 case factory.service.webAPI.Identifier.COA:
-                    cancelReservationObject = <COA.services.reserve.IStateReserveArgs>cancelReservationObject;
+                    cancelReservationObject = <COA.factory.reserve.IStateReserveArgs>cancelReservationObject;
 
-                    const stateReserveResult = await COA.services.reserve.stateReserve(cancelReservationObject);
+                    const reserveService = new COA.service.Reserve({
+                        endpoint: credentials.coa.endpoint,
+                        auth: coaAuthClient
+                    });
+                    const stateReserveResult = await reserveService.stateReserve(cancelReservationObject);
 
                     if (stateReserveResult !== null) {
-                        await COA.services.reserve.delReserve({
+                        await reserveService.delReserve({
                             theaterCode: cancelReservationObject.theaterCode,
                             reserveNum: cancelReservationObject.reserveNum,
                             telNum: cancelReservationObject.telNum,
@@ -145,6 +155,8 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
+        let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
+
         // アクション開始
         const confirmActionAttributes = params;
         const action = await repos.action.start(confirmActionAttributes);
@@ -162,14 +174,18 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                     // リトライ可能な前提でつくる必要があるので、要注意
                     // すでに本予約済みかどうか確認
-                    const stateReserveResult = await COA.services.reserve.stateReserve({
+                    reserveService = new COA.service.Reserve({
+                        endpoint: credentials.coa.endpoint,
+                        auth: coaAuthClient
+                    });
+                    const stateReserveResult = await reserveService.stateReserve({
                         theaterCode: object.theaterCode,
                         reserveNum: object.tmpReserveNum,
                         telNum: object.telNum
                     });
 
                     if (stateReserveResult === null) {
-                        await COA.services.reserve.updReserve(object);
+                        await reserveService.updReserve(object);
                     }
 
                     break;
@@ -183,7 +199,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
                         throw new factory.errors.ServiceUnavailable('Project settings not found');
                     }
 
-                    const reserveService = new chevre.service.transaction.Reserve({
+                    reserveService = new chevre.service.transaction.Reserve({
                         endpoint: project.settings.chevre.endpoint,
                         auth: chevreAuthClient
                     });

@@ -37,7 +37,7 @@ before(() => {
 //         // const movie = {};
 //         const creativeWorkRepo = new CreativeWorkRepo(mongoose.connection);
 
-//         sandbox.mock(COA.services.master).expects('title').once().resolves(filmsFromCOA);
+//         sandbox.mock(COA.service.Master.prototype).expects('title').once().resolves(filmsFromCOA);
 //         sandbox.mock(creativeWorkRepo).expects('saveMovie').exactly(filmsFromCOA.length).resolves();
 
 //         const result = await MasterSyncService.importMovies('123')({ creativeWork: creativeWorkRepo });
@@ -181,27 +181,27 @@ describe('importScreeningEvents()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('theater')
             .once()
             .resolves(
                 { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
             );
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('screen')
             .once()
             .resolves(movieTheater.containsPlace.map((p) => {
                 return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
             }));
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('title')
             .once()
             .resolves(filmFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('schedule')
             .once()
             .resolves(schedulesFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('kubunName')
             // tslint:disable-next-line:no-magic-numbers
             .exactly(6)
@@ -293,31 +293,31 @@ describe('importScreeningEvents()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('theater')
             .once()
             .resolves(
                 { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
             );
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('screen')
             .once()
             .resolves(movieTheater.containsPlace.map((p) => {
                 return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
             }));
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('title')
             .once()
             .resolves(filmFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('schedule')
             .once()
             .resolves(schedulesFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('xmlSchedule')
             .once()
             .resolves(xmlSchedule);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('kubunName')
             // tslint:disable-next-line:no-magic-numbers
             .exactly(6)
@@ -383,27 +383,27 @@ describe('importScreeningEvents()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('theater')
             .once()
             .resolves(
                 { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
             );
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('screen')
             .once()
             .resolves(movieTheater.containsPlace.map((p) => {
                 return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
             }));
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('title')
             .once()
             .resolves(filmFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('schedule')
             .once()
             .resolves(schedulesFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('kubunName')
             // tslint:disable-next-line:no-magic-numbers
             .exactly(6)
@@ -471,31 +471,31 @@ describe('importScreeningEvents()', () => {
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('theater')
             .once()
             .resolves(
                 { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
             );
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('screen')
             .once()
             .resolves(movieTheater.containsPlace.map((p) => {
                 return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
             }));
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('title')
             .once()
             .resolves(filmFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('schedule')
             .once()
             .resolves(schedulesFromCOA);
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('xmlSchedule')
             .once()
             .rejects(new Error('some random error'));
-        sandbox.mock(COA.services.master)
+        sandbox.mock(COA.service.Master.prototype)
             .expects('kubunName')
             .never();
         sandbox.mock(eventRepo)
@@ -534,9 +534,9 @@ describe('importScreeningEvents()', () => {
 //         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 //         const placeRepo = new domain.repository.Place(mongoose.connection);
 
-//         sandbox.stub(COA.services.master, 'theater')
+//         sandbox.stub(COA.service.Master.prototype, 'theater')
 //             .returns({ theaterTelNum: '0312345678' });
-//         sandbox.stub(COA.services.master, 'screen')
+//         sandbox.stub(COA.service.Master.prototype, 'screen')
 //             .returns([{ listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] }]);
 //         sandbox.mock(placeRepo)
 //             .expects('saveMovieTheater')

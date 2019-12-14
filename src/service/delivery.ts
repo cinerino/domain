@@ -81,25 +81,19 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 });
             }));
         } catch (error) {
-            // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
+            } catch (_) {
+                // no op
             }
 
             throw error;
         }
 
-        // アクション完了
-        // const result: factory.action.transfer.send.order.IResult = {
-        //     ownershipInfos: ownershipInfos
-        // };
         const result: factory.action.transfer.send.order.IResult = ownershipInfos;
         await repos.action.complete({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, result: result });
 
-        // 潜在アクション
         await onSend(sendOrderActionAttributes, order)({ task: repos.task });
     };
 }
@@ -112,24 +106,23 @@ export function createOwnershipInfosFromOrder(params: {
 }): IOwnershipInfo[] {
     const ownershipInfos: IOwnershipInfo[] = [];
 
-    // tslint:disable-next-line:max-func-body-length
     params.order.acceptedOffers.forEach((acceptedOffer, offerIndex) => {
         const itemOffered = acceptedOffer.itemOffered;
+
         let ownershipInfo: IOwnershipInfo | undefined;
+
         const ownedFrom = params.order.orderDate;
+
         const seller = params.order.seller;
-        let ownedThrough: Date;
         const acquiredFrom = {
             project: params.order.project,
             id: seller.id,
             typeOf: seller.typeOf,
-            name: {
-                ja: seller.name,
-                en: ''
-            },
+            name: { ja: seller.name, en: '' },
             telephone: seller.telephone,
             url: seller.url
         };
+
         const identifier = util.format(
             '%s-%s-%s-%s',
             params.order.customer.id,
@@ -140,78 +133,24 @@ export function createOwnershipInfosFromOrder(params: {
 
         switch (itemOffered.typeOf) {
             case factory.programMembership.ProgramMembershipType.ProgramMembership:
-                // どういう期間でいくらのオファーなのか
-                const eligibleDuration = acceptedOffer.eligibleDuration;
-                if (eligibleDuration === undefined) {
-                    throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
-                }
-                // 期間単位としては秒のみ実装
-                if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
-                    throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
-                }
-                ownedThrough = moment(params.order.orderDate)
-                    .add(eligibleDuration.value, 'seconds')
-                    .toDate();
-                ownershipInfo = {
-                    project: params.order.project,
-                    id: '',
-                    typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                    identifier: identifier,
-                    ownedBy: params.order.customer,
-                    acquiredFrom: acquiredFrom,
+                ownershipInfo = createProgramMembershipOwnershipInfo({
+                    order: params.order,
+                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
                     ownedFrom: ownedFrom,
-                    ownedThrough: ownedThrough,
-                    typeOfGood: itemOffered
-                };
+                    identifier: identifier,
+                    acquiredFrom: acquiredFrom
+                });
 
                 break;
 
             case factory.chevre.reservationType.EventReservation:
-                // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
-                // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
-                // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
-                ownedThrough = itemOffered.reservationFor.endDate;
-
-                let bookingService = acceptedOffer.offeredThrough;
-                if (bookingService === undefined) {
-                    // デフォルトブッキングサービスはChevre
-                    bookingService = {
-                        typeOf: 'WebAPI',
-                        identifier: factory.service.webAPI.Identifier.Chevre
-                    };
-                }
-
-                if (bookingService.identifier === factory.service.webAPI.Identifier.COA) {
-                    // COA予約の場合、typeOfGoodにはアイテムをそのまま挿入する
-                    ownershipInfo = {
-                        project: params.order.project,
-                        id: '',
-                        typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                        identifier: identifier,
-                        ownedBy: params.order.customer,
-                        acquiredFrom: acquiredFrom,
-                        ownedFrom: ownedFrom,
-                        ownedThrough: ownedThrough,
-                        typeOfGood: { ...itemOffered, bookingService: bookingService }
-                    };
-                } else {
-                    ownershipInfo = {
-                        project: params.order.project,
-                        typeOf: <factory.ownershipInfo.OwnershipInfoType>'OwnershipInfo',
-                        id: '',
-                        identifier: identifier,
-                        ownedBy: params.order.customer,
-                        acquiredFrom: acquiredFrom,
-                        ownedFrom: ownedFrom,
-                        ownedThrough: ownedThrough,
-                        typeOfGood: {
-                            typeOf: itemOffered.typeOf,
-                            id: itemOffered.id,
-                            reservationNumber: itemOffered.reservationNumber,
-                            bookingService: bookingService
-                        }
-                    };
-                }
+                ownershipInfo = createReservationOwnershipInfo({
+                    order: params.order,
+                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    ownedFrom: ownedFrom,
+                    identifier: identifier,
+                    acquiredFrom: acquiredFrom
+                });
 
                 break;
 
@@ -225,11 +164,103 @@ export function createOwnershipInfosFromOrder(params: {
 
         if (ownershipInfo !== undefined) {
             ownershipInfos.push(ownershipInfo);
-
         }
     });
 
     return ownershipInfos;
+}
+
+function createReservationOwnershipInfo(params: {
+    order: factory.order.IOrder;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.order.IReservation>;
+    ownedFrom: Date;
+    identifier: string;
+    acquiredFrom: factory.ownershipInfo.IOwner;
+}): IOwnershipInfo {
+    const itemOffered = params.acceptedOffer.itemOffered;
+
+    let ownershipInfo: IOwnershipInfo;
+
+    // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
+    // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
+    // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
+    const ownedThrough = itemOffered.reservationFor.endDate;
+
+    let bookingService = params.acceptedOffer.offeredThrough;
+    if (bookingService === undefined) {
+        // デフォルトブッキングサービスはChevre
+        bookingService = {
+            typeOf: 'WebAPI',
+            identifier: factory.service.webAPI.Identifier.Chevre
+        };
+    }
+
+    if (bookingService.identifier === factory.service.webAPI.Identifier.COA) {
+        // COA予約の場合、typeOfGoodにはアイテムをそのまま挿入する
+        ownershipInfo = {
+            project: params.order.project,
+            id: '',
+            typeOf: 'OwnershipInfo',
+            identifier: params.identifier,
+            ownedBy: params.order.customer,
+            acquiredFrom: params.acquiredFrom,
+            ownedFrom: params.ownedFrom,
+            ownedThrough: ownedThrough,
+            typeOfGood: { ...itemOffered, bookingService: bookingService }
+        };
+    } else {
+        ownershipInfo = {
+            project: params.order.project,
+            typeOf: 'OwnershipInfo',
+            id: '',
+            identifier: params.identifier,
+            ownedBy: params.order.customer,
+            acquiredFrom: params.acquiredFrom,
+            ownedFrom: params.ownedFrom,
+            ownedThrough: ownedThrough,
+            typeOfGood: {
+                typeOf: itemOffered.typeOf,
+                id: itemOffered.id,
+                reservationNumber: itemOffered.reservationNumber,
+                bookingService: bookingService
+            }
+        };
+    }
+
+    return ownershipInfo;
+}
+
+function createProgramMembershipOwnershipInfo(params: {
+    order: factory.order.IOrder;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>;
+    ownedFrom: Date;
+    identifier: string;
+    acquiredFrom: factory.ownershipInfo.IOwner;
+}): IOwnershipInfo {
+    // どういう期間でいくらのオファーなのか
+    const eligibleDuration = params.acceptedOffer.eligibleDuration;
+    if (eligibleDuration === undefined) {
+        throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
+    }
+    // 期間単位としては秒のみ実装
+    if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
+        throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
+    }
+    const ownedThrough = moment(params.ownedFrom)
+        .add(eligibleDuration.value, 'seconds')
+        .toDate();
+
+    return {
+        project: params.order.project,
+        id: '',
+        typeOf: 'OwnershipInfo',
+        identifier: params.identifier,
+        ownedBy: params.order.customer,
+        acquiredFrom: params.acquiredFrom,
+        ownedFrom: params.ownedFrom,
+        ownedThrough: ownedThrough,
+        typeOfGood: params.acceptedOffer.itemOffered
+    };
 }
 
 /**

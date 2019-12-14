@@ -11,6 +11,10 @@ export const credentials = {
         clientId: <string>process.env.CHEVRE_CLIENT_ID,
         clientSecret: <string>process.env.CHEVRE_CLIENT_SECRET
     },
+    coa: {
+        endpoint: <string>process.env.COA_ENDPOINT,
+        refreshToken: <string>process.env.COA_REFRESH_TOKEN
+    },
     customSearch: {
         engineId: <string>process.env.CUSTOM_SEARCH_ENGINE_ID,
         apiKey: <string>process.env.GOOGLE_API_KEY

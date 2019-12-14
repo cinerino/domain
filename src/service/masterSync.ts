@@ -14,7 +14,14 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as factory from '../factory';
 
+import { credentials } from '../credentials';
+
 const debug = createDebug('cinerino-domain:service');
+
+const coaAuthClient = new COA.auth.RefreshToken({
+    endpoint: credentials.coa.endpoint,
+    refreshToken: credentials.coa.refreshToken
+});
 
 /**
  * 映画作品インポート
@@ -22,7 +29,7 @@ const debug = createDebug('cinerino-domain:service');
 // export function importMovies(theaterCode: string) {
 //     return async (repos: { creativeWork: CreativeWorkRepo }) => {
 //         // COAから作品取得
-//         const filmsFromCOA = await COA.services.master.title({ theaterCode: theaterCode });
+//         const filmsFromCOA = await masterService.title({ theaterCode: theaterCode });
 
 //         // 永続化
 //         await Promise.all(filmsFromCOA.map(async (filmFromCOA) => {
@@ -36,7 +43,7 @@ const debug = createDebug('cinerino-domain:service');
 
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
-// function createMovieFromCOA(filmFromCOA: COA.services.master.ITitleResult): factory.chevre.creativeWork.movie.ICreativeWork {
+// function createMovieFromCOA(filmFromCOA: COA.factory.master.ITitleResult): factory.chevre.creativeWork.movie.ICreativeWork {
 //     return {
 //         identifier: filmFromCOA.titleCode,
 //         name: filmFromCOA.titleNameOrig,
@@ -50,8 +57,8 @@ const debug = createDebug('cinerino-domain:service');
  * XMLに存在するスケジュールかどうかを判定する
  */
 export function matchWithXML(
-    xmlSchedules: COA.services.master.IXMLScheduleResult[][],
-    coaSchedule: COA.services.master.IScheduleResult
+    xmlSchedules: COA.factory.master.IXMLScheduleResult[][],
+    coaSchedule: COA.factory.master.IScheduleResult
 ): boolean {
     return xmlSchedules.some((xmlSchedule) => {
         return xmlSchedule.some((schedule) => {
@@ -80,11 +87,16 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
     }) => {
         const project: factory.project.IProject = params.project;
 
+        const masterService = new COA.service.Master({
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        });
+
         // 劇場取得
         const movieTheater = createMovieTheaterFromCOA(
             project,
-            await COA.services.master.theater({ theaterCode: params.locationBranchCode }),
-            await COA.services.master.screen({ theaterCode: params.locationBranchCode })
+            await masterService.theater({ theaterCode: params.locationBranchCode }),
+            await masterService.screen({ theaterCode: params.locationBranchCode })
         );
 
         const sellers = await repos.seller.search({
@@ -108,7 +120,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         }
 
         // COAから作品取得
-        const filmsFromCOA = await COA.services.master.title({
+        const filmsFromCOA = await masterService.title({
             theaterCode: params.locationBranchCode
         });
 
@@ -132,7 +144,7 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 .tz('Asia/Tokyo')
                 .format('YYYYMMDD')
         );
-        const schedulesFromCOA = await COA.services.master.schedule({
+        const schedulesFromCOA = await masterService.schedule({
             theaterCode: params.locationBranchCode,
             begin: moment(targetImportFrom)
                 .tz('Asia/Tokyo')
@@ -143,11 +155,11 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
                 .format('YYYYMMDD') // COAは日本時間で判断
         });
 
-        let schedulesFromXML: COA.services.master.IXMLScheduleResult[][] = [];
+        let schedulesFromXML: COA.factory.master.IXMLScheduleResult[][] = [];
         if (xmlEndPoint !== undefined) {
             try {
                 debug('finding xmlSchedule...', xmlEndPoint.theaterCodeName);
-                schedulesFromXML = await COA.services.master.xmlSchedule({
+                schedulesFromXML = await masterService.xmlSchedule({
                     baseUrl: xmlEndPoint.baseUrl,
                     theaterCodeName: xmlEndPoint.theaterCodeName
                 });
@@ -160,27 +172,27 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         // xmlEndPointがない場合、処理を続きます
         if (xmlEndPoint === undefined || schedulesFromXML.length > 0) {
             // COAから区分マスター抽出
-            const serviceKubuns = await COA.services.master.kubunName({
+            const serviceKubuns = await masterService.kubunName({
                 theaterCode: params.locationBranchCode,
                 kubunClass: '009'
             });
-            const acousticKubuns = await COA.services.master.kubunName({
+            const acousticKubuns = await masterService.kubunName({
                 theaterCode: params.locationBranchCode,
                 kubunClass: '046'
             });
-            const eirinKubuns = await COA.services.master.kubunName({
+            const eirinKubuns = await masterService.kubunName({
                 theaterCode: params.locationBranchCode,
                 kubunClass: '044'
             });
-            const eizouKubuns = await COA.services.master.kubunName({
+            const eizouKubuns = await masterService.kubunName({
                 theaterCode: params.locationBranchCode,
                 kubunClass: '042'
             });
-            const joueihousikiKubuns = await COA.services.master.kubunName({
+            const joueihousikiKubuns = await masterService.kubunName({
                 theaterCode: params.locationBranchCode,
                 kubunClass: '045'
             });
-            const jimakufukikaeKubuns = await COA.services.master.kubunName({
+            const jimakufukikaeKubuns = await masterService.kubunName({
                 theaterCode: params.locationBranchCode,
                 kubunClass: '043'
             });
@@ -295,8 +307,8 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 //         seller: SellerRepo;
 //     }): Promise<void> => {
 //         const movieTheater = createMovieTheaterFromCOA(
-//             await COA.services.master.theater({ theaterCode: theaterCode }),
-//             await COA.services.master.screen({ theaterCode: theaterCode })
+//             await masterService.theater({ theaterCode: theaterCode }),
+//             await masterService.screen({ theaterCode: theaterCode })
 //         );
 
 //         // 場所を保管
@@ -348,11 +360,11 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
 // tslint:disable-next-line:max-func-body-length
 export function createScreeningEventFromCOA(params: {
     project: factory.project.IProject;
-    performanceFromCOA: COA.services.master.IScheduleResult;
+    performanceFromCOA: COA.factory.master.IScheduleResult;
     screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
     superEvent: factory.event.screeningEventSeries.IEvent;
-    serviceKubuns: COA.services.master.IKubunNameResult[];
-    acousticKubuns: COA.services.master.IKubunNameResult[];
+    serviceKubuns: COA.factory.master.IKubunNameResult[];
+    acousticKubuns: COA.factory.master.IKubunNameResult[];
 }): factory.event.screeningEvent.IEvent {
     const id = createScreeningEventIdFromCOA({
         theaterCode: params.superEvent.location.branchCode,
@@ -502,12 +514,12 @@ export function createScreeningEventFromCOA(params: {
 /* istanbul ignore next */
 export function createScreeningEventSeriesFromCOA(params: {
     project: factory.project.IProject;
-    filmFromCOA: COA.services.master.ITitleResult;
+    filmFromCOA: COA.factory.master.ITitleResult;
     movieTheater: factory.chevre.place.movieTheater.IPlace;
-    eirinKubuns: COA.services.master.IKubunNameResult[];
-    eizouKubuns: COA.services.master.IKubunNameResult[];
-    joueihousikiKubuns: COA.services.master.IKubunNameResult[];
-    jimakufukikaeKubuns: COA.services.master.IKubunNameResult[];
+    eirinKubuns: COA.factory.master.IKubunNameResult[];
+    eizouKubuns: COA.factory.master.IKubunNameResult[];
+    joueihousikiKubuns: COA.factory.master.IKubunNameResult[];
+    jimakufukikaeKubuns: COA.factory.master.IKubunNameResult[];
 }): factory.event.screeningEventSeries.IEvent {
     const endDate = (moment(`${params.filmFromCOA.dateEnd} +09:00`, 'YYYYMMDD Z')
         .isValid())
@@ -650,8 +662,8 @@ export function createScreeningEventSeriesId(params: {
 /* istanbul ignore next */
 export function createMovieTheaterFromCOA(
     project: factory.project.IProject,
-    theaterFromCOA: COA.services.master.ITheaterResult,
-    screensFromCOA: COA.services.master.IScreenResult[]
+    theaterFromCOA: COA.factory.master.ITheaterResult,
+    screensFromCOA: COA.factory.master.IScreenResult[]
 ): factory.chevre.place.movieTheater.IPlace {
     const id = `MovieTheater-${theaterFromCOA.theaterCode}`;
 
@@ -680,7 +692,7 @@ export function createMovieTheaterFromCOA(
 /* istanbul ignore next */
 export function createScreeningRoomFromCOA(
     project: factory.project.IProject,
-    screenFromCOA: COA.services.master.IScreenResult
+    screenFromCOA: COA.factory.master.IScreenResult
 ): factory.chevre.place.movieTheater.IScreeningRoom {
     const sections: factory.chevre.place.movieTheater.IScreeningRoomSection[] = [];
     const sectionCodes: string[] = [];
@@ -726,8 +738,13 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
     return async (repos: {
         attendeeCapacity: EventAttendeeCapacityRepo;
     }) => {
+        const reserveService = new COA.service.Reserve({
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        });
+
         // COAから空席状況取得
-        const countFreeSeatResult = await COA.services.reserve.countFreeSeat({
+        const countFreeSeatResult = await reserveService.countFreeSeat({
             theaterCode: params.locationBranchCode,
             begin: moment(params.importFrom)
                 .tz('Asia/Tokyo')

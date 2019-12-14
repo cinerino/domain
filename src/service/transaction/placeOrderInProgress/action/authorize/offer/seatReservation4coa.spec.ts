@@ -71,11 +71,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -83,7 +83,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(reserveSeatsTemporarilyResult);
@@ -159,15 +159,15 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.master)
+        sandbox.mock(domain.COA.service.Master.prototype)
             .expects('ticket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -175,7 +175,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(reserveSeatsTemporarilyResult);
@@ -255,11 +255,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -267,7 +267,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(reserveSeatsTemporarilyResult);
@@ -356,15 +356,15 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.master)
+        sandbox.mock(domain.COA.service.Master.prototype)
             .expects('mvtkTicketcode')
             .once()
             .resolves(mvtkTicket);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -372,7 +372,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(reserveSeatsTemporarilyResult);
@@ -459,15 +459,15 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.master)
+        sandbox.mock(domain.COA.service.Master.prototype)
             .expects('mvtkTicketcode')
             .once()
             .resolves(mvtkTicket);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -475,7 +475,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(reserveSeatsTemporarilyResult);
@@ -555,11 +555,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(event);
         // 会員と非会員で2回呼ばれるはず
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .twice()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -567,7 +567,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(reserveSeatsTemporarilyResult);
@@ -646,22 +646,22 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(event);
         // ムビチケを券種に変換で失敗する場合
-        sandbox.mock(domain.COA.services.master)
+        sandbox.mock(domain.COA.service.Master.prototype)
             .expects('mvtkTicketcode')
             .once()
             .rejects(mvtkTicketResult);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo)
             .expects('start')
             .never();
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .never();
         sandbox.mock(actionRepo)
@@ -735,22 +735,22 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(event);
         // ムビチケを券種に変換でサーバーエラーの場合
-        sandbox.mock(domain.COA.services.master)
+        sandbox.mock(domain.COA.service.Master.prototype)
             .expects('mvtkTicketcode')
             .once()
             .rejects(mvtkTicketResult);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo)
             .expects('start')
             .never();
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .never();
         sandbox.mock(actionRepo)
@@ -825,22 +825,22 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.master)
+        sandbox.mock(domain.COA.service.Master.prototype)
             .expects('mvtkTicketcode')
             .once()
             .resolves(mvtkTicket);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo)
             .expects('start')
             .never();
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .never();
         sandbox.mock(actionRepo)
@@ -911,18 +911,18 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo)
             .expects('start')
             .never();
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .never();
         sandbox.mock(actionRepo)
@@ -984,7 +984,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.mock(actionRepo)
             .expects('start')
             .never();
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .never();
 
@@ -1058,11 +1058,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -1070,7 +1070,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .rejects(updTmpReserveSeatResult);
@@ -1152,11 +1152,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -1164,7 +1164,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .rejects(updTmpReserveSeatResult);
@@ -1245,11 +1245,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -1258,7 +1258,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
         // COAが座席取得失敗エラーを返してきた場合
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .rejects(updTmpReserveSeatResult);
@@ -1342,11 +1342,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -1355,7 +1355,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
         // COAが座席取得失敗エラーを返してきた場合
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .rejects(updTmpReserveSeatResult);
@@ -1439,11 +1439,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -1452,7 +1452,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
         // COAが座席取得失敗エラーを返してきた場合
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .rejects(updTmpReserveSeatResult);
@@ -1559,18 +1559,18 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
         sandbox.mock(actionRepo)
             .expects('start')
             .never();
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .never();
         sandbox.mock(actionRepo)
@@ -1678,11 +1678,11 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()
             .resolves(salesTickets);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('stateReserveSeat')
             .once()
             .resolves(stateReserveSeatResult);
@@ -1690,7 +1690,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.COA.services.reserve)
+        sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('updTmpReserveSeat')
             .once()
             .resolves(updTmpReserveSeatResult);

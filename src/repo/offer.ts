@@ -2,7 +2,7 @@ import * as COA from '@motionpicture/coa-service';
 
 // import * as factory from '../factory';
 
-export interface ICOATicket extends COA.services.master.ITicketResult {
+export interface ICOATicket extends COA.factory.master.ITicketResult {
     theaterCode: string;
 }
 

@@ -16,11 +16,7 @@ import * as repository from './repository';
 import * as service from './service';
 
 /**
- * COAのAPIクライアント
- * @example
- * domain.COA.services.master.theater({ theater_code: '118' }).then(() => {
- *     console.log(result);
- * });
+ * COA APIクライアント
  */
 export import COA = COA;
 
