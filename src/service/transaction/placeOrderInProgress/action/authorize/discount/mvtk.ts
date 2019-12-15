@@ -26,7 +26,6 @@ export function createMovieTicketPaymentAuthorization(params: {
     transactionId: string;
     authorizeObject: factory.action.authorize.discount.mvtk.IObject;
 }): ICreateOperation<factory.action.authorize.paymentMethod.movieTicket.IAction[]> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         paymentMethod?: PaymentMethodRepo;
@@ -65,39 +64,7 @@ export function createMovieTicketPaymentAuthorization(params: {
             /* istanbul ignore next */
             try {
                 // 一度認証されたムビチケをDBに記録する(後で検索しやすいように)
-                await Promise.all(params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.map(async (knyknrNoInfo) => {
-                    const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
-                        project: params.project,
-                        typeOf: factory.paymentMethodType.MovieTicket,
-                        identifier: knyknrNoInfo.knyknrNo,
-                        accessCode: knyknrNoInfo.pinCd,
-                        serviceType: (knyknrNoInfo.knshInfo[0] !== undefined) ? knyknrNoInfo.knshInfo[0].knshTyp : '',
-                        serviceOutput: {
-                            reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: '' },
-                            reservedTicket: {
-                                ticketedSeat: {
-                                    typeOf: factory.chevre.placeType.ScreeningRoom,
-                                    seatingType: { typeOf: <any>'Default' },
-                                    seatNumber: '',
-                                    seatRow: '',
-                                    seatSection: ''
-                                }
-                            }
-                        }
-                    };
-
-                    if (repos.paymentMethod !== undefined) {
-                        await repos.paymentMethod.paymentMethodModel.findOneAndUpdate(
-                            {
-                                typeOf: factory.paymentMethodType.MovieTicket,
-                                identifier: movieTicket.identifier
-                            },
-                            movieTicket,
-                            { upsert: true }
-                        )
-                            .exec();
-                    }
-                }));
+                await savePaymentMethods(params)(repos);
             } catch (error) {
                 // no op
                 // 情報保管に失敗してもスルー
@@ -121,6 +88,49 @@ export function createMovieTicketPaymentAuthorization(params: {
             };
 
             return repos.action.complete({ typeOf: factory.actionType.AuthorizeAction, id: action.id, result: result });
+        }));
+    };
+}
+
+function savePaymentMethods(params: {
+    project: factory.project.IProject;
+    authorizeObject: factory.action.authorize.discount.mvtk.IObject;
+}) {
+    return async (repos: {
+        paymentMethod?: PaymentMethodRepo;
+    }) => {
+        await Promise.all(params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.map(async (knyknrNoInfo) => {
+            const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
+                project: params.project,
+                typeOf: factory.paymentMethodType.MovieTicket,
+                identifier: knyknrNoInfo.knyknrNo,
+                accessCode: knyknrNoInfo.pinCd,
+                serviceType: (knyknrNoInfo.knshInfo[0] !== undefined) ? knyknrNoInfo.knshInfo[0].knshTyp : '',
+                serviceOutput: {
+                    reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: '' },
+                    reservedTicket: {
+                        ticketedSeat: {
+                            typeOf: factory.chevre.placeType.ScreeningRoom,
+                            seatingType: { typeOf: <any>'Default' },
+                            seatNumber: '',
+                            seatRow: '',
+                            seatSection: ''
+                        }
+                    }
+                }
+            };
+
+            if (repos.paymentMethod !== undefined) {
+                await repos.paymentMethod.paymentMethodModel.findOneAndUpdate(
+                    {
+                        typeOf: factory.paymentMethodType.MovieTicket,
+                        identifier: movieTicket.identifier
+                    },
+                    movieTicket,
+                    { upsert: true }
+                )
+                    .exec();
+            }
         }));
     };
 }
@@ -180,14 +190,10 @@ export function validate(params: {
     transactionId: string;
     authorizeObject: factory.action.authorize.discount.mvtk.IObject;
 }): ICreateOperation<factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        transaction: TransactionRepo;
-    }) => {
-
-        // 座席予約承認を取得
-        // 座席予約承認アクションが存在していなければエラー
+    }): Promise<factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>> => {
+        // 座席予約承認の存在確認
         const seatReservationAuthorizeActions = await repos.action.actionModel.find({
             typeOf: factory.actionType.AuthorizeAction,
             'purpose.id': {
@@ -208,95 +214,108 @@ export function validate(params: {
             throw new factory.errors.Argument('transactionId', '座席予約が複数見つかりました。');
         }
 
-        const seatReservationAuthorizeAction = seatReservationAuthorizeActions[0];
-        const seatReservationAuthorizeActionObject = seatReservationAuthorizeAction.object;
-        const seatReservationAuthorizeActionResult =
-            <factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.COA>>
-            seatReservationAuthorizeAction.result;
+        return compareSeatReservationsAuthorizationAndMvtkAuthorization({
+            authorizeObject: params.authorizeObject,
+            seatReservationAuthorizeAction: seatReservationAuthorizeActions[0]
+        });
+    };
+}
 
-        // 購入管理番号が一致しているか
-        interface IKnyknrNoNumsByNo { [knyknrNo: string]: number; }
-        const knyknrNoNumsByNoShouldBe: IKnyknrNoNumsByNo = seatReservationAuthorizeActionObject.acceptedOffer.reduce(
-            (a: IKnyknrNoNumsByNo, b) => {
-                const knyknrNo = b.ticketInfo.mvtkNum;
-                // 券種情報にムビチケ購入管理番号があれば、枚数を追加
-                if (typeof knyknrNo === 'string' && knyknrNo !== '') {
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (a[knyknrNo] === undefined) {
-                        a[knyknrNo] = 0;
-                    }
-                    a[knyknrNo] += 1;
-                }
+/**
+ * 座席予約承認とムビチケ承認を比較する
+ */
+function compareSeatReservationsAuthorizationAndMvtkAuthorization(params: {
+    authorizeObject: factory.action.authorize.discount.mvtk.IObject;
+    seatReservationAuthorizeAction: factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.COA>;
+}): factory.event.IEvent<factory.chevre.eventType.ScreeningEvent> {
+    const seatReservationAuthorizeAction = params.seatReservationAuthorizeAction;
+    const seatReservationAuthorizeActionObject = seatReservationAuthorizeAction.object;
+    const seatReservationAuthorizeActionResult
+        = <factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.COA>>
+        seatReservationAuthorizeAction.result;
 
-                return a;
-            },
-            {}
-        );
-        const knyknrNoNumsByNo: IKnyknrNoNumsByNo = params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.reduce(
-            (a: IKnyknrNoNumsByNo, b) => {
+    // 購入管理番号が一致しているか
+    interface IKnyknrNoNumsByNo { [knyknrNo: string]: number; }
+    const knyknrNoNumsByNoShouldBe: IKnyknrNoNumsByNo = seatReservationAuthorizeActionObject.acceptedOffer.reduce(
+        (a: IKnyknrNoNumsByNo, b) => {
+            const knyknrNo = b.ticketInfo.mvtkNum;
+            // 券種情報にムビチケ購入管理番号があれば、枚数を追加
+            if (typeof knyknrNo === 'string' && knyknrNo !== '') {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
-                if (a[b.knyknrNo] === undefined) {
-                    a[b.knyknrNo] = 0;
+                if (a[knyknrNo] === undefined) {
+                    a[knyknrNo] = 0;
                 }
-                const knyknrNoNum = b.knshInfo.reduce((a2, b2) => a2 + b2.miNum, 0);
-                a[b.knyknrNo] += knyknrNoNum;
+                a[knyknrNo] += 1;
+            }
 
-                return a;
-            },
-            {}
-        );
-        debug('knyknrNoNumsByNo:', knyknrNoNumsByNo);
-        debug('knyyknrNoNumsByNoShouldBe:', knyknrNoNumsByNoShouldBe);
-        const knyknrNoExistsInSeatReservation =
-            Object.keys(knyknrNoNumsByNo)
-                .every((knyknrNo) => knyknrNoNumsByNo[knyknrNo] === knyknrNoNumsByNoShouldBe[knyknrNo]);
-        const knyknrNoExistsMvtkResult =
-            Object.keys(knyknrNoNumsByNoShouldBe)
-                .every((knyknrNo) => knyknrNoNumsByNo[knyknrNo] === knyknrNoNumsByNoShouldBe[knyknrNo]);
-        if (!knyknrNoExistsInSeatReservation || !knyknrNoExistsMvtkResult) {
-            throw new factory.errors.Argument('authorizeActionResult', 'knyknrNoInfo not matched with seat reservation authorizeAction');
-        }
+            return a;
+        },
+        {}
+    );
+    const knyknrNoNumsByNo: IKnyknrNoNumsByNo = params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.reduce(
+        (a: IKnyknrNoNumsByNo, b) => {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (a[b.knyknrNo] === undefined) {
+                a[b.knyknrNo] = 0;
+            }
+            const knyknrNoNum = b.knshInfo.reduce((a2, b2) => a2 + b2.miNum, 0);
+            a[b.knyknrNo] += knyknrNoNum;
 
-        const updTmpReserveSeatArgs = seatReservationAuthorizeActionResult.requestBody;
-        const updTmpReserveSeatResult = seatReservationAuthorizeActionResult.responseBody;
-        if (updTmpReserveSeatArgs === undefined || updTmpReserveSeatResult === undefined) {
-            throw new factory.errors.NotFound('seatReservationAuthorizeActionResult');
-        }
+            return a;
+        },
+        {}
+    );
+    debug('knyknrNoNumsByNo:', knyknrNoNumsByNo);
+    debug('knyyknrNoNumsByNoShouldBe:', knyknrNoNumsByNoShouldBe);
+    const knyknrNoExistsInSeatReservation =
+        Object.keys(knyknrNoNumsByNo)
+            .every((knyknrNo) => knyknrNoNumsByNo[knyknrNo] === knyknrNoNumsByNoShouldBe[knyknrNo]);
+    const knyknrNoExistsMvtkResult =
+        Object.keys(knyknrNoNumsByNoShouldBe)
+            .every((knyknrNo) => knyknrNoNumsByNo[knyknrNo] === knyknrNoNumsByNoShouldBe[knyknrNo]);
+    if (!knyknrNoExistsInSeatReservation || !knyknrNoExistsMvtkResult) {
+        throw new factory.errors.Argument('authorizeActionResult', 'knyknrNoInfo not matched with seat reservation authorizeAction');
+    }
 
-        // サイトコードが一致しているか (COAの劇場コードから頭の0をとった値)
-        // tslint:disable-next-line:no-magic-numbers
-        const stCdShouldBe = parseInt(updTmpReserveSeatArgs.theaterCode.slice(-2), 10)
-            .toString();
-        if (params.authorizeObject.seatInfoSyncIn.stCd !== stCdShouldBe) {
-            throw new factory.errors.Argument('authorizeActionResult', 'stCd not matched with seat reservation authorizeAction');
-        }
+    const updTmpReserveSeatArgs = seatReservationAuthorizeActionResult.requestBody;
+    const updTmpReserveSeatResult = seatReservationAuthorizeActionResult.responseBody;
+    if (updTmpReserveSeatArgs === undefined || updTmpReserveSeatResult === undefined) {
+        throw new factory.errors.NotFound('seatReservationAuthorizeActionResult');
+    }
 
-        // 作品コードが一致しているか
-        // ムビチケに渡す作品枝番号は、COAの枝番号を0埋めで二桁に揃えたもの、というのが、ムビチケ側の仕様なので、そのようにバリデーションをかけます。
-        // tslint:disable-next-line:no-magic-numbers
-        const titleBranchNum4mvtk = `0${updTmpReserveSeatArgs.titleBranchNum}`.slice(-2);
-        const skhnCdShouldBe = `${updTmpReserveSeatArgs.titleCode}${titleBranchNum4mvtk}`;
-        if (params.authorizeObject.seatInfoSyncIn.skhnCd !== skhnCdShouldBe) {
-            throw new factory.errors.Argument('authorizeActionResult', 'skhnCd not matched with seat reservation authorizeAction');
-        }
+    // サイトコードが一致しているか (COAの劇場コードから頭の0をとった値)
+    // tslint:disable-next-line:no-magic-numbers
+    const stCdShouldBe = parseInt(updTmpReserveSeatArgs.theaterCode.slice(-2), 10)
+        .toString();
+    if (params.authorizeObject.seatInfoSyncIn.stCd !== stCdShouldBe) {
+        throw new factory.errors.Argument('authorizeActionResult', 'stCd not matched with seat reservation authorizeAction');
+    }
 
-        // スクリーンコードが一致しているか
-        if (params.authorizeObject.seatInfoSyncIn.screnCd !== updTmpReserveSeatArgs.screenCode) {
-            throw new factory.errors.Argument('authorizeActionResult', 'screnCd not matched with seat reservation authorizeAction');
-        }
+    // 作品コードが一致しているか
+    // ムビチケに渡す作品枝番号は、COAの枝番号を0埋めで二桁に揃えたもの、というのが、ムビチケ側の仕様なので、そのようにバリデーションをかけます。
+    // tslint:disable-next-line:no-magic-numbers
+    const titleBranchNum4mvtk = `0${updTmpReserveSeatArgs.titleBranchNum}`.slice(-2);
+    const skhnCdShouldBe = `${updTmpReserveSeatArgs.titleCode}${titleBranchNum4mvtk}`;
+    if (params.authorizeObject.seatInfoSyncIn.skhnCd !== skhnCdShouldBe) {
+        throw new factory.errors.Argument('authorizeActionResult', 'skhnCd not matched with seat reservation authorizeAction');
+    }
 
-        // 座席番号が一致しているか
-        const seatNumsInSeatReservationAuthorization = updTmpReserveSeatResult.listTmpReserve.map((tmpReserve) => tmpReserve.seatNum);
-        if (!params.authorizeObject.seatInfoSyncIn.zskInfo.every(
-            (zskInfo) => seatNumsInSeatReservationAuthorization.indexOf(zskInfo.zskCd) >= 0
-        )) {
-            throw new factory.errors.Argument('authorizeActionResult', 'zskInfo not matched with seat reservation authorizeAction');
-        }
+    // スクリーンコードが一致しているか
+    if (params.authorizeObject.seatInfoSyncIn.screnCd !== updTmpReserveSeatArgs.screenCode) {
+        throw new factory.errors.Argument('authorizeActionResult', 'screnCd not matched with seat reservation authorizeAction');
+    }
 
-        return seatReservationAuthorizeActionObject.event;
-    };
+    // 座席番号が一致しているか
+    const seatNumsInSeatReservationAuthorization = updTmpReserveSeatResult.listTmpReserve.map((tmpReserve) => tmpReserve.seatNum);
+    if (!params.authorizeObject.seatInfoSyncIn.zskInfo.every(
+        (zskInfo) => seatNumsInSeatReservationAuthorization.indexOf(zskInfo.zskCd) >= 0
+    )) {
+        throw new factory.errors.Argument('authorizeActionResult', 'zskInfo not matched with seat reservation authorizeAction');
+    }
+
+    return seatReservationAuthorizeActionObject.event;
 }
 
 export function cancel(params: {

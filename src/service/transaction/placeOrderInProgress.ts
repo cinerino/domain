@@ -56,7 +56,6 @@ export type IUnitPriceSpecification =
 /**
  * 取引開始
  */
-// tslint:disable-next-line:max-func-body-length
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
         project: ProjectRepo;
@@ -66,41 +65,10 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         const project = await repos.project.findById({ id: params.project.id });
         const seller = await repos.seller.findById({ id: params.seller.id });
 
-        let passport: factory.waiter.passport.IPassport | undefined;
-        // WAITER許可証トークンがあれば検証する
-        if (params.object.passport !== undefined) {
-            try {
-                passport = await waiter.service.passport.verify({
-                    token: params.object.passport.token,
-                    secret: params.object.passport.secret
-                });
-            } catch (error) {
-                throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
-            }
-
-            // 許可証バリデーション
-            if (typeof params.passportValidator === 'function') {
-                if (!params.passportValidator({ passport: passport })) {
-                    throw new factory.errors.Argument('Passport Token', 'Invalid passport');
-                }
-            }
-        }
+        const passport = await validateWaiterPassport(params);
 
         // 注文通知パラメータ作成
-        const informOrderParams: factory.transaction.placeOrder.IInformOrderParams[] = [];
-
-        if (project.settings !== undefined
-            && project.settings !== null
-            && project.settings.onOrderStatusChanged !== undefined
-            && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
-            informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
-        }
-
-        if (params.object !== undefined
-            && params.object.onOrderStatusChanged !== undefined
-            && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
-            informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
-        }
+        const informOrderParams = createInformOrderParams({ ...params, project: project });
 
         const transactionObject: factory.transaction.placeOrder.IObject = {
             passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
@@ -116,7 +84,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
-            project: { typeOf: 'Project', id: params.project.id },
+            project: { typeOf: project.typeOf, id: project.id },
             typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
             agent: params.agent,
@@ -141,17 +109,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             transaction = await repos.transaction.start<factory.transactionType.PlaceOrder>(transactionAttributes);
         } catch (error) {
             if (error.name === 'MongoError') {
-                // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
-                // name: 'MongoError',
-                // message: 'E11000 duplicate key error collection: development-v2.transactions...',
-                // code: 11000,
-
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                // tslint:disable-next-line:no-magic-numbers
-                if (error.code === 11000) {
-                    throw new factory.errors.AlreadyInUse('Transaction', ['passportToken'], 'Passport already used');
-                }
+                // no op
             }
 
             throw error;
@@ -159,6 +117,54 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         return transaction;
     };
+}
+
+async function validateWaiterPassport(params: IStartParams): Promise<factory.waiter.passport.IPassport | undefined> {
+    let passport: factory.waiter.passport.IPassport | undefined;
+
+    // WAITER許可証トークンがあれば検証する
+    if (params.object.passport !== undefined) {
+        try {
+            passport = await waiter.service.passport.verify({
+                token: params.object.passport.token,
+                secret: params.object.passport.secret
+            });
+        } catch (error) {
+            throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
+        }
+
+        // 許可証バリデーション
+        if (typeof params.passportValidator === 'function') {
+            if (!params.passportValidator({ passport: passport })) {
+                throw new factory.errors.Argument('Passport Token', 'Invalid passport');
+            }
+        }
+    }
+
+    return passport;
+}
+
+function createInformOrderParams(params: IStartParams & {
+    project: factory.project.IProject;
+}): factory.transaction.placeOrder.IInformOrderParams[] {
+    const informOrderParams: factory.transaction.placeOrder.IInformOrderParams[] = [];
+
+    const project = params.project;
+
+    if (project.settings !== undefined
+        && project.settings !== null
+        && project.settings.onOrderStatusChanged !== undefined
+        && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
+        informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
+    }
+
+    if (params.object !== undefined
+        && params.object.onOrderStatusChanged !== undefined
+        && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
+        informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
+    }
+
+    return informOrderParams;
 }
 
 /**
@@ -294,7 +300,6 @@ export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
  * 注文取引を確定する
  */
 export function confirm(params: IConfirmParams) {
-    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -324,20 +329,63 @@ export function confirm(params: IConfirmParams) {
         }
 
         const project = await repos.project.findById({ id: transaction.project.id });
-
         const seller = await repos.seller.findById({ id: transaction.seller.id });
 
         // 取引に対する全ての承認アクションをマージ
-        let authorizeActions = await repos.action.searchByPurpose({
-            typeOf: factory.actionType.AuthorizeAction,
-            purpose: {
-                typeOf: factory.transactionType.PlaceOrder,
-                id: params.id
-            }
+        transaction.object.authorizeActions = await searchAuthorizeActions(params)(repos);
+
+        const result = await createResult({
+            ...params,
+            project: project,
+            transaction: transaction
+        })(repos);
+
+        // ポストアクションを作成
+        const potentialActions = await createPotentialActions({
+            transaction: transaction,
+            order: result.order,
+            seller: seller,
+            potentialActions: params.potentialActions
         });
-        // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < params.result.order.orderDate));
-        transaction.object.authorizeActions = authorizeActions;
+
+        // ステータス変更
+        try {
+            transaction = await repos.transaction.confirm({
+                typeOf: transaction.typeOf,
+                id: transaction.id,
+                authorizeActions: transaction.object.authorizeActions,
+                result: result,
+                potentialActions: potentialActions
+            });
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
+                // name: 'MongoError',
+                // message: 'E11000 duplicate key error collection: prodttts.transactions index:result.order.orderNumber_1 dup key:...',
+                // code: 11000,
+                // tslint:disable-next-line:no-magic-numbers
+                if (error.code === 11000) {
+                    throw new factory.errors.AlreadyInUse('transaction', ['result.order.orderNumber']);
+                }
+            }
+
+            throw error;
+        }
+
+        return <factory.transaction.placeOrder.IResult>transaction.result;
+    };
+}
+
+function createResult(params: IConfirmParams & {
+    project: factory.project.IProject;
+    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+}) {
+    return async (repos: {
+        orderNumber: OrderNumberRepo;
+        confirmationNumber?: ConfirmationNumberRepo;
+    }): Promise<factory.transaction.placeOrder.IResult> => {
+        const project = params.project;
+        const transaction = params.transaction;
 
         // 取引の確定条件が全て整っているかどうか確認
         validateTransaction(transaction);
@@ -362,25 +410,10 @@ export function confirm(params: IConfirmParams) {
         });
 
         // 注文アイテム数制限確認
-        if (params.result.order.numItems !== undefined) {
-            if (typeof params.result.order.numItems.maxValue === 'number') {
-                if (order.acceptedOffers.length > params.result.order.numItems.maxValue) {
-                    throw new factory.errors.Argument(
-                        'Transaction',
-                        format('Number of order items must be less than or equal to %s', params.result.order.numItems.maxValue)
-                    );
-                }
-            }
-
-            if (typeof params.result.order.numItems.minValue === 'number') {
-                if (order.acceptedOffers.length < params.result.order.numItems.minValue) {
-                    throw new factory.errors.Argument(
-                        'Transaction',
-                        format('Number of order items must be more than equal to %s', params.result.order.numItems.minValue)
-                    );
-                }
-            }
-        }
+        validateNumItems({
+            order: order,
+            result: params.result
+        });
 
         // 注文番号を発行
         order.orderNumber = await repos.orderNumber.publishByTimestamp({
@@ -389,78 +422,89 @@ export function confirm(params: IConfirmParams) {
         });
 
         // 確認番号を発行
-        let confirmationNumber = 0;
+        const { confirmationNumber, identifier, url } = await createConfirmationNumber({
+            order: order,
+            result: params.result
+        })(repos);
+
+        order.confirmationNumber = confirmationNumber;
+        order.identifier = identifier;
+        order.url = url;
+
+        return { order };
+    };
+}
+
+function searchAuthorizeActions(params: IConfirmParams) {
+    return async (repos: {
+        action: ActionRepo;
+    }) => {
+        // 取引に対する全ての承認アクションをマージ
+        let authorizeActions = await repos.action.searchByPurpose({
+            typeOf: factory.actionType.AuthorizeAction,
+            purpose: {
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.id
+            }
+        });
+
+        // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
+        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < params.result.order.orderDate));
+
+        return authorizeActions;
+    };
+}
+
+function createConfirmationNumber(params: {
+    order: factory.order.IOrder;
+    result: {
+        order: IResultOrderParams;
+    };
+}) {
+    return async (repos: {
+        confirmationNumber?: ConfirmationNumberRepo;
+    }) => {
+        let confirmationNumber = '0';
+        let url = '';
+        let identifier: factory.order.IIdentifier = [];
+
+        // 確認番号を発行
         if (repos.confirmationNumber !== undefined) {
-            confirmationNumber = await repos.confirmationNumber.publish({
+            confirmationNumber = (await repos.confirmationNumber.publish({
                 orderDate: params.result.order.orderDate
-            });
+            })).toString();
         }
-        order.confirmationNumber = confirmationNumber.toString();
 
         // 確認番号の指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (typeof params.result.order.confirmationNumber === 'string') {
-            order.confirmationNumber = params.result.order.confirmationNumber;
+            confirmationNumber = params.result.order.confirmationNumber;
         } else /* istanbul ignore next */ if (typeof params.result.order.confirmationNumber === 'function') {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
-            order.confirmationNumber = params.result.order.confirmationNumber(order);
+            confirmationNumber = params.result.order.confirmationNumber(params.order);
         }
 
         // URLの指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (typeof params.result.order.url === 'string') {
-            order.url = params.result.order.url;
+            url = params.result.order.url;
         } else /* istanbul ignore next */ if (typeof params.result.order.url === 'function') {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
-            order.url = params.result.order.url(order);
+            url = params.result.order.url(params.order);
         }
 
         // 識別子の指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (Array.isArray(params.result.order.identifier)) {
-            order.identifier = params.result.order.identifier;
+            identifier = params.result.order.identifier;
         }
 
-        const result: factory.transaction.placeOrder.IResult = { order };
-
-        // ポストアクションを作成
-        const potentialActions = await createPotentialActions({
-            transaction: transaction,
-            order: order,
-            seller: seller,
-            potentialActions: params.potentialActions
-        });
-
-        // ステータス変更
-        try {
-            transaction = await repos.transaction.confirm({
-                typeOf: transaction.typeOf,
-                id: transaction.id,
-                authorizeActions: authorizeActions,
-                result: result,
-                potentialActions: potentialActions
-            });
-        } catch (error) {
-            if (error.name === 'MongoError') {
-                // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
-                // name: 'MongoError',
-                // message: 'E11000 duplicate key error collection: prodttts.transactions index:result.order.orderNumber_1 dup key:...',
-                // code: 11000,
-                // tslint:disable-next-line:no-magic-numbers
-                if (error.code === 11000) {
-                    throw new factory.errors.AlreadyInUse('transaction', ['result.order.orderNumber']);
-                }
-            }
-
-            throw error;
-        }
-
-        return <factory.transaction.placeOrder.IResult>transaction.result;
+        return { confirmationNumber, url, identifier };
     };
 }
 
@@ -635,6 +679,34 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
             }
         });
     });
+}
+
+function validateNumItems(params: {
+    order: factory.order.IOrder;
+    result: {
+        order: IResultOrderParams;
+    };
+}) {
+    // 注文アイテム数制限確認
+    if (params.result.order.numItems !== undefined) {
+        if (typeof params.result.order.numItems.maxValue === 'number') {
+            if (params.order.acceptedOffers.length > params.result.order.numItems.maxValue) {
+                throw new factory.errors.Argument(
+                    'Transaction',
+                    format('Number of order items must be less than or equal to %s', params.result.order.numItems.maxValue)
+                );
+            }
+        }
+
+        if (typeof params.result.order.numItems.minValue === 'number') {
+            if (params.order.acceptedOffers.length < params.result.order.numItems.minValue) {
+                throw new factory.errors.Argument(
+                    'Transaction',
+                    format('Number of order items must be more than equal to %s', params.result.order.numItems.minValue)
+                );
+            }
+        }
+    }
 }
 
 /**

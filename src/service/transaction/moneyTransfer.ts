@@ -35,7 +35,6 @@ export type IConfirmOperation<T> = (repos: {
 /**
  * 取引開始
  */
-// tslint:disable-next-line:max-func-body-length
 export function start<T extends factory.accountType>(
     params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T>
 ): IStartOperation<factory.transaction.moneyTransfer.ITransaction<T>> {
@@ -52,31 +51,7 @@ export function start<T extends factory.accountType>(
         if (typeof amount !== 'number') {
             throw new factory.errors.ArgumentNull('amount');
         }
-        let toLocation = params.object.toLocation;
-        if (toLocation === undefined) {
-            throw new factory.errors.ArgumentNull('toLocation');
-        }
-
-        if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
-            if (toLocation.accountType !== factory.accountType.Coin) {
-                throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
-            }
-
-            // 口座存在確認
-            const searchAccountsResult = await repos.accountService.search<T>({
-                limit: 1,
-                project: { id: { $eq: params.project.id } },
-                accountType: toLocation.accountType,
-                accountNumbers: [toLocation.accountNumber],
-                statuses: [pecorino.factory.accountStatusType.Opened]
-            });
-            toLocation = searchAccountsResult.data.shift();
-            if (toLocation === undefined) {
-                throw new factory.errors.NotFound('Account', 'To Location Not Found');
-            }
-        } else {
-            throw new factory.errors.Argument('toLocation', `location type must be ${factory.pecorino.account.TypeOf.Account}`);
-        }
+        const toLocation = await fixToLocation(params)(repos);
 
         const startParams: factory.transaction.IStartParams<factory.transactionType.MoneyTransfer> = {
             project: params.project,
@@ -140,13 +115,48 @@ export function start<T extends factory.accountType>(
     };
 }
 
+export function fixToLocation<T extends factory.accountType>(
+    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T>
+) {
+    return async (repos: {
+        accountService: pecorino.service.Account;
+    }): Promise<factory.transaction.moneyTransfer.IToLocation<T>> => {
+        let toLocation = params.object.toLocation;
+        if (toLocation === undefined) {
+            throw new factory.errors.ArgumentNull('toLocation');
+        }
+
+        if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+            if (toLocation.accountType !== factory.accountType.Coin) {
+                throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
+            }
+
+            // 口座存在確認
+            const searchAccountsResult = await repos.accountService.search<T>({
+                limit: 1,
+                project: { id: { $eq: params.project.id } },
+                accountType: toLocation.accountType,
+                accountNumbers: [toLocation.accountNumber],
+                statuses: [pecorino.factory.accountStatusType.Opened]
+            });
+            toLocation = searchAccountsResult.data.shift();
+            if (toLocation === undefined) {
+                throw new factory.errors.NotFound('Account', 'To Location Not Found');
+            }
+        } else {
+            throw new factory.errors.Argument('toLocation', `location type must be ${factory.pecorino.account.TypeOf.Account}`);
+        }
+
+        return toLocation;
+    };
+}
+
 /**
  * 取引確定
  */
 export function confirm<T extends factory.accountType>(params: {
     id: string;
 }): IConfirmOperation<void> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -172,27 +182,10 @@ export function confirm<T extends factory.accountType>(params: {
         // }
 
         // 取引に対する全ての承認アクションをマージ
-        let authorizeActions = await repos.action.searchByPurpose({
-            typeOf: factory.actionType.AuthorizeAction,
-            purpose: {
-                typeOf: transaction.typeOf,
-                id: params.id
-            }
-        });
-        // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-        authorizeActions = authorizeActions.filter((a) => {
-            return a.endDate !== undefined
-                && moment(a.endDate)
-                    .toDate() < now;
-        });
-        transaction.object.authorizeActions = authorizeActions;
-
-        // まずは1承認アクションのみ対応(順次拡張)
-        // const completedAuthorizeActions = transaction.object.authorizeActions
-        //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-        // if (completedAuthorizeActions.length !== 1) {
-        //     throw new factory.errors.Argument('Transaction', 'Number of authorize actions must be 1');
-        // }
+        transaction.object.authorizeActions = await searchAuthorizeActions({
+            transaction: transaction,
+            now: now
+        })(repos);
 
         // ポストアクションを作成
         const potentialActions = await createPotentialActions<T>({
@@ -203,10 +196,36 @@ export function confirm<T extends factory.accountType>(params: {
         await repos.transaction.confirm({
             typeOf: factory.transactionType.MoneyTransfer,
             id: transaction.id,
-            authorizeActions: authorizeActions,
+            authorizeActions: transaction.object.authorizeActions,
             result: {},
             potentialActions: potentialActions
         });
+    };
+}
+
+function searchAuthorizeActions(params: {
+    transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
+    now: Date;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+    }) => {
+        let authorizeActions = await repos.action.searchByPurpose({
+            typeOf: factory.actionType.AuthorizeAction,
+            purpose: {
+                typeOf: params.transaction.typeOf,
+                id: params.transaction.id
+            }
+        });
+
+        // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
+        authorizeActions = authorizeActions.filter((a) => {
+            return a.endDate !== undefined
+                && moment(a.endDate)
+                    .toDate() < params.now;
+        });
+
+        return authorizeActions;
     };
 }
 
