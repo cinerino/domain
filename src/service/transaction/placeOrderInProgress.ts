@@ -350,7 +350,6 @@ export function confirm(params: IConfirmParams) {
 
         // 注文作成
         const order = createOrder({
-            project: { typeOf: project.typeOf, id: project.id },
             transaction: transaction,
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,

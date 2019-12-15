@@ -16,38 +16,12 @@ export type IReservationPriceSpecification =
 /**
  * 注文を生成する
  */
-// tslint:disable-next-line:max-func-body-length
 export function createOrder(params: {
-    project: factory.project.IProject;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderDate: Date;
     orderStatus: factory.orderStatus;
     isGift: boolean;
 }): factory.order.IOrder {
-    // 座席予約に対する承認アクション取り出す
-    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
-
-    // 会員プログラムに対する承認アクションを取り出す
-    const programMembershipAuthorizeActions = params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === 'Offer')
-        .filter((a) => a.object.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership);
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore if */
-    if (programMembershipAuthorizeActions.length > 1) {
-        throw new factory.errors.NotImplemented('Number of programMembership authorizeAction must be 1');
-    }
-    const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
-
-    // 通貨転送承認アクション
-    const authorizeMoneyTansferActions = <IAuthorizeMoneyTransferOffer[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
-
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
@@ -72,6 +46,98 @@ export function createOrder(params: {
     };
 
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = [];
+
+    // 座席予約がある場合
+    acceptedOffers.push(...createReservationAcceptedOffers({ ...params, seller: seller }));
+
+    // 会員プログラムがある場合
+    acceptedOffers.push(...createProgramMembershipAcceptedOffers(params));
+
+    // 通貨転送がある場合
+    acceptedOffers.push(...createMoneyTransferAcceptedOffers({ ...params, seller: seller }));
+
+    // 決済方法をセット
+    const { paymentMethods, price } = createPaymentMethods({ transaction: params.transaction });
+
+    const discounts: factory.order.IDiscount[] = [];
+
+    return {
+        project: params.transaction.project,
+        typeOf: 'Order',
+        seller: seller,
+        customer: customer,
+        price: price,
+        priceCurrency: factory.priceCurrency.JPY,
+        paymentMethods: paymentMethods,
+        discounts: discounts,
+        confirmationNumber: '',
+        orderNumber: '',
+        acceptedOffers: acceptedOffers,
+        url: '',
+        orderStatus: params.orderStatus,
+        orderDate: params.orderDate,
+        identifier: [],
+        isGift: params.isGift
+    };
+}
+
+function createPaymentMethods(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+}): {
+    paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[];
+    price: number;
+} {
+    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
+    let price = 0;
+
+    // 決済方法をセット
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+
+            params.transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.result !== undefined)
+                .filter((a) => a.result.paymentMethod === paymentMethodType)
+                .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
+                    const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                    paymentMethods.push({
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: paymentMethodType
+                    });
+                });
+
+            // 決済方法から注文金額の計算
+            price += params.transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.object.typeOf === paymentMethodType)
+                .filter((a) => {
+                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
+
+                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
+                })
+                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+        });
+
+    return { paymentMethods, price };
+}
+
+function createReservationAcceptedOffers(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+    orderDate: Date;
+    seller: factory.order.ISeller;
+}): factory.order.IAcceptedOffer<factory.order.IReservation>[] {
+    // 座席予約に対する承認アクション取り出す
+    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IReservation>[] = [];
 
     // 座席予約がある場合
     seatReservationAuthorizeActions.forEach((authorizeSeatReservationAction) => {
@@ -160,7 +226,7 @@ export function createOrder(params: {
                         // }
 
                         const reservation: factory.order.IReservation = {
-                            project: { typeOf: params.project.typeOf, id: params.project.id },
+                            project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
                             additionalTicketText: '',
@@ -222,7 +288,7 @@ export function createOrder(params: {
                                 ticketNumber: ticketToken,
                                 ticketToken: ticketToken,
                                 ticketType: {
-                                    project: { typeOf: params.project.typeOf, id: params.project.id },
+                                    project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                                     typeOf: <'Offer'>'Offer',
                                     id: requestedOffer.id,
                                     identifier: <string>requestedOffer.identifier,
@@ -243,8 +309,8 @@ export function createOrder(params: {
                             priceSpecification: requestedOffer.priceSpecification,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
-                                typeOf: seller.typeOf,
-                                name: seller.name
+                                typeOf: params.seller.typeOf,
+                                name: params.seller.name
                             }
                         };
                     }));
@@ -259,12 +325,43 @@ export function createOrder(params: {
         }
     });
 
-    // 会員プログラムがある場合
+    return acceptedOffers;
+}
+
+function createProgramMembershipAcceptedOffers(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+}): factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[] {
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[] = [];
+
+    const programMembershipAuthorizeActions = params.transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === 'Offer')
+        .filter((a) => a.object.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership);
+
+    if (programMembershipAuthorizeActions.length > 1) {
+        throw new factory.errors.NotImplemented('Number of programMembership authorizeAction must be 1');
+    }
+    const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
+
     if (programMembershipAuthorizeAction !== undefined) {
         acceptedOffers.push(programMembershipAuthorizeAction.object);
     }
 
-    // 通貨転送がある場合
+    return acceptedOffers;
+}
+
+function createMoneyTransferAcceptedOffers(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+    seller: factory.order.ISeller;
+}): factory.order.IAcceptedOffer<factory.order.IMoneyTransfer<factory.accountType>>[] {
+    // 通貨転送承認アクション
+    const authorizeMoneyTansferActions = <IAuthorizeMoneyTransferOffer[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
+
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IMoneyTransfer<factory.accountType>>[] = [];
+
     authorizeMoneyTansferActions.forEach((authorizeMoneyTansferAction) => {
         if (authorizeMoneyTansferAction.result === undefined) {
             throw new factory.errors.Argument('Transaction', 'authorize money transfer offer result does not exist');
@@ -284,72 +381,12 @@ export function createOrder(params: {
             // priceSpecification: requestedOffer.priceSpecification,
             priceCurrency: factory.priceCurrency.JPY,
             seller: {
-                typeOf: seller.typeOf,
-                name: seller.name
+                typeOf: params.seller.typeOf,
+                name: params.seller.name
             }
         });
 
     });
 
-    const discounts: factory.order.IDiscount[] = [];
-
-    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
-
-    // 決済方法をセット
-    Object.keys(factory.paymentMethodType)
-        .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-            params.transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.result !== undefined)
-                .filter((a) => a.result.paymentMethod === paymentMethodType)
-                .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
-                    const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
-                    paymentMethods.push({
-                        accountId: result.accountId,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
-                        name: result.name,
-                        paymentMethodId: result.paymentMethodId,
-                        totalPaymentDue: result.totalPaymentDue,
-                        typeOf: paymentMethodType
-                    });
-                });
-        });
-
-    const url = '';
-
-    // 決済方法から注文金額の計算
-    let price = 0;
-    Object.keys(factory.paymentMethodType)
-        .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-            price += params.transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.object.typeOf === paymentMethodType)
-                .filter((a) => {
-                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
-
-                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
-                })
-                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
-        });
-
-    return {
-        project: params.project,
-        typeOf: 'Order',
-        seller: seller,
-        customer: customer,
-        price: price,
-        priceCurrency: factory.priceCurrency.JPY,
-        paymentMethods: paymentMethods,
-        discounts: discounts,
-        confirmationNumber: '',
-        orderNumber: '',
-        acceptedOffers: acceptedOffers,
-        url: url,
-        orderStatus: params.orderStatus,
-        orderDate: params.orderDate,
-        identifier: [],
-        isGift: params.isGift
-    };
+    return acceptedOffers;
 }

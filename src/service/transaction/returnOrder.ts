@@ -33,7 +33,6 @@ export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 export function start(
     params: factory.transaction.returnOrder.IStartParamsWithoutDetail
 ): IStartOperation<factory.transaction.returnOrder.ITransaction> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
@@ -44,14 +43,7 @@ export function start(
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
         const seller = await repos.seller.findById({ id: params.seller.id });
-
-        // 返品対象の取引取得
         const order = await repos.order.findByOrderNumber({ orderNumber: params.object.order.orderNumber });
-
-        // 注文ステータスが配送済の場合のみ受け付け
-        if (order.orderStatus !== factory.orderStatus.OrderDelivered) {
-            throw new factory.errors.Argument('Order Number', `Invalid Order Status: ${order.orderStatus}`);
-        }
 
         const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
             typeOf: factory.transactionType.PlaceOrder,
@@ -64,29 +56,12 @@ export function start(
             throw new factory.errors.NotFound('Transaction');
         }
 
-        // 決済がある場合、請求書の状態を検証
-        if (order.paymentMethods.length > 0) {
-            const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: [order.orderNumber] } });
-            const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
-            if (!allPaymentCompleted) {
-                throw new factory.errors.Argument('order.orderNumber', 'Payment not completed');
-            }
-        }
+        await validateOrder({ order })(repos);
 
-        const informOrderParams: factory.transaction.returnOrder.IInformOrderParams[] = [];
-
-        if (project.settings !== undefined
-            && project.settings !== null
-            && project.settings.onOrderStatusChanged !== undefined
-            && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
-            informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
-        }
-
-        if (params.object !== undefined
-            && params.object.onOrderStatusChanged !== undefined
-            && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
-            informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
-        }
+        const informOrderParams = createInformOrderParams({
+            ...params,
+            project: project
+        });
 
         const transactionObject: factory.transaction.returnOrder.IObject = {
             order: order,
@@ -122,10 +97,6 @@ export function start(
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 同一取引に対して返品取引を作成しようとすると、MongoDBでE11000 duplicate key errorが発生する
-                // name: 'MongoError',
-                // message: 'E11000 duplicate key error ...',
-                // code: 11000,
-
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 // tslint:disable-next-line:no-magic-numbers
@@ -139,61 +110,7 @@ export function start(
 
         // Chevre予約の場合、予約キャンセル取引開始する？
         // いったん保留中
-        const pendingCancelReservationTransactions: factory.chevre.transaction.cancelReservation.ITransaction[] = [];
-        const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
-            placeOrderTransaction.object.authorizeActions
-                .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-
-        for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
-            if (authorizeSeatReservationAction.result === undefined) {
-                throw new factory.errors.NotFound('Result of seat reservation authorize action');
-            }
-
-            let responseBody = authorizeSeatReservationAction.result.responseBody;
-
-            if (authorizeSeatReservationAction.instrument === undefined) {
-                authorizeSeatReservationAction.instrument = {
-                    typeOf: 'WebAPI',
-                    identifier: factory.service.webAPI.Identifier.Chevre
-                };
-            }
-
-            switch (authorizeSeatReservationAction.instrument.identifier) {
-                case factory.service.webAPI.Identifier.COA:
-                    // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
-
-                    // no op
-
-                    break;
-
-                default:
-                    // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
-
-                // 予約キャンセル取引開始は保留
-
-                // pendingCancelReservationTransactions.push(await repos.cancelReservationService.start({
-                //     typeOf: factory.chevre.transactionType.CancelReservation,
-                //     agent: {
-                //         typeOf: returnOrderTransaction.agent.typeOf,
-                //         id: returnOrderTransaction.agent.id,
-                //         name: order.customer.name
-                //     },
-                //     object: {
-                //         transaction: {
-                //             typeOf: responseBody.typeOf,
-                //             id: responseBody.id
-                //         }
-                //     },
-                //     expires: moment(params.expires)
-                //         .add(1, 'month')
-                //         .toDate() // 余裕を持って
-                // }));
-            }
-        }
-
+        const pendingCancelReservationTransactions = await startCancelReservation({ placeOrderTransaction: placeOrderTransaction });
         await repos.transaction.transactionModel.findByIdAndUpdate(
             returnOrderTransaction.id,
             { 'object.pendingCancelReservationTransactions': pendingCancelReservationTransactions }
@@ -202,6 +119,114 @@ export function start(
 
         return returnOrderTransaction;
     };
+}
+
+function validateOrder(params: {
+    order: factory.order.IOrder;
+}) {
+    return async (repos: {
+        invoice: InvoiceRepo;
+    }) => {
+        const order = params.order;
+
+        // 注文ステータスが配送済の場合のみ受け付け
+        if (order.orderStatus !== factory.orderStatus.OrderDelivered) {
+            throw new factory.errors.Argument('Order Number', `Invalid Order Status: ${order.orderStatus}`);
+        }
+
+        // 決済がある場合、請求書の状態を検証
+        if (order.paymentMethods.length > 0) {
+            const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: [order.orderNumber] } });
+            const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
+            if (!allPaymentCompleted) {
+                throw new factory.errors.Argument('order.orderNumber', 'Payment not completed');
+            }
+        }
+    };
+}
+
+function createInformOrderParams(
+    params: factory.transaction.returnOrder.IStartParamsWithoutDetail
+): factory.transaction.returnOrder.IInformOrderParams[] {
+    const project = params.project;
+
+    const informOrderParams: factory.transaction.returnOrder.IInformOrderParams[] = [];
+
+    if (project.settings !== undefined
+        && project.settings !== null
+        && project.settings.onOrderStatusChanged !== undefined
+        && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
+        informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
+    }
+
+    if (params.object !== undefined
+        && params.object.onOrderStatusChanged !== undefined
+        && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
+        informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
+    }
+
+    return informOrderParams;
+}
+
+async function startCancelReservation(params: {
+    placeOrderTransaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+}): Promise<factory.chevre.transaction.cancelReservation.ITransaction[]> {
+    const pendingCancelReservationTransactions: factory.chevre.transaction.cancelReservation.ITransaction[] = [];
+    const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+        params.placeOrderTransaction.object.authorizeActions
+            .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+    for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
+        if (authorizeSeatReservationAction.result === undefined) {
+            throw new factory.errors.NotFound('Result of seat reservation authorize action');
+        }
+
+        let responseBody = authorizeSeatReservationAction.result.responseBody;
+
+        if (authorizeSeatReservationAction.instrument === undefined) {
+            authorizeSeatReservationAction.instrument = {
+                typeOf: 'WebAPI',
+                identifier: factory.service.webAPI.Identifier.Chevre
+            };
+        }
+
+        switch (authorizeSeatReservationAction.instrument.identifier) {
+            case factory.service.webAPI.Identifier.COA:
+                // tslint:disable-next-line:max-line-length
+                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
+
+                // no op
+
+                break;
+
+            default:
+                // tslint:disable-next-line:max-line-length
+                responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
+
+            // 予約キャンセル取引開始は保留
+
+            // pendingCancelReservationTransactions.push(await repos.cancelReservationService.start({
+            //     typeOf: factory.chevre.transactionType.CancelReservation,
+            //     agent: {
+            //         typeOf: returnOrderTransaction.agent.typeOf,
+            //         id: returnOrderTransaction.agent.id,
+            //         name: order.customer.name
+            //     },
+            //     object: {
+            //         transaction: {
+            //             typeOf: responseBody.typeOf,
+            //             id: responseBody.id
+            //         }
+            //     },
+            //     expires: moment(params.expires)
+            //         .add(1, 'month')
+            //         .toDate() // 余裕を持って
+            // }));
+        }
+    }
+
+    return pendingCancelReservationTransactions;
 }
 
 /**
