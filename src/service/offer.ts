@@ -128,7 +128,6 @@ export function searchEventOffers(params: {
     project: factory.project.IProject;
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -167,57 +166,7 @@ export function searchEventOffers(params: {
 
         switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
-                const masterService = new COA.service.Master({
-                    endpoint: credentials.coa.endpoint,
-                    auth: coaAuthClient
-                });
-                const reserveService = new COA.service.Reserve({
-                    endpoint: credentials.coa.endpoint,
-                    auth: coaAuthClient
-                });
-
-                let coaInfo: any;
-                if (Array.isArray(event.additionalProperty)) {
-                    const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
-                    coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
-                }
-
-                // イベント提供者がCOAであればCOAへ空席状況確認
-                const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
-
-                const movieTheater = MasterSync.createMovieTheaterFromCOA(
-                    params.project,
-                    await masterService.theater(coaInfo),
-                    await masterService.screen(coaInfo)
-                );
-                const screeningRoom = <chevre.factory.place.movieTheater.IScreeningRoom>movieTheater.containsPlace.find(
-                    (p) => p.branchCode === event.location.branchCode
-                );
-                if (screeningRoom === undefined) {
-                    throw new chevre.factory.errors.NotFound('Screening room');
-                }
-                const screeningRoomSections = screeningRoom.containsPlace;
-                const offers: chevre.factory.event.screeningEvent.IScreeningRoomSectionOffer[] = screeningRoomSections;
-                offers.forEach((offer) => {
-                    const seats = offer.containsPlace;
-                    const seatSection = offer.branchCode;
-                    seats.forEach((seat) => {
-                        const seatNumber = seat.branchCode;
-                        const availableOffer = stateReserveSeatResult.listSeat.find(
-                            (result) => result.seatSection === seatSection
-                                && result.listFreeSeat.find((freeSeat) => freeSeat.seatNum === seatNumber) !== undefined
-                        );
-                        seat.offers = [{
-                            typeOf: 'Offer',
-                            priceCurrency: chevre.factory.priceCurrency.JPY,
-                            availability: (availableOffer !== undefined)
-                                ? chevre.factory.itemAvailability.InStock
-                                : chevre.factory.itemAvailability.OutOfStock
-                        }];
-                    });
-                });
-
-                return screeningRoomSections;
+                return searchEventOffers4COA({ event });
 
             default:
                 if (project.settings === undefined || project.settings.chevre === undefined) {
@@ -233,6 +182,64 @@ export function searchEventOffers(params: {
                 return eventService.searchOffers({ id: params.event.id });
         }
     };
+}
+
+async function searchEventOffers4COA(params: {
+    event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+}): Promise<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+    const event = params.event;
+
+    const masterService = new COA.service.Master({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+    const reserveService = new COA.service.Reserve({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+
+    let coaInfo: any;
+    if (Array.isArray(event.additionalProperty)) {
+        const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
+        coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
+    }
+
+    // イベント提供者がCOAであればCOAへ空席状況確認
+    const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
+
+    const movieTheater = MasterSync.createMovieTheaterFromCOA(
+        event.project,
+        await masterService.theater(coaInfo),
+        await masterService.screen(coaInfo)
+    );
+    const screeningRoom = <chevre.factory.place.movieTheater.IScreeningRoom>movieTheater.containsPlace.find(
+        (p) => p.branchCode === event.location.branchCode
+    );
+    if (screeningRoom === undefined) {
+        throw new chevre.factory.errors.NotFound('Screening room');
+    }
+    const screeningRoomSections = screeningRoom.containsPlace;
+    const offers: chevre.factory.event.screeningEvent.IScreeningRoomSectionOffer[] = screeningRoomSections;
+    offers.forEach((offer) => {
+        const seats = offer.containsPlace;
+        const seatSection = offer.branchCode;
+        seats.forEach((seat) => {
+            const seatNumber = seat.branchCode;
+            const availableOffer = stateReserveSeatResult.listSeat.find(
+                (result) => result.seatSection === seatSection
+                    && result.listFreeSeat.find((freeSeat) => freeSeat.seatNum === seatNumber) !== undefined
+            );
+            seat.offers = [{
+                typeOf: 'Offer',
+                priceCurrency: chevre.factory.priceCurrency.JPY,
+                availability: (availableOffer !== undefined)
+                    ? chevre.factory.itemAvailability.InStock
+                    : chevre.factory.itemAvailability.OutOfStock
+            }];
+        });
+    });
+
+    return screeningRoomSections;
 }
 
 export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTicket.IMovieTicket;
@@ -259,7 +266,6 @@ export function searchEventTicketOffers(params: {
      */
     paymentMethod?: IAcceptedPaymentMethod;
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -273,10 +279,6 @@ export function searchEventTicketOffers(params: {
         const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const offerService = new chevre.service.Offer({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -305,72 +307,7 @@ export function searchEventTicketOffers(params: {
 
         switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
-                let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;
-                if (Array.isArray(event.additionalProperty)) {
-                    const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
-                    coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
-                }
-
-                let superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo | undefined;
-                if (Array.isArray(event.superEvent.additionalProperty)) {
-                    const coaInfoProperty = event.superEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                    superEventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
-                }
-
-                if (coaInfo === undefined || superEventCOAInfo === undefined) {
-                    throw new factory.errors.NotFound('Event COA Info');
-                }
-
-                const theaterCode = coaInfo.theaterCode;
-
-                // COA販売可能券種検索
-                const reserveService = new COA.service.Reserve({
-                    endpoint: credentials.coa.endpoint,
-                    auth: coaAuthClient
-                });
-                const salesTickets = await reserveService.salesTicket({
-                    ...coaInfo,
-                    flgMember: COA.factory.reserve.FlgMember.Member
-                });
-
-                const searchOffersResult = await offerService.searchTicketTypes({
-                    limit: 100,
-                    project: { ids: [params.project.id] },
-                    ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
-                });
-
-                // ChevreオファーにCOA券種情報を付加して返却
-                offers = salesTickets.map((t) => {
-                    const offer = searchOffersResult.data.find((o) => o.id === `COA-${theaterCode}-${t.ticketCode}`);
-                    if (offer === undefined) {
-                        throw new factory.errors.NotFound(`Offer: COA-${theaterCode}-${t.ticketCode}`);
-                    }
-
-                    if (!Array.isArray(offer.additionalProperty)) {
-                        offer.additionalProperty = [];
-                    }
-
-                    // coaInfoを調整する
-                    let offerCoaInfo: any = {};
-                    const coaInfoStrProperty = offer.additionalProperty.find((p) => p.name === 'coaInfo');
-                    if (coaInfoStrProperty !== undefined) {
-                        offerCoaInfo = JSON.parse(coaInfoStrProperty.value);
-                    }
-
-                    offer.additionalProperty = offer.additionalProperty.filter((p) => p.name !== 'coaInfo');
-                    offer.additionalProperty.push({ name: 'coaInfo', value: JSON.stringify({ ...offerCoaInfo, ...t }) });
-
-                    return {
-                        ...offer,
-                        ...coaSalesTicket2offer({
-                            project: params.project,
-                            event: event,
-                            salesTicket: t,
-                            coaInfo: <factory.event.screeningEvent.ICOAInfo>coaInfo,
-                            superEventCOAInfo: <factory.event.screeningEventSeries.ICOAInfo>superEventCOAInfo
-                        })
-                    };
-                });
+                offers = await searchEventTicketOffers4COA({ event, project });
 
                 break;
 
@@ -412,6 +349,89 @@ export function searchEventTicketOffers(params: {
 
         return offers;
     };
+}
+
+async function searchEventTicketOffers4COA(params: {
+    event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+    project: factory.project.IProject;
+}): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> {
+    const event = params.event;
+    const project = params.project;
+    if (project.settings === undefined || project.settings.chevre === undefined) {
+        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+    }
+
+    const offerService = new chevre.service.Offer({
+        endpoint: project.settings.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+
+    let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;
+    if (Array.isArray(event.additionalProperty)) {
+        const coaInfoProperty = event.additionalProperty.find((p) => p.name === 'coaInfo');
+        coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
+    }
+
+    let superEventCOAInfo: factory.event.screeningEventSeries.ICOAInfo | undefined;
+    if (Array.isArray(event.superEvent.additionalProperty)) {
+        const coaInfoProperty = event.superEvent.additionalProperty.find((p) => p.name === 'coaInfo');
+        superEventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
+    }
+
+    if (coaInfo === undefined || superEventCOAInfo === undefined) {
+        throw new factory.errors.NotFound('Event COA Info');
+    }
+
+    const theaterCode = coaInfo.theaterCode;
+
+    // COA販売可能券種検索
+    const reserveService = new COA.service.Reserve({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+    const salesTickets = await reserveService.salesTicket({
+        ...coaInfo,
+        flgMember: COA.factory.reserve.FlgMember.Member
+    });
+
+    const searchOffersResult = await offerService.searchTicketTypes({
+        limit: 100,
+        project: { ids: [params.project.id] },
+        ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
+    });
+
+    // ChevreオファーにCOA券種情報を付加して返却
+    return salesTickets.map((t) => {
+        const offer = searchOffersResult.data.find((o) => o.id === `COA-${theaterCode}-${t.ticketCode}`);
+        if (offer === undefined) {
+            throw new factory.errors.NotFound(`Offer: COA-${theaterCode}-${t.ticketCode}`);
+        }
+
+        if (!Array.isArray(offer.additionalProperty)) {
+            offer.additionalProperty = [];
+        }
+
+        // coaInfoを調整する
+        let offerCoaInfo: any = {};
+        const coaInfoStrProperty = offer.additionalProperty.find((p) => p.name === 'coaInfo');
+        if (coaInfoStrProperty !== undefined) {
+            offerCoaInfo = JSON.parse(coaInfoStrProperty.value);
+        }
+
+        offer.additionalProperty = offer.additionalProperty.filter((p) => p.name !== 'coaInfo');
+        offer.additionalProperty.push({ name: 'coaInfo', value: JSON.stringify({ ...offerCoaInfo, ...t }) });
+
+        return {
+            ...offer,
+            ...coaSalesTicket2offer({
+                project: params.project,
+                event: event,
+                salesTicket: t,
+                coaInfo: <factory.event.screeningEvent.ICOAInfo>coaInfo,
+                superEventCOAInfo: <factory.event.screeningEventSeries.ICOAInfo>superEventCOAInfo
+            })
+        };
+    });
 }
 
 /**

@@ -434,7 +434,7 @@ describe('importScreeningEvents()', () => {
         sandbox.verify();
     });
 
-    it('XMLエンドポイントからデータ取得するのはエラーが発生すれば処理を止まります', async () => {
+    it('XMLデータ取得に失敗すれば何もしないはず', async () => {
         const movieTheater = {
             branchCode: '123',
             containsPlace: [
@@ -447,27 +447,7 @@ describe('importScreeningEvents()', () => {
                 { name: 'xmlEndPoint', value: '{"baseUrl":"http://cinema.coasystems.net","theaterCodeName":"aira"}' }
             ]
         };
-        const filmFromCOA = [
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum'
-            }
-        ];
-        const schedulesFromCOA = [
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                screenCode: '01'
-            },
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                screenCode: '02'
-            }
-        ];
-        // const screeningEvent = {
-        //     identifier: 'identifier'
-        // };
+
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
@@ -484,17 +464,15 @@ describe('importScreeningEvents()', () => {
                 return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
             }));
         sandbox.mock(COA.service.Master.prototype)
-            .expects('title')
-            .once()
-            .resolves(filmFromCOA);
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('schedule')
-            .once()
-            .resolves(schedulesFromCOA);
-        sandbox.mock(COA.service.Master.prototype)
             .expects('xmlSchedule')
             .once()
             .rejects(new Error('some random error'));
+        sandbox.mock(COA.service.Master.prototype)
+            .expects('title')
+            .never();
+        sandbox.mock(COA.service.Master.prototype)
+            .expects('schedule')
+            .never();
         sandbox.mock(COA.service.Master.prototype)
             .expects('kubunName')
             .never();
@@ -523,36 +501,3 @@ describe('importScreeningEvents()', () => {
         sandbox.verify();
     });
 });
-
-// describe('importMovieTheater()', () => {
-//     afterEach(() => {
-//         sandbox.restore();
-//     });
-
-//     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
-//         // const movieTheater = { branchCode: '', name: {} };
-//         const sellerRepo = new domain.repository.Seller(mongoose.connection);
-//         const placeRepo = new domain.repository.Place(mongoose.connection);
-
-//         sandbox.stub(COA.service.Master.prototype, 'theater')
-//             .returns({ theaterTelNum: '0312345678' });
-//         sandbox.stub(COA.service.Master.prototype, 'screen')
-//             .returns([{ listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] }]);
-//         sandbox.mock(placeRepo)
-//             .expects('saveMovieTheater')
-//             .once();
-//         sandbox.mock(sellerRepo.organizationModel)
-//             .expects('findOneAndUpdate')
-//             .once()
-//             .chain('exec')
-//             .resolves();
-
-//         const result = await MasterSyncService.importMovieTheater('123')({
-//             seller: sellerRepo,
-//             place: placeRepo
-//         });
-
-//         assert.equal(result, undefined);
-//         sandbox.verify();
-//     });
-// });
