@@ -369,6 +369,10 @@ function createMoneyTransferAcceptedOffers(params: {
 
         // let responseBody = authorizeMoneyTansferAction.result.responseBody;
 
+        const price = (authorizeMoneyTansferAction.object.toLocation.accountType === factory.accountType.Coin)
+            ? authorizeMoneyTansferAction.object.amount
+            : undefined;
+
         acceptedOffers.push({
             typeOf: 'Offer',
             // id: '',
@@ -378,6 +382,7 @@ function createMoneyTransferAcceptedOffers(params: {
                 amount: authorizeMoneyTansferAction.object.amount,
                 toLocation: authorizeMoneyTansferAction.object.toLocation
             },
+            price: price,
             // priceSpecification: requestedOffer.priceSpecification,
             priceCurrency: factory.priceCurrency.JPY,
             seller: {

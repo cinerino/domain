@@ -9,6 +9,8 @@ import * as factory from './factory';
 
 const templateDirectory = `${__dirname}/../emails`;
 
+const DEFAULT_SENDER_EMAIL = 'noreply@example.com';
+
 export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
@@ -64,7 +66,7 @@ async function createEmailMessageText(params: {
     return emailMessageText;
 }
 
-async function createEmailMessageAbount(params: {
+async function createEmailMessageAbout(params: {
     email?: factory.creativeWork.message.email.ICustomization;
     renderFilePath: string;
     renderFileOptions: pug.LocalsObject;
@@ -94,6 +96,25 @@ async function createEmailMessageAbount(params: {
     return about;
 }
 
+function createEmailMessageSender(params: {
+    order: factory.order.IOrder;
+    email?: factory.creativeWork.message.email.ICustomization;
+}): factory.creativeWork.message.email.IParticipant {
+    return {
+        typeOf: params.order.seller.typeOf,
+        name: (params.email !== undefined
+            && params.email.sender !== undefined
+            && typeof params.email.sender.name === 'string')
+            ? params.email.sender.name
+            : params.order.seller.name,
+        email: (params.email !== undefined
+            && params.email.sender !== undefined
+            && typeof params.email.sender.email === 'string')
+            ? params.email.sender.email
+            : DEFAULT_SENDER_EMAIL
+    };
+}
+
 /**
  * 注文配送メッセージを作成する
  */
@@ -108,12 +129,12 @@ export async function createSendOrderMessage(params: {
         renderFilePath: `${templateDirectory}/sendOrder/text.pug`,
         renderFileOptions: {
             order: params.order,
-            orderItems: createOrderItems(params)
+            orderItems: createOrderItems({ order: params.order })
                 .join('\n')
         }
     });
 
-    const about = await createEmailMessageAbount({
+    const about = await createEmailMessageAbout({
         email: params.email,
         renderFilePath: `${templateDirectory}/sendOrder/subject.pug`,
         renderFileOptions: {
@@ -126,19 +147,7 @@ export async function createSendOrderMessage(params: {
         throw new factory.errors.Argument('order', 'order.customer.email undefined');
     }
 
-    const sender: factory.creativeWork.message.email.IParticipant = {
-        typeOf: params.order.seller.typeOf,
-        name: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.name === 'string')
-            ? params.email.sender.name
-            : params.order.seller.name,
-        email: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.email === 'string')
-            ? params.email.sender.email
-            : 'noreply@example.com'
-    };
+    const sender = createEmailMessageSender(params);
 
     const toRecipient: factory.creativeWork.message.email.IParticipant = {
         typeOf: params.order.customer.typeOf,
@@ -170,7 +179,6 @@ export async function createSendOrderMessage(params: {
  */
 export function createOrderItems(params: {
     order: factory.order.IOrder;
-    project: factory.project.IProject;
 }): string[] {
     return params.order.acceptedOffers.map((o) => {
         if (o.itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
@@ -179,12 +187,9 @@ export function createOrderItems(params: {
             const eventStartDate = util.format(
                 '%s - %s',
                 moment(event.startDate)
-                    .locale('ja')
-                    .tz('Asia/Tokyo')
-                    .format('YYYY年MM月DD日(ddd) HH:mm'),
+                    .toISOString(),
                 moment(event.endDate)
-                    .tz('Asia/Tokyo')
-                    .format('HH:mm')
+                    .toISOString()
             );
             const locationName = util.format(
                 '%s %s%s',
@@ -206,13 +211,13 @@ export function createOrderItems(params: {
                 if (typeof o.priceSpecification === 'number') {
                     // priceが数字の場合単価仕様を含む複合価格仕様に変換
                     reservationPriceSpec = {
-                        project: { typeOf: params.project.typeOf, id: params.project.id },
+                        project: { typeOf: params.order.project.typeOf, id: params.order.project.id },
                         typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
                         priceCurrency: factory.chevre.priceCurrency.JPY,
                         valueAddedTaxIncluded: true,
                         priceComponent: [
                             {
-                                project: { typeOf: params.project.typeOf, id: params.project.id },
+                                project: { typeOf: params.order.project.typeOf, id: params.order.project.id },
                                 typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
                                 price: o.priceSpecification,
                                 priceCurrency: o.priceCurrency,
@@ -254,7 +259,7 @@ export function createOrderItems(params: {
             return util.format(
                 '%s %s %s',
                 o.itemOffered.typeOf,
-                o.price,
+                (typeof o.price === 'number') ? String(o.price) : '',
                 o.priceCurrency
             );
         }
@@ -277,7 +282,7 @@ export async function createReturnOrderMessage(params: {
         }
     });
 
-    const about = await createEmailMessageAbount({
+    const about = await createEmailMessageAbout({
         email: params.email,
         renderFilePath: `${templateDirectory}/returnOrder/subject.pug`,
         renderFileOptions: {
@@ -290,19 +295,7 @@ export async function createReturnOrderMessage(params: {
         throw new factory.errors.Argument('order', 'order.customer.email undefined');
     }
 
-    const sender: factory.creativeWork.message.email.IParticipant = {
-        typeOf: params.order.seller.typeOf,
-        name: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.name === 'string')
-            ? params.email.sender.name
-            : params.order.seller.name,
-        email: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.email === 'string')
-            ? params.email.sender.email
-            : 'noreply@example.com'
-    };
+    const sender = createEmailMessageSender(params);
 
     const toRecipient: factory.creativeWork.message.email.IParticipant = {
         typeOf: params.order.customer.typeOf,
@@ -355,7 +348,7 @@ export async function createRefundMessage(params: {
         }
     });
 
-    const about = await createEmailMessageAbount({
+    const about = await createEmailMessageAbout({
         email: params.email,
         renderFilePath: `${templateDirectory}/refundOrder/subject.pug`,
         renderFileOptions: {
@@ -368,19 +361,7 @@ export async function createRefundMessage(params: {
         throw new factory.errors.Argument('order', 'order.customer.email undefined');
     }
 
-    const sender: factory.creativeWork.message.email.IParticipant = {
-        typeOf: params.order.seller.typeOf,
-        name: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.name === 'string')
-            ? params.email.sender.name
-            : params.order.seller.name,
-        email: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.email === 'string')
-            ? params.email.sender.email
-            : 'noreply@example.com'
-    };
+    const sender = createEmailMessageSender(params);
 
     const toRecipient: factory.creativeWork.message.email.IParticipant = {
         typeOf: params.order.customer.typeOf,
