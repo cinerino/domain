@@ -34,7 +34,6 @@ export function authorize<T extends factory.accountType>(params: {
     recipient: factory.pecorino.transaction.deposit.IRecipient;
     purpose: factory.action.authorize.offer.moneyTransfer.IPurpose;
 }): ICreateOperation<factory.action.authorize.offer.moneyTransfer.IAction<T>> {
-    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -53,61 +52,12 @@ export function authorize<T extends factory.accountType>(params: {
 
         const seller = transaction.seller;
 
-        if (project.settings === undefined
-            || project.settings.pecorino === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-
-        let requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
-        let responseBody: factory.action.authorize.offer.moneyTransfer.IResponseBody<T>;
-
-        try {
-            const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
-            });
-
-            requestBody = {
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: pecorinoapi.factory.transactionType.Deposit,
-                agent: {
-                    typeOf: transaction.agent.typeOf,
-                    name: transaction.agent.id,
-                    ...{
-                        identifier: [
-                            { name: 'transaction', value: transaction.id },
-                            {
-                                name: 'transactionExpires',
-                                value: moment(transaction.expires)
-                                    .toISOString()
-                            }
-                        ]
-                    }
-                },
-                object: {
-                    amount: params.object.amount,
-                    // fromLocation?: IAnonymousLocation;
-                    toLocation: params.object.toLocation
-                    // description?: string;
-                },
-                recipient: params.recipient,
-                expires: moment(transaction.expires)
-                    .add(1, 'month')
-                    .toDate() // 余裕を持って
-            };
-
-            responseBody = await depositService.start(requestBody);
-        } catch (error) {
-            // try {
-            //     const actionError = { ...error, message: error.message, name: error.name };
-            //     await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            // } catch (__) {
-            //     // no op
-            // }
-
-            error = handlePecorinoError(error);
-            throw error;
-        }
+        const { requestBody, responseBody } = await processStartDepositTransaction<T>({
+            project: project,
+            transaction: transaction,
+            object: params.object,
+            recipient: params.recipient
+        });
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.moneyTransfer.IAttributes<T> = {
@@ -149,7 +99,6 @@ export function authorize<T extends factory.accountType>(params: {
             throw error;
         }
 
-        // アクションを完了
         const result: factory.action.authorize.offer.moneyTransfer.IResult<T> = {
             price: params.object.amount,
             priceCurrency: factory.priceCurrency.JPY,
@@ -159,6 +108,67 @@ export function authorize<T extends factory.accountType>(params: {
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
+}
+
+async function processStartDepositTransaction<T extends factory.accountType>(params: {
+    project: factory.project.IProject;
+    transaction: factory.transaction.ITransaction<factory.transactionType>;
+    object: factory.action.authorize.offer.moneyTransfer.IObject<T>;
+    recipient: factory.pecorino.transaction.deposit.IRecipient;
+}): Promise<{
+    requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
+    responseBody: factory.action.authorize.offer.moneyTransfer.IResponseBody<T>;
+}> {
+    let requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
+    let responseBody: factory.action.authorize.offer.moneyTransfer.IResponseBody<T>;
+
+    if (params.project.settings === undefined
+        || params.project.settings.pecorino === undefined) {
+        throw new factory.errors.ServiceUnavailable('Project settings undefined');
+    }
+
+    try {
+        const depositService = new pecorinoapi.service.transaction.Deposit({
+            endpoint: params.project.settings.pecorino.endpoint,
+            auth: pecorinoAuthClient
+        });
+
+        requestBody = {
+            project: { typeOf: params.project.typeOf, id: params.project.id },
+            typeOf: pecorinoapi.factory.transactionType.Deposit,
+            agent: {
+                typeOf: params.transaction.agent.typeOf,
+                name: params.transaction.agent.id,
+                ...{
+                    identifier: [
+                        { name: 'transaction', value: params.transaction.id },
+                        {
+                            name: 'transactionExpires',
+                            value: moment(params.transaction.expires)
+                                .toISOString()
+                        }
+                    ]
+                }
+            },
+            object: {
+                amount: params.object.amount,
+                // fromLocation?: IAnonymousLocation;
+                toLocation: params.object.toLocation
+                // description?: string;
+            },
+            recipient: params.recipient,
+            expires: moment(params.transaction.expires)
+                .add(1, 'month')
+                .toDate() // 余裕を持って
+        };
+
+        responseBody = await depositService.start(requestBody);
+    } catch (error) {
+        error = handlePecorinoError(error);
+        throw error;
+    }
+
+    return { requestBody, responseBody };
 }
 
 export function voidTransaction<T extends factory.accountType>(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {

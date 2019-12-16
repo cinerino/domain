@@ -38,7 +38,6 @@ export function authorize(params: {
     object: factory.action.authorize.paymentMethod.creditCard.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.creditCard.IAction> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -48,32 +47,13 @@ export function authorize(params: {
         const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings.gmo === undefined) {
+        if (project.settings === undefined || project.settings.gmo === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const transaction = await repos.transaction.findInProgressById({
-            typeOf: params.purpose.typeOf,
-            id: params.purpose.id
-        });
+        const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        // 他者口座による決済も可能にするためにコメントアウト
-        // 基本的に、自分の口座のオーソリを他者に与えても得しないので、
-        // これが問題になるとすれば、本当にただサービスを荒らしたい悪質な攻撃のみ、ではある
-        // if (transaction.agent.id !== agentId) {
-        //     throw new factory.errors.Forbidden('Transaction not yours');
-        // }
-
-        // GMOショップ情報取得
-        const seller = await repos.seller.findById({
-            id: transaction.seller.id
-        });
-
+        const seller = await repos.seller.findById({ id: transaction.seller.id });
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
         // GMOオーダーIDはカスタム指定可能
@@ -97,76 +77,31 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         // GMOオーソリ取得
-        let entryTranArgs: GMO.services.credit.IEntryTranArgs;
-        let entryTranResult: GMO.services.credit.IEntryTranResult;
-        let execTranArgs: GMO.services.credit.IExecTranArgs;
-        let execTranResult: GMO.services.credit.IExecTranResult;
+        let authorizeResult: IAuthorizeResult;
         let searchTradeResult: GMO.services.credit.ISearchTradeResult | undefined;
 
-        const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
-
         try {
-            entryTranArgs = {
+            authorizeResult = await processAuthorizeCreditCard({
+                project: project,
                 shopId: shopId,
                 shopPass: shopPass,
                 orderId: orderId,
-                jobCd: GMO.utils.util.JobCd.Auth,
-                amount: params.object.amount
-            };
-
-            entryTranResult = await creditCardService.entryTran(entryTranArgs);
-            debug('entryTranResult:', entryTranResult);
-
-            const creditCard = params.object.creditCard;
-            execTranArgs = {
-                accessId: entryTranResult.accessId,
-                accessPass: entryTranResult.accessPass,
-                orderId: orderId,
-                method: params.object.method,
-                siteId: project.settings.gmo.siteId,
-                sitePass: project.settings.gmo.sitePass,
-                cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
-                cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
-                expire: (<IUncheckedCardRaw>creditCard).expire,
-                token: (<IUncheckedCardTokenized>creditCard).token,
-                memberId: (<IUnauthorizedCardOfMember>creditCard).memberId,
-                cardSeq: (<IUnauthorizedCardOfMember>creditCard).cardSeq,
-                seqMode: GMO.utils.util.SeqMode.Physics
-            };
-
-            execTranResult = await creditCardService.execTran(execTranArgs);
-            debug('execTranResult:', execTranResult);
+                object: params.object
+            });
         } catch (error) {
-            // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
-                // 失敗したら仕方ない
+                // no op
             }
 
-            if (error.name === 'GMOServiceBadRequestError') {
-                // consider E92000001,E92000002
-                // GMO流量制限オーバーエラーの場合
-                const serviceUnavailableError = error.errors.find((gmoError: any) => gmoError.info.match(/^E92000001|E92000002$/));
-                if (serviceUnavailableError !== undefined) {
-                    throw new factory.errors.RateLimitExceeded(serviceUnavailableError.userMessage);
-                }
-
-                // オーダーID重複エラーの場合
-                const duplicateError = error.errors.find((gmoError: any) => gmoError.info.match(/^E01040010$/));
-                if (duplicateError !== undefined) {
-                    throw new factory.errors.AlreadyInUse('action.object', ['orderId'], duplicateError.userMessage);
-                }
-
-                // その他のGMOエラーに場合、なんらかのクライアントエラー
-                throw new factory.errors.Argument('payment');
-            }
-
-            throw error;
+            throw handleAuthorizeError(error);
         }
 
         try {
+            const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+
             // ベストエフォートでクレジットカード詳細情報を取得
             searchTradeResult = await creditCardService.searchTrade({
                 shopId: shopId,
@@ -191,14 +126,107 @@ export function authorize(params: {
                 value: params.object.amount
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-            entryTranArgs: entryTranArgs,
-            entryTranResult: entryTranResult,
-            execTranArgs: execTranArgs,
-            execTranResult: execTranResult
+            entryTranArgs: authorizeResult.entryTranArgs,
+            entryTranResult: authorizeResult.entryTranResult,
+            execTranArgs: authorizeResult.execTranArgs,
+            execTranResult: authorizeResult.execTranResult
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
+}
+
+export interface IAuthorizeResult {
+    entryTranArgs: GMO.services.credit.IEntryTranArgs;
+    entryTranResult: GMO.services.credit.IEntryTranResult;
+    execTranArgs: GMO.services.credit.IExecTranArgs;
+    execTranResult: GMO.services.credit.IExecTranResult;
+}
+
+async function processAuthorizeCreditCard(params: {
+    project: factory.project.IProject;
+    shopId: string;
+    shopPass: string;
+    orderId: string;
+    object: factory.action.authorize.paymentMethod.creditCard.IObject;
+}): Promise<IAuthorizeResult> {
+    const project = params.project;
+
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
+    if (project.settings === undefined || project.settings.gmo === undefined) {
+        throw new factory.errors.ServiceUnavailable('Project settings not found');
+    }
+
+    // GMOオーソリ取得
+    let entryTranArgs: GMO.services.credit.IEntryTranArgs;
+    let entryTranResult: GMO.services.credit.IEntryTranResult;
+    let execTranArgs: GMO.services.credit.IExecTranArgs;
+    let execTranResult: GMO.services.credit.IExecTranResult;
+
+    const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+
+    entryTranArgs = {
+        shopId: params.shopId,
+        shopPass: params.shopPass,
+        orderId: params.orderId,
+        jobCd: GMO.utils.util.JobCd.Auth,
+        amount: params.object.amount
+    };
+
+    entryTranResult = await creditCardService.entryTran(entryTranArgs);
+    debug('entryTranResult:', entryTranResult);
+
+    const creditCard = params.object.creditCard;
+    execTranArgs = {
+        accessId: entryTranResult.accessId,
+        accessPass: entryTranResult.accessPass,
+        orderId: params.orderId,
+        method: params.object.method,
+        siteId: project.settings.gmo.siteId,
+        sitePass: project.settings.gmo.sitePass,
+        cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
+        cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
+        expire: (<IUncheckedCardRaw>creditCard).expire,
+        token: (<IUncheckedCardTokenized>creditCard).token,
+        memberId: (<IUnauthorizedCardOfMember>creditCard).memberId,
+        cardSeq: (<IUnauthorizedCardOfMember>creditCard).cardSeq,
+        seqMode: GMO.utils.util.SeqMode.Physics
+    };
+
+    execTranResult = await creditCardService.execTran(execTranArgs);
+    debug('execTranResult:', execTranResult);
+
+    return {
+        entryTranArgs,
+        entryTranResult,
+        execTranArgs,
+        execTranResult
+    };
+}
+
+function handleAuthorizeError(error: any) {
+    let handledError: Error = error;
+
+    if (error.name === 'GMOServiceBadRequestError') {
+        // consider E92000001,E92000002
+        // GMO流量制限オーバーエラーの場合
+        const serviceUnavailableError = error.errors.find((gmoError: any) => gmoError.info.match(/^E92000001|E92000002$/));
+        if (serviceUnavailableError !== undefined) {
+            handledError = new factory.errors.RateLimitExceeded(serviceUnavailableError.userMessage);
+        }
+
+        // オーダーID重複エラーの場合
+        const duplicateError = error.errors.find((gmoError: any) => gmoError.info.match(/^E01040010$/));
+        if (duplicateError !== undefined) {
+            handledError = new factory.errors.AlreadyInUse('action.object', ['orderId'], duplicateError.userMessage);
+        }
+
+        // その他のGMOエラーに場合、なんらかのクライアントエラー
+        handledError = new factory.errors.Argument('payment');
+    }
+
+    return handledError;
 }
 
 export function voidTransaction(params: {
@@ -468,7 +496,6 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
  * クレジットカード返金処理を実行する
  */
 export function refundCreditCard(params: factory.task.IData<factory.taskName.RefundCreditCard>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
@@ -478,20 +505,8 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings === undefined || project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        // const seller = await repos.seller.findById({
-        //     id: params.object.purpose.seller.id
-        // });
-
-        // const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
         const refundActionAttributes = params;
-        const payAction = refundActionAttributes.object;
 
         const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
             limit: 1,
@@ -508,81 +523,104 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         });
 
         const action = await repos.action.start(refundActionAttributes);
-        const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
+        let alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
 
         try {
-            const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
-            await Promise.all(payAction.object.map(async (paymentMethod) => {
-                const entryTranArgs = paymentMethod.entryTranArgs;
-
-                // 取引状態参照
-                const searchTradeResult = await creditCardService.searchTrade({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    orderId: entryTranArgs.orderId
-                });
-                debug('searchTradeResult is', searchTradeResult);
-
-                let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined;
-                if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
-                    creditCardSalesBefore = payAction.result.creditCardSales[0];
-                }
-                if (creditCardSalesBefore === undefined) {
-                    throw new Error('Credit Card Sales not found');
-                }
-
-                // GMO取引状態に変更がなければ金額変更
-                if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
-                    // 手数料0円であれば、決済取り消し(返品)処理
-                    if (returnOrderTransaction.object.cancellationFee === 0) {
-                        alterTranResult.push(await creditCardService.alterTran({
-                            shopId: entryTranArgs.shopId,
-                            shopPass: entryTranArgs.shopPass,
-                            accessId: searchTradeResult.accessId,
-                            accessPass: searchTradeResult.accessPass,
-                            jobCd: GMO.utils.util.JobCd.Void
-                        }));
-                        debug('GMO alterTranResult is', alterTranResult);
-                    } else {
-                        const changeTranResult = await creditCardService.changeTran({
-                            shopId: entryTranArgs.shopId,
-                            shopPass: entryTranArgs.shopPass,
-                            accessId: searchTradeResult.accessId,
-                            accessPass: searchTradeResult.accessPass,
-                            jobCd: GMO.utils.util.JobCd.Capture,
-                            amount: returnOrderTransaction.object.cancellationFee
-                        });
-                        alterTranResult.push(changeTranResult);
-                    }
-                } else {
-                    alterTranResult.push({
-                        accessId: searchTradeResult.accessId,
-                        accessPass: searchTradeResult.accessPass,
-                        forward: searchTradeResult.forward,
-                        approve: searchTradeResult.approve,
-                        tranId: searchTradeResult.tranId,
-                        tranDate: ''
-                    });
-                }
-            }));
+            alterTranResult = await processChangeTransaction({
+                project: project,
+                payAction: refundActionAttributes.object,
+                cancellationFee: returnOrderTransaction.object.cancellationFee
+            });
         } catch (error) {
-            // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
-                // 失敗したら仕方ない
+                // no op
             }
 
             throw error;
         }
 
-        // アクション完了
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
 
         // 潜在アクション
         await onRefund(refundActionAttributes, order)({ task: repos.task });
     };
+}
+
+async function processChangeTransaction(params: {
+    project: factory.project.IProject;
+    payAction: factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>;
+    cancellationFee: number;
+}): Promise<GMO.services.credit.IAlterTranResult[]> {
+    const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
+
+    const project = params.project;
+    const payAction = params.payAction;
+
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
+    if (project.settings === undefined || project.settings.gmo === undefined) {
+        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+    }
+
+    const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+    await Promise.all(payAction.object.map(async (paymentMethod) => {
+        const entryTranArgs = paymentMethod.entryTranArgs;
+
+        // 取引状態参照
+        const searchTradeResult = await creditCardService.searchTrade({
+            shopId: entryTranArgs.shopId,
+            shopPass: entryTranArgs.shopPass,
+            orderId: entryTranArgs.orderId
+        });
+        debug('searchTradeResult is', searchTradeResult);
+
+        let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined;
+        if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
+            creditCardSalesBefore = payAction.result.creditCardSales[0];
+        }
+        if (creditCardSalesBefore === undefined) {
+            throw new Error('Credit Card Sales not found');
+        }
+
+        // GMO取引状態に変更がなければ金額変更
+        if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
+            // 手数料0円であれば、決済取り消し(返品)処理
+            if (params.cancellationFee === 0) {
+                alterTranResult.push(await creditCardService.alterTran({
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    accessId: searchTradeResult.accessId,
+                    accessPass: searchTradeResult.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Void
+                }));
+                debug('GMO alterTranResult is', alterTranResult);
+            } else {
+                const changeTranResult = await creditCardService.changeTran({
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    accessId: searchTradeResult.accessId,
+                    accessPass: searchTradeResult.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Capture,
+                    amount: params.cancellationFee
+                });
+                alterTranResult.push(changeTranResult);
+            }
+        } else {
+            alterTranResult.push({
+                accessId: searchTradeResult.accessId,
+                accessPass: searchTradeResult.accessPass,
+                forward: searchTradeResult.forward,
+                approve: searchTradeResult.approve,
+                tranId: searchTradeResult.tranId,
+                tranDate: ''
+            });
+        }
+    }));
+
+    return alterTranResult;
 }
 
 /**

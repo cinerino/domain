@@ -25,7 +25,6 @@ export function authorize<T extends factory.paymentMethodType>(params: {
     object: factory.action.authorize.paymentMethod.any.IObject<T>;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction<T>> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         seller: SellerRepo;
