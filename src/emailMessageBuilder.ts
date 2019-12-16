@@ -202,34 +202,39 @@ export function createOrderItems(params: {
 
             let reservationPriceSpec: ICompoundPriceSpecification | undefined;
 
-            if (typeof o.priceSpecification === 'number') {
-                // priceが数字の場合単価仕様を含む複合価格仕様に変換
-                reservationPriceSpec = {
-                    project: { typeOf: params.project.typeOf, id: params.project.id },
-                    typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-                    priceCurrency: factory.chevre.priceCurrency.JPY,
-                    valueAddedTaxIncluded: true,
-                    priceComponent: [
-                        {
-                            project: { typeOf: params.project.typeOf, id: params.project.id },
-                            typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-                            price: o.priceSpecification,
-                            priceCurrency: o.priceCurrency,
-                            valueAddedTaxIncluded: true
-                        }
-                    ]
+            if (o.priceSpecification !== undefined && o.priceSpecification !== null) {
+                if (typeof o.priceSpecification === 'number') {
+                    // priceが数字の場合単価仕様を含む複合価格仕様に変換
+                    reservationPriceSpec = {
+                        project: { typeOf: params.project.typeOf, id: params.project.id },
+                        typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+                        priceCurrency: factory.chevre.priceCurrency.JPY,
+                        valueAddedTaxIncluded: true,
+                        priceComponent: [
+                            {
+                                project: { typeOf: params.project.typeOf, id: params.project.id },
+                                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                price: o.priceSpecification,
+                                priceCurrency: o.priceCurrency,
+                                valueAddedTaxIncluded: true
+                            }
+                        ]
 
-                };
-            } else {
-                reservationPriceSpec = <ICompoundPriceSpecification>o.priceSpecification;
+                    };
+                } else {
+                    reservationPriceSpec = <ICompoundPriceSpecification>o.priceSpecification;
+                }
             }
 
-            const unitPriceSpec = <IUnitPriceSpecification>
-                reservationPriceSpec.priceComponent.find(
-                    (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
-                );
-            if (unitPriceSpec !== undefined) {
-                priceStr = `${unitPriceSpec.price}/${unitPriceSpec.referenceQuantity.value}`;
+            // 予約の価格仕様が分かれば、priceStrに単価をセット
+            if (reservationPriceSpec !== undefined) {
+                const unitPriceSpec = <IUnitPriceSpecification>
+                    reservationPriceSpec.priceComponent.find(
+                        (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+                    );
+                if (unitPriceSpec !== undefined) {
+                    priceStr = `${unitPriceSpec.price}/${unitPriceSpec.referenceQuantity.value}`;
+                }
             }
 
             return util.format(
