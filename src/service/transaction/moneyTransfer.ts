@@ -34,10 +34,11 @@ export type IConfirmOperation<T> = (repos: {
 
 /**
  * 取引開始
+ * Pecorinoサービスを利用してWithdrawTransactionあるいはTransferTransactionを開始する
  */
-export function start<T extends factory.accountType>(
-    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T>
-): IStartOperation<factory.transaction.moneyTransfer.ITransaction<T>> {
+export function start<T extends factory.accountType, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
+    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T, T2>
+): IStartOperation<factory.transaction.moneyTransfer.ITransaction<T, T2>> {
     return async (repos: {
         accountService: pecorino.service.Account;
         action: ActionRepo;
@@ -47,12 +48,17 @@ export function start<T extends factory.accountType>(
     }) => {
         const seller = await repos.seller.findById({ id: params.seller.id });
 
+        // 金額をfix
         const amount = params.object.amount;
         if (typeof amount !== 'number') {
             throw new factory.errors.ArgumentNull('amount');
         }
+
+        // fromとtoをfix
+        const fromLocation = await fixFromLocation(params)(repos);
         const toLocation = await fixToLocation(params)(repos);
 
+        // 取引開始
         const startParams: factory.transaction.IStartParams<factory.transactionType.MoneyTransfer> = {
             project: params.project,
             typeOf: factory.transactionType.MoneyTransfer,
@@ -70,37 +76,21 @@ export function start<T extends factory.accountType>(
             },
             object: {
                 amount: amount,
-                toLocation: {
-                    typeOf: toLocation.typeOf,
-                    accountType: toLocation.accountType,
-                    accountNumber: toLocation.accountNumber,
-                    name: toLocation.name
-                },
+                fromLocation: fromLocation,
+                toLocation: toLocation,
                 authorizeActions: [],
                 ...(typeof params.object.description === 'string') ? { description: params.object.description } : {}
             },
             expires: params.expires
         };
 
-        // 取引作成
-        let transaction: factory.transaction.moneyTransfer.ITransaction<T>;
+        // 取引開始
+        let transaction: factory.transaction.moneyTransfer.ITransaction<T, T2>;
         try {
-            transaction = <factory.transaction.moneyTransfer.ITransaction<T>>
+            transaction = <factory.transaction.moneyTransfer.ITransaction<T, T2>>
                 await repos.transaction.start<factory.transactionType.MoneyTransfer>(startParams);
 
-            // 入金取引承認
-            await AccountService.authorize({
-                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                agent: { id: transaction.agent.id },
-                object: {
-                    amount: amount,
-                    typeOf: factory.paymentMethodType.Account,
-                    toAccount: transaction.object.toLocation,
-                    notes: transaction.object.description
-                },
-                purpose: { typeOf: transaction.typeOf, id: transaction.id }
-            })(repos);
-
+            await authorizeAccount({ transaction })(repos);
         } catch (error) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
@@ -115,19 +105,62 @@ export function start<T extends factory.accountType>(
     };
 }
 
-export function fixToLocation<T extends factory.accountType>(
-    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T>
+function authorizeAccount<T extends factory.accountType>(params: {
+    transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
+}) {
+    return async (repos: {
+        // accountService: pecorino.service.Account;
+        action: ActionRepo;
+        project: ProjectRepo;
+        transaction: TransactionRepo;
+    }) => {
+        const transaction = params.transaction;
+        const amount = transaction.object.amount;
+        const fromLocation = transaction.object.fromLocation;
+        const toLocation = transaction.object.toLocation;
+
+        if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+            // 転送取引
+            await AccountService.authorize({
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                agent: { id: transaction.agent.id },
+                object: {
+                    amount: amount,
+                    typeOf: factory.paymentMethodType.Account,
+                    fromAccount: fromLocation,
+                    toAccount: <factory.transaction.moneyTransfer.IToLocation<T, factory.pecorino.account.TypeOf.Account>>toLocation,
+                    notes: transaction.object.description
+                },
+                purpose: { typeOf: transaction.typeOf, id: transaction.id }
+            })(repos);
+        } else {
+            // 出金取引
+            await AccountService.authorize({
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                agent: { id: transaction.agent.id },
+                object: {
+                    amount: amount,
+                    typeOf: factory.paymentMethodType.Account,
+                    fromAccount: fromLocation,
+                    notes: transaction.object.description
+                },
+                purpose: { typeOf: transaction.typeOf, id: transaction.id }
+            })(repos);
+        }
+    };
+}
+
+function fixFromLocation<T extends factory.accountType, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
+    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T, T2>
 ) {
     return async (repos: {
         accountService: pecorino.service.Account;
-    }): Promise<factory.transaction.moneyTransfer.IToLocation<T>> => {
-        let toLocation = params.object.toLocation;
-        if (toLocation === undefined) {
-            throw new factory.errors.ArgumentNull('toLocation');
-        }
+    }): Promise<factory.transaction.moneyTransfer.IFromLocation<T>> => {
+        let fromLocation: factory.transaction.moneyTransfer.IFromLocation<T> = params.object.fromLocation;
 
-        if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
-            if (toLocation.accountType !== factory.accountType.Coin) {
+        if (fromLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+            const fromLocationObject = params.object.fromLocation;
+            if (fromLocationObject.accountType !== factory.accountType.Coin) {
                 throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
             }
 
@@ -135,16 +168,69 @@ export function fixToLocation<T extends factory.accountType>(
             const searchAccountsResult = await repos.accountService.search<T>({
                 limit: 1,
                 project: { id: { $eq: params.project.id } },
-                accountType: toLocation.accountType,
-                accountNumbers: [toLocation.accountNumber],
+                accountType: fromLocationObject.accountType,
+                accountNumbers: [fromLocationObject.accountNumber],
                 statuses: [pecorino.factory.accountStatusType.Opened]
             });
-            toLocation = searchAccountsResult.data.shift();
-            if (toLocation === undefined) {
+
+            const account = searchAccountsResult.data.shift();
+            if (account === undefined) {
                 throw new factory.errors.NotFound('Account', 'To Location Not Found');
             }
+
+            fromLocation = {
+                typeOf: fromLocation.typeOf,
+                accountNumber: fromLocation.accountNumber,
+                accountType: fromLocation.accountType
+            };
         } else {
-            throw new factory.errors.Argument('toLocation', `location type must be ${factory.pecorino.account.TypeOf.Account}`);
+            throw new factory.errors.Argument('fromLocation', `location type must be ${factory.pecorino.account.TypeOf.Account}`);
+        }
+
+        return fromLocation;
+    };
+}
+
+function fixToLocation<T extends factory.accountType, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
+    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T, T2>
+) {
+    return async (repos: {
+        accountService: pecorino.service.Account;
+    }): Promise<factory.transaction.moneyTransfer.IToLocation<T, T2>> => {
+        let toLocation: factory.transaction.moneyTransfer.IToLocation<T, T2> = params.object.toLocation;
+
+        if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+            const toLocationObject
+                = <factory.transaction.moneyTransfer.IToLocation<T, factory.pecorino.account.TypeOf.Account>>params.object.toLocation;
+            if (toLocationObject.accountType !== factory.accountType.Coin) {
+                throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
+            }
+
+            // 口座存在確認
+            const searchAccountsResult = await repos.accountService.search<T>({
+                limit: 1,
+                project: { id: { $eq: params.project.id } },
+                accountType: toLocationObject.accountType,
+                accountNumbers: [toLocationObject.accountNumber],
+                statuses: [pecorino.factory.accountStatusType.Opened]
+            });
+
+            const account = searchAccountsResult.data.shift();
+            if (account === undefined) {
+                throw new factory.errors.NotFound('Account', 'To Location Not Found');
+            }
+
+            toLocation = <any>{
+                typeOf: toLocation.typeOf,
+                accountNumber: (<any>toLocation).accountNumber,
+                accountType: (<any>toLocation).accountType
+            };
+        } else {
+            toLocation = <any>{
+                typeOf: toLocation.typeOf,
+                id: (<any>toLocation).id,
+                name: toLocation.name
+            };
         }
 
         return toLocation;
@@ -296,44 +382,6 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                                 data: a
                             };
                         }));
-                    }
-
-                    // 口座決済
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (Array.isArray((<any>potentialActions).payAccount)) {
-                        taskAttributes.push(...(<any>potentialActions).payAccount.map(
-                            (a: any): factory.task.IAttributes<factory.taskName.PayAccount> => {
-                                return {
-                                    project: a.project,
-                                    name: factory.taskName.PayAccount,
-                                    status: factory.taskStatus.Ready,
-                                    runsAt: now, // なるはやで実行
-                                    remainingNumberOfTries: 10,
-                                    numberOfTried: 0,
-                                    executionResults: [],
-                                    data: a
-                                };
-                            }));
-                    }
-
-                    // クレジットカード決済
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (Array.isArray(potentialActions.payCreditCard)) {
-                        taskAttributes.push(...potentialActions.payCreditCard.map(
-                            (a): factory.task.IAttributes<factory.taskName.PayCreditCard> => {
-                                return {
-                                    project: a.project,
-                                    name: factory.taskName.PayCreditCard,
-                                    status: factory.taskStatus.Ready,
-                                    runsAt: now, // なるはやで実行
-                                    remainingNumberOfTries: 10,
-                                    numberOfTried: 0,
-                                    executionResults: [],
-                                    data: a
-                                };
-                            }));
                     }
                 }
 

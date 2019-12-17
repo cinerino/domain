@@ -235,7 +235,6 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        // アクション開始
         const action = await repos.action.start(params);
 
         try {
@@ -283,19 +282,17 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
                     );
             }
         } catch (error) {
-            // actionにエラー結果を追加
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
-                // 失敗したら仕方ない
+                // no op
             }
 
             throw error;
         }
 
-        // アクション完了
         const actionResult: factory.action.transfer.moneyTransfer.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
