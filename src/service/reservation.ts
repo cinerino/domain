@@ -41,20 +41,16 @@ export type ISearchEventReservationsOperation<T> = (repos: {
 /**
  * 予約取消
  */
-// tslint:disable-next-line:max-func-body-length
 export function cancelReservation(params: factory.task.IData<factory.taskName.CancelReservation>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const projectId: string = params.project.id;
-        const project = await repos.project.findById({ id: projectId });
+        const project = await repos.project.findById({ id: params.project.id });
 
         const action = await repos.action.start(params);
 
         try {
-            let cancelReservationObject = params.object;
-
             if (params.instrument === undefined) {
                 params.instrument = {
                     typeOf: 'WebAPI',
@@ -64,78 +60,24 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
 
             switch (params.instrument.identifier) {
                 case factory.service.webAPI.Identifier.COA:
-                    cancelReservationObject = <COA.factory.reserve.IStateReserveArgs>cancelReservationObject;
-
-                    const reserveService = new COA.service.Reserve({
-                        endpoint: credentials.coa.endpoint,
-                        auth: coaAuthClient
+                    await processCancelReservation4coa({
+                        cancelReservationObject: <COA.factory.reserve.IStateReserveArgs>params.object
                     });
-                    const stateReserveResult = await reserveService.stateReserve(cancelReservationObject);
-
-                    if (stateReserveResult !== null) {
-                        await reserveService.delReserve({
-                            theaterCode: cancelReservationObject.theaterCode,
-                            reserveNum: cancelReservationObject.reserveNum,
-                            telNum: cancelReservationObject.telNum,
-                            dateJouei: stateReserveResult.dateJouei,
-                            titleCode: stateReserveResult.titleCode,
-                            titleBranchNum: stateReserveResult.titleBranchNum,
-                            timeBegin: stateReserveResult.timeBegin,
-                            listSeat: stateReserveResult.listTicket
-                        });
-                    }
 
                     break;
 
                 default:
-                    // cancelReservationObject = cancelReservationObject;
-
-                    if (project.settings === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                    }
-                    if (project.settings.chevre === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings not found');
-                    }
-
-                    const cancelReservationService = new chevre.service.transaction.CancelReservation({
-                        endpoint: project.settings.chevre.endpoint,
-                        auth: chevreAuthClient
+                    await processCancelReservation4chevre({
+                        ...params,
+                        project: project
                     });
-
-                    if (cancelReservationService !== undefined) {
-                        const cancelReservationTransaction = await cancelReservationService.start({
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.chevre.transactionType.CancelReservation,
-                            agent: {
-                                typeOf: params.agent.typeOf,
-                                id: params.agent.id,
-                                name: String(params.agent.name)
-                            },
-                            object: {
-                                transaction: {
-                                    typeOf: (<any>cancelReservationObject).typeOf,
-                                    id: (<any>cancelReservationObject).id
-                                }
-                            },
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate()
-                        });
-
-                        await cancelReservationService.confirm({
-                            id: cancelReservationTransaction.id,
-                            potentialActions: params.potentialActions
-                        });
-                    }
             }
         } catch (error) {
-            // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
-                // 失敗したら仕方ない
+                // no op
             }
 
             throw error;
@@ -143,6 +85,73 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
 
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: {} });
     };
+}
+
+async function processCancelReservation4coa(params: {
+    cancelReservationObject: COA.factory.reserve.IStateReserveArgs;
+}) {
+    const cancelReservationObject = params.cancelReservationObject;
+
+    const reserveService = new COA.service.Reserve({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+    const stateReserveResult = await reserveService.stateReserve(cancelReservationObject);
+
+    if (stateReserveResult !== null) {
+        await reserveService.delReserve({
+            theaterCode: cancelReservationObject.theaterCode,
+            reserveNum: cancelReservationObject.reserveNum,
+            telNum: cancelReservationObject.telNum,
+            dateJouei: stateReserveResult.dateJouei,
+            titleCode: stateReserveResult.titleCode,
+            titleBranchNum: stateReserveResult.titleBranchNum,
+            timeBegin: stateReserveResult.timeBegin,
+            listSeat: stateReserveResult.listTicket
+        });
+    }
+}
+
+async function processCancelReservation4chevre(params: factory.task.IData<factory.taskName.CancelReservation> & {
+    project: factory.project.IProject;
+}) {
+    const cancelReservationObject = params.object;
+    const project = params.project;
+
+    if (project.settings === undefined || project.settings.chevre === undefined) {
+        throw new factory.errors.ServiceUnavailable('Project settings not found');
+    }
+
+    const cancelReservationService = new chevre.service.transaction.CancelReservation({
+        endpoint: project.settings.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+
+    const cancelReservationTransaction = await cancelReservationService.start({
+        project: { typeOf: project.typeOf, id: project.id },
+        typeOf: factory.chevre.transactionType.CancelReservation,
+        agent: {
+            typeOf: params.agent.typeOf,
+            id: params.agent.id,
+            name: String(params.agent.name)
+        },
+        object: {
+            transaction: {
+                typeOf: (<any>cancelReservationObject).typeOf,
+                id: (<any>cancelReservationObject).id
+            }
+        },
+        expires: moment()
+            // tslint:disable-next-line:no-magic-numbers
+            .add(5, 'minutes')
+            .toDate()
+    });
+
+    await cancelReservationService.confirm({
+        id: cancelReservationTransaction.id,
+        potentialActions: params.potentialActions
+    });
+
 }
 
 /**

@@ -3,16 +3,13 @@
  * 在庫仕入れ、在庫調整等
  */
 import { google } from 'googleapis';
-import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
 import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
-import * as COA from '../coa';
 import * as factory from '../factory';
 
-import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as EventRepo } from '../repo/event';
 import { RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
 import { MongoRepository as ProjectRepo } from '../repo/project';
@@ -30,15 +27,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-const coaAuthClient = new COA.auth.RefreshToken({
-    endpoint: credentials.coa.endpoint,
-    refreshToken: credentials.coa.refreshToken
-});
-
-export import IPlaceOrderTransaction = factory.transaction.placeOrder.ITransaction;
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
-export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
-    factory.action.authorize.offer.seatReservation.IResponseBody<T>;
 export type IScreeningEvent = factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
 /**
@@ -228,115 +217,6 @@ export async function findMovieImage(params: {
             }
         );
     });
-}
-
-/**
- * 座席仮予約キャンセル
- */
-// tslint:disable-next-line:max-func-body-length
-export function cancelSeatReservationAuth(params: factory.task.IData<factory.taskName.CancelSeatReservation>) {
-    return async (repos: {
-        action: ActionRepo;
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        // 座席仮予約アクションを取得
-        const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
-            await repos.action.searchByPurpose({
-                typeOf: factory.actionType.AuthorizeAction,
-                purpose: {
-                    typeOf: params.purpose.typeOf,
-                    id: params.purpose.id
-                }
-            })
-                .then((actions) => actions
-                    .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
-                );
-
-        let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
-
-        await Promise.all(authorizeActions.map(async (action) => {
-            if (action.instrument === undefined) {
-                action.instrument = {
-                    typeOf: 'WebAPI',
-                    identifier: WebAPIIdentifier.Chevre
-                };
-            }
-
-            switch (action.instrument.identifier) {
-                case WebAPIIdentifier.COA:
-                    // COAの場合、resultに連携内容情報が記録されているので、その情報を元に仮予約を取り消す
-                    if (action.result !== undefined) {
-                        const requestBody = action.result.requestBody;
-                        const responseBody = <IAuthorizeSeatReservationResponse<WebAPIIdentifier.COA>>action.result.responseBody;
-
-                        // COAで仮予約取消
-                        const updTmpReserveSeatArgs = requestBody;
-                        const updTmpReserveSeatResult = responseBody;
-
-                        try {
-                            reserveService = new COA.service.Reserve({
-                                endpoint: credentials.coa.endpoint,
-                                auth: coaAuthClient
-                            });
-
-                            await reserveService.delTmpReserve({
-                                theaterCode: updTmpReserveSeatArgs.theaterCode,
-                                dateJouei: updTmpReserveSeatArgs.dateJouei,
-                                titleCode: updTmpReserveSeatArgs.titleCode,
-                                titleBranchNum: updTmpReserveSeatArgs.titleBranchNum,
-                                timeBegin: updTmpReserveSeatArgs.timeBegin,
-                                tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum
-                            });
-                        } catch (error) {
-                            let deleted = false;
-                            // COAサービスエラーの場合ハンドリング
-                            // tslint:disable-next-line:no-single-line-block-comment
-                            /* istanbul ignore if */
-                            if (error.name === 'COAServiceError') {
-                                if (Number.isInteger(error.code) && error.code < INTERNAL_SERVER_ERROR) {
-                                    // すでに取消済の場合こうなるので、okとする
-                                    if (error.message === '座席取消失敗') {
-                                        deleted = true;
-                                    }
-                                    // if (action.actionStatus === factory.actionStatusType.CanceledActionStatus) {
-                                    //     deleted = true;
-                                    // }
-                                }
-                            }
-
-                            if (!deleted) {
-                                throw error;
-                            }
-                        }
-                    }
-
-                    break;
-
-                default:
-                    // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
-                    if (project.settings === undefined
-                        || project.settings.chevre === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                    }
-
-                    reserveService = new chevre.service.transaction.Reserve({
-                        endpoint: project.settings.chevre.endpoint,
-                        auth: chevreAuthClient
-                    });
-
-                    const pendingTransaction = action.object.pendingTransaction;
-
-                    if (pendingTransaction !== undefined) {
-                        // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
-                        await reserveService.cancel({ id: pendingTransaction.id });
-                    }
-            }
-
-            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
-        }));
-    };
 }
 
 /**
