@@ -57,6 +57,9 @@ export function authorize<T extends factory.accountType>(params: {
         let recipient = transaction.recipient;
         if (transaction.typeOf === factory.transactionType.PlaceOrder) {
             recipient = transaction.seller;
+        } else if (transaction.typeOf === factory.transactionType.MoneyTransfer) {
+            recipient = transaction.recipient;
+            // no op
         } else {
             // 現時点で、他取引タイプは未想定
             throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
