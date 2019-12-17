@@ -15,7 +15,7 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('会員プログラム登録タスクを作成する', () => {
+describe('会員プログラム注文タスクを作成する', () => {
     beforeEach(() => {
         sandbox.restore();
     });
@@ -34,9 +34,9 @@ describe('会員プログラム登録タスクを作成する', () => {
             .once()
             .resolves(seller);
         sandbox.mock(programMembershipRepo)
-            .expects('search')
+            .expects('findById')
             .once()
-            .resolves([programMembership]);
+            .resolves(programMembership);
         sandbox.mock(taskRepo)
             .expects('save')
             .once()

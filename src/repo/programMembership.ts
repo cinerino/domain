@@ -90,4 +90,29 @@ export class MongoRepository {
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
+
+    public async findById(
+        conditions: {
+            id: string;
+        },
+        projection?: any
+    ): Promise<factory.programMembership.IProgramMembership> {
+        const doc = await this.programMembershipModel.findOne(
+            {
+                _id: conditions.id
+            },
+            {
+                __v: 0,
+                createdAt: 0,
+                updatedAt: 0,
+                ...projection
+            }
+        )
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound(this.programMembershipModel.modelName);
+        }
+
+        return doc.toObject();
+    }
 }

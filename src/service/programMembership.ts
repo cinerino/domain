@@ -2,7 +2,7 @@
  * 会員プログラムサービス
  */
 import * as GMO from '@motionpicture/gmo-service';
-import * as fs from 'fs';
+// import * as fs from 'fs';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -22,7 +22,7 @@ import * as PlaceOrderService from './transaction/placeOrderInProgress';
 
 import * as factory from '../factory';
 
-const RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH = `${__dirname}/../../emails/renewProgramMembership/text.pug`;
+// const RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH = `${__dirname}/../../emails/renewProgramMembership/text.pug`;
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
@@ -52,7 +52,6 @@ export type IRegisterOperation<T> = (repos: {
 /**
  * 会員プログラム登録タスクを作成する
  */
-// tslint:disable-next-line:max-func-body-length
 export function createRegisterTask(params: {
     agent: factory.person.IPerson;
     /**
@@ -67,12 +66,10 @@ export function createRegisterTask(params: {
     seller: {
         /**
          * 販売者タイプ
-         * どの販売者に属した会員プログラムを登録するか
          */
         typeOf: factory.organizationType;
         /**
          * 販売者ID
-         * どの販売者に属した会員プログラムを登録するか
          */
         id: string;
     };
@@ -83,86 +80,30 @@ export function createRegisterTask(params: {
         task: TaskRepo;
     }) => {
         const now = new Date();
-        const programMemberships = await repos.programMembership.search({ id: { $eq: params.programMembershipId } });
-        const programMembership = programMemberships.shift();
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (programMembership === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
+
+        const programMembership = await repos.programMembership.findById({ id: params.programMembershipId });
+
         if (programMembership.offers === undefined) {
             throw new factory.errors.NotFound('ProgramMembership.offers');
         }
+
         const offer = programMembership.offers.find((o) => o.identifier === params.offerIdentifier);
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
         if (offer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (offer.price === undefined) {
-            throw new factory.errors.NotFound('Offer Price undefined');
-        }
 
-        const seller = await repos.seller.findById({
-            id: params.seller.id
-        });
-        // 会員プログラムのホスト組織確定(この組織が決済対象となる)
-        programMembership.hostingOrganization = {
-            project: seller.project,
-            id: seller.id,
-            identifier: seller.identifier,
-            name: seller.name,
-            legalName: seller.legalName,
-            location: seller.location,
-            typeOf: seller.typeOf,
-            telephone: seller.telephone,
-            url: seller.url
-        };
+        const seller = await repos.seller.findById({ id: params.seller.id });
 
-        const itemOffered = {
-            ...programMembership,
-            offers: programMembership.offers.map((o) => {
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore if */
-                if (o.price === undefined) {
-                    throw new factory.errors.NotFound('Offer Price undefined');
-                }
-
-                return {
-                    ...o,
-                    price: o.price
-                };
-            })
-        };
-
-        // 受け入れれたオファーオブジェクトを作成
-        const acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership> = {
-            typeOf: 'Offer',
-            identifier: offer.identifier,
-            price: offer.price,
-            priceCurrency: offer.priceCurrency,
-            eligibleDuration: offer.eligibleDuration,
-            itemOffered: itemOffered,
-            seller: {
-                typeOf: seller.typeOf,
-                name: seller.name.ja
-            }
-        };
-
-        // 登録アクション属性を作成
-        const data: factory.task.IData<factory.taskName.OrderProgramMembership> = {
+        // 注文アクション属性を作成
+        const data = createOrderProgramMembershipActionAttributes({
             agent: params.agent,
-            object: acceptedOffer,
+            offer: offer,
+            programMembership: programMembership,
             potentialActions: params.potentialActions,
-            project: programMembership.project,
-            typeOf: factory.actionType.OrderAction
-        };
+            seller: seller
+        });
 
-        // 会員プログラム登録タスクを作成する
+        // 会員プログラム注文タスクを作成する
         const taskAttributes: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {
             project: data.project,
             name: factory.taskName.OrderProgramMembership,
@@ -178,13 +119,70 @@ export function createRegisterTask(params: {
     };
 }
 
+function createOrderProgramMembershipActionAttributes(params: {
+    agent: factory.person.IPerson;
+    offer: factory.offer.IOffer;
+    programMembership: factory.programMembership.IProgramMembership;
+    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+    seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
+}): factory.task.IData<factory.taskName.OrderProgramMembership> {
+    const offer = params.offer;
+    const programMembership = params.programMembership;
+    const seller = params.seller;
+
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
+    if (programMembership.offers === undefined) {
+        throw new factory.errors.NotFound('ProgramMembership.offers');
+    }
+
+    // 会員プログラムのホスト組織確定(この組織が決済対象となる)
+    programMembership.hostingOrganization = {
+        project: seller.project,
+        id: seller.id,
+        identifier: seller.identifier,
+        name: seller.name,
+        legalName: seller.legalName,
+        location: seller.location,
+        typeOf: seller.typeOf,
+        telephone: seller.telephone,
+        url: seller.url
+    };
+
+    const itemOffered = {
+        ...programMembership,
+        offers: programMembership.offers
+    };
+
+    // 受け入れれたオファーオブジェクトを作成
+    const acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership> = {
+        typeOf: 'Offer',
+        identifier: offer.identifier,
+        price: offer.price,
+        priceCurrency: offer.priceCurrency,
+        eligibleDuration: offer.eligibleDuration,
+        itemOffered: itemOffered,
+        seller: {
+            typeOf: seller.typeOf,
+            name: seller.name.ja
+        }
+    };
+
+    return {
+        agent: params.agent,
+        object: acceptedOffer,
+        potentialActions: params.potentialActions,
+        project: programMembership.project,
+        typeOf: factory.actionType.OrderAction
+    };
+}
+
 /**
  * 会員プログラム注文
  */
 export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.OrderProgramMembership>
 ): IOrderOperation<void> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         creditCard: CreditCardRepo;
@@ -202,25 +200,16 @@ export function orderProgramMembership(
         const project = await repos.project.findById({ id: params.project.id });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        const customer = await repos.person.findById({
-            userId: params.agent.id
-        });
+        const customer = await repos.person.findById({ userId: params.agent.id });
 
         const acceptedOffer = params.object;
-        if (acceptedOffer.typeOf !== 'Offer') {
-            throw new factory.errors.Argument('Object', 'Object type must be Offer');
-        }
 
         const programMembership = acceptedOffer.itemOffered;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
         if (programMembership.id === undefined) {
             throw new factory.errors.ArgumentNull('ProgramMembership ID');
         }
 
         const seller = programMembership.hostingOrganization;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
         if (seller === undefined) {
             throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
         }
@@ -299,7 +288,6 @@ export function orderProgramMembership(
 export function register(
     params: factory.task.IData<factory.taskName.RegisterProgramMembership>
 ): IRegisterOperation<void> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         person: PersonRepo;
@@ -627,20 +615,20 @@ function processPlaceOrder(params: {
         if (!isNewRegister
             && emailInformUpdateProgrammembership !== undefined
             && params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.length === 0) {
-            const template = await new Promise<string | undefined>((resolve) => {
-                // tslint:disable-next-line:non-literal-fs-path
-                fs.readFile(RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH, { encoding: 'utf-8' }, (err, data) => {
-                    if (err instanceof Error) {
-                        resolve(undefined);
-                    } else {
-                        resolve(data);
-                    }
-                });
-            });
+            // const template = await new Promise<string | undefined>((resolve) => {
+            //     // tslint:disable-next-line:non-literal-fs-path
+            //     fs.readFile(RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH, { encoding: 'utf-8' }, (err, data) => {
+            //         if (err instanceof Error) {
+            //             resolve(undefined);
+            //         } else {
+            //             resolve(data);
+            //         }
+            //     });
+            // });
             const email: factory.creativeWork.message.email.ICustomization = {
                 about: `ProgramMembership Renewed [${project.id}]`,
-                toRecipient: { name: 'administrator', email: emailInformUpdateProgrammembership },
-                template: template
+                toRecipient: { name: 'administrator', email: emailInformUpdateProgrammembership }
+                // template: template
             };
 
             params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.push({
