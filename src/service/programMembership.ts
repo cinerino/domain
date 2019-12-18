@@ -18,7 +18,7 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as CreditCardPaymentService from './payment/creditCard';
-import * as PlaceOrderService from './transaction/placeOrderInProgress';
+import * as TransactionService from './transaction';
 
 import * as factory from '../factory';
 
@@ -487,7 +487,7 @@ function processPlaceOrder(params: {
         }
 
         // 会員プログラム注文取引進行
-        const transaction = await PlaceOrderService.start({
+        const transaction = await TransactionService.placeOrderInProgress.start({
             project: { typeOf: project.typeOf, id: project.id },
             expires: moment()
                 // tslint:disable-next-line:no-magic-numbers
@@ -530,7 +530,7 @@ function processPlaceOrder(params: {
                 }
                 const toAccount = accountOwnershipInfos[0].typeOfGood;
 
-                await PlaceOrderService.action.authorize.award.point.create({
+                await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
                     agent: { id: transaction.agent.id },
                     transaction: { id: transaction.id },
                     object: {
@@ -551,7 +551,7 @@ function processPlaceOrder(params: {
         }
 
         // 会員プログラムオファー承認
-        await PlaceOrderService.action.authorize.offer.programMembership.create({
+        await TransactionService.placeOrderInProgress.action.authorize.offer.programMembership.create({
             agentId: customer.id,
             transactionId: transaction.id,
             acceptedOffer: acceptedOffer
@@ -582,7 +582,8 @@ function processPlaceOrder(params: {
             purpose: transaction
         })(repos);
 
-        await PlaceOrderService.updateAgent({
+        await TransactionService.updateAgent({
+            typeOf: transaction.typeOf,
             id: transaction.id,
             agent: customer
         })(repos);
@@ -637,7 +638,7 @@ function processPlaceOrder(params: {
         }
 
         // 取引確定
-        return PlaceOrderService.confirm({
+        return TransactionService.placeOrderInProgress.confirm({
             project: { id: project.id },
             id: transaction.id,
             agent: { id: customer.id },

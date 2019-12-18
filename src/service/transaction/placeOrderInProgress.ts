@@ -3,7 +3,6 @@
  */
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
-import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import { format } from 'util';
 
 import * as factory from '../../factory';
@@ -204,63 +203,6 @@ export namespace action {
             export import seatReservation4ttts = AuthorizeSeatReservation4tttsActionService;
         }
     }
-}
-
-/**
- * 顧客プロフィール更新
- */
-export function updateAgent(params: {
-    id: string;
-    agent: factory.transaction.placeOrder.IAgent & {
-        telephoneRegion?: string;
-    };
-}): ITransactionOperation<factory.transaction.placeOrder.IAgent> {
-    return async (repos: { transaction: TransactionRepo }) => {
-        let formattedTelephone: string;
-        try {
-            const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(params.agent.telephone, params.agent.telephoneRegion);
-            if (!phoneUtil.isValidNumber(phoneNumber)) {
-                throw new Error('Invalid phone number');
-            }
-            formattedTelephone = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
-        } catch (error) {
-            throw new factory.errors.Argument('telephone', error.message);
-        }
-
-        const transaction = await repos.transaction.findInProgressById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.id
-        });
-
-        if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('Transaction not yours');
-        }
-
-        // 新プロフィール作成
-        const newAgent: factory.transaction.placeOrder.IAgent = {
-            typeOf: transaction.agent.typeOf,
-            id: transaction.agent.id,
-            ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : {},
-            ...(typeof params.agent.age === 'string') ? { age: params.agent.age } : {},
-            ...(typeof params.agent.address === 'string') ? { address: params.agent.address } : {},
-            ...(typeof params.agent.email === 'string') ? { email: params.agent.email } : {},
-            ...(typeof params.agent.familyName === 'string') ? { familyName: params.agent.familyName } : {},
-            ...(typeof params.agent.gender === 'string') ? { gender: params.agent.gender } : {},
-            ...(typeof params.agent.givenName === 'string') ? { givenName: params.agent.givenName } : {},
-            ...(typeof params.agent.name === 'string') ? { name: params.agent.name } : {},
-            ...(typeof formattedTelephone === 'string') ? { telephone: formattedTelephone } : {},
-            ...(typeof params.agent.url === 'string') ? { url: params.agent.url } : {}
-        };
-
-        await repos.transaction.updateAgent({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.id,
-            agent: newAgent
-        });
-
-        return newAgent;
-    };
 }
 
 export type IConfirmationNumberGenerator = (order: factory.order.IOrder) => string;

@@ -29,7 +29,6 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
         return {
             project: params.transaction.project,
             typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
-            ...(typeof a.object.notes === 'string') ? { description: a.object.notes } : {},
             result: {},
             object: {
                 pendingTransaction: actionResult.pendingTransaction
@@ -42,7 +41,8 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
             purpose: {
                 typeOf: params.transaction.typeOf,
                 id: params.transaction.id
-            }
+            },
+            ...(typeof a.object.notes === 'string') ? { description: a.object.notes } : {}
         };
     });
 }

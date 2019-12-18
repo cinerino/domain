@@ -145,30 +145,33 @@ async function processAccountTransaction<T extends factory.accountType>(params: 
 }): Promise<factory.action.authorize.paymentMethod.account.IPendingTransaction<T>> {
     let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction<T>;
 
-    const project = params.project;
     const transaction = params.transaction;
 
-    if (project.settings === undefined || project.settings.pecorino === undefined) {
+    if (params.project.settings === undefined || params.project.settings.pecorino === undefined) {
         throw new factory.errors.ServiceUnavailable('Project settings not found');
     }
-
-    let recipientName = (params.recipient.typeOf === factory.personType.Person) ? params.recipient.name : params.recipient.name.ja;
-    recipientName = (recipientName === undefined) ? params.recipient.id : recipientName;
-    const recipient = {
-        typeOf: params.recipient.typeOf,
-        id: params.recipient.id,
-        name: recipientName,
-        url: params.recipient.url
-    };
 
     const agent = {
         typeOf: transaction.agent.typeOf,
         id: transaction.agent.id,
-        name: `${transaction.typeOf} Transaction ${transaction.id}`,
-        url: transaction.agent.url
+        name: (typeof transaction.agent.name === 'string') ? transaction.agent.name : `${transaction.typeOf} Transaction ${transaction.id}`,
+        ...(typeof transaction.agent.url === 'string') ? { url: transaction.agent.url } : undefined
     };
 
-    const description = (params.object.notes !== undefined) ? params.object.notes : agent.name;
+    const recipient = {
+        typeOf: params.recipient.typeOf,
+        id: params.recipient.id,
+        name: (typeof (<any>params.recipient).name === 'string')
+            ? (<any>params.recipient).name
+            : ((<any>params.recipient).name !== undefined
+                && (<any>params.recipient).name !== null
+                && typeof (<any>params.recipient).name.ja === 'string')
+                ? (<any>params.recipient).name.ja
+                : `${transaction.typeOf} Transaction ${transaction.id}`,
+        ...(typeof params.recipient.url === 'string') ? { url: params.recipient.url } : undefined
+    };
+
+    const description = (typeof params.object.notes === 'string') ? params.object.notes : `for transaction ${transaction.id}`;
 
     // 最大1ヵ月のオーソリ
     const expires = moment()
@@ -180,7 +183,7 @@ async function processAccountTransaction<T extends factory.accountType>(params: 
     if (params.object.fromAccount !== undefined && params.object.toAccount === undefined) {
         // 転送先口座が指定されていない場合は、出金取引
         const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-            endpoint: project.settings.pecorino.endpoint,
+            endpoint: params.project.settings.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
         pendingTransaction = await withdrawService.start<T>({
@@ -201,11 +204,11 @@ async function processAccountTransaction<T extends factory.accountType>(params: 
         });
     } else if (params.object.fromAccount !== undefined && params.object.toAccount !== undefined) {
         const transferService = new pecorinoapi.service.transaction.Transfer({
-            endpoint: project.settings.pecorino.endpoint,
+            endpoint: params.project.settings.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
         pendingTransaction = await transferService.start<T>({
-            project: { typeOf: 'Project', id: project.id },
+            project: { typeOf: 'Project', id: params.project.id },
             typeOf: factory.pecorino.transactionType.Transfer,
             agent: agent,
             expires: expires,
@@ -227,11 +230,11 @@ async function processAccountTransaction<T extends factory.accountType>(params: 
         });
     } else if (params.object.fromAccount === undefined && params.object.toAccount !== undefined) {
         const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: project.settings.pecorino.endpoint,
+            endpoint: params.project.settings.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
         pendingTransaction = await depositService.start<T>({
-            project: { typeOf: 'Project', id: project.id },
+            project: { typeOf: 'Project', id: params.project.id },
             typeOf: factory.pecorino.transactionType.Deposit,
             agent: agent,
             expires: expires,

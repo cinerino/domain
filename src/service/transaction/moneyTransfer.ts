@@ -118,20 +118,21 @@ function authorizeAccount<T extends factory.accountType>(params: {
         transaction: TransactionRepo;
     }) => {
         const transaction = params.transaction;
-        const amount = transaction.object.amount;
-        const fromLocation = transaction.object.fromLocation;
-        const toLocation = transaction.object.toLocation;
+        // const amount = transaction.object.amount;
 
-        if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+        if (transaction.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
+            const toLocation
+                = <factory.transaction.moneyTransfer.IToLocation<T, factory.pecorino.account.TypeOf.Account>>transaction.object.toLocation;
+
             // 転送取引
             await AccountService.authorize({
                 project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                 agent: { id: transaction.agent.id },
                 object: {
-                    amount: amount,
+                    amount: transaction.object.amount,
                     typeOf: factory.paymentMethodType.Account,
-                    fromAccount: fromLocation,
-                    toAccount: <factory.transaction.moneyTransfer.IToLocation<T, factory.pecorino.account.TypeOf.Account>>toLocation,
+                    fromAccount: transaction.object.fromLocation,
+                    toAccount: toLocation,
                     notes: transaction.object.description
                 },
                 purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -142,9 +143,9 @@ function authorizeAccount<T extends factory.accountType>(params: {
                 project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                 agent: { id: transaction.agent.id },
                 object: {
-                    amount: amount,
+                    amount: transaction.object.amount,
                     typeOf: factory.paymentMethodType.Account,
-                    fromAccount: fromLocation,
+                    fromAccount: transaction.object.fromLocation,
                     notes: transaction.object.description
                 },
                 purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -182,9 +183,10 @@ function fixFromLocation<T extends factory.accountType, T2 extends factory.trans
             }
 
             fromLocation = {
-                typeOf: fromLocation.typeOf,
-                accountNumber: fromLocation.accountNumber,
-                accountType: fromLocation.accountType
+                typeOf: account.typeOf,
+                accountNumber: account.accountNumber,
+                accountType: account.accountType,
+                name: account.name
             };
         } else {
             throw new factory.errors.Argument('fromLocation', `location type must be ${factory.pecorino.account.TypeOf.Account}`);
@@ -224,15 +226,16 @@ function fixToLocation<T extends factory.accountType, T2 extends factory.transac
             }
 
             toLocation = <any>{
-                typeOf: toLocation.typeOf,
-                accountNumber: (<any>toLocation).accountNumber,
-                accountType: (<any>toLocation).accountType
+                typeOf: account.typeOf,
+                accountNumber: (<any>account).accountNumber,
+                accountType: (<any>account).accountType,
+                name: account.name
             };
         } else {
             toLocation = <any>{
                 typeOf: toLocation.typeOf,
-                id: (<any>toLocation).id,
-                name: toLocation.name
+                id: (typeof toLocation.id === 'string') ? toLocation.id : '',
+                name: (typeof toLocation.name === 'string') ? toLocation.name : ''
             };
         }
 

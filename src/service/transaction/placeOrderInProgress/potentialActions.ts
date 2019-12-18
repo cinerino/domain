@@ -702,6 +702,7 @@ async function createMoneyTransferActions(params: {
                     pendingTransaction: actionResult.responseBody
                 },
                 agent: params.transaction.agent,
+                recipient: a.recipient,
                 amount: a.object.amount,
                 fromLocation: (paymentMethod !== undefined)
                     ? {
@@ -727,7 +728,10 @@ async function createMoneyTransferActions(params: {
                     price: params.order.price,
                     priceCurrency: params.order.priceCurrency,
                     orderDate: params.order.orderDate
-                }
+                },
+                ...(typeof actionResult.responseBody.object.description === 'string')
+                    ? { description: actionResult.responseBody.object.description }
+                    : {}
             });
         }
     });
