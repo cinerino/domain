@@ -178,19 +178,16 @@ export function voidTransaction<T extends factory.accountType>(params: factory.t
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined
-            || project.settings.pecorino === undefined) {
+        if (project.settings === undefined || project.settings.pecorino === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
+        let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
-            const transaction = await repos.transaction.findInProgressById({
+            transaction = await repos.transaction.findInProgressById({
                 typeOf: params.purpose.typeOf,
                 id: params.purpose.id
             });
-            if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('Transaction not yours');
-            }
         }
 
         let authorizeActions: factory.action.authorize.offer.moneyTransfer.IAction<T>[];
@@ -198,6 +195,14 @@ export function voidTransaction<T extends factory.accountType>(params: factory.t
         if (typeof params.id === 'string') {
             const authorizeAction = <factory.action.authorize.offer.moneyTransfer.IAction<T>>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+
+            // 取引内のアクションかどうか確認
+            if (transaction !== undefined) {
+                if (authorizeAction.purpose.typeOf !== transaction.typeOf || authorizeAction.purpose.id !== transaction.id) {
+                    throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+                }
+            }
+
             authorizeActions = [authorizeAction];
         } else {
             authorizeActions = <factory.action.authorize.offer.moneyTransfer.IAction<T>[]>

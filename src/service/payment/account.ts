@@ -256,78 +256,103 @@ async function processAccountTransaction<T extends factory.accountType>(params: 
 /**
  * 口座承認取消
  */
-export function voidTransaction(params: {
-    project: factory.project.IProject;
-    agent: { id: string };
-    id: string;
-    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}) {
+export function voidTransaction<T extends factory.accountType>(
+    params: factory.task.IData<factory.taskName.CancelAccount>
+) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (project.settings.pecorino === undefined) {
+        if (project.settings === undefined || project.settings.pecorino === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        // 進行中取引存在確認
-        const transaction = await repos.transaction.findInProgressById({
-            typeOf: params.purpose.typeOf,
-            id: params.purpose.id
-        });
+        const pecorinoSettings = project.settings.pecorino;
 
-        // 取引内のアクションかどうか確認
-        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
-            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
+        if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
+            transaction = await repos.transaction.findInProgressById({
+                typeOf: params.purpose.typeOf,
+                id: params.purpose.id
+            });
         }
 
-        // まずアクションをキャンセル
-        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        const actionResult = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>action.result;
-        const pendingTransaction = actionResult.pendingTransaction;
+        let authorizeActions: factory.action.authorize.paymentMethod.account.IAction<T>[];
 
-        // Pecorinoで取消中止実行
-        switch (pendingTransaction.typeOf) {
-            case pecorinoapi.factory.transactionType.Deposit:
-                const depositService = new pecorinoapi.service.transaction.Deposit({
-                    endpoint: project.settings.pecorino.endpoint,
-                    auth: pecorinoAuthClient
-                });
-                await depositService.cancel({ id: pendingTransaction.id });
+        if (typeof params.id === 'string') {
+            const authorizeAction = <factory.action.authorize.paymentMethod.account.IAction<T>>
+                await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
-                break;
+            // 取引内のアクションかどうか確認
+            if (transaction !== undefined) {
+                if (authorizeAction.purpose.typeOf !== transaction.typeOf || authorizeAction.purpose.id !== transaction.id) {
+                    throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+                }
+            }
 
-            case pecorinoapi.factory.transactionType.Transfer:
-                const transferService = new pecorinoapi.service.transaction.Transfer({
-                    endpoint: project.settings.pecorino.endpoint,
-                    auth: pecorinoAuthClient
-                });
-                await transferService.cancel({ id: pendingTransaction.id });
+            authorizeActions = [authorizeAction];
+        } else {
+            authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<T>[]>
+                await repos.action.searchByPurpose({
+                    typeOf: factory.actionType.AuthorizeAction,
+                    purpose: {
+                        typeOf: params.purpose.typeOf,
+                        id: params.purpose.id
+                    }
+                })
+                    .then((actions) => actions
+                        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+                    );
+        }
 
-                break;
-
-            case pecorinoapi.factory.transactionType.Withdraw:
-                const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                    endpoint: project.settings.pecorino.endpoint,
-                    auth: pecorinoAuthClient
-                });
-                await withdrawService.cancel({ id: pendingTransaction.id });
-
-                break;
+        await Promise.all(authorizeActions.map(async (action) => {
+            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
 
             // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            default:
-                throw new factory.errors.NotImplemented(
-                    `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                );
-        }
+            /* istanbul ignore else */
+            if (action.result !== undefined) {
+                const pendingTransaction = action.result.pendingTransaction;
+
+                // アクションステータスに関係なく取消処理実行
+                switch (action.result.pendingTransaction.typeOf) {
+                    case pecorinoapi.factory.transactionType.Deposit:
+                        const depositService = new pecorinoapi.service.transaction.Deposit({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await depositService.cancel({ id: pendingTransaction.id });
+
+                        break;
+
+                    case pecorinoapi.factory.transactionType.Withdraw:
+                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await withdrawService.cancel({ id: pendingTransaction.id });
+
+                        break;
+
+                    case pecorinoapi.factory.transactionType.Transfer:
+                        const transferService = new pecorinoapi.service.transaction.Transfer({
+                            endpoint: pecorinoSettings.endpoint,
+                            auth: pecorinoAuthClient
+                        });
+                        await transferService.cancel({ id: pendingTransaction.id });
+
+                        break;
+
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore next */
+                    default:
+                        throw new factory.errors.NotImplemented(
+                            `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
+                        );
+                }
+            }
+        }));
     };
 }
 
@@ -408,71 +433,6 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         // アクション完了
         const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-    };
-}
-
-/**
- * 口座オーソリ取消
- */
-export function cancelAccountAuth(params: factory.task.IData<factory.taskName.CancelAccount>) {
-    return async (repos: {
-        action: ActionRepo;
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined
-            || project.settings.pecorino === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        const pecorinoSettings = project.settings.pecorino;
-
-        // 口座承認アクションを取得
-        const authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
-            await repos.action.searchByPurpose({
-                typeOf: factory.actionType.AuthorizeAction,
-                purpose: {
-                    typeOf: params.purpose.typeOf,
-                    id: params.purpose.id
-                }
-            })
-                .then((actions) => actions
-                    .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-                );
-        await Promise.all(authorizeActions.map(async (action) => {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (action.result !== undefined) {
-                // アクションステータスに関係なく取消処理実行
-                switch (action.result.pendingTransaction.typeOf) {
-                    case pecorinoapi.factory.transactionType.Withdraw:
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await withdrawService.cancel(action.result.pendingTransaction);
-
-                        break;
-
-                    case pecorinoapi.factory.transactionType.Transfer:
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await transferService.cancel(action.result.pendingTransaction);
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `transaction type '${(<any>action.result.pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
-
-                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
-            }
-        }));
     };
 }
 

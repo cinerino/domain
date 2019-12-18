@@ -1,6 +1,8 @@
 /**
  * 注文返品取引サービス
  */
+import * as moment from 'moment';
+
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
@@ -20,11 +22,13 @@ export type IStartOperation<T> = (repos: {
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
-export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
+
 export type ITaskAndTransactionOperation<T> = (repos: {
+    project: ProjectRepo;
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
 export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 /**
@@ -304,45 +308,34 @@ export function validateRequest() {
 }
 
 /**
- * 返品取引のタスクをエクスポートする
- */
-export function exportTasks(params: {
-    project?: factory.project.IProject;
-    status: factory.transactionStatusType;
-}) {
-    return async (repos: {
-        task: TaskRepo;
-        transaction: TransactionRepo;
-    }) => {
-        const transaction = await repos.transaction.startExportTasks({
-            project: params.project,
-            typeOf: factory.transactionType.ReturnOrder,
-            status: params.status
-        });
-        if (transaction === null) {
-            return;
-        }
-
-        // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        const tasks = await exportTasksById(transaction)(repos);
-        await repos.transaction.setTasksExportedById({ id: transaction.id });
-
-        return tasks;
-    };
-}
-
-/**
  * 取引のタスクを出力します
  * 複数タスクが生成されます
  * この関数では、取引のタスクエクスポートステータスは見ません
  */
-export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
+export function exportTasksById(params: {
+    id: string;
+    /**
+     * タスク実行日時バッファ
+     */
+    runsTasksAfterInSeconds?: number;
+}): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {
+        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
+
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // タスク実行日時バッファの指定があれば調整
+        let taskRunsAt = new Date();
+        if (typeof params.runsTasksAfterInSeconds === 'number') {
+            taskRunsAt = moment(taskRunsAt)
+                .add(params.runsTasksAfterInSeconds, 'seconds')
+                .toDate();
+        }
+
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
                 // 注文返品タスク
@@ -350,7 +343,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                     project: transaction.project,
                     name: factory.taskName.ReturnOrder,
                     status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],

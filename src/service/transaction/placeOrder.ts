@@ -19,42 +19,6 @@ export type ITaskAndTransactionOperation<T> = (repos: {
 }) => Promise<T>;
 
 /**
- * ひとつの取引のタスクをエクスポートする
- */
-export function exportTasks(params: {
-    project?: factory.project.IProject;
-    status: factory.transactionStatusType;
-    /**
-     * タスク実行日時バッファ
-     */
-    runsTasksAfterInSeconds?: number;
-}) {
-    return async (repos: {
-        project: ProjectRepo;
-        task: TaskRepo;
-        transaction: TransactionRepo;
-    }) => {
-        const transaction = await repos.transaction.startExportTasks({
-            project: params.project,
-            typeOf: factory.transactionType.PlaceOrder,
-            status: params.status
-        });
-        if (transaction === null) {
-            return;
-        }
-
-        // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        const tasks = await exportTasksById({
-            id: transaction.id,
-            runsTasksAfterInSeconds: params.runsTasksAfterInSeconds
-        })(repos);
-        await repos.transaction.setTasksExportedById({ id: transaction.id });
-
-        return tasks;
-    };
-}
-
-/**
  * 取引のタスクを出力します
  */
 export function exportTasksById(params: {

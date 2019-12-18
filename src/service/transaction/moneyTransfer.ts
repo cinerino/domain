@@ -23,10 +23,13 @@ export type IStartOperation<T> = (repos: {
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
 export type ITaskAndTransactionOperation<T> = (repos: {
+    project: ProjectRepo;
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
 export type IConfirmOperation<T> = (repos: {
     action: ActionRepo;
     transaction: TransactionRepo;
@@ -316,44 +319,20 @@ function searchAuthorizeActions(params: {
 }
 
 /**
- * ひとつの取引のタスクをエクスポートする
- */
-export function exportTasks(params: {
-    project?: factory.project.IProject;
-    status: factory.transactionStatusType;
-}) {
-    return async (repos: {
-        task: TaskRepo;
-        transaction: TransactionRepo;
-    }) => {
-        const transaction = await repos.transaction.startExportTasks({
-            project: params.project,
-            typeOf: factory.transactionType.MoneyTransfer,
-            status: params.status
-        });
-        if (transaction === null) {
-            return;
-        }
-
-        // 失敗してもここでは戻さない(RUNNINGのまま待機)
-        const tasks = await exportTasksById(transaction)(repos);
-        await repos.transaction.setTasksExportedById({ id: transaction.id });
-
-        return tasks;
-    };
-}
-
-/**
  * 取引のタスク出力
  */
-export function exportTasksById(params: { id: string }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
-    // tslint:disable-next-line:max-func-body-length
+export function exportTasksById(params: {
+    id: string;
+    /**
+     * タスク実行日時バッファ
+     */
+    runsTasksAfterInSeconds?: number;
+}): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {
+        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        const now = new Date();
-
         const transaction = await repos.transaction.findById({
             typeOf: factory.transactionType.MoneyTransfer,
             id: params.id
@@ -361,6 +340,14 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
         const potentialActions = transaction.potentialActions;
 
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // タスク実行日時バッファの指定があれば調整
+        let taskRunsAt = new Date();
+        if (typeof params.runsTasksAfterInSeconds === 'number') {
+            taskRunsAt = moment(taskRunsAt)
+                .add(params.runsTasksAfterInSeconds, 'seconds')
+                .toDate();
+        }
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
@@ -375,7 +362,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                                 project: transaction.project,
                                 name: <factory.taskName.MoneyTransfer>factory.taskName.MoneyTransfer,
                                 status: factory.taskStatus.Ready,
-                                runsAt: now, // なるはやで実行
+                                runsAt: taskRunsAt,
                                 remainingNumberOfTries: 10,
                                 numberOfTried: 0,
                                 executionResults: [],
@@ -389,39 +376,11 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
 
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
-                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                    name: factory.taskName.CancelCreditCard,
-                    status: factory.taskStatus.Ready,
-                    runsAt: now,
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                    }
-                };
-
                 const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
                     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                     name: factory.taskName.CancelAccount,
                     status: factory.taskStatus.Ready,
-                    runsAt: now,
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                    }
-                };
-
-                const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
-                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                    name: factory.taskName.VoidMoneyTransfer,
-                    status: factory.taskStatus.Ready,
-                    runsAt: now,
+                    runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
@@ -432,9 +391,7 @@ export function exportTasksById(params: { id: string }): ITaskAndTransactionOper
                 };
 
                 taskAttributes.push(
-                    cancelCreditCardTaskAttributes,
-                    cancelAccountTaskAttributes,
-                    voidMoneyTransferTaskAttributes
+                    cancelAccountTaskAttributes
                 );
 
                 break;
