@@ -58,8 +58,7 @@ describe('exportTasks()', () => {
             .resolves();
 
         const result = await domain.service.transaction.exportTasks({
-            status: status,
-            typeOf: domain.factory.transactionType.PlaceOrder
+            status: status
         })({
             project: projectRepo,
             task: taskRepo,
@@ -91,8 +90,7 @@ describe('exportTasks()', () => {
             .never();
 
         const result = await domain.service.transaction.exportTasks({
-            status: status,
-            typeOf: domain.factory.transactionType.PlaceOrder
+            status: status
         })({
             project: projectRepo,
             task: taskRepo,
