@@ -27,7 +27,7 @@ export function exportTasks<T extends factory.transactionType>(params: {
      */
     runsTasksAfterInSeconds?: number;
     status: factory.transactionStatusType;
-    typeOf: T;
+    typeOf?: { $in: T[] };
 }) {
     return async (repos: {
         project: ProjectRepo;

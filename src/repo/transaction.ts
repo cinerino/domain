@@ -406,7 +406,7 @@ export class MongoRepository {
      */
     public async startExportTasks<T extends factory.transactionType>(params: {
         project?: { id: string };
-        typeOf: T;
+        typeOf?: { $in: T[] };
         status: factory.transactionStatusType;
     }): Promise<factory.transaction.ITransaction<T> | null> {
         return this.transactionModel.findOneAndUpdate(
@@ -418,7 +418,8 @@ export class MongoRepository {
                             $eq: params.project.id
                         }
                     } : undefined,
-                typeOf: params.typeOf,
+                ...(params.typeOf !== undefined && params.typeOf !== null && Array.isArray(params.typeOf.$in))
+                    ? { typeOf: { $in: params.typeOf.$in } } : undefined,
                 status: params.status,
                 tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
             },
