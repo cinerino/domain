@@ -70,7 +70,7 @@ export function updateAgent(params: {
         };
 
         await repos.transaction.updateAgent({
-            typeOf: factory.transactionType.PlaceOrder,
+            typeOf: params.typeOf,
             id: params.id,
             agent: newAgent
         });
