@@ -133,33 +133,37 @@ async function processStartDepositTransaction<T extends factory.accountType>(par
             auth: pecorinoAuthClient
         });
 
+        const description = `for ${params.transaction.typeOf} Transaction ${params.transaction.id}`;
+
+        // 最大1ヵ月のオーソリ
+        const expires = moment()
+            .add(1, 'month')
+            .toDate();
+
         requestBody = {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: pecorinoapi.factory.transactionType.Deposit,
             agent: {
                 typeOf: params.transaction.agent.typeOf,
-                name: params.transaction.agent.id,
-                ...{
-                    identifier: [
-                        { name: 'transaction', value: params.transaction.id },
-                        {
-                            name: 'transactionExpires',
-                            value: moment(params.transaction.expires)
-                                .toISOString()
-                        }
-                    ]
-                }
+                id: params.transaction.agent.id,
+                name: (typeof params.transaction.agent.name === 'string')
+                    ? params.transaction.agent.name
+                    : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
             },
             object: {
                 amount: params.object.amount,
-                // fromLocation?: IAnonymousLocation;
-                toLocation: params.object.toLocation
-                // description?: string;
+                fromLocation: {
+                    typeOf: params.transaction.agent.typeOf,
+                    id: params.transaction.agent.id,
+                    name: (typeof params.transaction.agent.name === 'string')
+                        ? params.transaction.agent.name
+                        : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
+                },
+                toLocation: params.object.toLocation,
+                description: description
             },
             recipient: params.recipient,
-            expires: moment(params.transaction.expires)
-                .add(1, 'month')
-                .toDate() // 余裕を持って
+            expires: expires
         };
 
         responseBody = await depositService.start(requestBody);
