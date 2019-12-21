@@ -26,6 +26,8 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
             }
         }
 
+        const fromLocation = <factory.action.transfer.moneyTransfer.IAccount<T>>params.transaction.object.fromLocation;
+
         return {
             project: params.transaction.project,
             typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
@@ -36,7 +38,7 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
             agent: a.agent,
             recipient: a.recipient,
             amount: a.object.amount,
-            fromLocation: params.transaction.object.fromLocation,
+            fromLocation: fromLocation,
             toLocation: params.transaction.object.toLocation,
             purpose: {
                 typeOf: params.transaction.typeOf,

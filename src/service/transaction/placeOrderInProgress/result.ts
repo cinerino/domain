@@ -5,7 +5,7 @@ import * as factory from '../../../factory';
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.moneyTransfer.IAction<factory.accountType>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<factory.accountType>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
@@ -353,14 +353,14 @@ function createProgramMembershipAcceptedOffers(params: {
 function createMoneyTransferAcceptedOffers(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     seller: factory.order.ISeller;
-}): factory.order.IAcceptedOffer<factory.order.IMoneyTransfer<factory.accountType>>[] {
+}): factory.order.IAcceptedOffer<factory.order.IMonetaryAmount>[] {
     // 通貨転送承認アクション
     const authorizeMoneyTansferActions = <IAuthorizeMoneyTransferOffer[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
 
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IMoneyTransfer<factory.accountType>>[] = [];
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IMonetaryAmount>[] = [];
 
     authorizeMoneyTansferActions.forEach((authorizeMoneyTansferAction) => {
         if (authorizeMoneyTansferAction.result === undefined) {
@@ -368,29 +368,34 @@ function createMoneyTransferAcceptedOffers(params: {
         }
 
         // let responseBody = authorizeMoneyTansferAction.result.responseBody;
+        const pendingTransaction = authorizeMoneyTansferAction.object.pendingTransaction;
+        if (pendingTransaction !== undefined) {
+            const accountType = pendingTransaction.object.toLocation.accountType;
+            const price = (accountType === factory.accountType.Coin)
+                ? pendingTransaction.object.amount
+                : undefined;
 
-        const price = (authorizeMoneyTansferAction.object.toLocation.accountType === factory.accountType.Coin)
-            ? authorizeMoneyTansferAction.object.amount
-            : undefined;
-
-        acceptedOffers.push({
-            typeOf: 'Offer',
-            // id: '',
-            // name: '',
-            itemOffered: {
-                typeOf: authorizeMoneyTansferAction.object.typeOf,
-                amount: authorizeMoneyTansferAction.object.amount,
-                toLocation: authorizeMoneyTansferAction.object.toLocation
-            },
-            price: price,
-            // priceSpecification: requestedOffer.priceSpecification,
-            priceCurrency: factory.priceCurrency.JPY,
-            seller: {
-                typeOf: params.seller.typeOf,
-                name: params.seller.name
-            }
-        });
-
+            acceptedOffers.push({
+                typeOf: 'Offer',
+                // id: '',
+                // name: '',
+                itemOffered: {
+                    typeOf: 'MonetaryAmount',
+                    value: authorizeMoneyTansferAction.object.itemOffered.value,
+                    currency: accountType
+                    // typeOf: authorizeMoneyTansferAction.object.typeOf,
+                    // amount: authorizeMoneyTansferAction.object.amount,
+                    // toLocation: authorizeMoneyTansferAction.object.toLocation
+                },
+                price: price,
+                // priceSpecification: requestedOffer.priceSpecification,
+                priceCurrency: factory.priceCurrency.JPY,
+                seller: {
+                    typeOf: params.seller.typeOf,
+                    name: params.seller.name
+                }
+            });
+        }
     });
 
     return acceptedOffers;

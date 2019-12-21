@@ -7,7 +7,7 @@ import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.moneyTransfer.IAction<factory.accountType>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<factory.accountType>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
@@ -693,8 +693,9 @@ async function createMoneyTransferActions(params: {
     const paymentMethod = params.order.paymentMethods[0];
     authorizeMoneyTransferActions.forEach((a) => {
         const actionResult = a.result;
+        const pendingTransaction = a.object.pendingTransaction;
 
-        if (actionResult !== undefined) {
+        if (actionResult !== undefined && pendingTransaction !== undefined) {
             moneyTransferActions.push({
                 project: params.transaction.project,
                 typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
@@ -703,7 +704,7 @@ async function createMoneyTransferActions(params: {
                 },
                 agent: params.transaction.agent,
                 recipient: a.recipient,
-                amount: a.object.amount,
+                amount: Number(a.object.itemOffered.value),
                 fromLocation: (paymentMethod !== undefined)
                     ? {
                         accountId: paymentMethod.accountId,
@@ -717,7 +718,7 @@ async function createMoneyTransferActions(params: {
                         id: params.transaction.agent.id,
                         name: params.transaction.agent.name
                     },
-                toLocation: a.object.toLocation,
+                toLocation: pendingTransaction.object.toLocation,
                 purpose: {
                     project: params.order.project,
                     typeOf: params.order.typeOf,

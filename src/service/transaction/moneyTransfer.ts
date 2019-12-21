@@ -120,6 +120,8 @@ function authorizeAccount<T extends factory.accountType>(params: {
         const transaction = params.transaction;
         // const amount = transaction.object.amount;
 
+        const fromLocation = <factory.action.transfer.moneyTransfer.IAccount<T>>transaction.object.fromLocation;
+
         if (transaction.object.toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
             const toLocation
                 = <factory.transaction.moneyTransfer.IToLocation<T, factory.pecorino.account.TypeOf.Account>>transaction.object.toLocation;
@@ -131,7 +133,7 @@ function authorizeAccount<T extends factory.accountType>(params: {
                 object: {
                     amount: transaction.object.amount,
                     typeOf: factory.paymentMethodType.Account,
-                    fromAccount: transaction.object.fromLocation,
+                    fromAccount: fromLocation,
                     toAccount: toLocation,
                     notes: transaction.object.description
                 },
@@ -145,7 +147,7 @@ function authorizeAccount<T extends factory.accountType>(params: {
                 object: {
                     amount: transaction.object.amount,
                     typeOf: factory.paymentMethodType.Account,
-                    fromAccount: transaction.object.fromLocation,
+                    fromAccount: fromLocation,
                     notes: transaction.object.description
                 },
                 purpose: { typeOf: transaction.typeOf, id: transaction.id }
@@ -160,10 +162,10 @@ function fixFromLocation<T extends factory.accountType, T2 extends factory.trans
     return async (repos: {
         accountService: pecorino.service.Account;
     }): Promise<factory.transaction.moneyTransfer.IFromLocation<T>> => {
-        let fromLocation: factory.transaction.moneyTransfer.IFromLocation<T> = params.object.fromLocation;
+        let fromLocation = <factory.action.transfer.moneyTransfer.IAccount<T>>params.object.fromLocation;
 
         if (fromLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
-            const fromLocationObject = params.object.fromLocation;
+            const fromLocationObject = fromLocation;
             if (fromLocationObject.accountType !== factory.accountType.Coin) {
                 throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
             }

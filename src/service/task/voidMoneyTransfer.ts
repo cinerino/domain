@@ -17,7 +17,7 @@ export function call(data: factory.task.IData<factory.taskName.VoidMoneyTransfer
         const projectRepo = new ProjectRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
 
-        await OfferService.moneyTransfer.voidTransaction(data)({
+        await OfferService.monetaryAmount.voidTransaction(data)({
             action: actionRepo,
             project: projectRepo,
             transaction: transactionRepo

@@ -154,7 +154,7 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
-            case factory.actionType.MoneyTransfer:
+            case 'MonetaryAmount':
                 // no op
                 break;
 

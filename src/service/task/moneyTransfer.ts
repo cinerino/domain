@@ -15,7 +15,7 @@ export function call(data: factory.task.IData<factory.taskName.MoneyTransfer>): 
         const actionRepo = new ActionRepo(settings.connection);
         const projectRepo = new ProjectRepo(settings.connection);
 
-        await OfferService.moneyTransfer.settleTransaction(data)({
+        await OfferService.monetaryAmount.settleTransaction(data)({
             action: actionRepo,
             project: projectRepo
         });

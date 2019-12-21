@@ -30,10 +30,10 @@ export type ICreateOperation<T> = (repos: {
 export function authorize<T extends factory.accountType>(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.offer.moneyTransfer.IObject<T>;
+    object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
     recipient: factory.pecorino.transaction.deposit.IRecipient;
-    purpose: factory.action.authorize.offer.moneyTransfer.IPurpose;
-}): ICreateOperation<factory.action.authorize.offer.moneyTransfer.IAction<T>> {
+    purpose: factory.action.authorize.offer.monetaryAmount.IPurpose;
+}): ICreateOperation<factory.action.authorize.offer.monetaryAmount.IAction<T>> {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -60,12 +60,20 @@ export function authorize<T extends factory.accountType>(params: {
         });
 
         // 承認アクションを開始
-        const actionAttributes: factory.action.authorize.offer.moneyTransfer.IAttributes<T> = {
+        const actionAttributes: factory.action.authorize.offer.monetaryAmount.IAttributes<T> = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
-                typeOf: factory.actionType.MoneyTransfer,
-                amount: params.object.amount,
+                typeOf: 'Offer',
+                itemOffered: params.object.itemOffered,
+                seller: {
+                    ...transaction.seller,
+                    name: transaction.seller.name.ja
+                },
+                price: params.object.itemOffered.value,
+                priceCurrency: factory.priceCurrency.JPY,
+                // typeOf: factory.actionType.MoneyTransfer,
+                // amount: params.object.amount,
                 toLocation: params.object.toLocation,
                 pendingTransaction: responseBody
             },
@@ -99,8 +107,8 @@ export function authorize<T extends factory.accountType>(params: {
             throw error;
         }
 
-        const result: factory.action.authorize.offer.moneyTransfer.IResult<T> = {
-            price: params.object.amount,
+        const result: factory.action.authorize.offer.monetaryAmount.IResult<T> = {
+            price: Number(params.object.itemOffered.value),
             priceCurrency: factory.priceCurrency.JPY,
             requestBody: requestBody,
             responseBody: responseBody
@@ -113,14 +121,14 @@ export function authorize<T extends factory.accountType>(params: {
 async function processStartDepositTransaction<T extends factory.accountType>(params: {
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-    object: factory.action.authorize.offer.moneyTransfer.IObject<T>;
+    object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
     recipient: factory.pecorino.transaction.deposit.IRecipient;
 }): Promise<{
     requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
-    responseBody: factory.action.authorize.offer.moneyTransfer.IResponseBody<T>;
+    responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody<T>;
 }> {
     let requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
-    let responseBody: factory.action.authorize.offer.moneyTransfer.IResponseBody<T>;
+    let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody<T>;
 
     if (params.project.settings === undefined
         || params.project.settings.pecorino === undefined) {
@@ -151,7 +159,7 @@ async function processStartDepositTransaction<T extends factory.accountType>(par
                     : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
             },
             object: {
-                amount: params.object.amount,
+                amount: Number(params.object.itemOffered.value),
                 fromLocation: {
                     typeOf: params.transaction.agent.typeOf,
                     id: params.transaction.agent.id,
@@ -194,10 +202,10 @@ export function voidTransaction<T extends factory.accountType>(params: factory.t
             });
         }
 
-        let authorizeActions: factory.action.authorize.offer.moneyTransfer.IAction<T>[];
+        let authorizeActions: factory.action.authorize.offer.monetaryAmount.IAction<T>[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.offer.moneyTransfer.IAction<T>>
+            const authorizeAction = <factory.action.authorize.offer.monetaryAmount.IAction<T>>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -209,7 +217,7 @@ export function voidTransaction<T extends factory.accountType>(params: factory.t
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.offer.moneyTransfer.IAction<T>[]>
+            authorizeActions = <factory.action.authorize.offer.monetaryAmount.IAction<T>[]>
                 await repos.action.searchByPurpose({
                     typeOf: factory.actionType.AuthorizeAction,
                     purpose: {
