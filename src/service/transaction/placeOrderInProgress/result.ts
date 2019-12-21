@@ -355,10 +355,10 @@ function createMoneyTransferAcceptedOffers(params: {
     seller: factory.order.ISeller;
 }): factory.order.IAcceptedOffer<factory.order.IMonetaryAmount>[] {
     // 通貨転送承認アクション
-    const authorizeMoneyTansferActions = <IAuthorizeMoneyTransferOffer[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
+    const authorizeMoneyTansferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === 'Offer')
+        .filter((a) => a.object.itemOffered !== undefined && a.object.itemOffered.typeOf === 'MonetaryAmount');
 
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IMonetaryAmount>[] = [];
 

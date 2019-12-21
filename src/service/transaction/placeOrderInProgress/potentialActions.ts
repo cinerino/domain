@@ -685,10 +685,10 @@ async function createMoneyTransferActions(params: {
 }): Promise<factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[]> {
     const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[] = [];
 
-    const authorizeMoneyTransferActions = <IAuthorizeMoneyTransferOffer[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer);
+    const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === 'Offer')
+        .filter((a) => a.object.itemOffered !== undefined && a.object.itemOffered.typeOf === 'MonetaryAmount');
 
     const paymentMethod = params.order.paymentMethods[0];
     authorizeMoneyTransferActions.forEach((a) => {

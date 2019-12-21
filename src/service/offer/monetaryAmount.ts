@@ -217,17 +217,15 @@ export function voidTransaction<T extends factory.accountType>(params: factory.t
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.offer.monetaryAmount.IAction<T>[]>
-                await repos.action.searchByPurpose({
-                    typeOf: factory.actionType.AuthorizeAction,
-                    purpose: {
-                        typeOf: params.purpose.typeOf,
-                        id: params.purpose.id
-                    }
-                })
-                    .then((actions) => actions
-                        .filter((a) => a.object.typeOf === factory.actionType.MoneyTransfer)
-                    );
+            authorizeActions = <factory.action.authorize.offer.monetaryAmount.IAction<T>[]>await repos.action.searchByPurpose({
+                typeOf: factory.actionType.AuthorizeAction,
+                purpose: {
+                    typeOf: params.purpose.typeOf,
+                    id: params.purpose.id
+                }
+            });
+            authorizeActions = authorizeActions.filter((a) => a.object.typeOf === 'Offer')
+                .filter((a) => a.object.itemOffered !== undefined && a.object.itemOffered.typeOf === 'MonetaryAmount');
         }
 
         const depositService = new pecorinoapi.service.transaction.Deposit({
