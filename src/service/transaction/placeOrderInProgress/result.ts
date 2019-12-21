@@ -382,10 +382,10 @@ function createMoneyTransferAcceptedOffers(params: {
                 itemOffered: {
                     typeOf: 'MonetaryAmount',
                     value: authorizeMoneyTansferAction.object.itemOffered.value,
-                    currency: accountType
-                    // typeOf: authorizeMoneyTansferAction.object.typeOf,
-                    // amount: authorizeMoneyTansferAction.object.amount,
-                    // toLocation: authorizeMoneyTansferAction.object.toLocation
+                    currency: accountType,
+                    ...{
+                        name: `${authorizeMoneyTansferAction.object.itemOffered.value} ${accountType}`
+                    }
                 },
                 price: price,
                 // priceSpecification: requestedOffer.priceSpecification,

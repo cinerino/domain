@@ -257,8 +257,9 @@ export function createOrderItems(params: {
             );
         } else {
             return util.format(
-                '%s %s %s',
+                '%s %s %s %s',
                 o.itemOffered.typeOf,
+                (typeof (<any>o.itemOffered).name === 'string') ? (<any>o.itemOffered).name : '',
                 (typeof o.price === 'number') ? String(o.price) : '',
                 o.priceCurrency
             );
