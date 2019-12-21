@@ -22,8 +22,6 @@ import * as TransactionService from './transaction';
 
 import * as factory from '../factory';
 
-// const RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH = `${__dirname}/../../emails/renewProgramMembership/text.pug`;
-
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
     seller: SellerRepo;
@@ -616,16 +614,6 @@ function processPlaceOrder(params: {
         if (!isNewRegister
             && emailInformUpdateProgrammembership !== undefined
             && params.potentialActions.order.potentialActions.sendOrder.potentialActions.sendEmailMessage.length === 0) {
-            // const template = await new Promise<string | undefined>((resolve) => {
-            //     // tslint:disable-next-line:non-literal-fs-path
-            //     fs.readFile(RENEW_PROGRAMMEMBERSHIP_TEMPLATE_PATH, { encoding: 'utf-8' }, (err, data) => {
-            //         if (err instanceof Error) {
-            //             resolve(undefined);
-            //         } else {
-            //             resolve(data);
-            //         }
-            //     });
-            // });
             const email: factory.creativeWork.message.email.ICustomization = {
                 about: `ProgramMembership Renewed [${project.id}]`,
                 toRecipient: { name: 'administrator', email: emailInformUpdateProgrammembership }

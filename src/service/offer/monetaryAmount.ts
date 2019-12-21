@@ -31,7 +31,6 @@ export function authorize<T extends factory.accountType>(params: {
     project: factory.project.IProject;
     agent: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
-    recipient: factory.pecorino.transaction.deposit.IRecipient;
     purpose: factory.action.authorize.offer.monetaryAmount.IPurpose;
 }): ICreateOperation<factory.action.authorize.offer.monetaryAmount.IAction<T>> {
     return async (repos: {
@@ -55,8 +54,7 @@ export function authorize<T extends factory.accountType>(params: {
         const { requestBody, responseBody } = await processStartDepositTransaction<T>({
             project: project,
             transaction: transaction,
-            object: params.object,
-            recipient: params.recipient
+            object: params.object
         });
 
         // 承認アクションを開始
@@ -122,7 +120,6 @@ async function processStartDepositTransaction<T extends factory.accountType>(par
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
     object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
-    recipient: factory.pecorino.transaction.deposit.IRecipient;
 }): Promise<{
     requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
     responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody<T>;
@@ -148,15 +145,14 @@ async function processStartDepositTransaction<T extends factory.accountType>(par
             .add(1, 'month')
             .toDate();
 
+        // 販売者が取引人に入金
         requestBody = {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: pecorinoapi.factory.transactionType.Deposit,
             agent: {
-                typeOf: params.transaction.agent.typeOf,
-                id: params.transaction.agent.id,
-                name: (typeof params.transaction.agent.name === 'string')
-                    ? params.transaction.agent.name
-                    : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
+                typeOf: params.transaction.seller.typeOf,
+                id: params.transaction.seller.id,
+                name: params.transaction.seller.name.ja
             },
             object: {
                 amount: Number(params.object.itemOffered.value),
@@ -170,7 +166,13 @@ async function processStartDepositTransaction<T extends factory.accountType>(par
                 toLocation: params.object.toLocation,
                 description: description
             },
-            recipient: params.recipient,
+            recipient: {
+                typeOf: params.transaction.agent.typeOf,
+                id: params.transaction.agent.id,
+                name: (typeof params.transaction.agent.name === 'string')
+                    ? params.transaction.agent.name
+                    : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
+            },
             expires: expires
         };
 
