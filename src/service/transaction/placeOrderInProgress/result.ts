@@ -383,9 +383,7 @@ function createMoneyTransferAcceptedOffers(params: {
                     typeOf: 'MonetaryAmount',
                     value: authorizeMoneyTansferAction.object.itemOffered.value,
                     currency: accountType,
-                    ...{
-                        name: `${authorizeMoneyTansferAction.object.itemOffered.value} ${accountType}`
-                    }
+                    name: `${authorizeMoneyTansferAction.object.itemOffered.value} ${accountType}`
                 },
                 price: price,
                 // priceSpecification: requestedOffer.priceSpecification,

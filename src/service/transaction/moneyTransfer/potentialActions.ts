@@ -37,7 +37,11 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
             },
             agent: a.agent,
             recipient: a.recipient,
-            amount: a.object.amount,
+            amount: {
+                typeOf: 'MonetaryAmount',
+                value: Number(a.object.amount),
+                currency: fromLocation.accountType
+            },
             fromLocation: fromLocation,
             toLocation: params.transaction.object.toLocation,
             purpose: {

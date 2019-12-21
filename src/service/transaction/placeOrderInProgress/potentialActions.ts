@@ -704,7 +704,11 @@ async function createMoneyTransferActions(params: {
                 },
                 agent: params.transaction.agent,
                 recipient: a.recipient,
-                amount: Number(a.object.itemOffered.value),
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: Number(a.object.itemOffered.value),
+                    currency: pendingTransaction.object.toLocation.accountType
+                },
                 fromLocation: (paymentMethod !== undefined)
                     ? {
                         accountId: paymentMethod.accountId,
