@@ -46,22 +46,6 @@ const potentialActionsSchema = new mongoose.Schema(
         strict: false
     }
 );
-const locationSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-const instrumentSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
 
 /**
  * アクションスキーマ
@@ -80,10 +64,10 @@ const schema = new mongoose.Schema(
         endDate: Date,
         purpose: purposeSchema,
         potentialActions: potentialActionsSchema,
-        amount: Number,
-        fromLocation: locationSchema,
-        toLocation: locationSchema,
-        instrument: instrumentSchema
+        amount: mongoose.SchemaTypes.Mixed,
+        fromLocation: mongoose.SchemaTypes.Mixed,
+        toLocation: mongoose.SchemaTypes.Mixed,
+        instrument: mongoose.SchemaTypes.Mixed
     },
     {
         collection: 'actions',
