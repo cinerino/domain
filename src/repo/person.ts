@@ -39,7 +39,7 @@ export class CognitoRepository {
         let additionalProperty: factory.person.IAdditionalProperty = [];
         if (Array.isArray(params.attributes)) {
             additionalProperty = params.attributes.map((a) => {
-                return { name: a.Name, value: a.Value };
+                return { name: a.Name, value: String(a.Value) };
             });
         }
 
