@@ -109,3 +109,46 @@ export function handleMvtkReserveError(error: any) {
 
     return handledError;
 }
+
+/**
+ * AWSエラーハンドリング
+ */
+export function handleAWSError(error: any) {
+    let handledError: Error = error;
+
+    const message = `${error.name}:${error.message}`;
+
+    switch (error.name) {
+        case 'InternalErrorException':
+            handledError = new errors.ServiceUnavailable(message);
+            break;
+
+        case 'MissingRequiredParameter':
+            handledError = new errors.ArgumentNull('AWSArgument', message);
+            break;
+
+        case 'InvalidParameterException':
+            handledError = new errors.Argument('AWSArgument', message);
+            break;
+
+        case 'NotAuthorizedException':
+            handledError = new errors.Forbidden(message);
+            break;
+
+        case 'TooManyRequestsException':
+            handledError = new errors.RateLimitExceeded(message);
+            break;
+
+        case 'ResourceNotFoundException':
+            handledError = new errors.NotFound('Resource', message);
+            break;
+
+        case 'UserNotFoundException':
+            handledError = new errors.NotFound('User', message);
+            break;
+
+        default:
+    }
+
+    return handledError;
+}
