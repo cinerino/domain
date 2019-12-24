@@ -110,26 +110,26 @@ schema.index(
 );
 
 schema.index(
-    { typeOf: 1 },
-    { name: 'searchByTypeOf' }
+    { typeOf: 1, startDate: 1 },
+    { name: 'searchByTypeOf-v2' }
 );
 schema.index(
-    { identifier: 1 },
+    { identifier: 1, startDate: 1 },
     {
-        name: 'searchByIdentifier',
+        name: 'searchByIdentifier-v2',
         partialFilterExpression: {
             identifier: { $exists: true }
         }
     }
 );
 schema.index(
-    { name: 1 },
-    { name: 'searchByName' }
+    { name: 1, startDate: 1 },
+    { name: 'searchByName-v2' }
 );
 schema.index(
-    { doorTime: 1 },
+    { doorTime: 1, startDate: 1 },
     {
-        name: 'searchByDoorTime',
+        name: 'searchByDoorTime-v2',
         partialFilterExpression: {
             doorTime: { $exists: true }
         }
@@ -140,62 +140,62 @@ schema.index(
     { name: 'searchByStartDate' }
 );
 schema.index(
-    { endDate: 1 },
-    { name: 'searchByEndDate' }
+    { endDate: 1, startDate: 1 },
+    { name: 'searchByEndDate-v2' }
 );
 schema.index(
-    { eventStatus: 1 },
-    { name: 'searchByEventStatus' }
+    { eventStatus: 1, startDate: 1 },
+    { name: 'searchByEventStatus-v2' }
 );
 schema.index(
-    { 'superEvent.id': 1 },
+    { 'superEvent.id': 1, startDate: 1 },
     {
-        name: 'searchBySuperEventId',
+        name: 'searchBySuperEventId-v2',
         partialFilterExpression: {
             'superEvent.id': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'superEvent.location.branchCode': 1 },
+    { 'superEvent.location.branchCode': 1, startDate: 1 },
     {
-        name: 'searchBySuperEventLocationBranchCode',
+        name: 'searchBySuperEventLocationBranchCode-v2',
         partialFilterExpression: {
             'superEvent.location.branchCode': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'superEvent.location.identifier': 1 },
+    { 'superEvent.location.identifier': 1, startDate: 1 },
     {
-        name: 'searchBySuperEventLocationIdentifier',
+        name: 'searchBySuperEventLocationIdentifier-v2',
         partialFilterExpression: {
             'superEvent.location.identifier': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'superEvent.workPerformed.identifier': 1 },
+    { 'superEvent.workPerformed.identifier': 1, startDate: 1 },
     {
-        name: 'searchBySuperEventWorkPerformedIdentifier',
+        name: 'searchBySuperEventWorkPerformedIdentifier-v2',
         partialFilterExpression: {
             'superEvent.workPerformed.identifier': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'workPerformed.identifier': 1 },
+    { 'workPerformed.identifier': 1, startDate: 1 },
     {
-        name: 'searchByWorkPerformedIdentifier',
+        name: 'searchByWorkPerformedIdentifier-v2',
         partialFilterExpression: {
             'workPerformed.identifier': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'offers.availabilityEnds': 1 },
+    { 'offers.availabilityEnds': 1, startDate: 1 },
     {
-        name: 'searchByOffersAvailabilityEnds',
+        name: 'searchByOffersAvailabilityEnds-v2',
         partialFilterExpression: {
             'offers.availabilityEnds': { $exists: true }
         }
@@ -204,34 +204,34 @@ schema.index(
 schema.index(
     { 'offers.availabilityStarts': 1 },
     {
-        name: 'searchByOffersAvailabilityStarts',
+        name: 'searchByOffersAvailabilityStarts-v2',
         partialFilterExpression: {
             'offers.availabilityStarts': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'offers.validThrough': 1 },
+    { 'offers.validThrough': 1, startDate: 1 },
     {
-        name: 'searchByOffersValidThrough',
+        name: 'searchByOffersValidThrough-v2',
         partialFilterExpression: {
             'offers.validThrough': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'offers.validFrom': 1 },
+    { 'offers.validFrom': 1, startDate: 1 },
     {
-        name: 'searchByOffersValidFrom',
+        name: 'searchByOffersValidFrom-v2',
         partialFilterExpression: {
             'offers.validFrom': { $exists: true }
         }
     }
 );
 schema.index(
-    { 'offers.id': 1 },
+    { 'offers.id': 1, startDate: 1 },
     {
-        name: 'searchByOffersId',
+        name: 'searchByOffersId-v2',
         partialFilterExpression: {
             'offers.id': { $exists: true }
         }
