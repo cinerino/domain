@@ -2,14 +2,14 @@ import * as COA from '@motionpicture/coa-service';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 
-import { credentials } from '../../../../../../credentials';
+import { credentials } from '../../credentials';
 
-import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as EventRepo } from '../../../../../../repo/event';
-import { InMemoryRepository as OfferRepo } from '../../../../../../repo/offer';
-import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as EventRepo } from '../../repo/event';
+import { InMemoryRepository as OfferRepo } from '../../repo/offer';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as factory from '../../../../../../factory';
+import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -526,7 +526,7 @@ export function create(params: {
             debug('updTmpReserveSeat processed', updTmpReserveSeatResult);
         } catch (error) {
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
+                const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // no op

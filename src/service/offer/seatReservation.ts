@@ -2,20 +2,20 @@ import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment';
 
-import { credentials } from '../../../../../../credentials';
+import { credentials } from '../../credentials';
 
-import * as chevre from '../../../../../../chevre';
-import * as COA from '../../../../../../coa';
-import * as factory from '../../../../../../factory';
+import * as chevre from '../../chevre';
+import * as COA from '../../coa';
+import * as factory from '../../factory';
 
-import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as EventRepo } from '../../../../../../repo/event';
-import { MvtkRepository as MovieTicketRepo } from '../../../../../../repo/paymentMethod/movieTicket';
-import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
-import { MongoRepository as SellerRepo } from '../../../../../../repo/seller';
-import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as EventRepo } from '../../repo/event';
+import { MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as OfferService from '../../../../../offer';
+import * as OfferService from '../../service/offer';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,

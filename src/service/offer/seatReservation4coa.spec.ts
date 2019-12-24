@@ -5,7 +5,7 @@
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
-import * as domain from '../../../../../../index';
+import * as domain from '../../index';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
 
@@ -92,7 +92,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -184,7 +184,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -276,7 +276,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -381,7 +381,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -484,7 +484,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -576,7 +576,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -668,7 +668,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -757,7 +757,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -847,7 +847,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -929,7 +929,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -988,7 +988,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('updTmpReserveSeat')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1083,7 +1083,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1176,7 +1176,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1271,7 +1271,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1368,7 +1368,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1465,7 +1465,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1580,7 +1580,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('complete')
             .never();
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {
@@ -1699,7 +1699,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .once()
             .resolves(action);
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.seatReservation4coa.create({
+        const result = await domain.service.offer.seatReservation4coa.create({
             agent: agent,
             transaction: transaction,
             object: {

@@ -1,15 +1,11 @@
 /**
- * 会員プログラムオファー承認アクションサービス
+ * 会員プログラムオファーサービス
  */
-import * as createDebug from 'debug';
+import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProgramMembershipRepo } from '../../repo/programMembership';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as ProgramMembershipRepo } from '../../../../../../repo/programMembership';
-import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
-
-import * as factory from '../../../../../../factory';
-
-const debug = createDebug('cinerino-domain:service');
+import * as factory from '../../factory';
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
@@ -17,13 +13,11 @@ export type ICreateOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export function create(params: {
-    agentId: string;
-    transactionId: string;
-    /**
-     * 受け入れられた会員プログラムオファー
-     */
-    acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>;
+export function authorize(params: {
+    project: factory.project.IProject;
+    agent: { id: string };
+    object: factory.action.authorize.offer.programMembership.IObject;
+    purpose: factory.action.authorize.offer.programMembership.IPurpose;
 }): ICreateOperation<factory.action.authorize.offer.programMembership.IAction> {
     return async (repos: {
         action: ActionRepo;
@@ -31,18 +25,18 @@ export function create(params: {
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
         });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         // 会員プログラム検索
-        const programMemberships = await repos.programMembership.search({ id: { $eq: params.acceptedOffer.itemOffered.id } });
+        const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.id } });
         const programMembership = programMemberships.shift();
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -54,7 +48,7 @@ export function create(params: {
         if (programMembership.offers === undefined) {
             throw new factory.errors.NotFound('ProgramMembership.Offer');
         }
-        const acceptedOffer = programMembership.offers.find((o) => o.identifier === params.acceptedOffer.identifier);
+        const acceptedOffer = programMembership.offers.find((o) => o.identifier === params.object.identifier);
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (acceptedOffer === undefined) {
@@ -70,11 +64,10 @@ export function create(params: {
         // 何かしら会員プログラムへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
 
         // 承認アクションを開始
-        debug('starting authorize action of programMembership...');
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
-            object: params.acceptedOffer,
+            object: params.object,
             agent: transaction.seller,
             recipient: transaction.agent,
             purpose: {
@@ -87,23 +80,16 @@ export function create(params: {
         try {
             // 在庫確保？
         } catch (error) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next: ありえないフロー */
-            // actionにエラー結果を追加
             try {
-                const actionError = { ...error, ...{ message: error.message, name: error.name } };
+                const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
-                // 失敗したら仕方ない
+                // no op
             }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next: ありえないフロー */
             throw new factory.errors.ServiceUnavailable('Unexepected error occurred.');
         }
 
-        // アクションを完了
-        debug('ending authorize action...');
         const result: factory.action.authorize.offer.programMembership.IResult = {
             price: acceptedOffer.price,
             priceCurrency: acceptedOffer.priceCurrency
@@ -116,7 +102,7 @@ export function create(params: {
 /**
  * 承認アクションをキャンセルする
  */
-export function cancel(params: {
+export function voidTransaction(params: {
     agentId: string;
     transactionId: string;
     actionId: string;
@@ -143,6 +129,5 @@ export function cancel(params: {
         }
 
         action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
-        debug('action canceld.', action.id);
     };
 }

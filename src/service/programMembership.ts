@@ -2,7 +2,6 @@
  * 会員プログラムサービス
  */
 import * as GMO from '@motionpicture/gmo-service';
-// import * as fs from 'fs';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -17,6 +16,7 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
+import * as OfferService from './offer';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as TransactionService from './transaction';
 
@@ -549,10 +549,11 @@ function processPlaceOrder(params: {
         }
 
         // 会員プログラムオファー承認
-        await TransactionService.placeOrderInProgress.action.authorize.offer.programMembership.create({
-            agentId: customer.id,
-            transactionId: transaction.id,
-            acceptedOffer: acceptedOffer
+        await OfferService.programMembership.authorize({
+            project: { typeOf: project.typeOf, id: project.id },
+            agent: { id: customer.id },
+            object: acceptedOffer,
+            purpose: { typeOf: transaction.typeOf, id: transaction.id }
         })(repos);
 
         // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)

@@ -16,10 +16,6 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as AuthorizePointAwardActionService from './placeOrderInProgress/action/authorize/award/point';
 import * as AuthorizeMvtkDiscountActionService from './placeOrderInProgress/action/authorize/discount/mvtk';
-import * as ProgramMembershipAuthorizeActionService from './placeOrderInProgress/action/authorize/offer/programMembership';
-import * as AuthorizeSeatReservationActionService from './placeOrderInProgress/action/authorize/offer/seatReservation';
-import * as AuthorizeSeatReservation4coaActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4coa';
-import * as AuthorizeSeatReservation4tttsActionService from './placeOrderInProgress/action/authorize/offer/seatReservation4ttts';
 
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
 import { createOrder } from './placeOrderInProgress/result';
@@ -185,22 +181,6 @@ export namespace action {
             export import mvtk = AuthorizeMvtkDiscountActionService;
         }
         export namespace offer {
-            /**
-             * 会員プログラム承認アクションサービス
-             */
-            export import programMembership = ProgramMembershipAuthorizeActionService;
-            /**
-             * 座席予約承認アクションサービス
-             */
-            export import seatReservation = AuthorizeSeatReservationActionService;
-            /**
-             * 座席予約承認アクションサービス(連携先がCOA限定)
-             */
-            export import seatReservation4coa = AuthorizeSeatReservation4coaActionService;
-            /**
-             * 座席予約承認アクションサービス(ttts専用)
-             */
-            export import seatReservation4ttts = AuthorizeSeatReservation4tttsActionService;
         }
     }
 }

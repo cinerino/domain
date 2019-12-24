@@ -1,14 +1,14 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../../../../../repo/project';
-import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { credentials } from '../../../../../../credentials';
+import { credentials } from '../../credentials';
 
-import * as chevre from '../../../../../../chevre';
-import * as factory from '../../../../../../factory';
+import * as chevre from '../../chevre';
+import * as factory from '../../factory';
 
 const debug = createDebug('ttts-domain:service');
 

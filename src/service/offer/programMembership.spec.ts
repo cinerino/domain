@@ -5,7 +5,7 @@
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
-import * as domain from '../../../../../../index';
+import * as domain from '../../index';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
 
@@ -49,10 +49,10 @@ describe('会員プログラムオファーを承認する', () => {
             .once()
             .resolves({});
 
-        const result = await domain.service.transaction.placeOrderInProgress.action.authorize.offer.programMembership.create(<any>{
-            agentId: transaction.agent.id,
-            transactionId: transaction.id,
-            acceptedOffer: acceptedOffer
+        const result = await domain.service.offer.programMembership.authorize(<any>{
+            agent: { id: transaction.agent.id },
+            object: acceptedOffer,
+            purpose: { id: transaction.id }
         })({
             action: actionRepo,
             programMembership: programMembershipRepo,
