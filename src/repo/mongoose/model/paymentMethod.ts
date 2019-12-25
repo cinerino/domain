@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 
 const modelName = 'PaymentMethod';
 
-const safe = { j: true, w: 'majority', wtimeout: 10000 };
+const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 const serviceOutputSchema = new mongoose.Schema(
     {},
@@ -32,7 +32,7 @@ const schema = new mongoose.Schema(
         collection: 'paymentMethods',
         id: true,
         read: 'primaryPreferred',
-        safe: safe,
+        writeConcern: writeConcern,
         strict: false, // 今後、決済方法スキーマにどんなデータが入ってくるか未知数なので、あえて柔軟に
         useNestedStrict: true,
         timestamps: {

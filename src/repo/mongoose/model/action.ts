@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 
 const modelName = 'Action';
 
-const safe = { j: true, w: 'majority', wtimeout: 10000 };
+const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 const agentSchema = new mongoose.Schema(
     {},
@@ -73,7 +73,7 @@ const schema = new mongoose.Schema(
         collection: 'actions',
         id: true,
         read: 'primaryPreferred',
-        safe: safe,
+        writeConcern: writeConcern,
         strict: true,
         useNestedStrict: true,
         timestamps: {

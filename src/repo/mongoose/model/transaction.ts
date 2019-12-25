@@ -4,7 +4,7 @@ import * as factory from '../../../factory';
 
 const modelName = 'Transaction';
 
-const safe = { j: true, w: 'majority', wtimeout: 10000 };
+const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 const objectSchema = new mongoose.Schema(
     {},
@@ -94,7 +94,7 @@ const schema = new mongoose.Schema(
         collection: 'transactions',
         id: true,
         read: 'primaryPreferred',
-        safe: safe,
+        writeConcern: writeConcern,
         strict: true,
         useNestedStrict: true,
         timestamps: {

@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 
 const modelName = 'ProgramMembership';
 
-const safe = { j: true, w: 'majority', wtimeout: 10000 };
+const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 /**
  * 会員プログラムスキーマ
@@ -26,7 +26,7 @@ const schema = new mongoose.Schema(
         collection: 'programMemberships',
         id: true,
         read: 'primaryPreferred',
-        safe: safe,
+        writeConcern: writeConcern,
         strict: true,
         useNestedStrict: true,
         timestamps: {

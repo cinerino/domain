@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 
 const modelName = 'Project';
 
-const safe = { j: true, w: 'majority', wtimeout: 10000 };
+const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 /**
  * プロジェクトスキーマ
@@ -19,7 +19,7 @@ const schema = new mongoose.Schema(
         collection: 'projects',
         id: true,
         read: 'primaryPreferred',
-        safe: safe,
+        writeConcern: writeConcern,
         strict: false,
         useNestedStrict: true,
         timestamps: {

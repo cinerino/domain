@@ -82,7 +82,7 @@ describe('retry()', () => {
 
         const repository = new domain.repository.Task(mongoose.connection);
         sandbox.mock(repository.taskModel)
-            .expects('update')
+            .expects('updateMany')
             .once()
             .chain('exec')
             .resolves();

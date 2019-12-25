@@ -161,7 +161,7 @@ describe('makeExpired()', () => {
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
         const repository = new domain.repository.Transaction(mongoose.connection);
         sandbox.mock(repository.transactionModel)
-            .expects('update')
+            .expects('updateMany')
             .once()
             .chain('exec')
             .resolves();

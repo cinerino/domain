@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 
 const modelName = 'Task';
 
-const safe = { j: true, w: 'majority', wtimeout: 10000 };
+const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 const executionResultSchema = new mongoose.Schema(
     {},
@@ -40,7 +40,7 @@ const schema = new mongoose.Schema(
         collection: 'tasks',
         id: true,
         read: 'primaryPreferred',
-        safe: safe,
+        writeConcern: writeConcern,
         strict: true,
         useNestedStrict: true,
         timestamps: {

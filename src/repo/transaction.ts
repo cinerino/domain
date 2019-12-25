@@ -488,7 +488,7 @@ export class MongoRepository {
             .toDate();
 
         // ステータスと期限を見て更新
-        await this.transactionModel.update(
+        await this.transactionModel.updateMany(
             {
                 ...(params.project !== undefined)
                     ? {
@@ -503,8 +503,7 @@ export class MongoRepository {
             {
                 status: factory.transactionStatusType.Expired,
                 endDate: endDate
-            },
-            { multi: true }
+            }
         )
             .exec();
     }
