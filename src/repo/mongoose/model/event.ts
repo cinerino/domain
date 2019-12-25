@@ -202,7 +202,7 @@ schema.index(
     }
 );
 schema.index(
-    { 'offers.availabilityStarts': 1 },
+    { 'offers.availabilityStarts': 1, startDate: 1 },
     {
         name: 'searchByOffersAvailabilityStarts-v2',
         partialFilterExpression: {
