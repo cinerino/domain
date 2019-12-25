@@ -670,7 +670,7 @@ export function createScreeningEventSeriesFromCOA(params: {
             duration: moment.duration(params.filmFromCOA.showTime, 'm')
                 .toISOString(),
             contentRating: params.eirinKubuns.filter((kubun) => kubun.kubunCode === params.filmFromCOA.kbnEirin)[0],
-            typeOf: factory.creativeWorkType.Movie
+            typeOf: factory.chevre.creativeWorkType.Movie
         },
         duration: moment.duration(params.filmFromCOA.showTime, 'm')
             .toISOString(),

@@ -3,10 +3,7 @@ import { Connection, Model } from 'mongoose';
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/application';
 
-export interface IApplication {
-    typeOf: string;
-    id: string;
-}
+export import IApplication = factory.creativeWork.softwareApplication.webApplication.ICreativeWork;
 
 /**
  * アプリケーションリポジトリ
