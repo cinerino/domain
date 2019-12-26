@@ -1,0 +1,162 @@
+// tslint:disable:no-implicit-dependencies
+/**
+ * 口座サービステスト
+ */
+import * as mongoose from 'mongoose';
+import * as assert from 'power-assert';
+import * as redis from 'redis-mock';
+import * as sinon from 'sinon';
+import * as domain from '../index';
+
+let sandbox: sinon.SinonSandbox;
+let redisClient: redis.RedisClient;
+
+before(() => {
+    sandbox = sinon.createSandbox();
+    redisClient = redis.createClient();
+});
+
+describe('ポイント口座を開設する', () => {
+    beforeEach(() => {
+        sandbox.restore();
+    });
+
+    it('口座リポジトリが正常であれば開設できるはず', async () => {
+        const project = { id: 'id', settings: { pecorino: {} } };
+        const account = {};
+        const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
+        sandbox.mock(accountNumberRepo)
+            .expects('publish')
+            .once()
+            .resolves('accountNumber');
+        sandbox.mock(domain.pecorinoapi.service.Account.prototype)
+            .expects('open')
+            .once()
+            .resolves(account);
+
+        const result = await domain.service.account.openWithoutOwnershipInfo({
+            project: <any>project,
+            name: '',
+            accountType: <any>''
+        })({
+            accountNumber: accountNumberRepo,
+            project: projectRepo
+        });
+        assert.equal(typeof result, 'object');
+        sandbox.verify();
+    });
+
+    it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
+        const project = { id: 'id', settings: { pecorino: {} } };
+        const pecorinoRequestError = { name: 'PecorinoRequestError' };
+        const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
+        sandbox.mock(accountNumberRepo)
+            .expects('publish')
+            .once()
+            .resolves('accountNumber');
+        sandbox.mock(domain.pecorinoapi.service.Account.prototype)
+            .expects('open')
+            .once()
+            .rejects(pecorinoRequestError);
+
+        const result = await domain.service.account.openWithoutOwnershipInfo({
+            project: <any>project,
+            name: '',
+            accountType: <any>''
+        })({
+            accountNumber: accountNumberRepo,
+            project: projectRepo
+        })
+            .catch((err) => err);
+        assert(result instanceof domain.factory.errors.Cinerino);
+        sandbox.verify();
+    });
+});
+
+describe('ポイントを入金する', () => {
+    beforeEach(() => {
+        sandbox.restore();
+    });
+
+    it('Pecorinoサービスが正常であれば入金できるはず', async () => {
+        const project = { id: 'id', settings: { pecorino: {} } };
+        const depositTransaction = {};
+
+        const projectRepo = new domain.repository.Project(mongoose.connection);
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+            .expects('start')
+            .once()
+            .resolves(depositTransaction);
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+            .expects('confirm')
+            .once()
+            .resolves();
+
+        const result = await domain.service.account.deposit({
+            project: <any>project,
+            agent: <any>{},
+            object: {
+                amount: 0,
+                description: '',
+                toLocation: <any>{ accountNumber: '12345' }
+            },
+            recipient: <any>{}
+        })({
+            project: projectRepo
+        });
+        assert.equal(result, undefined);
+        sandbox.verify();
+    });
+
+    it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
+        const project = { id: 'id', settings: { pecorino: {} } };
+        const pecorinoRequestError = { name: 'PecorinoRequestError' };
+
+        const projectRepo = new domain.repository.Project(mongoose.connection);
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+            .expects('start')
+            .once()
+            .rejects(pecorinoRequestError);
+        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+            .expects('confirm')
+            .never();
+
+        const result = await domain.service.account.deposit({
+            project: <any>project,
+            agent: <any>{},
+            object: {
+                amount: 0,
+                description: '',
+                toLocation: <any>{ accountNumber: '12345' }
+            },
+            recipient: <any>{}
+        })({
+            project: projectRepo
+        })
+            .catch((err) => err);
+        assert(result instanceof domain.factory.errors.Cinerino);
+        sandbox.verify();
+    });
+});

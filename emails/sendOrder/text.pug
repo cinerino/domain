@@ -1,0 +1,22 @@
+| #{order.customer.familyName} #{order.customer.givenName} 様
+| ご注文商品をお届けしました。詳細は下記の通りです。
+| 
+| 注文番号: #{order.orderNumber}
+| 
+| 注文日時: #{order.orderDate}
+| 
+| 確認番号: #{order.confirmationNumber}
+| 
+| 商品:
+| #{orderItems}
+| 
+| 注文合計: #{order.price} #{order.priceCurrency}
+| 
+| またのご利用をお待ちしています。
+| 
+| このEメールアドレスは配信専用です。このメッセージに返信しないようお願いいたします。
+| ご不明な点がございましたら、下記番号までお問合わせください。
+| 
+| お問い合わせはこちら
+| #{order.seller.name}
+| TEL：#{order.seller.telephone}

@@ -1,0 +1,18 @@
+| #{order.customer.familyName} #{order.customer.givenName} 様
+| 下記購入について、返金処理が完了いたしました。
+| またのご利用、心よりお待ちしております。
+| 
+| [確認番号]
+| #{order.confirmationNumber}
+| 
+| [決済方法]
+| #{paymentMethods}
+| 
+| なお、このメールは、#{order.seller.name}の予約システムでチケットをご購入頂いた方にお送りしておりますが、
+| チケット購入に覚えのない方に届いております場合は、下記お問い合わせ先までご連絡ください。
+| ※なお、このメールアドレスは送信専用となっておりますので、ご返信頂けません。
+| ご不明な点がございましたら、下記番号までお問合わせください。
+| 
+| お問い合わせはこちら
+| #{order.seller.name}
+| TEL：#{order.seller.telephone}

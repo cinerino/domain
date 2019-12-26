@@ -1,0 +1,22 @@
+{
+    "check-coverage": true,
+    "lines": 10,
+    "statements": 10,
+    "functions": 10,
+    "branches": 10,
+    "extension": [
+        ".ts"
+    ],
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "**/*.spec.ts",
+        "src/service/util.ts"
+    ],
+    "reporter": [
+        "lcov",
+        "text-summary"
+    ],
+    "all": true
+}
