@@ -140,6 +140,15 @@ schema.index(
     }
 );
 schema.index(
+    { 'seller.typeOf': 1, orderDate: -1 },
+    {
+        name: 'searchBySellerTypeOf',
+        partialFilterExpression: {
+            'seller.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'seller.id': 1, orderDate: -1 },
     {
         name: 'searchOrdersBySellerAndOrderDate',
