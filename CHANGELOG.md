@@ -8,12 +8,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- 注文取引周辺サービスを追加。
-- 口座サービスを追加。
-- 予約サービスを追加。
-- 汎用的な口座決済サービスを追加。
-- コードサービスを追加。
-
 ### Changed
 
 ### Deprecated
@@ -23,3 +17,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v1.0.0 - 2019-12-26
+
+### Added
+
+- 口座サービスを追加
+- コードサービスを追
+- 配送サービスを追加
+- 通知サービスを追加
+- オファーサービスを追加
+- 決済サービスを追加
+- レポートサービスを追加
+- 予約サービスを追加
+- 取引サービスを追加
