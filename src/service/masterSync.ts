@@ -435,7 +435,7 @@ function cancelDeletedEvents(params: {
 /* istanbul ignore next */
 // tslint:disable-next-line:max-func-body-length
 export function createScreeningEventFromCOA(params: {
-    project: { typeOf: 'Project'; id: string };
+    project: { typeOf: factory.organizationType.Project; id: string };
     performanceFromCOA: COA.factory.master.IScheduleResult;
     screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
     superEvent: factory.event.screeningEventSeries.IEvent;
@@ -589,7 +589,7 @@ export function createScreeningEventFromCOA(params: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createScreeningEventSeriesFromCOA(params: {
-    project: { typeOf: 'Project'; id: string };
+    project: { typeOf: factory.organizationType.Project; id: string };
     filmFromCOA: COA.factory.master.ITitleResult;
     movieTheater: factory.chevre.place.movieTheater.IPlace;
     eirinKubuns: COA.factory.master.IKubunNameResult[];
@@ -656,7 +656,7 @@ export function createScreeningEventSeriesFromCOA(params: {
             typeOf: <factory.chevre.placeType.MovieTheater>params.movieTheater.typeOf
         },
         organizer: {
-            typeOf: factory.organizationType.MovieTheater,
+            typeOf: factory.chevre.organizationType.MovieTheater,
             identifier: params.movieTheater.id,
             name: params.movieTheater.name
         },
@@ -737,7 +737,7 @@ export function createScreeningEventSeriesId(params: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createMovieTheaterFromCOA(
-    project: { typeOf: 'Project'; id: string },
+    project: { typeOf: factory.organizationType.Project; id: string },
     theaterFromCOA: COA.factory.master.ITheaterResult,
     screensFromCOA: COA.factory.master.IScreenResult[]
 ): factory.chevre.place.movieTheater.IPlace {
@@ -767,7 +767,7 @@ export function createMovieTheaterFromCOA(
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createScreeningRoomFromCOA(
-    project: { typeOf: 'Project'; id: string },
+    project: { typeOf: factory.organizationType.Project; id: string },
     screenFromCOA: COA.factory.master.IScreenResult
 ): factory.chevre.place.movieTheater.IScreeningRoom {
     const sections: factory.chevre.place.movieTheater.IScreeningRoomSection[] = [];

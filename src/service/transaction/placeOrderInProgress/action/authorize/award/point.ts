@@ -136,7 +136,7 @@ async function processAuthorize(params: {
     });
 
     return depositService.start<factory.accountType.Point>({
-        project: { typeOf: 'Project', id: params.transaction.project.id },
+        project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
         typeOf: factory.pecorino.transactionType.Deposit,
         agent: {
             typeOf: params.transaction.seller.typeOf,

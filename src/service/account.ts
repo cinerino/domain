@@ -69,7 +69,7 @@ export function open<T extends factory.accountType>(params: {
                 auth: pecorinoAuthClient
             });
             const account = await accountService.open({
-                project: { typeOf: 'Project', id: project.id },
+                project: { typeOf: project.typeOf, id: project.id },
                 accountType: params.accountType,
                 accountNumber: accountNumber,
                 name: params.name
@@ -342,7 +342,7 @@ export function openWithoutOwnershipInfo<T extends factory.accountType>(params: 
                 auth: pecorinoAuthClient
             });
             account = await accountService.open({
-                project: { typeOf: 'Project', id: project.id },
+                project: { typeOf: project.typeOf, id: project.id },
                 accountType: params.accountType,
                 accountNumber: accountNumber,
                 name: params.name
@@ -382,7 +382,7 @@ export function deposit(params: {
                 auth: pecorinoAuthClient
             });
             const transaction = await depositService.start({
-                project: { typeOf: 'Project', id: project.id },
+                project: { typeOf: project.typeOf, id: project.id },
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
                     ...params.agent

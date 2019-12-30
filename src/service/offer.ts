@@ -218,7 +218,7 @@ async function searchEventOffers4COA(params: {
     const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
 
     const movieTheater = MasterSync.createMovieTheaterFromCOA(
-        event.project,
+        { typeOf: factory.organizationType.Project, id: event.project.id },
         await masterService.theater(coaInfo),
         await masterService.screen(coaInfo)
     );

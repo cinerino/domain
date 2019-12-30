@@ -95,7 +95,7 @@ export class MvtkRepository {
                             // tslint:disable-next-line:prefer-array-literal
                             [...Array(Number(ykknInfo.ykknKnshbtsmiNum))].forEach(() => {
                                 movieTickets.push({
-                                    project: { typeOf: params.screeningEvent.project.typeOf, id: params.screeningEvent.project.id },
+                                    project: { typeOf: factory.organizationType.Project, id: params.screeningEvent.project.id },
                                     typeOf: factory.paymentMethodType.MovieTicket,
                                     identifier: knyknrNoInfo.knyknrNo,
                                     accessCode: knyknrNoInfo.pinCd,
@@ -124,7 +124,7 @@ export class MvtkRepository {
                             // tslint:disable-next-line:prefer-array-literal
                             [...Array(Number(mkknInfo.mkknKnshbtsmiNum))].forEach(() => {
                                 movieTickets.push({
-                                    project: { typeOf: params.screeningEvent.project.typeOf, id: params.screeningEvent.project.id },
+                                    project: { typeOf: factory.organizationType.Project, id: params.screeningEvent.project.id },
                                     typeOf: factory.paymentMethodType.MovieTicket,
                                     identifier: knyknrNoInfo.knyknrNo,
                                     accessCode: knyknrNoInfo.pinCd,
