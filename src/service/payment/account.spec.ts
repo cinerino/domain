@@ -20,7 +20,7 @@ describe('service.payment.account.authorize()', () => {
 
     it('口座サービスを正常であればエラーにならないはず', async () => {
         const project = {
-            typeOf: 'Project',
+            typeOf: domain.factory.organizationType.Project,
             id: 'id',
             settings: { pecorino: {} }
         };
@@ -107,7 +107,7 @@ describe('service.payment.account.authorize()', () => {
 
     it('口座サービスでエラーが発生すればアクションにエラー結果が追加されるはず', async () => {
         const project = {
-            typeOf: 'Project',
+            typeOf: domain.factory.organizationType.Project,
             id: 'id',
             settings: { pecorino: {} }
         };

@@ -222,7 +222,7 @@ describe('importScreeningEvents()', () => {
             .once();
 
         const result = await MasterSyncService.importScreeningEvents({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             locationBranchCode: movieTheater.branchCode,
             importFrom: new Date(),
             importThrough: new Date()
@@ -338,7 +338,7 @@ describe('importScreeningEvents()', () => {
             .never();
 
         const result = await MasterSyncService.importScreeningEvents({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             locationBranchCode: movieTheater.branchCode,
             importFrom: new Date(),
             importThrough: new Date()
@@ -421,7 +421,7 @@ describe('importScreeningEvents()', () => {
             .resolves([]);
 
         const result = await MasterSyncService.importScreeningEvents({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             locationBranchCode: '123',
             importFrom: new Date(),
             importThrough: new Date()
@@ -488,7 +488,7 @@ describe('importScreeningEvents()', () => {
             .never();
 
         const result = await MasterSyncService.importScreeningEvents({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             locationBranchCode: '123',
             importFrom: new Date(),
             importThrough: new Date()
