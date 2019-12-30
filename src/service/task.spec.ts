@@ -11,7 +11,7 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 import * as PlaceOrderTask from './task/placeOrder';
 
 let sandbox: sinon.SinonSandbox;
-const project = { typeOf: domain.factory.organizationType.Project, id: 'projectId' };
+const project = { typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project, id: 'projectId' };
 
 before(() => {
     sandbox = sinon.createSandbox();
