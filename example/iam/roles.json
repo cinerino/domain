@@ -1,0 +1,101 @@
+[
+    {
+        "typeOf": "OrganizationRole",
+        "roleName": "owner",
+        "permissions": [
+            "admin",
+            "user",
+            "accounts.*",
+            "actions.*",
+            "applications.*",
+            "authorizations.*",
+            "iam.members.me.read",
+            "invoices.*",
+            "orders.*",
+            "paymentMethods.*",
+            "people.*",
+            "programMemberships.*",
+            "projects.*",
+            "projects.settings.read",
+            "sellers.*",
+            "transactions.*",
+            "tasks.*"
+        ]
+    },
+    {
+        "typeOf": "OrganizationRole",
+        "roleName": "editor",
+        "permissions": [
+            "user",
+            "accounts.*",
+            "actions.*",
+            "applications.*",
+            "authorizations.*",
+            "iam.members.me.read",
+            "invoices.*",
+            "orders.*",
+            "paymentMethods.*",
+            "people.*",
+            "programMemberships.*",
+            "projects.read",
+            "projects.settings.read",
+            "sellers.*",
+            "transactions.*",
+            "tasks.*"
+        ]
+    },
+    {
+        "typeOf": "OrganizationRole",
+        "roleName": "viewer",
+        "permissions": [
+            "user",
+            "accounts.read",
+            "actions.read",
+            "applications.read",
+            "authorizations.read",
+            "iam.members.me.read",
+            "invoices.read",
+            "orders.read",
+            "paymentMethods.read",
+            "people.read",
+            "programMemberships.read",
+            "projects.read",
+            "projects.settings.read",
+            "sellers.read",
+            "transactions.read",
+            "tasks.read"
+        ]
+    },
+    {
+        "typeOf": "OrganizationRole",
+        "roleName": "user",
+        "permissions": [
+            "user",
+            "iam.members.me.read",
+            "projects.read"
+        ]
+    },
+    {
+        "typeOf": "OrganizationRole",
+        "roleName": "chevre.admin",
+        "permissions": [
+            "chevre.*",
+            "iam.members.me.read",
+            "projects.read"
+        ]
+    },
+    {
+        "typeOf": "OrganizationRole",
+        "roleName": "customer",
+        "permissions": [
+            "customer",
+            "creativeWorks.read",
+            "events.read",
+            "orders.findByConfirmationNumber",
+            "reservations.findByToken",
+            "sellers.read",
+            "tokens",
+            "transactions"
+        ]
+    }
+]

@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 組織タイプにProjectを追加
 - プロジェクトメンバーリポジトリを追加
+- ロールリポジトリを追加
+- IAMサービスを追加
 
 ### Changed
 
