@@ -65,6 +65,17 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.member !== undefined && params.member !== null) {
+            if (params.member.typeOf !== undefined && params.member.typeOf !== null) {
+                if (typeof params.member.typeOf.$eq === 'string') {
+                    andConditions.push({
+                        'member.typeOf': {
+                            $exists: true,
+                            $eq: params.member.typeOf.$eq
+                        }
+                    });
+                }
+            }
+
             if (params.member.id !== undefined && params.member.id !== null) {
                 if (typeof params.member.id.$eq === 'string') {
                     andConditions.push({

@@ -49,6 +49,13 @@ schema.index(
 );
 
 schema.index(
+    { 'member.id': 1 },
+    {
+        name: 'searchByMemberId'
+    }
+);
+
+schema.index(
     { 'project.id': 1, 'member.id': 1 },
     {
         name: 'uniqueProjectMember',
@@ -57,23 +64,12 @@ schema.index(
 );
 
 schema.index(
-    { 'member.username': 1 },
+    { 'member.typeOf': 1, 'member.id': 1 },
     {
-        name: 'searchByMemberUsername'
-    }
-);
-
-schema.index(
-    { 'member.id': 1, 'member.username': 1 },
-    {
-        name: 'searchByMemberId'
-    }
-);
-
-schema.index(
-    { 'project.id': 1, 'member.username': 1 },
-    {
-        name: 'searchByProjectId'
+        name: 'searchByMemberTypeOf',
+        partialFilterExpression: {
+            'member.typeOf': { $exists: true }
+        }
     }
 );
 
