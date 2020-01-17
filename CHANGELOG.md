@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- ユーザープロフィールを部分的に更新できるように調整
+
 ### Deprecated
 
 ### Removed
