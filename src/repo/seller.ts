@@ -15,6 +15,7 @@ export class MongoRepository {
         this.organizationModel = connection.model(modelName);
     }
 
+    // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.seller.ISearchConditions) {
         // MongoDB検索条件
         const andConditions: any[] = [
@@ -33,6 +34,17 @@ export class MongoRepository {
                         $in: params.project.ids
                     }
                 });
+            }
+
+            if ((<any>params).project.id !== undefined && (<any>params).project.id !== null) {
+                if (typeof (<any>params).project.id.$eq === 'string') {
+                    andConditions.push({
+                        'project.id': {
+                            $exists: true,
+                            $eq: (<any>params).project.id.$eq
+                        }
+                    });
+                }
             }
         }
 
