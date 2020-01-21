@@ -790,7 +790,14 @@ export function createScreeningRoomFromCOA(
         sections[sectionCodes.indexOf(seat.seatSection)].containsPlace.push({
             project: { typeOf: project.typeOf, id: project.id },
             branchCode: seat.seatNum,
-            typeOf: factory.chevre.placeType.Seat
+            typeOf: factory.chevre.placeType.Seat,
+            additionalProperty: [
+                { name: 'flgFree', value: String(seat.flgFree) },
+                { name: 'flgHc', value: String(seat.flgHc) },
+                { name: 'flgPair', value: String(seat.flgPair) },
+                { name: 'flgSpare', value: String(seat.flgSpare) },
+                { name: 'flgSpecial', value: String(seat.flgSpecial) }
+            ]
         });
     });
 

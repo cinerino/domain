@@ -405,7 +405,7 @@ function validateAcceptedOffers(params: {
         });
 
         // 利用可能なチケットオファーを検索
-        const availableTicketOffers = await OfferService.searchEventTicketOffers({
+        const availableTicketOffers = <factory.chevre.event.screeningEvent.ITicketOffer[]>await OfferService.searchEventTicketOffers({
             project: { typeOf: factory.organizationType.Project, id: params.project.id },
             event: { id: params.event.id },
             seller: params.seller
