@@ -412,7 +412,40 @@ export type IAvailableSalesTickets = COA.factory.reserve.ISalesTicketResult & {
      * ポイント購入の場合の消費ポイント
      */
     usePoint: number;
-    mvtkFlg: boolean;
+    flgMvtk: boolean;
+    /**
+     * ムビチケ計上単価
+     * ムビチケの場合、計上単価（興収報告単価）をセット（ムビチケ以外は0をセット）
+     */
+    mvtkAppPrice: number;
+    /**
+     * ムビチケ映写方式区分
+     * ムビチケ連携情報より
+     */
+    kbnEisyahousiki: string;
+    /**
+     * ムビチケ電子券区分
+     * ムビチケ連携情報より(01：電子、02：紙)
+     * ※ムビチケ以外は"00"をセット
+     */
+    mvtkKbnDenshiken: string;
+    /**
+     * ムビチケ前売券区分
+     * ムビチケ連携情報より(01：全国券、02：劇場券)
+     * ※ムビチケ以外は"00"をセット
+     */
+    mvtkKbnMaeuriken: string;
+    /**
+     * ムビチケ券種区分
+     * ムビチケ連携情報より(01：一般2Ｄ、02：小人2Ｄ、03：一般3Ｄ)
+     * ※ムビチケ以外は"00"をセット
+     */
+    mvtkKbnKensyu: string;
+    /**
+     * ムビチケ販売単価
+     * ムビチケ連携情報より（ムビチケ以外は0をセット）
+     */
+    mvtkSalesPrice: number;
 };
 
 /**
@@ -482,7 +515,18 @@ async function searchCOAAvailableTickets(params: {
             flgMember: COA.factory.reserve.FlgMember.NonMember
         });
         availableSalesTickets.push(...salesTickets4nonMember.map((t) => {
-            return { ...t, flgMember: COA.factory.reserve.FlgMember.NonMember, usePoint: 0, mvtkFlg: false };
+            return {
+                ...t,
+                flgMember: COA.factory.reserve.FlgMember.NonMember,
+                usePoint: 0,
+                flgMvtk: false,
+                mvtkAppPrice: 0,
+                kbnEisyahousiki: '00',
+                mvtkKbnDenshiken: '00',
+                mvtkKbnMaeuriken: '00',
+                mvtkKbnKensyu: '00',
+                mvtkSalesPrice: 0
+            };
         }));
 
         // COA券種取得(会員)
@@ -512,7 +556,13 @@ async function searchCOAAvailableTickets(params: {
                 ...salesTicket,
                 flgMember: COA.factory.reserve.FlgMember.Member,
                 usePoint: (coaPointTicket !== undefined) ? Number(coaPointTicket.usePoint) : 0,
-                mvtkFlg: false
+                flgMvtk: false,
+                mvtkAppPrice: 0,
+                kbnEisyahousiki: '00',
+                mvtkKbnDenshiken: '00',
+                mvtkKbnMaeuriken: '00',
+                mvtkKbnKensyu: '00',
+                mvtkSalesPrice: 0
             });
         });
 
@@ -546,7 +596,13 @@ async function searchCOAAvailableTickets(params: {
                 addGlasses: mvtkTicketcodeResult.addPriceGlasses,
                 flgMember: COA.factory.reserve.FlgMember.NonMember,
                 usePoint: 0,
-                mvtkFlg: true
+                flgMvtk: true,
+                kbnEisyahousiki: params.movieTicket.kbnEisyahousiki,
+                mvtkKbnDenshiken: params.movieTicket.kbnDenshiken,
+                mvtkKbnMaeuriken: params.movieTicket.kbnMaeuriken,
+                mvtkKbnKensyu: params.movieTicket.kbnKensyu,
+                mvtkSalesPrice: params.movieTicket.salesPrice,
+                mvtkAppPrice: params.movieTicket.appPrice
             });
         }
     } catch (error) {
