@@ -591,7 +591,7 @@ async function searchCOAAvailableTickets(params: {
                 addPrice: 0,
                 salePrice: mvtkTicketcodeResult.addPrice,
                 limitCount: 1,
-                limitUnit: '1',
+                limitUnit: '001',
                 ticketNote: '',
                 addGlasses: mvtkTicketcodeResult.addPriceGlasses,
                 flgMember: COA.factory.reserve.FlgMember.NonMember,
