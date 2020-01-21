@@ -291,6 +291,35 @@ export function searchEventTicketOffers(params: {
      * どの決済方法に対して
      */
     paymentMethod?: IAcceptedPaymentMethod;
+    /**
+     * COAムビチケ券種もほしい場合に指定
+     */
+    movieTicket?: {
+        /**
+         * 電子券区分
+         */
+        kbnDenshiken: string;
+        /**
+         * 前売券区分
+         */
+        kbnMaeuriken: string;
+        /**
+         * 券種区分
+         */
+        kbnKensyu: string;
+        /**
+         * 販売単価
+         */
+        salesPrice: number;
+        /**
+         * 計上単価
+         */
+        appPrice: number;
+        /**
+         * 映写方式区分
+         */
+        kbnEisyahousiki: string;
+    };
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[]> {
     return async (repos: {
         event: EventRepo;
@@ -333,7 +362,7 @@ export function searchEventTicketOffers(params: {
 
         switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
-                offers = await searchCOAAvailableTickets({ event, project });
+                offers = await searchCOAAvailableTickets({ event, project, movieTicket: params.movieTicket });
 
                 break;
 
