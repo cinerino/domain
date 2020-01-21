@@ -39,12 +39,12 @@ export class MongoRepository {
                 });
             }
 
-            if ((<any>params).project.id !== undefined && (<any>params).project.id !== null) {
-                if (typeof (<any>params).project.id.$eq === 'string') {
+            if (params.project.id !== undefined && params.project.id !== null) {
+                if (typeof params.project.id.$eq === 'string') {
                     andConditions.push({
                         'project.id': {
                             $exists: true,
-                            $eq: (<any>params).project.id.$eq
+                            $eq: params.project.id.$eq
                         }
                     });
                 }
