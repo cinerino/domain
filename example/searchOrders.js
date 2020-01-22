@@ -12,25 +12,29 @@ async function main() {
     const orders = await orderRepo.search({
         orderDateFrom: moment().add(-3, 'days').toDate(),
         orderDateThrough: moment().toDate(),
-        paymentMethods: {
-            typeOfs: [domain.factory.paymentMethodType.MovieTicket],
-            paymentMethodIds: ['xxx']
-        },
-        seller: { ids: ['xxx'] },
-        customer: {
-            ids: ['xxx'],
-            identifiers: [{ name: '', value: '' }],
-            givenName: 'xxx'
-        },
-        acceptedOffers: {
-            itemOffered: {
-                ids: ['xxx'],
-                reservationFor: { ids: ['xxx'] }
-            }
-        },
+        // paymentMethods: {
+        //     typeOfs: [domain.factory.paymentMethodType.MovieTicket],
+        //     paymentMethodIds: ['xxx']
+        // },
+        // seller: { ids: ['xxx'] },
+        // customer: {
+        //     ids: ['xxx'],
+        //     identifiers: [{ name: '', value: '' }],
+        //     givenName: 'xxx'
+        // },
+        // acceptedOffers: {
+        //     itemOffered: {
+        //         ids: ['xxx'],
+        //         reservationFor: { ids: ['xxx'] }
+        //     }
+        // },
         sort: { orderDate: -1 }
     });
+    console.log(orders);
     console.log(orders.length, 'orders found.');
+    console.log(typeof orders[0].id);
+    console.log(typeof orders[0].acceptedOffers);
+    console.log(orders[0].orderDate instanceof Date);
 
     // const res = await orderRepo.orderModel.find({
     //     $and: [
