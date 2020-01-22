@@ -434,13 +434,16 @@ export class MongoRepository {
             });
         }
 
-        if ((<any>params).orderDate !== undefined && (<any>params).orderDate !== null) {
-            if ((<any>params).orderDate.$gte instanceof Date && (<any>params).orderDate.$lte instanceof Date) {
+        if (params.orderDate !== undefined && params.orderDate !== null) {
+            if (params.orderDate.$gte instanceof Date) {
                 andConditions.push({
-                    orderDate: {
-                        $gte: (<any>params).orderDate.$gte,
-                        $lte: (<any>params).orderDate.$lte
-                    }
+                    orderDate: { $gte: params.orderDate.$gte }
+                });
+            }
+
+            if (params.orderDate.$lte instanceof Date) {
+                andConditions.push({
+                    orderDate: { $lte: params.orderDate.$lte }
                 });
             }
         }
