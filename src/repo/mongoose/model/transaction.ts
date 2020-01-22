@@ -109,7 +109,7 @@ const schema = new mongoose.Schema(
         },
         toObject: {
             getters: false,
-            virtuals: false,
+            virtuals: true,
             minimize: false,
             versionKey: false
         }
