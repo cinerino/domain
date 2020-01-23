@@ -63,13 +63,13 @@ export class MongoRepository {
                     {
                         'name.ja': {
                             $exists: true,
-                            $regex: new RegExp(params.name, 'i')
+                            $regex: new RegExp(params.name)
                         }
                     },
                     {
                         'name.en': {
                             $exists: true,
-                            $regex: new RegExp(params.name, 'i')
+                            $regex: new RegExp(params.name)
                         }
                     }
                 ]
@@ -106,13 +106,13 @@ export class MongoRepository {
                         {
                             'location.name.ja': {
                                 $exists: true,
-                                $regex: new RegExp(params.location.name, 'i')
+                                $regex: new RegExp(params.location.name)
                             }
                         },
                         {
                             'location.name.en': {
                                 $exists: true,
-                                $regex: new RegExp(params.location.name, 'i')
+                                $regex: new RegExp(params.location.name)
                             }
                         }
                     ]

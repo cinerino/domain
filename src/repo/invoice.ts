@@ -122,7 +122,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.email': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.email, 'i')
+                        $regex: new RegExp(params.customer.email)
                     }
                 });
             }
@@ -133,7 +133,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.telephone': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.telephone, 'i')
+                        $regex: new RegExp(params.customer.telephone)
                     }
                 });
             }

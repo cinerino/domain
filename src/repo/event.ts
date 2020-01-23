@@ -107,8 +107,8 @@ export class MongoRepository {
         if (params.name !== undefined) {
             andConditions.push({
                 $or: [
-                    { 'name.ja': new RegExp(params.name, 'i') },
-                    { 'name.en': new RegExp(params.name, 'i') }
+                    { 'name.ja': new RegExp(params.name) },
+                    { 'name.en': new RegExp(params.name) }
                 ]
             });
         }

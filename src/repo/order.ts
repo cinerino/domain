@@ -167,7 +167,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.givenName': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.givenName, 'i')
+                        $regex: new RegExp(params.customer.givenName)
                     }
                 });
             }
@@ -177,7 +177,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.familyName': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.familyName, 'i')
+                        $regex: new RegExp(params.customer.familyName)
                     }
                 });
             }
@@ -187,7 +187,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.email': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.email, 'i')
+                        $regex: new RegExp(params.customer.email)
                     }
                 });
             }
@@ -197,7 +197,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.telephone': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.telephone, 'i')
+                        $regex: new RegExp(params.customer.telephone)
                     }
                 });
             }
@@ -276,13 +276,13 @@ export class MongoRepository {
                                 {
                                     'acceptedOffers.itemOffered.reservationFor.name.ja': {
                                         $exists: true,
-                                        $regex: new RegExp(reservationForConditions.name, 'i')
+                                        $regex: new RegExp(reservationForConditions.name)
                                     }
                                 },
                                 {
                                     'acceptedOffers.itemOffered.reservationFor.name.en': {
                                         $exists: true,
-                                        $regex: new RegExp(reservationForConditions.name, 'i')
+                                        $regex: new RegExp(reservationForConditions.name)
                                     }
                                 }
                             ]

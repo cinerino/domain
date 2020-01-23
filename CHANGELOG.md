@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 会員登録時のポイント付与において、最も古い所有口座をデフォルト口座として扱うように調整
 - MongoDBの各コレクション検索条件にproject.id.$eqを追加
 - mongooseのsettersを無効化
+- 各リソースの正規表現検索についてcase  insensitivityを無効化
 
 ### Deprecated
 

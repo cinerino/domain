@@ -142,7 +142,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.familyName': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.familyName, 'i')
+                        $regex: new RegExp(params.agent.familyName)
                     }
                 });
             }
@@ -152,7 +152,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.givenName': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.givenName, 'i')
+                        $regex: new RegExp(params.agent.givenName)
                     }
                 });
             }
@@ -162,7 +162,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.email': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.email, 'i')
+                        $regex: new RegExp(params.agent.email)
                     }
                 });
             }
@@ -172,7 +172,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.telephone': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.telephone, 'i')
+                        $regex: new RegExp(params.agent.telephone)
                     }
                 });
             }
