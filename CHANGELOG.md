@@ -16,7 +16,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - ユーザープロフィールを部分的に更新できるように調整
-- ストリーミング検索にタイムアウトを設定
 - COA管理のイベントに対しても、座席オファーと券種オファーを検索できるように調整
 - 会員登録時のポイント付与において、最も古い所有口座をデフォルト口座として扱うように調整
 - MongoDBの各コレクション検索条件にproject.id.$eqを追加

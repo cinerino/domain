@@ -10,15 +10,15 @@ async function main() {
 
     const orderRepo = new domain.repository.Order(mongoose.connection);
 
-    // const count = await orderRepo.count({
-    //     project: { id: { $eq: 'oyatsu-production' } },
-    //     orderDate: {
-    //         $gte: moment().add(-6, 'months').toDate(),
-    //         $lte: moment().toDate(),
-    //     }
-    // });
-    // console.log(count);
-    // return;
+    const count = await orderRepo.count({
+        project: { id: { $eq: 'cinerino' } },
+        orderDate: {
+            $gte: moment().add(-6, 'months').toDate(),
+            $lte: moment().toDate(),
+        }
+    });
+    console.log(count);
+    return;
 
     const orders = await orderRepo.search({
         project: { id: { $eq: 'oyatsu-production' } },

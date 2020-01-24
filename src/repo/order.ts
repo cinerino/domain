@@ -595,7 +595,6 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 30000 })
-            .cursor();
+        return query.cursor();
     }
 }

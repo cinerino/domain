@@ -595,7 +595,7 @@ export class MongoRepository {
         // const explainResult = await (<any>query).explain();
         // console.log(explainResult[0].executionStats.allPlansExecution.map((e: any) => e.executionStages.inputStage));
 
-        return query.setOptions({ maxTimeMS: 30000 })
+        return query.setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
@@ -620,7 +620,6 @@ export class MongoRepository {
             query.sort(params.sort);
         }
 
-        return query.setOptions({ maxTimeMS: 30000 })
-            .cursor();
+        return query.cursor();
     }
 }
