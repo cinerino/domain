@@ -145,7 +145,9 @@ describe('注文を検索する', () => {
             },
             customer: {
                 typeOf: domain.factory.personType.Person,
-                membershipNumbers: ['customerMembershipNumber']
+                memberOf: {
+                    membershipNumber: { $in: ['customerMembershipNumber'] }
+                }
             },
             orderNumbers: ['orderNumber'],
             orderStatuses: [domain.factory.orderStatus.OrderCancelled],

@@ -206,6 +206,15 @@ schema.index(
     }
 );
 schema.index(
+    { 'customer.additionalProperty': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerAdditionalProperty',
+        partialFilterExpression: {
+            'customer.additionalProperty': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'customer.memberOf.membershipNumber': 1, orderDate: -1 },
     {
         name: 'searchByCustomerMemberhipNumberAndOrderDate',

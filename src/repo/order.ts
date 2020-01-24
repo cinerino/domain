@@ -151,57 +151,121 @@ export class MongoRepository {
                 }
             }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(params.customer.membershipNumbers)) {
-                andConditions.push({
-                    'customer.memberOf.membershipNumber': {
-                        $exists: true,
-                        $in: params.customer.membershipNumbers
-                    }
-                });
+            if (params.customer.additionalProperty !== undefined && params.customer.additionalProperty !== null) {
+                if (Array.isArray(params.customer.additionalProperty.$all)) {
+                    andConditions.push({
+                        'customer.additionalProperty': {
+                            $exists: true,
+                            $all: params.customer.additionalProperty.$all
+                        }
+                    });
+                }
+
+                if (Array.isArray(params.customer.additionalProperty.$in)) {
+                    andConditions.push({
+                        'customer.additionalProperty': {
+                            $exists: true,
+                            $in: params.customer.additionalProperty.$in
+                        }
+                    });
+                }
             }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.customer.givenName !== undefined) {
+
+            if (params.customer.memberOf !== undefined && params.customer.memberOf !== null) {
+                if (params.customer.memberOf.membershipNumber !== undefined && params.customer.memberOf.membershipNumber !== null) {
+                    if (typeof params.customer.memberOf.membershipNumber.$eq === 'string') {
+                        andConditions.push({
+                            'customer.memberOf.membershipNumber': {
+                                $exists: true,
+                                $eq: params.customer.memberOf.membershipNumber.$eq
+                            }
+                        });
+                    }
+
+                    if (Array.isArray(params.customer.memberOf.membershipNumber.$in)) {
+                        andConditions.push({
+                            'customer.memberOf.membershipNumber': {
+                                $exists: true,
+                                $in: params.customer.memberOf.membershipNumber.$in
+                            }
+                        });
+                    }
+                }
+            }
+
+            if (typeof params.customer.givenName === 'string') {
                 andConditions.push({
                     'customer.givenName': {
                         $exists: true,
                         $regex: new RegExp(params.customer.givenName)
                     }
                 });
+            } else if (params.customer.givenName !== undefined && params.customer.givenName !== null) {
+                if (typeof params.customer.givenName.$eq === 'string') {
+                    andConditions.push({
+                        'customer.givenName': {
+                            $exists: true,
+                            $eq: params.customer.givenName.$eq
+                        }
+                    });
+                }
             }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.customer.familyName !== undefined) {
+
+            if (typeof params.customer.familyName === 'string') {
                 andConditions.push({
                     'customer.familyName': {
                         $exists: true,
                         $regex: new RegExp(params.customer.familyName)
                     }
                 });
+            } else if (params.customer.familyName !== undefined && params.customer.familyName !== null) {
+                if (typeof params.customer.familyName.$eq === 'string') {
+                    andConditions.push({
+                        'customer.familyName': {
+                            $exists: true,
+                            $eq: params.customer.familyName.$eq
+                        }
+                    });
+                }
             }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.customer.email !== undefined) {
+
+            if (typeof params.customer.email === 'string') {
                 andConditions.push({
                     'customer.email': {
                         $exists: true,
                         $regex: new RegExp(params.customer.email)
                     }
                 });
+            } else if (params.customer.email !== undefined && params.customer.email !== null) {
+                if (typeof params.customer.email.$eq === 'string') {
+                    andConditions.push({
+                        'customer.email': {
+                            $exists: true,
+                            $eq: params.customer.email.$eq
+                        }
+                    });
+                }
             }
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (params.customer.telephone !== undefined) {
+
+            if (typeof params.customer.telephone === 'string') {
                 andConditions.push({
                     'customer.telephone': {
                         $exists: true,
                         $regex: new RegExp(params.customer.telephone)
                     }
                 });
+            } else if (params.customer.telephone !== undefined && params.customer.telephone !== null) {
+                if (typeof params.customer.telephone.$eq === 'string') {
+                    andConditions.push({
+                        'customer.telephone': {
+                            $exists: true,
+                            $eq: params.customer.telephone.$eq
+                        }
+                    });
+                }
             }
         }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (Array.isArray(params.orderNumbers)) {
