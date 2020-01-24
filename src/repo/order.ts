@@ -209,6 +209,15 @@ export class MongoRepository {
                         }
                     });
                 }
+
+                if (typeof params.customer.givenName.$regex === 'string') {
+                    andConditions.push({
+                        'customer.givenName': {
+                            $exists: true,
+                            $regex: new RegExp(params.customer.givenName.$regex)
+                        }
+                    });
+                }
             }
 
             if (typeof params.customer.familyName === 'string') {
@@ -224,6 +233,15 @@ export class MongoRepository {
                         'customer.familyName': {
                             $exists: true,
                             $eq: params.customer.familyName.$eq
+                        }
+                    });
+                }
+
+                if (typeof params.customer.familyName.$regex === 'string') {
+                    andConditions.push({
+                        'customer.familyName': {
+                            $exists: true,
+                            $regex: new RegExp(params.customer.familyName.$regex)
                         }
                     });
                 }
@@ -245,6 +263,15 @@ export class MongoRepository {
                         }
                     });
                 }
+
+                if (typeof params.customer.email.$regex === 'string') {
+                    andConditions.push({
+                        'customer.email': {
+                            $exists: true,
+                            $regex: new RegExp(params.customer.email.$regex)
+                        }
+                    });
+                }
             }
 
             if (typeof params.customer.telephone === 'string') {
@@ -260,6 +287,15 @@ export class MongoRepository {
                         'customer.telephone': {
                             $exists: true,
                             $eq: params.customer.telephone.$eq
+                        }
+                    });
+                }
+
+                if (typeof params.customer.telephone.$regex === 'string') {
+                    andConditions.push({
+                        'customer.telephone': {
+                            $exists: true,
+                            $regex: new RegExp(params.customer.telephone.$regex)
                         }
                     });
                 }
