@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v1.1.0 - 2020-01-24
+
+### Added
+
 - 組織タイプにProjectを追加
 - プロジェクトメンバーリポジトリを追加
 - ロールリポジトリを追加
@@ -21,14 +35,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - MongoDBの各コレクション検索条件にproject.id.$eqを追加
 - mongooseのsettersを無効化
 - 各リソースの正規表現検索についてcase  insensitivityを無効化
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v1.0.0 - 2019-12-26
 
