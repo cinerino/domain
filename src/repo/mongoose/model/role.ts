@@ -1,22 +1,19 @@
 import * as mongoose from 'mongoose';
 
-const modelName = 'Project';
+const modelName = 'Role';
 
 const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 /**
- * プロジェクトスキーマ
+ * ロールスキーマ
  */
 const schema = new mongoose.Schema(
     {
-        _id: String,
-        typeOf: {
-            type: String,
-            required: true
-        }
+        typeOf: String,
+        permissions: [String]
     },
     {
-        collection: 'projects',
+        collection: 'roles',
         id: true,
         read: 'primaryPreferred',
         writeConcern: writeConcern,
@@ -38,6 +35,22 @@ const schema = new mongoose.Schema(
             minimize: false,
             versionKey: false
         }
+    }
+);
+
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
+
+schema.index(
+    { roleName: 1 },
+    {
+        name: 'searchByRoleName'
     }
 );
 

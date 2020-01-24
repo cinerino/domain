@@ -405,8 +405,8 @@ function validateAcceptedOffers(params: {
         });
 
         // 利用可能なチケットオファーを検索
-        const availableTicketOffers = await OfferService.searchEventTicketOffers({
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+        const availableTicketOffers = <factory.chevre.event.screeningEvent.ITicketOffer[]>await OfferService.searchEventTicketOffers({
+            project: { typeOf: factory.organizationType.Project, id: params.project.id },
             event: { id: params.event.id },
             seller: params.seller
         })(repos);
@@ -485,7 +485,7 @@ function validateAcceptedOffers(params: {
                         // ムビチケ認証
                         const checkResult = await repos.movieTicket.checkByIdentifier({
                             movieTickets: [{
-                                project: { typeOf: params.project.typeOf, id: params.project.id },
+                                project: { typeOf: factory.organizationType.Project, id: params.project.id },
                                 typeOf: movieTicket.typeOf,
                                 identifier: movieTicket.identifier,
                                 accessCode: movieTicket.accessCode,

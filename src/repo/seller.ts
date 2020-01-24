@@ -15,6 +15,7 @@ export class MongoRepository {
         this.organizationModel = connection.model(modelName);
     }
 
+    // tslint:disable-next-line:max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.seller.ISearchConditions) {
         // MongoDB検索条件
         const andConditions: any[] = [
@@ -34,6 +35,17 @@ export class MongoRepository {
                     }
                 });
             }
+
+            if (params.project.id !== undefined && params.project.id !== null) {
+                if (typeof params.project.id.$eq === 'string') {
+                    andConditions.push({
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id.$eq
+                        }
+                    });
+                }
+            }
         }
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -51,13 +63,13 @@ export class MongoRepository {
                     {
                         'name.ja': {
                             $exists: true,
-                            $regex: new RegExp(params.name, 'i')
+                            $regex: new RegExp(params.name)
                         }
                     },
                     {
                         'name.en': {
                             $exists: true,
-                            $regex: new RegExp(params.name, 'i')
+                            $regex: new RegExp(params.name)
                         }
                     }
                 ]
@@ -94,13 +106,13 @@ export class MongoRepository {
                         {
                             'location.name.ja': {
                                 $exists: true,
-                                $regex: new RegExp(params.location.name, 'i')
+                                $regex: new RegExp(params.location.name)
                             }
                         },
                         {
                             'location.name.en': {
                                 $exists: true,
-                                $regex: new RegExp(params.location.name, 'i')
+                                $regex: new RegExp(params.location.name)
                             }
                         }
                     ]

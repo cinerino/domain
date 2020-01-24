@@ -55,7 +55,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: 'Project', id: 'projectId' });
+            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -70,7 +70,7 @@ describe('start()', () => {
             .resolves(passport);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -123,7 +123,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: 'Project', id: 'projectId' });
+            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -138,7 +138,7 @@ describe('start()', () => {
             .resolves(transaction);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -183,7 +183,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: 'Project', id: 'projectId' });
+            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -197,7 +197,7 @@ describe('start()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -248,7 +248,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: 'Project', id: 'projectId' });
+            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -263,7 +263,7 @@ describe('start()', () => {
             .rejects(startResult);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: 'Project', id: 'id' },
+            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
             expires: expires,
             object: {
                 passport: {

@@ -16,7 +16,7 @@ export class MongoRepository {
         this.invoiceModel = connection.model(modelName);
     }
 
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: factory.invoice.ISearchConditions) {
         const andConditions: any[] = [];
 
@@ -46,6 +46,17 @@ export class MongoRepository {
                         $in: params.project.ids
                     }
                 });
+            }
+
+            if (params.project.id !== undefined && params.project.id !== null) {
+                if (typeof params.project.id.$eq === 'string') {
+                    andConditions.push({
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id.$eq
+                        }
+                    });
+                }
             }
         }
 
@@ -111,7 +122,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.email': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.email, 'i')
+                        $regex: new RegExp(params.customer.email)
                     }
                 });
             }
@@ -122,7 +133,7 @@ export class MongoRepository {
                 andConditions.push({
                     'customer.telephone': {
                         $exists: true,
-                        $regex: new RegExp(params.customer.telephone, 'i')
+                        $regex: new RegExp(params.customer.telephone)
                     }
                 });
             }

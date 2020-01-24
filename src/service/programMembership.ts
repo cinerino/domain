@@ -515,6 +515,9 @@ function processPlaceOrder(params: {
             if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
                 // ポイント口座を検索
                 const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+                    // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+                    sort: { ownedFrom: factory.sortType.Ascending },
+                    limit: 1,
                     typeOfGood: {
                         typeOf: factory.ownershipInfo.AccountGoodType.Account,
                         accountType: factory.accountType.Point

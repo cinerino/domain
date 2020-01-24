@@ -28,6 +28,17 @@ export class MongoRepository {
                     }
                 });
             }
+
+            if (params.project.id !== undefined && params.project.id !== null) {
+                if (typeof params.project.id.$eq === 'string') {
+                    andConditions.push({
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id.$eq
+                        }
+                    });
+                }
+            }
         }
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -131,7 +142,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.familyName': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.familyName, 'i')
+                        $regex: new RegExp(params.agent.familyName)
                     }
                 });
             }
@@ -141,7 +152,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.givenName': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.givenName, 'i')
+                        $regex: new RegExp(params.agent.givenName)
                     }
                 });
             }
@@ -151,7 +162,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.email': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.email, 'i')
+                        $regex: new RegExp(params.agent.email)
                     }
                 });
             }
@@ -161,7 +172,7 @@ export class MongoRepository {
                 andConditions.push({
                     'agent.telephone': {
                         $exists: true,
-                        $regex: new RegExp(params.agent.telephone, 'i')
+                        $regex: new RegExp(params.agent.telephone)
                     }
                 });
             }
@@ -584,7 +595,7 @@ export class MongoRepository {
         // const explainResult = await (<any>query).explain();
         // console.log(explainResult[0].executionStats.allPlansExecution.map((e: any) => e.executionStages.inputStage));
 
-        return query.setOptions({ maxTimeMS: 30000 })
+        return query.setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
     }

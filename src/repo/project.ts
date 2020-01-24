@@ -33,13 +33,13 @@ export class MongoRepository {
                     {
                         alternateName: {
                             $exists: true,
-                            $regex: new RegExp(params.name, 'i')
+                            $regex: new RegExp(params.name)
                         }
                     },
                     {
                         name: {
                             $exists: true,
-                            $regex: new RegExp(params.name, 'i')
+                            $regex: new RegExp(params.name)
                         }
                     }
                 ]

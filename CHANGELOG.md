@@ -18,6 +18,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v1.1.0 - 2020-01-24
+
+### Added
+
+- 組織タイプにProjectを追加
+- プロジェクトメンバーリポジトリを追加
+- ロールリポジトリを追加
+- IAMサービスを追加
+
+### Changed
+
+- ユーザープロフィールを部分的に更新できるように調整
+- COA管理のイベントに対しても、座席オファーと券種オファーを検索できるように調整
+- 会員登録時のポイント付与において、最も古い所有口座をデフォルト口座として扱うように調整
+- MongoDBの各コレクション検索条件にproject.id.$eqを追加
+- mongooseのsettersを無効化
+- 各リソースの正規表現検索についてcase  insensitivityを無効化
+
 ## v1.0.0 - 2019-12-26
 
 ### Added

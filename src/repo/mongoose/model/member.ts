@@ -1,20 +1,20 @@
 import * as mongoose from 'mongoose';
 
-const modelName = 'Application';
+const modelName = 'Member';
 
 const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
 /**
- * アプリケーションスキーマ
+ * プロジェクトメンバースキーマ
  */
 const schema = new mongoose.Schema(
     {
-        _id: String,
         project: mongoose.SchemaTypes.Mixed,
-        typeOf: String
+        typeOf: String,
+        member: mongoose.SchemaTypes.Mixed
     },
     {
-        collection: 'applications',
+        collection: 'members',
         id: true,
         read: 'primaryPreferred',
         writeConcern: writeConcern,
@@ -25,13 +25,13 @@ const schema = new mongoose.Schema(
             updatedAt: 'updatedAt'
         },
         toJSON: {
-            getters: true,
-            virtuals: true,
+            getters: false,
+            virtuals: false,
             minimize: false,
             versionKey: false
         },
         toObject: {
-            getters: true,
+            getters: false,
             virtuals: true,
             minimize: false,
             versionKey: false
@@ -49,11 +49,26 @@ schema.index(
 );
 
 schema.index(
-    { 'project.id': 1, startDate: -1 },
+    { 'member.id': 1 },
     {
-        name: 'searchByProjectId',
+        name: 'searchByMemberId'
+    }
+);
+
+schema.index(
+    { 'project.id': 1, 'member.id': 1 },
+    {
+        name: 'uniqueProjectMember',
+        unique: true
+    }
+);
+
+schema.index(
+    { 'member.typeOf': 1, 'member.id': 1 },
+    {
+        name: 'searchByMemberTypeOf',
         partialFilterExpression: {
-            'project.id': { $exists: true }
+            'member.typeOf': { $exists: true }
         }
     }
 );

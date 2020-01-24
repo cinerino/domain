@@ -148,7 +148,7 @@ function seatSyncInfoIn2movieTickets(params: {
                 // tslint:disable-next-line:prefer-array-literal
                 [...Array(Number(knshInfo.miNum))].forEach(() => {
                     movieTickets.push({
-                        project: { typeOf: params.event.project.typeOf, id: params.event.project.id },
+                        project: { typeOf: factory.organizationType.Project, id: params.event.project.id },
                         typeOf: factory.paymentMethodType.MovieTicket,
                         serviceType: knshInfo.knshTyp,
                         identifier: knyknrNoInfo.knyknrNo,

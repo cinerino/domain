@@ -1,4 +1,5 @@
 import * as createDebug from 'debug';
+import { INTERNAL_SERVER_ERROR } from 'http-status';
 
 import { MongoRepository as EventRepo } from '../repo/event';
 import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
@@ -218,7 +219,7 @@ async function searchEventOffers4COA(params: {
     const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
 
     const movieTheater = MasterSync.createMovieTheaterFromCOA(
-        event.project,
+        { typeOf: factory.organizationType.Project, id: event.project.id },
         await masterService.theater(coaInfo),
         await masterService.screen(coaInfo)
     );
@@ -233,12 +234,27 @@ async function searchEventOffers4COA(params: {
     offers.forEach((offer) => {
         const seats = offer.containsPlace;
         const seatSection = offer.branchCode;
+        const availableSectionOffer = stateReserveSeatResult.listSeat.find((s) => String(s.seatSection) === String(seatSection));
+
         seats.forEach((seat) => {
             const seatNumber = seat.branchCode;
-            const availableOffer = stateReserveSeatResult.listSeat.find(
-                (result) => result.seatSection === seatSection
-                    && result.listFreeSeat.find((freeSeat) => freeSeat.seatNum === seatNumber) !== undefined
-            );
+
+            let availableOffer: COA.factory.reserve.IStateReserveSeatFreeSeat | undefined;
+            if (availableSectionOffer !== undefined) {
+                availableOffer = availableSectionOffer.listFreeSeat.find((s) => String(s.seatNum) === String(seatNumber));
+            }
+
+            const additionalProperty = (Array.isArray(seat.additionalProperty)) ? seat.additionalProperty : [];
+            if (availableOffer !== undefined) {
+                additionalProperty.push(
+                    { name: 'spseatAdd1', value: String(availableOffer.spseatAdd1) },
+                    { name: 'spseatAdd2', value: String(availableOffer.spseatAdd2) },
+                    { name: 'spseatKbn', value: String(availableOffer.spseatKbn) }
+                );
+            }
+
+            seat.additionalProperty = additionalProperty;
+
             seat.offers = [{
                 typeOf: 'Offer',
                 priceCurrency: chevre.factory.priceCurrency.JPY,
@@ -275,7 +291,36 @@ export function searchEventTicketOffers(params: {
      * どの決済方法に対して
      */
     paymentMethod?: IAcceptedPaymentMethod;
-}): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
+    /**
+     * COAムビチケ券種もほしい場合に指定
+     */
+    movieTicket?: {
+        /**
+         * 電子券区分
+         */
+        kbnDenshiken: string;
+        /**
+         * 前売券区分
+         */
+        kbnMaeuriken: string;
+        /**
+         * 券種区分
+         */
+        kbnKensyu: string;
+        /**
+         * 販売単価
+         */
+        salesPrice: number;
+        /**
+         * 計上単価
+         */
+        appPrice: number;
+        /**
+         * 映写方式区分
+         */
+        kbnEisyahousiki: string;
+    };
+}): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[]> {
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -305,7 +350,7 @@ export function searchEventTicketOffers(params: {
             });
         }
 
-        let offers: factory.chevre.event.screeningEvent.ITicketOffer[];
+        let offers: factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[];
         const eventOffers = event.offers;
         if (eventOffers === undefined) {
             throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
@@ -317,7 +362,7 @@ export function searchEventTicketOffers(params: {
 
         switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
-                offers = await searchEventTicketOffers4COA({ event, project });
+                offers = await searchCOAAvailableTickets({ event, project, movieTicket: params.movieTicket });
 
                 break;
 
@@ -361,6 +406,229 @@ export function searchEventTicketOffers(params: {
     };
 }
 
+export type IAvailableSalesTickets = COA.factory.reserve.ISalesTicketResult & {
+    flgMember: COA.factory.reserve.FlgMember;
+    /**
+     * ポイント購入の場合の消費ポイント
+     */
+    usePoint: number;
+    flgMvtk: boolean;
+    /**
+     * ムビチケ計上単価
+     * ムビチケの場合、計上単価（興収報告単価）をセット（ムビチケ以外は0をセット）
+     */
+    mvtkAppPrice: number;
+    /**
+     * ムビチケ映写方式区分
+     * ムビチケ連携情報より
+     */
+    kbnEisyahousiki: string;
+    /**
+     * ムビチケ電子券区分
+     * ムビチケ連携情報より(01：電子、02：紙)
+     * ※ムビチケ以外は"00"をセット
+     */
+    mvtkKbnDenshiken: string;
+    /**
+     * ムビチケ前売券区分
+     * ムビチケ連携情報より(01：全国券、02：劇場券)
+     * ※ムビチケ以外は"00"をセット
+     */
+    mvtkKbnMaeuriken: string;
+    /**
+     * ムビチケ券種区分
+     * ムビチケ連携情報より(01：一般2Ｄ、02：小人2Ｄ、03：一般3Ｄ)
+     * ※ムビチケ以外は"00"をセット
+     */
+    mvtkKbnKensyu: string;
+    /**
+     * ムビチケ販売単価
+     * ムビチケ連携情報より（ムビチケ以外は0をセット）
+     */
+    mvtkSalesPrice: number;
+};
+
+/**
+ * COAから利用可能な販売券種をすべて検索する
+ */
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+async function searchCOAAvailableTickets(params: {
+    event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+    project: factory.project.IProject;
+    movieTicket?: {
+        /**
+         * 電子券区分
+         */
+        kbnDenshiken: string;
+        /**
+         * 前売券区分
+         */
+        kbnMaeuriken: string;
+        /**
+         * 券種区分
+         */
+        kbnKensyu: string;
+        /**
+         * 販売単価
+         */
+        salesPrice: number;
+        /**
+         * 計上単価
+         */
+        appPrice: number;
+        /**
+         * 映写方式区分
+         */
+        kbnEisyahousiki: string;
+    };
+}): Promise<IAvailableSalesTickets[]> {
+    const event = params.event;
+    const project = params.project;
+    if (project.settings === undefined || project.settings.chevre === undefined) {
+        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+    }
+
+    const reserveService = new COA.service.Reserve({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+    const masterService = new COA.service.Master({
+        endpoint: credentials.coa.endpoint,
+        auth: coaAuthClient
+    });
+
+    // 供給情報が適切かどうか確認
+    const availableSalesTickets: IAvailableSalesTickets[] = [];
+
+    // 必ず定義されている前提
+    const coaInfo = <factory.event.screeningEvent.ICOAInfo>event.coaInfo;
+
+    try {
+
+        // COA券種取得(非会員)
+        const salesTickets4nonMember = await reserveService.salesTicket({
+            theaterCode: coaInfo.theaterCode,
+            dateJouei: coaInfo.dateJouei,
+            titleCode: coaInfo.titleCode,
+            titleBranchNum: coaInfo.titleBranchNum,
+            timeBegin: coaInfo.timeBegin,
+            flgMember: COA.factory.reserve.FlgMember.NonMember
+        });
+        availableSalesTickets.push(...salesTickets4nonMember.map((t) => {
+            return {
+                ...t,
+                flgMember: COA.factory.reserve.FlgMember.NonMember,
+                usePoint: 0,
+                flgMvtk: false,
+                mvtkAppPrice: 0,
+                kbnEisyahousiki: '00',
+                mvtkKbnDenshiken: '00',
+                mvtkKbnMaeuriken: '00',
+                mvtkKbnKensyu: '00',
+                mvtkSalesPrice: 0
+            };
+        }));
+
+        // COA券種取得(会員)
+        const salesTickets4member = await reserveService.salesTicket({
+            theaterCode: coaInfo.theaterCode,
+            dateJouei: coaInfo.dateJouei,
+            titleCode: coaInfo.titleCode,
+            titleBranchNum: coaInfo.titleBranchNum,
+            timeBegin: coaInfo.timeBegin,
+            flgMember: COA.factory.reserve.FlgMember.Member
+        });
+
+        // ポイント消費鑑賞券の場合
+        // COA側のマスタ構成で、
+        // 券種マスタに消費ポイント
+        // 販売可能チケット情報に販売金額
+        // を持っているので、処理が少し冗長になってしまうが、しょうがない
+        const allTickets = await masterService.ticket({
+            theaterCode: coaInfo.theaterCode
+        });
+
+        let coaPointTicket: COA.factory.master.ITicketResult | undefined;
+        salesTickets4member.forEach((salesTicket) => {
+            coaPointTicket = allTickets.find((t) => t.ticketCode === salesTicket.ticketCode);
+
+            availableSalesTickets.push({
+                ...salesTicket,
+                flgMember: COA.factory.reserve.FlgMember.Member,
+                usePoint: (coaPointTicket !== undefined) ? Number(coaPointTicket.usePoint) : 0,
+                flgMvtk: false,
+                mvtkAppPrice: 0,
+                kbnEisyahousiki: '00',
+                mvtkKbnDenshiken: '00',
+                mvtkKbnMaeuriken: '00',
+                mvtkKbnKensyu: '00',
+                mvtkSalesPrice: 0
+            });
+        });
+
+        // ムビチケの場合、ムビチケ情報をCOA券種に変換
+        if (params.movieTicket !== undefined) {
+            const mvtkTicketcodeResult = await masterService.mvtkTicketcode({
+                theaterCode: coaInfo.theaterCode,
+                kbnDenshiken: params.movieTicket.kbnDenshiken,
+                kbnMaeuriken: params.movieTicket.kbnMaeuriken,
+                kbnKensyu: params.movieTicket.kbnKensyu,
+                salesPrice: params.movieTicket.salesPrice,
+                appPrice: params.movieTicket.appPrice,
+                kbnEisyahousiki: params.movieTicket.kbnEisyahousiki,
+                titleCode: coaInfo.titleCode,
+                titleBranchNum: coaInfo.titleBranchNum,
+                dateJouei: coaInfo.dateJouei
+            });
+
+            availableSalesTickets.push({
+                ticketCode: mvtkTicketcodeResult.ticketCode,
+                ticketName: mvtkTicketcodeResult.ticketName,
+                ticketNameKana: mvtkTicketcodeResult.ticketNameKana,
+                ticketNameEng: mvtkTicketcodeResult.ticketNameEng,
+                // ムビチケチケットインターフェース属性が少なめなので補ってあげる
+                stdPrice: 0,
+                addPrice: 0,
+                salePrice: mvtkTicketcodeResult.addPrice,
+                limitCount: 1,
+                limitUnit: '001',
+                ticketNote: '',
+                addGlasses: mvtkTicketcodeResult.addPriceGlasses,
+                flgMember: COA.factory.reserve.FlgMember.NonMember,
+                usePoint: 0,
+                flgMvtk: true,
+                kbnEisyahousiki: params.movieTicket.kbnEisyahousiki,
+                mvtkKbnDenshiken: params.movieTicket.kbnDenshiken,
+                mvtkKbnMaeuriken: params.movieTicket.kbnMaeuriken,
+                mvtkKbnKensyu: params.movieTicket.kbnKensyu,
+                mvtkSalesPrice: params.movieTicket.salesPrice,
+                mvtkAppPrice: params.movieTicket.appPrice
+            });
+        }
+    } catch (error) {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next: please write tests */
+        // COAサービスエラーの場合ハンドリング
+        if (error.name === 'COAServiceError') {
+            // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
+            // 500未満であればクライアントエラーとみなす
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (error.code < INTERNAL_SERVER_ERROR) {
+                throw new factory.errors.Argument('COA argument', error.message);
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next: please write tests */
+        throw error;
+    }
+
+    return availableSalesTickets;
+}
+
+// @ts-ignore
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 async function searchEventTicketOffers4COA(params: {
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     project: factory.project.IProject;

@@ -9,14 +9,30 @@ async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
     const orderRepo = new domain.repository.Order(mongoose.connection);
+
+    const count = await orderRepo.count({
+        project: { id: { $eq: 'cinerino' } },
+        orderDate: {
+            $gte: moment().add(-6, 'months').toDate(),
+            $lte: moment().toDate(),
+        }
+    });
+    console.log(count);
+    return;
+
     const orders = await orderRepo.search({
-        orderDateFrom: moment().add(-3, 'days').toDate(),
-        orderDateThrough: moment().toDate(),
+        project: { id: { $eq: 'oyatsu-production' } },
+        // orderDateFrom: moment().add(-3, 'weeks').toDate(),
+        // orderDateThrough: moment().toDate(),
+        orderDate: {
+            $gte: moment().add(-12, 'months').toDate(),
+            $lte: moment().toDate(),
+        },
         // paymentMethods: {
         //     typeOfs: [domain.factory.paymentMethodType.MovieTicket],
         //     paymentMethodIds: ['xxx']
         // },
-        // seller: { ids: ['xxx'] },
+        seller: { ids: ['5cef8cc57261bf0012ad2f3a'] },
         // customer: {
         //     ids: ['xxx'],
         //     identifiers: [{ name: '', value: '' }],
@@ -28,13 +44,15 @@ async function main() {
         //         reservationFor: { ids: ['xxx'] }
         //     }
         // },
+        limit: 20,
+        page: 20,
         sort: { orderDate: -1 }
     });
-    console.log(orders);
+    // console.log(orders);
     console.log(orders.length, 'orders found.');
-    console.log(typeof orders[0].id);
-    console.log(typeof orders[0].acceptedOffers);
-    console.log(orders[0].orderDate instanceof Date);
+    // console.log(typeof orders[0].id);
+    // console.log(typeof orders[0].acceptedOffers);
+    // console.log(orders[0].orderDate instanceof Date);
 
     // const res = await orderRepo.orderModel.find({
     //     $and: [

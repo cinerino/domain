@@ -33,6 +33,17 @@ export class MongoRepository {
                     }
                 });
             }
+
+            if (params.project.id !== undefined && params.project.id !== null) {
+                if (typeof params.project.id.$eq === 'string') {
+                    andConditions.push({
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id.$eq
+                        }
+                    });
+                }
+            }
         }
 
         // tslint:disable-next-line:no-single-line-block-comment

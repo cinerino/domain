@@ -1,18 +1,25 @@
 import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
-import { modelName } from './mongoose/model/application';
+import { modelName } from './mongoose/model/role';
 
-export import IApplication = factory.creativeWork.softwareApplication.webApplication.ICreativeWork;
+export enum RoleType {
+    OrganizationRole = 'OrganizationRole'
+}
+export interface IRole {
+    typeOf: RoleType;
+    roleName: string;
+    permissions: string[];
+}
 
 /**
- * アプリケーションリポジトリ
+ * ロールリポジトリ
  */
 export class MongoRepository {
-    public readonly applicationModel: typeof Model;
+    public readonly roleModel: typeof Model;
 
     constructor(connection: Connection) {
-        this.applicationModel = connection.model(modelName);
+        this.roleModel = connection.model(modelName);
     }
 
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
@@ -38,11 +45,30 @@ export class MongoRepository {
                 if (typeof params.project.id.$eq === 'string') {
                     andConditions.push({
                         'project.id': {
-                            $exists: true,
                             $eq: params.project.id.$eq
                         }
                     });
                 }
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.roleName !== undefined && params.roleName !== null) {
+            if (typeof params.roleName.$eq === 'string') {
+                andConditions.push({
+                    roleName: {
+                        $eq: params.roleName.$eq
+                    }
+                });
+            }
+
+            if (Array.isArray(params.roleName.$in)) {
+                andConditions.push({
+                    roleName: {
+                        $in: params.roleName.$in
+                    }
+                });
             }
         }
 
@@ -52,16 +78,16 @@ export class MongoRepository {
     public async count(params: any): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.applicationModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
+        return this.roleModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
 
     public async search(
         params: any
-    ): Promise<IApplication[]> {
+    ): Promise<IRole[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-        const query = this.applicationModel.find(
+        const query = this.roleModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},
             {
                 __v: 0,
@@ -93,8 +119,8 @@ export class MongoRepository {
 
     public async findById(params: {
         id: string;
-    }): Promise<IApplication> {
-        const doc = await this.applicationModel.findOne(
+    }): Promise<IRole> {
+        const doc = await this.roleModel.findOne(
             {
                 _id: params.id
             }
@@ -102,7 +128,7 @@ export class MongoRepository {
             .select({ __v: 0, createdAt: 0, updatedAt: 0 })
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound(this.applicationModel.modelName);
+            throw new factory.errors.NotFound(this.roleModel.modelName);
         }
 
         return doc.toObject();

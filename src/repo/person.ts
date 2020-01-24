@@ -127,38 +127,53 @@ export class CognitoRepository {
     }
 
     public static PROFILE2ATTRIBUTE(params: factory.person.IProfile): AttributeListType {
-        let formatedPhoneNumber: string;
-        try {
-            const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(params.telephone);
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (!phoneUtil.isValidNumber(phoneNumber)) {
-                throw new Error('Invalid phone number');
+        let formatedPhoneNumber: string | undefined;
+
+        if (typeof params.telephone === 'string' && params.telephone.length > 0) {
+            try {
+                const phoneUtil = PhoneNumberUtil.getInstance();
+                const phoneNumber = phoneUtil.parse(params.telephone);
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore if */
+                if (!phoneUtil.isValidNumber(phoneNumber)) {
+                    throw new Error('Invalid phone number');
+                }
+                formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
+            } catch (error) {
+                throw new factory.errors.Argument('telephone', 'Invalid phone number');
             }
-            formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
-        } catch (error) {
-            throw new factory.errors.Argument('telephone', 'Invalid phone number');
         }
 
-        const userAttributes: AttributeListType = [
-            {
+        const userAttributes: AttributeListType = [];
+
+        if (typeof params.givenName === 'string') {
+            userAttributes.push({
                 Name: 'given_name',
                 Value: params.givenName
-            },
-            {
+            });
+        }
+
+        if (typeof params.familyName === 'string') {
+            userAttributes.push({
                 Name: 'family_name',
                 Value: params.familyName
-            },
-            {
-                Name: 'phone_number',
-                Value: formatedPhoneNumber
-            },
-            {
+            });
+        }
+
+        if (typeof params.email === 'string') {
+            userAttributes.push({
                 Name: 'email',
                 Value: params.email
-            }
-        ];
+            });
+        }
+
+        if (typeof formatedPhoneNumber === 'string') {
+            userAttributes.push({
+                Name: 'phone_number',
+                Value: formatedPhoneNumber
+            });
+        }
+
         if (Array.isArray(params.additionalProperty)) {
             userAttributes.push(...params.additionalProperty.map((a) => {
                 return {

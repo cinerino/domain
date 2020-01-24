@@ -5,12 +5,12 @@
 import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgress } from './repo/action/registerProgramMembershipInProgress';
-import { MongoRepository as ApplicationRepo } from './repo/application';
 import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as EventRepo } from './repo/event';
 import { RedisRepository as EventAttendeeCapacityRepo } from './repo/event/attendeeCapacity';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
+import { MongoRepository as MemberRepo } from './repo/member';
 import { InMemoryRepository as OfferRepo } from './repo/offer';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
@@ -21,6 +21,7 @@ import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTic
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
 import { MongoRepository as ProjectRepo } from './repo/project';
+import { MongoRepository as RoleRepo } from './repo/role';
 import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
@@ -39,11 +40,6 @@ export class Action extends ActionRepo { }
 export namespace action {
     export class RegisterProgramMembershipInProgress extends RegisterProgramMembershipActionInProgress { }
 }
-
-/**
- * アプリケーションリポジトリ
- */
-export class Application extends ApplicationRepo { }
 
 /**
  * 所有権コードリポジトリ
@@ -68,6 +64,11 @@ export class Event extends EventRepo { }
  * 請求書リポジトリ
  */
 export class Invoice extends InvoiceRepo { }
+
+/**
+ * プロジェクトメンバーリポジトリ
+ */
+export class Member extends MemberRepo { }
 
 /**
  * オファーリポジトリ
@@ -122,6 +123,11 @@ export class Project extends ProjectRepo { }
 
 export namespace rateLimit {
 }
+
+/**
+ * ロールリポジトリ
+ */
+export class Role extends RoleRepo { }
 
 /**
  * 販売者リポジトリ
