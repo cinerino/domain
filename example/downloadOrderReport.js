@@ -8,8 +8,11 @@ async function main() {
     const orderRepo = new domain.repository.Order(mongoose.connection);
     const readable = await domain.service.report.order.stream({
         conditions: {
-            orderDateFrom: moment().add(-1, 'week').toDate,
-            orderDateThrough: moment().toDate,
+            // project: { id: 'cinerino' },
+            orderDate: {
+                $gte: moment().add(-1, 'week').toDate(),
+                $lte: moment().toDate(),
+            }
         },
         // format: domain.factory.encodingFormat.Application.json
         format: domain.factory.encodingFormat.Text.csv

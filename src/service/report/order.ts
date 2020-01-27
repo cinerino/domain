@@ -28,12 +28,16 @@ export interface ICustomer {
     id: string;
     name: string;
     email: string;
+    givenName: string;
+    familyName: string;
     telephone: string;
     memberOf?: {
         membershipNumber?: string;
     };
     clientId: string;
     tokenIssuer: string;
+    additionalProperty: string;
+    identifier: string;
 }
 
 export interface IItem {
@@ -78,6 +82,7 @@ export interface IOrderReport {
     price: string;
     paymentMethodType: string[];
     paymentMethodId: string[];
+    identifier: string;
 }
 
 /**
@@ -114,15 +119,20 @@ export function stream(params: {
                     { label: '注文日時', default: '', value: 'orderDate' },
                     { label: '注文番号', default: '', value: 'orderNumber' },
                     { label: '確認番号', default: '', value: 'confirmationNumber' },
+                    { label: '注文識別子', default: '', value: 'identifier' },
                     { label: '金額', default: '', value: 'price' },
                     { label: '購入者タイプ', default: '', value: 'customer.typeOf' },
                     { label: '購入者ID', default: '', value: 'customer.id' },
                     { label: '購入者名称', default: '', value: 'customer.name' },
+                    { label: '購入者名', default: '', value: 'customer.givenName' },
+                    { label: '購入者性', default: '', value: 'customer.familyName' },
                     { label: '購入者メールアドレス', default: '', value: 'customer.email' },
                     { label: '購入者電話番号', default: '', value: 'customer.telephone' },
                     { label: '購入者会員番号', default: '', value: 'customer.memberOf.membershipNumber' },
                     { label: '購入者トークン発行者', default: '', value: 'customer.tokenIssuer' },
                     { label: '購入者クライアント', default: '', value: 'customer.clientId' },
+                    { label: '購入者追加特性', default: '', value: 'customer.additionalProperty' },
+                    { label: '購入者識別子', default: '', value: 'customer.identifier' },
                     { label: '販売者タイプ', default: '', value: 'seller.typeOf' },
                     { label: '販売者ID', default: '', value: 'seller.id' },
                     { label: '販売者名称', default: '', value: 'seller.name' },
@@ -342,11 +352,15 @@ export function order2report(params: {
             typeOf: order.customer.typeOf,
             id: order.customer.id,
             name: String(order.customer.name),
+            givenName: String(order.customer.givenName),
+            familyName: String(order.customer.familyName),
             email: String(order.customer.email),
             telephone: String(order.customer.telephone),
             memberOf: order.customer.memberOf,
             clientId: (clientIdProperty !== undefined) ? clientIdProperty.value : '',
-            tokenIssuer: (tokenIssuerProperty !== undefined) ? tokenIssuerProperty.value : ''
+            tokenIssuer: (tokenIssuerProperty !== undefined) ? tokenIssuerProperty.value : '',
+            additionalProperty: (Array.isArray(order.customer.additionalProperty)) ? JSON.stringify(order.customer.additionalProperty) : '',
+            identifier: (Array.isArray(order.customer.identifier)) ? JSON.stringify(order.customer.identifier) : ''
         },
         acceptedOffers: acceptedOffers,
         orderNumber: order.orderNumber,
@@ -354,6 +368,7 @@ export function order2report(params: {
         confirmationNumber: order.confirmationNumber.toString(),
         price: `${order.price} ${order.priceCurrency}`,
         paymentMethodType: order.paymentMethods.map((method) => method.typeOf),
-        paymentMethodId: order.paymentMethods.map((method) => method.paymentMethodId)
+        paymentMethodId: order.paymentMethods.map((method) => method.paymentMethodId),
+        identifier: (Array.isArray(order.identifier)) ? JSON.stringify(order.identifier) : ''
     };
 }
