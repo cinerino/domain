@@ -143,13 +143,13 @@ function validateOffers(
             let availableSeats = sectionOffer.containsPlace.map((p) => {
                 return {
                     branchCode: p.branchCode,
-                    seatingType: <factory.chevre.place.movieTheater.ISeatingType><unknown>p.seatingType
+                    seatingType: <factory.chevre.place.seat.ISeatingType><unknown>p.seatingType
                 };
             });
             let availableSeatsForAdditionalStocks = sectionOffer.containsPlace.map((p) => {
                 return {
                     branchCode: p.branchCode,
-                    seatingType: <factory.chevre.place.movieTheater.ISeatingType><unknown>p.seatingType
+                    seatingType: <factory.chevre.place.seat.ISeatingType><unknown>p.seatingType
                 };
             });
             debug(availableSeats.length, 'seats exist');
@@ -166,12 +166,18 @@ function validateOffers(
             if (isWheelChairOffer) {
                 // 車椅子予約の場合、車椅子タイプ座席のみ
                 availableSeats = availableSeats.filter(
-                    (s) => s.seatingType.typeOf === <string>SeatingType.Wheelchair
+                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Wheelchair)
+                        || (typeof s.seatingType !== 'string'
+                            && typeof s.seatingType !== undefined
+                            && s.seatingType.typeOf === <string>SeatingType.Wheelchair)
                 );
 
                 // 余分確保は一般座席から
                 availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
-                    (s) => s.seatingType.typeOf === <string>SeatingType.Normal
+                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
+                        || (typeof s.seatingType !== 'string'
+                            && typeof s.seatingType !== undefined
+                            && s.seatingType.typeOf === <string>SeatingType.Normal)
                 );
 
                 // 車椅子確保分が一般座席になければ車椅子は0
@@ -180,7 +186,10 @@ function validateOffers(
                 }
             } else {
                 availableSeats = availableSeats.filter(
-                    (s) => s.seatingType.typeOf === <string>SeatingType.Normal
+                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
+                        || (typeof s.seatingType !== 'string'
+                            && typeof s.seatingType !== undefined
+                            && s.seatingType.typeOf === <string>SeatingType.Normal)
                 );
 
                 // 余分確保なし

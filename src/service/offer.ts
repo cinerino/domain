@@ -138,7 +138,7 @@ export function searchEvents(params: {
 export function searchEventOffers(params: {
     project: factory.project.IProject;
     event: { id: string };
-}): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+}): ISearchEventOffersOperation<factory.chevre.place.movieTheater.IScreeningRoomSectionOffer[]> {
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -197,7 +197,7 @@ export function searchEventOffers(params: {
 
 async function searchEventOffers4COA(params: {
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-}): Promise<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+}): Promise<factory.chevre.place.movieTheater.IScreeningRoomSectionOffer[]> {
     const event = params.event;
 
     const masterService = new COA.service.Master({
@@ -230,7 +230,7 @@ async function searchEventOffers4COA(params: {
         throw new chevre.factory.errors.NotFound('Screening room');
     }
     const screeningRoomSections = screeningRoom.containsPlace;
-    const offers: chevre.factory.event.screeningEvent.IScreeningRoomSectionOffer[] = screeningRoomSections;
+    const offers: chevre.factory.place.movieTheater.IScreeningRoomSectionOffer[] = screeningRoomSections;
     offers.forEach((offer) => {
         const seats = offer.containsPlace;
         const seatSection = offer.branchCode;
@@ -880,12 +880,9 @@ function coaSalesTicket2offer(params: {
             value: 1
         },
         itemOffered: {
-            serviceType: {
+            serviceType: <any>{
                 project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: 'ServiceType',
-                id: '',
-                identifier: '',
-                name: ''
+                typeOf: 'CategoryCode'
             }
         }
     };

@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 注文検索条件拡張
 - 注文CSVレポート拡張
+- update @chevre/factory
+- String型のseatingTypeに対応
 
 ### Deprecated
 
