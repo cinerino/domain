@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文CSVレポート拡張
 - update @chevre/factory
 - String型のseatingTypeに対応
+- 座席タイプチャージを予約の価格要素に追加
 
 ### Deprecated
 

@@ -411,6 +411,12 @@ function validateAcceptedOffers(params: {
             seller: params.seller
         })(repos);
 
+        // 座席オファーを検索
+        const availableSeatOffers = await OfferService.searchEventOffers({
+            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            event: { id: params.event.id }
+        })(repos);
+
         const acceptedOffersWithoutDetail = params.object.acceptedOffer;
 
         // 利用可能なチケットオファーであれば受け入れる
@@ -421,9 +427,44 @@ function validateAcceptedOffers(params: {
                 throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
             }
 
+            // 座席指定であれば、座席タイプチャージを検索する
+            let seatPriceComponent: factory.chevre.place.seat.IPriceComponent[] | undefined;
+            const ticketedSeat = offerWithoutDetail.ticketedSeat;
+            if (ticketedSeat !== undefined && ticketedSeat !== null) {
+                const availableSeatSectionOffer = availableSeatOffers.find((o) => o.branchCode === ticketedSeat.seatSection);
+                if (availableSeatSectionOffer !== undefined) {
+                    if (Array.isArray(availableSeatSectionOffer.containsPlace)) {
+                        const availableSeat =
+                            availableSeatSectionOffer.containsPlace.find((o) => o.branchCode === ticketedSeat.seatNumber);
+                        if (availableSeat !== undefined) {
+                            if (Array.isArray(availableSeat.offers)) {
+                                if (availableSeat.offers[0] !== undefined) {
+                                    const availableSeatOffer = availableSeat.offers[0];
+                                    if (availableSeatOffer !== undefined) {
+                                        if (availableSeatOffer.priceSpecification !== undefined
+                                            && availableSeatOffer.priceSpecification !== null
+                                            && Array.isArray(availableSeatOffer.priceSpecification.priceComponent)) {
+                                            seatPriceComponent = availableSeatOffer.priceSpecification.priceComponent;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
                 ...offerWithoutDetail,
                 ...offer,
+                priceSpecification: {
+                    // イベントオファーと座席オファーの価格要素をマージ
+                    ...offer.priceSpecification,
+                    priceComponent: [
+                        ...offer.priceSpecification.priceComponent,
+                        ...(Array.isArray(seatPriceComponent)) ? seatPriceComponent : []
+                    ]
+                },
                 // 追加属性をマージ
                 additionalProperty: [
                     ...(Array.isArray(offerWithoutDetail.additionalProperty)) ? offerWithoutDetail.additionalProperty : [],
