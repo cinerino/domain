@@ -691,11 +691,15 @@ export function changeOffers(params: {
         if (authorizeAction.object.event.id !== params.object.event.id) {
             throw new factory.errors.Argument('Event', 'Event ID not matched.');
         }
+
         // 座席セクションと座席番号が一致しているかどうか
-        const allSeatsMatched = authorizeAction.object.acceptedOffer.every((offer, index) => {
-            return (offer.seatSection === params.object.acceptedOffer[index].seatSection
-                && offer.seatNumber === params.object.acceptedOffer[index].seatNumber);
+        const acceptedOfferParams = (Array.isArray(params.object.acceptedOffer)) ? params.object.acceptedOffer : [];
+        const allSeatsExisted = authorizeAction.object.acceptedOffer.every((originalAcceptedOffer) => {
+            return acceptedOfferParams.some(
+                (o) => originalAcceptedOffer.seatSection === o.seatSection && originalAcceptedOffer.seatNumber === o.seatNumber
+            );
         });
+        const allSeatsMatched = (acceptedOfferParams.length === authorizeAction.object.acceptedOffer.length) && allSeatsExisted;
         if (!allSeatsMatched) {
             throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
         }
@@ -706,7 +710,7 @@ export function changeOffers(params: {
         });
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = params.object.acceptedOffer.map((offer) => {
+        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = acceptedOfferParams.map((offer) => {
             const originalOffer = authorizeAction.object.acceptedOffer.find((o) => {
                 return o.seatSection === offer.seatSection
                     && o.seatNumber === offer.seatNumber;
