@@ -496,59 +496,44 @@ function processPlaceOrder(params: {
             object: {}
         })(repos);
 
-        // 新規登録かどうか、所有権で確認
-        const programMembershipOwnershipInfos =
-            await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
+        // 新規登録時の獲得ポイント
+        const membershipPointsEarned = programMembership.membershipPointsEarned;
+        if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
+            // ポイント口座を検索
+            const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+                // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+                sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
                 typeOfGood: {
-                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                    ids: [<string>programMembership.id]
+                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                    accountType: factory.accountType.Point
                 },
-                ownedBy: { id: customer.id }
+                ownedBy: { id: customer.id },
+                ownedFrom: now,
+                ownedThrough: now
             });
-
-        const isNewRegister = programMembershipOwnershipInfos.length === 0;
-
-        if (isNewRegister) {
-            // 新規登録時の獲得ポイント
-            const membershipPointsEarned = programMembership.membershipPointsEarned;
-            if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
-                // ポイント口座を検索
-                const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-                    // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
-                    sort: { ownedFrom: factory.sortType.Ascending },
-                    limit: 1,
-                    typeOfGood: {
-                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                        accountType: factory.accountType.Point
-                    },
-                    ownedBy: { id: customer.id },
-                    ownedFrom: now,
-                    ownedThrough: now
-                });
-                if (accountOwnershipInfos.length === 0) {
-                    throw new factory.errors.NotFound('accountOwnershipInfos');
-                }
-                const toAccount = accountOwnershipInfos[0].typeOfGood;
-
-                await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
-                    agent: { id: transaction.agent.id },
-                    transaction: { id: transaction.id },
-                    object: {
-                        typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                        amount: Number(membershipPointsEarned.value),
-                        toAccountNumber: toAccount.accountNumber,
-                        notes: (typeof membershipPointsEarned.name === 'string')
-                            ? membershipPointsEarned.name
-                            : programMembership.programName
-                    }
-                })({
-                    action: repos.action,
-                    ownershipInfo: repos.ownershipInfo,
-                    project: repos.project,
-                    transaction: repos.transaction
-                });
+            if (accountOwnershipInfos.length === 0) {
+                throw new factory.errors.NotFound('accountOwnershipInfos');
             }
+            const toAccount = accountOwnershipInfos[0].typeOfGood;
+
+            await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+                agent: { id: transaction.agent.id },
+                transaction: { id: transaction.id },
+                object: {
+                    typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
+                    amount: Number(membershipPointsEarned.value),
+                    toAccountNumber: toAccount.accountNumber,
+                    notes: (typeof membershipPointsEarned.name === 'string')
+                        ? membershipPointsEarned.name
+                        : programMembership.programName
+                }
+            })({
+                action: repos.action,
+                ownershipInfo: repos.ownershipInfo,
+                project: repos.project,
+                transaction: repos.transaction
+            });
         }
 
         // 会員プログラムオファー承認
@@ -614,6 +599,19 @@ function processPlaceOrder(params: {
             (project.settings !== undefined && typeof project.settings.emailInformUpdateProgrammembership === 'string')
                 ? project.settings.emailInformUpdateProgrammembership
                 : undefined;
+
+        // 新規登録かどうか、所有権で確認
+        const programMembershipOwnershipInfos =
+            await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
+                limit: 1,
+                typeOfGood: {
+                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                    ids: [<string>programMembership.id]
+                },
+                ownedBy: { id: customer.id }
+            });
+
+        const isNewRegister = programMembershipOwnershipInfos.length === 0;
 
         if (!isNewRegister
             && emailInformUpdateProgrammembership !== undefined
