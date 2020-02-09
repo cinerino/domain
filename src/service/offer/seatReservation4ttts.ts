@@ -515,7 +515,21 @@ export function create(params: {
         }
 
         // 金額計算
-        const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffersWithSeatNumber });
+        const amount = acceptedOffers2amount({
+            acceptedOffers: acceptedOffersWithSeatNumber
+                .filter((o) => {
+                    const r = o.itemOffered.serviceOutput;
+                    // 余分確保分を除く
+                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    if (r.additionalProperty !== undefined) {
+                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    }
+
+                    return r.additionalProperty === undefined
+                        || extraProperty === undefined
+                        || extraProperty.value !== '1';
+                })
+        });
 
         // アクションを完了
         const result: factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre> = {

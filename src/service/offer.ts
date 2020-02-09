@@ -371,7 +371,8 @@ export function searchEventTicketOffers(params: {
                 offers = await eventService.searchTicketOffers({ id: params.event.id });
 
                 // 店舗条件によって対象を絞る
-                if (params.seller.typeOf !== factory.organizationType.MovieTheater) {
+                if (params.seller.typeOf !== factory.organizationType.Corporation
+                    && params.seller.typeOf !== factory.organizationType.MovieTheater) {
                     throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
                 }
                 const seller = await repos.seller.findById({ id: params.seller.id });
