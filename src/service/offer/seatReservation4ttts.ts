@@ -180,18 +180,12 @@ function validateOffers(
             if (isWheelChairOffer) {
                 // 車椅子予約の場合、車椅子タイプ座席のみ
                 availableSeats = availableSeats.filter(
-                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Wheelchair)
-                        || (typeof s.seatingType !== 'string'
-                            && typeof s.seatingType !== undefined
-                            && s.seatingType.typeOf === <string>SeatingType.Wheelchair)
+                    (s) => typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Wheelchair
                 );
 
                 // 余分確保は一般座席から
                 availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
-                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
-                        || (typeof s.seatingType !== 'string'
-                            && typeof s.seatingType !== undefined
-                            && s.seatingType.typeOf === <string>SeatingType.Normal)
+                    (s) => typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal
                 );
 
                 // 車椅子確保分が一般座席になければ車椅子は0
@@ -200,10 +194,7 @@ function validateOffers(
                 }
             } else {
                 availableSeats = availableSeats.filter(
-                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
-                        || (typeof s.seatingType !== 'string'
-                            && typeof s.seatingType !== undefined
-                            && s.seatingType.typeOf === <string>SeatingType.Normal)
+                    (s) => typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal
                 );
 
                 // 余分確保なし
@@ -252,6 +243,7 @@ function validateOffers(
             acceptedOffersWithSeatNumber.push({
                 // ...offer,
                 ...ticketOffer,
+                addOn: [],
                 additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
                     ? ticketOffer.additionalProperty
                     : [],
@@ -301,6 +293,7 @@ function validateOffers(
                 acceptedOffersWithSeatNumber.push({
                     // ...offer,
                     ...ticketOffer,
+                    addOn: [],
                     additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
                         ? ticketOffer.additionalProperty
                         : [],
@@ -732,6 +725,7 @@ function responseBody2acceptedOffers4result(params: {
             : 0;
 
         return {
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: <factory.chevre.offerType>'Offer',
             id: itemOffered.reservedTicket.ticketType.id,
             name: itemOffered.reservedTicket.ticketType.name,

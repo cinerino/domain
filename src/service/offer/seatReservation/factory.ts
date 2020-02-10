@@ -245,6 +245,7 @@ export function responseBody2acceptedOffers4result(params: {
             //     : 0;
 
             return {
+                project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: <factory.chevre.offerType>'Offer',
                 id: itemOffered.reservedTicket.ticketType.id,
                 name: itemOffered.reservedTicket.ticketType.name,

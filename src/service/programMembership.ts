@@ -154,6 +154,7 @@ function createOrderProgramMembershipActionAttributes(params: {
 
     // 受け入れれたオファーオブジェクトを作成
     const acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership> = {
+        project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: 'Offer',
         identifier: offer.identifier,
         price: offer.price,

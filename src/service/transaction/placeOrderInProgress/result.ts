@@ -280,7 +280,7 @@ function createReservationAcceptedOffers(params: {
                                 dateIssued: params.orderDate,
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
-                                    seatingType: { typeOf: <any>'Default' },
+                                    // seatingType: 'Default',
                                     seatNumber: tmpReserve.seatNum,
                                     seatRow: '',
                                     seatSection: tmpReserve.seatSection
@@ -301,6 +301,7 @@ function createReservationAcceptedOffers(params: {
                         };
 
                         return {
+                            project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                             typeOf: <factory.chevre.offerType>'Offer',
                             id: requestedOffer.id,
                             name: <factory.multilingualString>requestedOffer.name,
@@ -376,6 +377,7 @@ function createMoneyTransferAcceptedOffers(params: {
                 : undefined;
 
             acceptedOffers.push({
+                project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                 typeOf: 'Offer',
                 // id: '',
                 // name: '',

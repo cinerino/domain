@@ -251,6 +251,7 @@ async function offer2availableSalesTicket(params: {
 }
 
 function availableSalesTicket2offerWithDetails(params: {
+    project: factory.chevre.project.IProject;
     availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket;
     coaPointTicket: COA.factory.master.ITicketResult | undefined;
     offer: IAcceptedOfferWithoutDetail;
@@ -283,6 +284,7 @@ function availableSalesTicket2offerWithDetails(params: {
     ].reduce((a, b) => a + b, 0);
 
     offerWithDetails = {
+        project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: 'Offer',
         id: availableSalesTicket.ticketCode,
         name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
@@ -393,11 +395,16 @@ async function validateOffers(
         });
 
         const offerWithDetails = availableSalesTicket2offerWithDetails({
-            availableSalesTicket, coaPointTicket, offer, offerIndex
+            project: { typeOf: screeningEvent.project.typeOf, id: screeningEvent.project.id },
+            availableSalesTicket,
+            coaPointTicket,
+            offer,
+            offerIndex
         });
 
         offersWithDetails.push({
             ...offerWithDetails,
+            addOn: [],
             additionalProperty: offer.additionalProperty,
             id: <string>offerWithDetails.id,
             ...{

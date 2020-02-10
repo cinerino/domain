@@ -256,6 +256,7 @@ async function searchEventOffers4COA(params: {
             seat.additionalProperty = additionalProperty;
 
             seat.offers = [{
+                project: { typeOf: params.event.project.typeOf, id: params.event.project.id },
                 typeOf: 'Offer',
                 priceCurrency: chevre.factory.priceCurrency.JPY,
                 availability: (availableOffer !== undefined)
@@ -857,6 +858,7 @@ function coaSalesTicket2offer(params: {
     // }
 
     return {
+        project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: 'Offer',
         priceCurrency: factory.priceCurrency.JPY,
         id: `COA-${params.coaInfo.theaterCode}-${params.salesTicket.ticketCode}`,

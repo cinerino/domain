@@ -341,6 +341,22 @@ export function validateAcceptedOffers(params: {
             const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
                 ...offerWithoutDetail,
                 ...offer,
+                itemOffered: {
+                    serviceType: offer.itemOffered.serviceType,
+                    serviceOutput: (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null)
+                        ? offerWithoutDetail.itemOffered.serviceOutput
+                        : undefined
+                },
+                addOn: (Array.isArray(offerWithoutDetail.addOn))
+                    ? offerWithoutDetail.addOn.map((a) => {
+                        return {
+                            project: params.project,
+                            typeOf: 'Offer',
+                            id: a.id,
+                            priceCurrency: offer.priceCurrency
+                        };
+                    })
+                    : [],
                 priceSpecification: {
                     // イベントオファーと座席オファーの価格要素をマージ
                     ...offer.priceSpecification,

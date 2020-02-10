@@ -62,6 +62,7 @@ export function authorize<T extends factory.accountType>(params: {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                 typeOf: 'Offer',
                 itemOffered: params.object.itemOffered,
                 seller: {

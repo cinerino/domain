@@ -325,8 +325,8 @@ export function checkMovieTicket(
                         reservationFor: { typeOf: movieTicketResult.serviceOutput.reservationFor.typeOf, id: '' },
                         reservedTicket: {
                             ticketedSeat: {
-                                typeOf: factory.chevre.placeType.ScreeningRoom,
-                                seatingType: { typeOf: <any>'Default' },
+                                typeOf: factory.chevre.placeType.Seat,
+                                // seatingType: 'Default',
                                 seatNumber: '',
                                 seatRow: '',
                                 seatSection: ''

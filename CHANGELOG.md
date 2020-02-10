@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 座席順が異なっていてもCOA座席予約の券種を変更できるように調整
 - メンバーシップ自動更新時もポイントインセンティブが付与されるように調整
 - ttts予約承認を本家予約承認に合わせるように調整
+- update @chevre/api-nodejs-client
 
 ### Deprecated
 
