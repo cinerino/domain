@@ -35,6 +35,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {}
         };
@@ -124,6 +125,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {}
         };
@@ -215,6 +217,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {}
         };
@@ -309,6 +312,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -414,6 +418,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -517,6 +522,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -608,6 +614,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -700,6 +707,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -789,6 +797,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -879,6 +888,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1021,6 +1031,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1115,6 +1126,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1208,6 +1220,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1303,6 +1316,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1400,6 +1414,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1498,6 +1513,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'
@@ -1614,6 +1630,7 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventId = 'eventId';
         const event = {
+            project: { id: '' },
             id: eventId,
             coaInfo: {
                 theaterCode: 'theaterCode'

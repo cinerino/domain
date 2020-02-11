@@ -44,16 +44,17 @@ export type ICancelOpetaiton<T> = (
 
 export type IValidateOperation<T> = () => Promise<T>;
 
-export type IAcceptedOfferWithSeatNumber
-    = factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> &
-    {
-        // price: number;
-        // priceCurrency: factory.priceCurrency;
-        // additionalProperty?: factory.propertyValue.IPropertyValue<string>[];
-        itemOffered: {
-            serviceOutput: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
-        };
-    };
+// export type IAcceptedOfferWithSeatNumber
+//     = factory.chevre.event.screeningEvent.IAcceptedTicketOfferWithoutDetail &
+// = factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> &
+// {
+// price: number;
+// priceCurrency: factory.priceCurrency;
+// additionalProperty?: factory.propertyValue.IPropertyValue<string>[];
+// itemOffered: {
+//     serviceOutput: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
+// };
+// };
 
 export interface IAcceptedOffer {
     seat_code?: string;
@@ -61,10 +62,10 @@ export interface IAcceptedOffer {
     watcher_name: string;
 }
 
-enum TicketTypeCategory {
-    Normal = 'Normal',
-    Wheelchair = 'Wheelchair'
-}
+// enum TicketTypeCategory {
+//     Normal = 'Normal',
+//     Wheelchair = 'Wheelchair'
+// }
 
 enum SeatingType {
     Normal = 'Normal',
@@ -78,8 +79,11 @@ export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
 
 /**
- * オファーのバリデーション
- * 座席の自動選択を含む
+ * tttsのacceptedOfferパラメータ(座席指定なし)に対して
+ * 座席指定情報を付加(座席の自動選択)
+ * addditionalTicketTextを付加
+ * additionalProperty(余分確保分調整のため)を付加
+ * する
  */
 // tslint:disable-next-line:max-func-body-length
 function validateOffers(
@@ -87,7 +91,7 @@ function validateOffers(
     performance: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>,
     acceptedOffers: IAcceptedOffer[],
     transactionId: string
-): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
+): IValidateOperation<factory.chevre.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[]> {
     return async () => {
         if (project.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
@@ -96,7 +100,7 @@ function validateOffers(
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[] = [];
+        const acceptedOffersWithSeatNumber: factory.chevre.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[] = [];
 
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
@@ -145,11 +149,11 @@ function validateOffers(
                 throw new factory.errors.NotFound('Unit Price');
             }
 
-            let ticketTypeCategory = TicketTypeCategory.Normal;
+            let ticketTypeCategory = SeatingType.Normal;
             if (Array.isArray(ticketOffer.additionalProperty)) {
                 const categoryProperty = ticketOffer.additionalProperty.find((p) => p.name === 'category');
                 if (categoryProperty !== undefined) {
-                    ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
+                    ticketTypeCategory = <SeatingType>categoryProperty.value;
                 }
             }
 
@@ -176,7 +180,7 @@ function validateOffers(
 
             // 車椅子予約の場合、車椅子座席に絞る
             // 一般予約は、車椅子座席でも予約可能
-            const isWheelChairOffer = ticketTypeCategory === TicketTypeCategory.Wheelchair;
+            const isWheelChairOffer = ticketTypeCategory === SeatingType.Wheelchair;
             if (isWheelChairOffer) {
                 // 車椅子予約の場合、車椅子タイプ座席のみ
                 availableSeats = availableSeats.filter(
@@ -214,18 +218,18 @@ function validateOffers(
             const selectedSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.slice(0, WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS);
             unavailableSeatNumbers.push(...selectedSeatsForAdditionalStocks.map((s) => s.branchCode));
 
-            const ticketType: chevre.factory.ticketType.ITicketType = {
-                project: ticketOffer.priceSpecification.project,
-                typeOf: ticketOffer.typeOf,
-                id: ticketOffer.id,
-                identifier: ticketOffer.identifier,
-                name: <any>ticketOffer.name,
-                priceSpecification: unitPriceSpec,
-                priceCurrency: ticketOffer.priceCurrency,
-                additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
-                    ? ticketOffer.additionalProperty
-                    : []
-            };
+            // const ticketType: chevre.factory.ticketType.ITicketType = {
+            //     project: ticketOffer.priceSpecification.project,
+            //     typeOf: ticketOffer.typeOf,
+            //     id: ticketOffer.id,
+            //     identifier: ticketOffer.identifier,
+            //     name: <any>ticketOffer.name,
+            //     priceSpecification: unitPriceSpec,
+            //     priceCurrency: ticketOffer.priceCurrency,
+            //     additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
+            //         ? ticketOffer.additionalProperty
+            //         : []
+            // };
 
             const additionalProperty: factory.propertyValue.IPropertyValue<string>[] = [
                 ...(Array.isArray(ticketOffer.additionalProperty))
@@ -243,12 +247,11 @@ function validateOffers(
             acceptedOffersWithSeatNumber.push({
                 // ...offer,
                 ...ticketOffer,
-                addOn: [],
-                additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
-                    ? ticketOffer.additionalProperty
-                    : [],
-                price: unitPrice,
-                priceCurrency: factory.priceCurrency.JPY,
+                // additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
+                //     ? ticketOffer.additionalProperty
+                //     : [],
+                // price: unitPrice,
+                // priceCurrency: factory.priceCurrency.JPY,
                 ticketedSeat: {
                     seatSection: sectionOffer.branchCode,
                     seatNumber: selectedSeat.branchCode,
@@ -256,13 +259,13 @@ function validateOffers(
                     typeOf: factory.chevre.placeType.Seat
                 },
                 itemOffered: {
-                    serviceType: <any>{},
+                    // serviceType: <any>{},
                     serviceOutput: {
-                        project: { typeOf: project.typeOf, id: project.id },
+                        // project: { typeOf: project.typeOf, id: project.id },
                         typeOf: factory.chevre.reservationType.EventReservation,
-                        id: '',
-                        reservationNumber: '',
-                        reservationFor: performance,
+                        // id: '',
+                        // reservationNumber: '',
+                        // reservationFor: performance,
                         additionalTicketText: offer.watcher_name,
                         reservedTicket: {
                             typeOf: <'Ticket'>'Ticket',
@@ -273,8 +276,8 @@ function validateOffers(
                                 seatRow: '',
                                 seatingType: <any>selectedSeat.seatingType,
                                 typeOf: <factory.chevre.placeType.Seat>factory.chevre.placeType.Seat
-                            },
-                            ticketType: ticketType
+                            }
+                            // ticketType: ticketType
                         },
                         additionalProperty: additionalProperty
                     }
@@ -293,12 +296,11 @@ function validateOffers(
                 acceptedOffersWithSeatNumber.push({
                     // ...offer,
                     ...ticketOffer,
-                    addOn: [],
-                    additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
-                        ? ticketOffer.additionalProperty
-                        : [],
-                    price: unitPrice,
-                    priceCurrency: factory.priceCurrency.JPY,
+                    // additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
+                    //     ? ticketOffer.additionalProperty
+                    //     : [],
+                    // price: unitPrice,
+                    // priceCurrency: factory.priceCurrency.JPY,
                     ticketedSeat: {
                         seatSection: sectionOffer.branchCode,
                         seatNumber: s.branchCode,
@@ -306,31 +308,31 @@ function validateOffers(
                         typeOf: factory.chevre.placeType.Seat
                     },
                     itemOffered: {
-                        serviceType: <any>{},
+                        // serviceType: <any>{},
                         serviceOutput: {
-                            project: { typeOf: project.typeOf, id: project.id },
+                            // project: { typeOf: project.typeOf, id: project.id },
                             typeOf: factory.chevre.reservationType.EventReservation,
-                            id: '',
-                            reservationNumber: '',
-                            reservationFor: performance,
+                            // id: '',
+                            // reservationNumber: '',
+                            // reservationFor: performance,
                             additionalTicketText: offer.watcher_name,
                             reservedTicket: {
                                 typeOf: 'Ticket',
-                                priceCurrency: factory.priceCurrency.JPY,
+                                // priceCurrency: factory.priceCurrency.JPY,
                                 ticketedSeat: {
                                     seatSection: sectionOffer.branchCode,
                                     seatNumber: s.branchCode,
                                     seatRow: '',
                                     seatingType: <any>s.seatingType,
                                     typeOf: factory.chevre.placeType.Seat
-                                },
-                                ticketType: {
-                                    ...ticketType,
-                                    priceSpecification: {
-                                        ...unitPriceSpec,
-                                        price: 0 // 余分確保分の単価調整
-                                    }
                                 }
+                                // ticketType: {
+                                //     ...ticketType,
+                                //     priceSpecification: {
+                                //         ...unitPriceSpec,
+                                //         price: 0 // 余分確保分の単価調整
+                                //     }
+                                // }
                             },
                             additionalProperty: additionalProperty4extra
                         }
@@ -406,7 +408,7 @@ export function create(params: {
         }
 
         // 車椅子の余分確保分を調整
-        const acceptedOffersWithSeatNumber = await validateOffers(
+        const acceptedOffersWithoutDetail = await validateOffers(
             project,
             event,
             params.object.acceptedOffers,
@@ -416,7 +418,12 @@ export function create(params: {
         const acceptedOffers = await validateAcceptedOffers({
             project: { typeOf: params.project.typeOf, id: params.project.id },
             object: {
-                acceptedOffer: acceptedOffersWithSeatNumber,
+                acceptedOffer: acceptedOffersWithoutDetail.map((o) => {
+                    return {
+                        ...o,
+                        additionalProperty: []
+                    };
+                }),
                 event: params.object.event
             },
             event: event,
@@ -447,32 +454,15 @@ export function create(params: {
             requestBody = {
                 id: reserveTransaction.id,
                 object: {
-                    event: {
-                        id: event.id
-                    },
-                    acceptedOffer: acceptedOffers.map((o) => {
-                        const ticketedSeat = o.ticketedSeat;
-                        if (ticketedSeat === undefined) {
-                            throw new Error('ticketedSeat undefined');
-                        }
-
-                        return {
-                            id: o.id,
-                            ticketedSeat: {
-                                typeOf: chevre.factory.placeType.Seat,
-                                seatSection: ticketedSeat.seatSection,
-                                seatNumber: ticketedSeat.seatNumber,
-                                seatRow: ''
-                            }
-                        };
-                    })
+                    event: { id: event.id },
+                    acceptedOffer: acceptedOffersWithoutDetail
                 }
             };
 
             responseBody = await reserveService.addReservations(requestBody);
 
             const tmpReservations = createTmpReservations({
-                acceptedOffersWithSeatNumber,
+                acceptedOffers,
                 reservations: (Array.isArray(responseBody.object.reservations)) ? responseBody.object.reservations : []
             });
             debug(tmpReservations.length, 'tmp reservation(s) created');
@@ -509,17 +499,16 @@ export function create(params: {
 
         // 金額計算
         const amount = acceptedOffers2amount({
-            acceptedOffers: acceptedOffersWithSeatNumber
+            acceptedOffers: acceptedOffers
                 .filter((o) => {
                     const r = o.itemOffered.serviceOutput;
                     // 余分確保分を除く
                     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    if (r.additionalProperty !== undefined) {
+                    if (r !== undefined && r !== null && Array.isArray(r.additionalProperty)) {
                         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
                     }
 
-                    return r.additionalProperty === undefined
-                        || extraProperty === undefined
+                    return extraProperty === undefined
                         || extraProperty.value !== '1';
                 })
         });
@@ -539,25 +528,25 @@ export function create(params: {
 }
 
 function createTmpReservations(params: {
-    acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[];
+    acceptedOffers: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[];
+    // acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[];
     reservations: factory.chevre.transaction.reserve.ISubReservation[];
 }) {
     let tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[] = [];
 
-    const acceptedOffersWithSeatNumber = params.acceptedOffersWithSeatNumber;
+    const acceptedOffers = params.acceptedOffers;
     const reservations = params.reservations;
 
-    tmpReservations = acceptedOffersWithSeatNumber
+    tmpReservations = acceptedOffers
         .filter((o) => {
             const r = o.itemOffered.serviceOutput;
             // 余分確保分を除く
             let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (r.additionalProperty !== undefined) {
+            if (r !== undefined && r !== null && Array.isArray(r.additionalProperty)) {
                 extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
             }
 
-            return r.additionalProperty === undefined
-                || extraProperty === undefined
+            return extraProperty === undefined
                 || extraProperty.value !== '1';
         })
         .map((o) => {
@@ -573,10 +562,15 @@ function createTmpReservations(params: {
             }
 
             const reservationInAcceptedOffer = o.itemOffered.serviceOutput;
+            if (reservationInAcceptedOffer === undefined || reservationInAcceptedOffer === null) {
+                throw new factory.errors.ServiceUnavailable(`serviceOutput undefined in accepted offer`);
+            }
 
             let extraReservationIds: string[] | undefined;
             if (Array.isArray(reservationInAcceptedOffer.additionalProperty)) {
-                const extraSeatNumbersProperty = reservationInAcceptedOffer.additionalProperty.find((p) => p.name === 'extraSeatNumbers');
+                const extraSeatNumbersProperty = reservationInAcceptedOffer.additionalProperty.find(
+                    (p) => p.name === 'extraSeatNumbers'
+                );
                 if (extraSeatNumbersProperty !== undefined) {
                     const extraSeatNumbers: string[] = JSON.parse(extraSeatNumbersProperty.value);
                     if (extraSeatNumbers.length > 0) {

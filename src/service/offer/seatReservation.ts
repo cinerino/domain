@@ -313,13 +313,28 @@ export function validateAcceptedOffers(params: {
 
             // 座席指定であれば、座席タイプチャージを検索する
             let seatPriceComponent: factory.chevre.place.seat.IPriceComponent[] | undefined;
-            const ticketedSeat = offerWithoutDetail.ticketedSeat;
+            let ticketedSeat = offerWithoutDetail.ticketedSeat;
+            if (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null) {
+                if (offerWithoutDetail.itemOffered.serviceOutput !== undefined && offerWithoutDetail.itemOffered.serviceOutput !== null) {
+                    if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== undefined
+                        && offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== null) {
+                        if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat !== undefined
+                            && offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat !== null) {
+                            ticketedSeat = offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat;
+                        }
+                    }
+                }
+
+            }
             if (ticketedSeat !== undefined && ticketedSeat !== null) {
-                const availableSeatSectionOffer = availableSeatOffers.find((o) => o.branchCode === ticketedSeat.seatSection);
+                const seatSection = ticketedSeat.seatSection;
+                const seatNumber = ticketedSeat.seatNumber;
+
+                const availableSeatSectionOffer = availableSeatOffers.find((o) => o.branchCode === seatSection);
                 if (availableSeatSectionOffer !== undefined) {
                     if (Array.isArray(availableSeatSectionOffer.containsPlace)) {
                         const availableSeat =
-                            availableSeatSectionOffer.containsPlace.find((o) => o.branchCode === ticketedSeat.seatNumber);
+                            availableSeatSectionOffer.containsPlace.find((o) => o.branchCode === seatNumber);
                         if (availableSeat !== undefined) {
                             if (Array.isArray(availableSeat.offers)) {
                                 if (availableSeat.offers[0] !== undefined) {
