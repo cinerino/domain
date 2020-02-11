@@ -118,7 +118,18 @@ export function createAuthorizeSeatReservationActionAttributes(params: {
 export function acceptedOffers2amount(params: {
     acceptedOffers: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[];
 }): number {
-    const acceptedOffers = params.acceptedOffers;
+    const acceptedOffers = params.acceptedOffers
+        .filter((o) => {
+            const r = o.itemOffered.serviceOutput;
+            // 余分確保分を除く
+            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            if (r !== undefined && r !== null && Array.isArray(r.additionalProperty)) {
+                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            }
+
+            return extraProperty === undefined
+                || extraProperty.value !== '1';
+        });
 
     // 金額計算
     const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
@@ -160,116 +171,129 @@ export function responseBody2acceptedOffers4result(params: {
     // 座席仮予約からオファー情報を生成する
     if (Array.isArray(params.responseBody.object.reservations)) {
         // tslint:disable-next-line:max-func-body-length
-        acceptedOffers4result = params.responseBody.object.reservations.map((itemOffered) => {
-            const reservationFor: IReservationFor = {
-                project: itemOffered.reservationFor.project,
-                typeOf: itemOffered.reservationFor.typeOf,
-                additionalProperty: itemOffered.reservationFor.additionalProperty,
-                eventStatus: itemOffered.reservationFor.eventStatus,
-                id: itemOffered.reservationFor.id,
-                location: itemOffered.reservationFor.location,
-                name: itemOffered.reservationFor.name,
-                doorTime: moment(itemOffered.reservationFor.doorTime)
-                    .toDate(),
-                endDate: moment(itemOffered.reservationFor.endDate)
-                    .toDate(),
-                startDate: moment(itemOffered.reservationFor.startDate)
-                    .toDate(),
-                superEvent: {
-                    project: event.superEvent.project,
-                    typeOf: event.superEvent.typeOf,
-                    duration: event.superEvent.duration,
-                    eventStatus: event.superEvent.eventStatus,
-                    headline: event.superEvent.headline,
-                    id: event.superEvent.id,
-                    kanaName: event.superEvent.kanaName,
-                    location: event.superEvent.location,
-                    name: event.superEvent.name,
-                    soundFormat: event.superEvent.soundFormat,
-                    videoFormat: event.superEvent.videoFormat,
-                    workPerformed: {
-                        project: event.superEvent.workPerformed.project,
-                        typeOf: event.superEvent.workPerformed.typeOf,
-                        duration: event.superEvent.workPerformed.duration,
-                        headline: event.superEvent.workPerformed.headline,
-                        id: event.superEvent.workPerformed.id,
-                        identifier: event.superEvent.workPerformed.identifier,
-                        name: event.superEvent.workPerformed.name
-                    }
-                },
-                workPerformed: (event.workPerformed !== undefined)
-                    ? {
-                        project: event.workPerformed.project,
-                        typeOf: event.workPerformed.typeOf,
-                        duration: event.workPerformed.duration,
-                        headline: event.workPerformed.headline,
-                        id: event.workPerformed.id,
-                        identifier: event.workPerformed.identifier,
-                        name: event.workPerformed.name
-                    }
-                    : undefined
-            };
-
-            const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation>
-                = {
-                typeOf: itemOffered.reservedTicket.typeOf,
-                ticketType: {
-                    project: { typeOf: params.project.typeOf, id: params.project.id },
-                    typeOf: itemOffered.reservedTicket.ticketType.typeOf,
-                    id: itemOffered.reservedTicket.ticketType.id,
-                    identifier: itemOffered.reservedTicket.ticketType.identifier,
-                    name: itemOffered.reservedTicket.ticketType.name,
-                    description: itemOffered.reservedTicket.ticketType.description,
-                    additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                    priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
-                },
-                ...(itemOffered.reservedTicket.ticketedSeat !== undefined)
-                    ? { ticketedSeat: itemOffered.reservedTicket.ticketedSeat }
-                    : undefined
-            };
-
-            const reservation: factory.order.IReservation = {
-                project: itemOffered.project,
-                typeOf: itemOffered.typeOf,
-                additionalProperty: itemOffered.additionalProperty,
-                additionalTicketText: itemOffered.additionalTicketText,
-                id: itemOffered.id,
-                reservationNumber: itemOffered.reservationNumber,
-                reservationFor: reservationFor,
-                reservedTicket: reservedTicket
-            };
-
-            const priceSpecification = <IReservationPriceSpecification>itemOffered.price;
-            // const unitPrice = (itemOffered.reservedTicket.ticketType.priceSpecification !== undefined)
-            //     ? itemOffered.reservedTicket.ticketType.priceSpecification.price
-            //     : 0;
-
-            return {
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: <factory.chevre.offerType>'Offer',
-                id: itemOffered.reservedTicket.ticketType.id,
-                name: itemOffered.reservedTicket.ticketType.name,
-                itemOffered: reservation,
-                offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-                // price: unitPrice,
-                priceSpecification: {
-                    ...priceSpecification,
-                    priceComponent: priceSpecification.priceComponent.map((c) => {
-                        return {
-                            ...c,
-                            accounting: undefined // accountingはorderに不要な情報
-                        };
-                    })
-                },
-                priceCurrency: (itemOffered.priceCurrency !== undefined)
-                    ? itemOffered.priceCurrency
-                    : factory.priceCurrency.JPY,
-                seller: {
-                    typeOf: seller.typeOf,
-                    name: seller.name.ja
+        acceptedOffers4result = params.responseBody.object.reservations
+            .filter((itemOffered) => {
+                const r = itemOffered;
+                // 余分確保分を除く(ttts対応)
+                let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                if (Array.isArray(r.additionalProperty)) {
+                    extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
                 }
-            };
-        });
+
+                return extraProperty === undefined
+                    || extraProperty.value !== '1';
+            })
+            // tslint:disable-next-line:max-func-body-length
+            .map((itemOffered) => {
+                const reservationFor: IReservationFor = {
+                    project: itemOffered.reservationFor.project,
+                    typeOf: itemOffered.reservationFor.typeOf,
+                    additionalProperty: itemOffered.reservationFor.additionalProperty,
+                    eventStatus: itemOffered.reservationFor.eventStatus,
+                    id: itemOffered.reservationFor.id,
+                    location: itemOffered.reservationFor.location,
+                    name: itemOffered.reservationFor.name,
+                    doorTime: moment(itemOffered.reservationFor.doorTime)
+                        .toDate(),
+                    endDate: moment(itemOffered.reservationFor.endDate)
+                        .toDate(),
+                    startDate: moment(itemOffered.reservationFor.startDate)
+                        .toDate(),
+                    superEvent: {
+                        project: event.superEvent.project,
+                        typeOf: event.superEvent.typeOf,
+                        duration: event.superEvent.duration,
+                        eventStatus: event.superEvent.eventStatus,
+                        headline: event.superEvent.headline,
+                        id: event.superEvent.id,
+                        kanaName: event.superEvent.kanaName,
+                        location: event.superEvent.location,
+                        name: event.superEvent.name,
+                        soundFormat: event.superEvent.soundFormat,
+                        videoFormat: event.superEvent.videoFormat,
+                        workPerformed: {
+                            project: event.superEvent.workPerformed.project,
+                            typeOf: event.superEvent.workPerformed.typeOf,
+                            duration: event.superEvent.workPerformed.duration,
+                            headline: event.superEvent.workPerformed.headline,
+                            id: event.superEvent.workPerformed.id,
+                            identifier: event.superEvent.workPerformed.identifier,
+                            name: event.superEvent.workPerformed.name
+                        }
+                    },
+                    workPerformed: (event.workPerformed !== undefined)
+                        ? {
+                            project: event.workPerformed.project,
+                            typeOf: event.workPerformed.typeOf,
+                            duration: event.workPerformed.duration,
+                            headline: event.workPerformed.headline,
+                            id: event.workPerformed.id,
+                            identifier: event.workPerformed.identifier,
+                            name: event.workPerformed.name
+                        }
+                        : undefined
+                };
+
+                const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation>
+                    = {
+                    typeOf: itemOffered.reservedTicket.typeOf,
+                    ticketType: {
+                        project: { typeOf: params.project.typeOf, id: params.project.id },
+                        typeOf: itemOffered.reservedTicket.ticketType.typeOf,
+                        id: itemOffered.reservedTicket.ticketType.id,
+                        identifier: itemOffered.reservedTicket.ticketType.identifier,
+                        name: itemOffered.reservedTicket.ticketType.name,
+                        description: itemOffered.reservedTicket.ticketType.description,
+                        additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
+                        priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
+                    },
+                    ...(itemOffered.reservedTicket.ticketedSeat !== undefined)
+                        ? { ticketedSeat: itemOffered.reservedTicket.ticketedSeat }
+                        : undefined
+                };
+
+                const reservation: factory.order.IReservation = {
+                    project: itemOffered.project,
+                    typeOf: itemOffered.typeOf,
+                    additionalProperty: itemOffered.additionalProperty,
+                    additionalTicketText: itemOffered.additionalTicketText,
+                    id: itemOffered.id,
+                    reservationNumber: itemOffered.reservationNumber,
+                    reservationFor: reservationFor,
+                    reservedTicket: reservedTicket
+                };
+
+                const priceSpecification = <IReservationPriceSpecification>itemOffered.price;
+                // const unitPrice = (itemOffered.reservedTicket.ticketType.priceSpecification !== undefined)
+                //     ? itemOffered.reservedTicket.ticketType.priceSpecification.price
+                //     : 0;
+
+                return {
+                    project: { typeOf: params.project.typeOf, id: params.project.id },
+                    typeOf: <factory.chevre.offerType>'Offer',
+                    id: itemOffered.reservedTicket.ticketType.id,
+                    name: itemOffered.reservedTicket.ticketType.name,
+                    itemOffered: reservation,
+                    offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
+                    // price: unitPrice,
+                    priceSpecification: {
+                        ...priceSpecification,
+                        priceComponent: priceSpecification.priceComponent.map((c) => {
+                            return {
+                                ...c,
+                                accounting: undefined // accountingはorderに不要な情報
+                            };
+                        })
+                    },
+                    priceCurrency: (itemOffered.priceCurrency !== undefined)
+                        ? itemOffered.priceCurrency
+                        : factory.priceCurrency.JPY,
+                    seller: {
+                        typeOf: seller.typeOf,
+                        name: seller.name.ja
+                    }
+                };
+            });
     }
 
     return acceptedOffers4result;

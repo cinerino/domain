@@ -1,5 +1,5 @@
 import * as createDebug from 'debug';
-import * as moment from 'moment-timezone';
+// import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
@@ -20,8 +20,8 @@ import {
 import {
     acceptedOffers2amount,
     createAuthorizeSeatReservationActionAttributes,
-    createReserveTransactionStartParams
-    // responseBody2acceptedOffers4result
+    createReserveTransactionStartParams,
+    responseBody2acceptedOffers4result
 } from './seatReservation/factory';
 
 const debug = createDebug('ttts-domain:service');
@@ -35,12 +35,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = 6;
-
-export type ICancelOpetaiton<T> = (
-    transactionRepo: TransactionRepo,
-    actionRepo: ActionRepo,
-    projectRepo: ProjectRepo
-) => Promise<T>;
 
 export type IValidateOperation<T> = () => Promise<T>;
 
@@ -56,11 +50,11 @@ export type IValidateOperation<T> = () => Promise<T>;
 // };
 // };
 
-export interface IAcceptedOffer {
-    seat_code?: string;
-    ticket_type: string;
-    watcher_name: string;
-}
+// export interface IAcceptedOffer {
+//     seat_code?: string;
+//     ticket_type: string;
+//     watcher_name: string;
+// }
 
 // enum TicketTypeCategory {
 //     Normal = 'Normal',
@@ -89,7 +83,8 @@ export type IUnitPriceSpecification =
 function validateOffers(
     project: factory.project.IProject,
     performance: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>,
-    acceptedOffers: IAcceptedOffer[],
+    acceptedOffer: factory.chevre.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[],
+    // acceptedOffers: IAcceptedOffer[],
     transactionId: string
 ): IValidateOperation<factory.chevre.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[]> {
     return async () => {
@@ -130,24 +125,24 @@ function validateOffers(
         debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
         // tslint:disable-next-line:max-func-body-length
-        for (const offer of acceptedOffers) {
+        for (const offer of acceptedOffer) {
             // リクエストで指定されるのは、券種IDではなく券種コードなので要注意
-            const ticketOffer = ticketOffers.find((t) => t.identifier === offer.ticket_type);
+            const ticketOffer = ticketOffers.find((t) => t.id === offer.id);
             if (ticketOffer === undefined) {
-                throw new factory.errors.NotFound('Offer', `Offer ${offer.ticket_type} not found`);
+                throw new factory.errors.NotFound('Offer', `Offer ${offer.id} not found`);
             }
-            const unitPriceSpec =
-                <chevre.factory.priceSpecification.IPriceSpecification<chevre.factory.priceSpecificationType.UnitPriceSpecification>>
-                ticketOffer.priceSpecification.priceComponent.find((c) => {
-                    return c.typeOf === chevre.factory.priceSpecificationType.UnitPriceSpecification;
-                });
-            if (unitPriceSpec === undefined) {
-                throw new factory.errors.NotFound('Unit Price Specification');
-            }
-            const unitPrice = unitPriceSpec.price;
-            if (unitPrice === undefined) {
-                throw new factory.errors.NotFound('Unit Price');
-            }
+            // const unitPriceSpec =
+            //     <chevre.factory.priceSpecification.IPriceSpecification<chevre.factory.priceSpecificationType.UnitPriceSpecification>>
+            //     ticketOffer.priceSpecification.priceComponent.find((c) => {
+            //         return c.typeOf === chevre.factory.priceSpecificationType.UnitPriceSpecification;
+            //     });
+            // if (unitPriceSpec === undefined) {
+            //     throw new factory.errors.NotFound('Unit Price Specification');
+            // }
+            // const unitPrice = unitPriceSpec.price;
+            // if (unitPrice === undefined) {
+            //     throw new factory.errors.NotFound('Unit Price');
+            // }
 
             let ticketTypeCategory = SeatingType.Normal;
             if (Array.isArray(ticketOffer.additionalProperty)) {
@@ -244,9 +239,12 @@ function validateOffers(
                     : []
             ];
 
+            const additionalTicketText = offer.itemOffered?.serviceOutput?.additionalTicketText;
+
             acceptedOffersWithSeatNumber.push({
                 // ...offer,
-                ...ticketOffer,
+                // ...ticketOffer,
+                id: ticketOffer.id,
                 // additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
                 //     ? ticketOffer.additionalProperty
                 //     : [],
@@ -266,7 +264,7 @@ function validateOffers(
                         // id: '',
                         // reservationNumber: '',
                         // reservationFor: performance,
-                        additionalTicketText: offer.watcher_name,
+                        additionalTicketText: additionalTicketText,
                         reservedTicket: {
                             typeOf: <'Ticket'>'Ticket',
                             // priceCurrency: factory.priceCurrency.JPY,
@@ -295,7 +293,8 @@ function validateOffers(
 
                 acceptedOffersWithSeatNumber.push({
                     // ...offer,
-                    ...ticketOffer,
+                    // ...ticketOffer,
+                    id: ticketOffer.id,
                     // additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
                     //     ? ticketOffer.additionalProperty
                     //     : [],
@@ -315,7 +314,7 @@ function validateOffers(
                             // id: '',
                             // reservationNumber: '',
                             // reservationFor: performance,
-                            additionalTicketText: offer.watcher_name,
+                            additionalTicketText: additionalTicketText,
                             reservedTicket: {
                                 typeOf: 'Ticket',
                                 // priceCurrency: factory.priceCurrency.JPY,
@@ -353,8 +352,8 @@ export function create(params: {
     project: factory.project.IProject;
     // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre> & {
-        acceptedOffers: IAcceptedOffer[];
-        event: { id: string };
+        // acceptedOffers: IAcceptedOffer[];
+        // event: { id: string };
     };
     agent: { id: string };
     transaction: { id: string };
@@ -368,8 +367,6 @@ export function create(params: {
         seller: SellerRepo;
         transaction: TransactionRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>> => {
-        debug('creating seatReservation authorizeAction...acceptedOffers:', params.object.acceptedOffers.length);
-
         const project = await repos.project.findById({ id: params.project.id });
         if (project.settings === undefined
             || project.settings.chevre === undefined) {
@@ -394,6 +391,10 @@ export function create(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
+        if (params.object.event === undefined || params.object.event === null) {
+            throw new factory.errors.ArgumentNull('object.event');
+        }
+
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
         event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: params.object.event.id });
 
@@ -407,11 +408,11 @@ export function create(params: {
             offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
 
-        // 車椅子の余分確保分を調整
+        // 座席自動選択
         const acceptedOffersWithoutDetail = await validateOffers(
             project,
             event,
-            params.object.acceptedOffers,
+            params.object.acceptedOffer,
             params.transaction.id
         )();
 
@@ -498,20 +499,7 @@ export function create(params: {
         }
 
         // 金額計算
-        const amount = acceptedOffers2amount({
-            acceptedOffers: acceptedOffers
-                .filter((o) => {
-                    const r = o.itemOffered.serviceOutput;
-                    // 余分確保分を除く
-                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    if (r !== undefined && r !== null && Array.isArray(r.additionalProperty)) {
-                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                    }
-
-                    return extraProperty === undefined
-                        || extraProperty.value !== '1';
-                })
-        });
+        const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffers });
 
         // アクションを完了
         const result: factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre> = {
@@ -610,217 +598,4 @@ function createTmpReservations(params: {
         });
 
     return tmpReservations;
-}
-
-// tslint:disable-next-line:max-func-body-length
-function responseBody2acceptedOffers4result(params: {
-    responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>;
-    // tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[];
-    event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    project: factory.project.IProject;
-    seller: factory.transaction.placeOrder.ISeller;
-}): factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined {
-    let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
-
-    const event = params.event;
-    const seller = params.seller;
-    const reservations = (Array.isArray(params.responseBody.object.reservations)) ? params.responseBody.object.reservations : [];
-
-    // tslint:disable-next-line:max-func-body-length
-    acceptedOffers4result = reservations
-        .filter((itemOffered) => {
-            const r = itemOffered;
-            // 余分確保分を除く
-            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (Array.isArray(r.additionalProperty)) {
-                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            }
-
-            return extraProperty === undefined
-                || extraProperty.value !== '1';
-        })
-        // tslint:disable-next-line:max-func-body-length
-        .map((itemOffered) => {
-            // acceptedOffers4result = params.tmpReservations.map((tmpReservation) => {
-            // const itemOffered = reservations.find((r) => r.id === tmpReservation.id);
-            // if (itemOffered === undefined) {
-            //     throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
-            // }
-
-            const reservationFor: IReservationFor = {
-                project: itemOffered.reservationFor.project,
-                typeOf: itemOffered.reservationFor.typeOf,
-                additionalProperty: itemOffered.reservationFor.additionalProperty,
-                eventStatus: itemOffered.reservationFor.eventStatus,
-                id: itemOffered.reservationFor.id,
-                location: itemOffered.reservationFor.location,
-                name: itemOffered.reservationFor.name,
-                doorTime: moment(itemOffered.reservationFor.doorTime)
-                    .toDate(),
-                endDate: moment(itemOffered.reservationFor.endDate)
-                    .toDate(),
-                startDate: moment(itemOffered.reservationFor.startDate)
-                    .toDate(),
-                superEvent: {
-                    project: event.superEvent.project,
-                    typeOf: event.superEvent.typeOf,
-                    duration: event.superEvent.duration,
-                    eventStatus: event.superEvent.eventStatus,
-                    headline: event.superEvent.headline,
-                    id: event.superEvent.id,
-                    kanaName: event.superEvent.kanaName,
-                    location: event.superEvent.location,
-                    name: event.superEvent.name,
-                    soundFormat: event.superEvent.soundFormat,
-                    videoFormat: event.superEvent.videoFormat,
-                    workPerformed: {
-                        project: event.superEvent.workPerformed.project,
-                        typeOf: event.superEvent.workPerformed.typeOf,
-                        duration: event.superEvent.workPerformed.duration,
-                        headline: event.superEvent.workPerformed.headline,
-                        id: event.superEvent.workPerformed.id,
-                        identifier: event.superEvent.workPerformed.identifier,
-                        name: event.superEvent.workPerformed.name
-                    }
-                },
-                workPerformed: (event.workPerformed !== undefined)
-                    ? {
-                        project: event.workPerformed.project,
-                        typeOf: event.workPerformed.typeOf,
-                        duration: event.workPerformed.duration,
-                        headline: event.workPerformed.headline,
-                        id: event.workPerformed.id,
-                        identifier: event.workPerformed.identifier,
-                        name: event.workPerformed.name
-                    }
-                    : undefined
-            };
-
-            const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation>
-                = {
-                typeOf: itemOffered.reservedTicket.typeOf,
-                ticketType: {
-                    project: { typeOf: params.project.typeOf, id: params.project.id },
-                    typeOf: itemOffered.reservedTicket.ticketType.typeOf,
-                    id: itemOffered.reservedTicket.ticketType.id,
-                    identifier: itemOffered.reservedTicket.ticketType.identifier,
-                    name: itemOffered.reservedTicket.ticketType.name,
-                    description: itemOffered.reservedTicket.ticketType.description,
-                    additionalProperty: itemOffered.reservedTicket.ticketType.additionalProperty,
-                    priceCurrency: itemOffered.reservedTicket.ticketType.priceCurrency
-                    // priceSpecification: itemOffered.reservedTicket.ticketType.priceSpecification // 必要ないことが確実になったら削除
-                },
-                ...(itemOffered.reservedTicket.ticketedSeat !== undefined)
-                    ? { ticketedSeat: itemOffered.reservedTicket.ticketedSeat }
-                    : undefined
-            };
-
-            const reservation: factory.order.IReservation = {
-                project: itemOffered.project,
-                typeOf: itemOffered.typeOf,
-                additionalProperty: itemOffered.additionalProperty,
-                additionalTicketText: itemOffered.additionalTicketText,
-                id: itemOffered.id,
-                // price: itemOffered.price,
-                reservationNumber: itemOffered.reservationNumber,
-                reservationFor: reservationFor,
-                reservedTicket: reservedTicket
-            };
-
-            const priceSpecification = <IReservationPriceSpecification>itemOffered.price;
-            // const unitPrice = (itemOffered.reservedTicket.ticketType.priceSpecification !== undefined)
-            //     ? itemOffered.reservedTicket.ticketType.priceSpecification.price
-            //     : 0;
-
-            return {
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: <factory.chevre.offerType>'Offer',
-                id: itemOffered.reservedTicket.ticketType.id,
-                name: itemOffered.reservedTicket.ticketType.name,
-                itemOffered: reservation,
-                offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-                // price: unitPrice,
-                priceSpecification: {
-                    ...priceSpecification,
-                    priceComponent: priceSpecification.priceComponent.map((c) => {
-                        return {
-                            ...c,
-                            accounting: undefined // accountingはorderに不要な情報
-                        };
-                    })
-                },
-                priceCurrency: factory.priceCurrency.JPY,
-                seller: {
-                    typeOf: seller.typeOf,
-                    name: seller.name.ja
-                }
-            };
-        });
-
-    return acceptedOffers4result;
-}
-
-/**
- * 座席予約承認アクションをキャンセルする
- */
-export function cancel(params: {
-    project: factory.project.IProject;
-    /**
-     * 承認アクションID
-     */
-    id: string;
-    /**
-     * 取引進行者
-     */
-    agent: { id: string };
-    /**
-     * 取引
-     */
-    transaction: { id: string };
-}): ICancelOpetaiton<void> {
-    return async (
-        transactionRepo: TransactionRepo,
-        actionRepo: ActionRepo,
-        projectRepo: ProjectRepo
-    ) => {
-        try {
-            const project = await projectRepo.findById({ id: params.project.id });
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-
-            const transaction = await transactionRepo.findInProgressById({
-                typeOf: factory.transactionType.PlaceOrder,
-                id: params.transaction.id
-            });
-
-            if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('Transaction not yours');
-            }
-
-            // アクションではcompleteステータスであるにも関わらず、在庫は有になっている、というのが最悪の状況
-            // それだけは回避するためにアクションを先に変更
-            const action = <factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.Chevre>>
-                await actionRepo.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-            const actionResult = <factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier.Chevre>>
-                action.result;
-
-            const performance = action.object.event;
-            if (performance !== undefined && performance !== null) {
-                // 在庫から仮予約削除
-                debug('removing tmp reservations...');
-                const reserveService = new chevre.service.transaction.Reserve({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
-
-                await reserveService.cancel({ id: (<any>actionResult).responseBody.id });
-            }
-        } catch (error) {
-            // no op
-        }
-    };
 }
