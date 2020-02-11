@@ -231,8 +231,8 @@ export function responseBody2acceptedOffers4result(params: {
             const reservation: factory.order.IReservation = {
                 project: itemOffered.project,
                 typeOf: itemOffered.typeOf,
-                // additionalProperty: tmpReservation.additionalProperty,
-                // additionalTicketText: tmpReservation.additionalTicketText,
+                additionalProperty: itemOffered.additionalProperty,
+                additionalTicketText: itemOffered.additionalTicketText,
                 id: itemOffered.id,
                 reservationNumber: itemOffered.reservationNumber,
                 reservationFor: reservationFor,

@@ -470,7 +470,7 @@ export function create(params: {
             // 座席仮予約からオファー情報を生成する
             acceptedOffers4result = responseBody2acceptedOffers4result({
                 responseBody: responseBody,
-                tmpReservations: tmpReservations,
+                // tmpReservations: tmpReservations,
                 event: event,
                 project: params.project,
                 seller: transaction.seller
@@ -566,30 +566,30 @@ function createTmpReservations(params: {
                 throw new factory.errors.ServiceUnavailable(`serviceOutput undefined in accepted offer`);
             }
 
-            let extraReservationIds: string[] | undefined;
-            if (Array.isArray(reservationInAcceptedOffer.additionalProperty)) {
-                const extraSeatNumbersProperty = reservationInAcceptedOffer.additionalProperty.find(
-                    (p) => p.name === 'extraSeatNumbers'
-                );
-                if (extraSeatNumbersProperty !== undefined) {
-                    const extraSeatNumbers: string[] = JSON.parse(extraSeatNumbersProperty.value);
-                    if (extraSeatNumbers.length > 0) {
-                        extraReservationIds = extraSeatNumbers.map((seatNumber) => {
-                            const extraChevreReservation = reservations.find((r) => {
-                                return r.reservedTicket.ticketedSeat !== undefined
-                                    && o.ticketedSeat !== undefined
-                                    && r.reservedTicket.ticketedSeat.seatNumber
-                                    === seatNumber;
-                            });
-                            if (extraChevreReservation === undefined) {
-                                throw new factory.errors.ServiceUnavailable(`Unexpected extra seat numbers: ${seatNumber}`);
-                            }
+            // let extraReservationIds: string[] | undefined;
+            // if (Array.isArray(reservationInAcceptedOffer.additionalProperty)) {
+            //     const extraSeatNumbersProperty = reservationInAcceptedOffer.additionalProperty.find(
+            //         (p) => p.name === 'extraSeatNumbers'
+            //     );
+            //     if (extraSeatNumbersProperty !== undefined) {
+            //         const extraSeatNumbers: string[] = JSON.parse(extraSeatNumbersProperty.value);
+            //         if (extraSeatNumbers.length > 0) {
+            //             extraReservationIds = extraSeatNumbers.map((seatNumber) => {
+            //                 const extraChevreReservation = reservations.find((r) => {
+            //                     return r.reservedTicket.ticketedSeat !== undefined
+            //                         && o.ticketedSeat !== undefined
+            //                         && r.reservedTicket.ticketedSeat.seatNumber
+            //                         === seatNumber;
+            //                 });
+            //                 if (extraChevreReservation === undefined) {
+            //                     throw new factory.errors.ServiceUnavailable(`Unexpected extra seat numbers: ${seatNumber}`);
+            //                 }
 
-                            return extraChevreReservation.id;
-                        });
-                    }
-                }
-            }
+            //                 return extraChevreReservation.id;
+            //             });
+            //         }
+            //     }
+            // }
 
             return {
                 ...reservationInAcceptedOffer,
@@ -598,10 +598,10 @@ function createTmpReservations(params: {
                     : '',
                 additionalProperty: [
                     ...(Array.isArray(reservationInAcceptedOffer.additionalProperty))
-                        ? reservationInAcceptedOffer.additionalProperty : [],
-                    ...(Array.isArray(extraReservationIds))
-                        ? [{ name: 'extraReservationIds', value: JSON.stringify(extraReservationIds) }]
-                        : []
+                        ? reservationInAcceptedOffer.additionalProperty : []
+                    // ...(Array.isArray(extraReservationIds))
+                    //     ? [{ name: 'extraReservationIds', value: JSON.stringify(extraReservationIds) }]
+                    //     : []
                 ],
                 id: chevreReservation.id,
                 reservationNumber: chevreReservation.reservationNumber,
@@ -615,7 +615,7 @@ function createTmpReservations(params: {
 // tslint:disable-next-line:max-func-body-length
 function responseBody2acceptedOffers4result(params: {
     responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>;
-    tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[];
+    // tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[];
     event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     project: factory.project.IProject;
     seller: factory.transaction.placeOrder.ISeller;
@@ -627,11 +627,12 @@ function responseBody2acceptedOffers4result(params: {
     const reservations = (Array.isArray(params.responseBody.object.reservations)) ? params.responseBody.object.reservations : [];
 
     // tslint:disable-next-line:max-func-body-length
-    acceptedOffers4result = params.tmpReservations.map((tmpReservation) => {
-        const itemOffered = reservations.find((r) => r.id === tmpReservation.id);
-        if (itemOffered === undefined) {
-            throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
-        }
+    acceptedOffers4result = reservations.map((itemOffered) => {
+        // acceptedOffers4result = params.tmpReservations.map((tmpReservation) => {
+        // const itemOffered = reservations.find((r) => r.id === tmpReservation.id);
+        // if (itemOffered === undefined) {
+        //     throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
+        // }
 
         const reservationFor: IReservationFor = {
             project: itemOffered.reservationFor.project,
@@ -704,19 +705,19 @@ function responseBody2acceptedOffers4result(params: {
         const reservation: factory.order.IReservation = {
             project: itemOffered.project,
             typeOf: itemOffered.typeOf,
-            additionalProperty: tmpReservation.additionalProperty,
-            additionalTicketText: tmpReservation.additionalTicketText,
+            additionalProperty: itemOffered.additionalProperty,
+            additionalTicketText: itemOffered.additionalTicketText,
             id: itemOffered.id,
-            price: itemOffered.price,
+            // price: itemOffered.price,
             reservationNumber: itemOffered.reservationNumber,
             reservationFor: reservationFor,
             reservedTicket: reservedTicket
         };
 
         const priceSpecification = <IReservationPriceSpecification>itemOffered.price;
-        const unitPrice = (itemOffered.reservedTicket.ticketType.priceSpecification !== undefined)
-            ? itemOffered.reservedTicket.ticketType.priceSpecification.price
-            : 0;
+        // const unitPrice = (itemOffered.reservedTicket.ticketType.priceSpecification !== undefined)
+        //     ? itemOffered.reservedTicket.ticketType.priceSpecification.price
+        //     : 0;
 
         return {
             project: { typeOf: params.project.typeOf, id: params.project.id },
@@ -725,7 +726,7 @@ function responseBody2acceptedOffers4result(params: {
             name: itemOffered.reservedTicket.ticketType.name,
             itemOffered: reservation,
             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre },
-            price: unitPrice,
+            // price: unitPrice,
             priceSpecification: {
                 ...priceSpecification,
                 priceComponent: priceSpecification.priceComponent.map((c) => {
