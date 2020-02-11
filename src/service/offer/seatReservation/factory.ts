@@ -298,3 +298,88 @@ export function responseBody2acceptedOffers4result(params: {
 
     return acceptedOffers4result;
 }
+
+export function createTmpReservations(params: {
+    acceptedOffers: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[];
+    // acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[];
+    reservations: factory.chevre.transaction.reserve.ISubReservation[];
+}) {
+    let tmpReservations: factory.action.authorize.offer.seatReservation.ITmpReservation[] = [];
+
+    const acceptedOffers = params.acceptedOffers;
+    const reservations = params.reservations;
+
+    tmpReservations = acceptedOffers
+        .filter((o) => {
+            const r = o.itemOffered.serviceOutput;
+            // 余分確保分を除く
+            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            if (r !== undefined && r !== null && Array.isArray(r.additionalProperty)) {
+                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            }
+
+            return extraProperty === undefined
+                || extraProperty.value !== '1';
+        })
+        .map((o) => {
+            // 該当座席のChevre予約を検索
+            const chevreReservation = reservations.find((r) => {
+                return r.reservedTicket.ticketedSeat !== undefined
+                    && o.ticketedSeat !== undefined
+                    && r.reservedTicket.ticketedSeat.seatNumber === o.ticketedSeat.seatNumber;
+            });
+
+            if (chevreReservation === undefined) {
+                throw new factory.errors.ServiceUnavailable('Reservation not found for an accepted offer');
+            }
+
+            const reservationInAcceptedOffer = o.itemOffered.serviceOutput;
+            if (reservationInAcceptedOffer === undefined || reservationInAcceptedOffer === null) {
+                throw new factory.errors.ServiceUnavailable(`serviceOutput undefined in accepted offer`);
+            }
+
+            // let extraReservationIds: string[] | undefined;
+            // if (Array.isArray(reservationInAcceptedOffer.additionalProperty)) {
+            //     const extraSeatNumbersProperty = reservationInAcceptedOffer.additionalProperty.find(
+            //         (p) => p.name === 'extraSeatNumbers'
+            //     );
+            //     if (extraSeatNumbersProperty !== undefined) {
+            //         const extraSeatNumbers: string[] = JSON.parse(extraSeatNumbersProperty.value);
+            //         if (extraSeatNumbers.length > 0) {
+            //             extraReservationIds = extraSeatNumbers.map((seatNumber) => {
+            //                 const extraChevreReservation = reservations.find((r) => {
+            //                     return r.reservedTicket.ticketedSeat !== undefined
+            //                         && o.ticketedSeat !== undefined
+            //                         && r.reservedTicket.ticketedSeat.seatNumber
+            //                         === seatNumber;
+            //                 });
+            //                 if (extraChevreReservation === undefined) {
+            //                     throw new factory.errors.ServiceUnavailable(`Unexpected extra seat numbers: ${seatNumber}`);
+            //                 }
+
+            //                 return extraChevreReservation.id;
+            //             });
+            //         }
+            //     }
+            // }
+
+            return {
+                ...reservationInAcceptedOffer,
+                additionalTicketText: (typeof reservationInAcceptedOffer.additionalTicketText === 'string')
+                    ? reservationInAcceptedOffer.additionalTicketText
+                    : '',
+                additionalProperty: [
+                    ...(Array.isArray(reservationInAcceptedOffer.additionalProperty))
+                        ? reservationInAcceptedOffer.additionalProperty : []
+                    // ...(Array.isArray(extraReservationIds))
+                    //     ? [{ name: 'extraReservationIds', value: JSON.stringify(extraReservationIds) }]
+                    //     : []
+                ],
+                id: chevreReservation.id,
+                reservationNumber: chevreReservation.reservationNumber,
+                reservedTicket: chevreReservation.reservedTicket
+            };
+        });
+
+    return tmpReservations;
+}
