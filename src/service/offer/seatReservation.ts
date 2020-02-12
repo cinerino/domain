@@ -304,15 +304,11 @@ export function selectSeats(
     project: factory.project.IProject,
     performance: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>,
     acceptedOffer: IAcceptedOfferWithoutDetail4chevre[],
-    // acceptedOffers: IAcceptedOffer[],
     transactionId: string
 ): ISelectSeatOperation<IAcceptedOfferWithoutDetail4chevre[]> {
     return async () => {
-        if (project.settings === undefined) {
+        if (project.settings === undefined || project.settings.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (project.settings.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
         const acceptedOffersWithoutDetail: IAcceptedOfferWithoutDetail4chevre[] = [];
@@ -351,18 +347,6 @@ export function selectSeats(
             if (ticketOffer === undefined) {
                 throw new factory.errors.NotFound('Offer', `Offer ${offer.id} not found`);
             }
-            // const unitPriceSpec =
-            //     <chevre.factory.priceSpecification.IPriceSpecification<chevre.factory.priceSpecificationType.UnitPriceSpecification>>
-            //     ticketOffer.priceSpecification.priceComponent.find((c) => {
-            //         return c.typeOf === chevre.factory.priceSpecificationType.UnitPriceSpecification;
-            //     });
-            // if (unitPriceSpec === undefined) {
-            //     throw new factory.errors.NotFound('Unit Price Specification');
-            // }
-            // const unitPrice = unitPriceSpec.price;
-            // if (unitPrice === undefined) {
-            //     throw new factory.errors.NotFound('Unit Price');
-            // }
 
             let ticketTypeCategory = SeatingType.Normal;
             if (Array.isArray(ticketOffer.additionalProperty)) {
@@ -375,14 +359,16 @@ export function selectSeats(
             // まず利用可能な座席は全座席
             let availableSeats = sectionOffer.containsPlace.map((p) => {
                 return {
+                    typeOf: p.typeOf,
                     branchCode: p.branchCode,
-                    seatingType: <factory.chevre.place.seat.ISeatingType><unknown>p.seatingType
+                    seatingType: p.seatingType
                 };
             });
             let availableSeatsForAdditionalStocks = sectionOffer.containsPlace.map((p) => {
                 return {
+                    typeOf: p.typeOf,
                     branchCode: p.branchCode,
-                    seatingType: <factory.chevre.place.seat.ISeatingType><unknown>p.seatingType
+                    seatingType: p.seatingType
                 };
             });
             debug(availableSeats.length, 'seats exist');
@@ -433,134 +419,91 @@ export function selectSeats(
             const selectedSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.slice(0, WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS);
             unavailableSeatNumbers.push(...selectedSeatsForAdditionalStocks.map((s) => s.branchCode));
 
-            // const ticketType: chevre.factory.ticketType.ITicketType = {
-            //     project: ticketOffer.priceSpecification.project,
-            //     typeOf: ticketOffer.typeOf,
-            //     id: ticketOffer.id,
-            //     identifier: ticketOffer.identifier,
-            //     name: <any>ticketOffer.name,
-            //     priceSpecification: unitPriceSpec,
-            //     priceCurrency: ticketOffer.priceCurrency,
-            //     additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
-            //         ? ticketOffer.additionalProperty
-            //         : []
-            // };
-
             const additionalProperty: factory.propertyValue.IPropertyValue<string>[] = [
                 ...(Array.isArray(ticketOffer.additionalProperty))
                     ? ticketOffer.additionalProperty
                     : [],
-                { name: 'transaction', value: transactionId },
-                ...(selectedSeatsForAdditionalStocks.length > 0)
-                    ? [{
-                        name: 'extraSeatNumbers',
-                        value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.branchCode))
-                    }]
-                    : []
+                { name: 'transaction', value: transactionId }
+                // ...(selectedSeatsForAdditionalStocks.length > 0)
+                //     ? [{
+                //         name: 'extraSeatNumbers',
+                //         value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.branchCode))
+                //     }]
+                //     : []
             ];
 
             const additionalTicketText = offer.itemOffered?.serviceOutput?.additionalTicketText;
 
             acceptedOffersWithoutDetail.push({
                 additionalProperty: offer.additionalProperty,
-                // ...offer,
-                // ...ticketOffer,
                 id: ticketOffer.id,
-                // additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
-                //     ? ticketOffer.additionalProperty
-                //     : [],
-                // price: unitPrice,
-                // priceCurrency: factory.priceCurrency.JPY,
-                ticketedSeat: {
-                    seatSection: sectionOffer.branchCode,
-                    seatNumber: selectedSeat.branchCode,
-                    seatRow: '',
-                    typeOf: factory.chevre.placeType.Seat
-                },
                 itemOffered: {
-                    // serviceType: <any>{},
                     serviceOutput: {
-                        // project: { typeOf: project.typeOf, id: project.id },
                         typeOf: factory.chevre.reservationType.EventReservation,
-                        // id: '',
-                        // reservationNumber: '',
-                        // reservationFor: performance,
                         additionalTicketText: additionalTicketText,
                         reservedTicket: {
-                            typeOf: <'Ticket'>'Ticket',
-                            // priceCurrency: factory.priceCurrency.JPY,
+                            typeOf: 'Ticket',
                             ticketedSeat: {
                                 seatSection: sectionOffer.branchCode,
                                 seatNumber: selectedSeat.branchCode,
                                 seatRow: '',
-                                seatingType: <any>selectedSeat.seatingType,
-                                typeOf: <factory.chevre.placeType.Seat>factory.chevre.placeType.Seat
+                                seatingType: selectedSeat.seatingType,
+                                typeOf: selectedSeat.typeOf
                             }
-                            // ticketType: ticketType
                         },
-                        additionalProperty: additionalProperty
+                        additionalProperty: additionalProperty,
+                        // 余分確保分
+                        subReservation: (selectedSeatsForAdditionalStocks.length > 0)
+                            ? selectedSeatsForAdditionalStocks.map((selectedSeatForAdditionalStocks) => {
+                                return {
+                                    reservedTicket: {
+                                        typeOf: 'Ticket',
+                                        ticketedSeat: {
+                                            seatSection: sectionOffer.branchCode,
+                                            seatNumber: selectedSeatForAdditionalStocks.branchCode,
+                                            seatRow: '',
+                                            typeOf: selectedSeatForAdditionalStocks.typeOf
+                                        }
+                                    }
+                                };
+                            })
+                            : undefined
                     }
                 }
             });
 
-            selectedSeatsForAdditionalStocks.forEach((s) => {
-                const additionalProperty4extra: factory.propertyValue.IPropertyValue<string>[] = [
-                    ...(Array.isArray(ticketOffer.additionalProperty))
-                        ? ticketOffer.additionalProperty
-                        : [],
-                    { name: 'extra', value: '1' },
-                    { name: 'transaction', value: transactionId }
-                ];
+            // selectedSeatsForAdditionalStocks.forEach((s) => {
+            //     const additionalProperty4extra: factory.propertyValue.IPropertyValue<string>[] = [
+            //         ...(Array.isArray(ticketOffer.additionalProperty))
+            //             ? ticketOffer.additionalProperty
+            //             : [],
+            //         { name: 'extra', value: '1' },
+            //         { name: 'transaction', value: transactionId }
+            //     ];
 
-                acceptedOffersWithoutDetail.push({
-                    // ...offer,
-                    // ...ticketOffer,
-                    additionalProperty: offer.additionalProperty,
-                    id: ticketOffer.id,
-                    // additionalProperty: (Array.isArray(ticketOffer.additionalProperty))
-                    //     ? ticketOffer.additionalProperty
-                    //     : [],
-                    // price: unitPrice,
-                    // priceCurrency: factory.priceCurrency.JPY,
-                    ticketedSeat: {
-                        seatSection: sectionOffer.branchCode,
-                        seatNumber: s.branchCode,
-                        seatRow: '',
-                        typeOf: factory.chevre.placeType.Seat
-                    },
-                    itemOffered: {
-                        // serviceType: <any>{},
-                        serviceOutput: {
-                            // project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.chevre.reservationType.EventReservation,
-                            // id: '',
-                            // reservationNumber: '',
-                            // reservationFor: performance,
-                            additionalTicketText: additionalTicketText,
-                            reservedTicket: {
-                                typeOf: 'Ticket',
-                                // priceCurrency: factory.priceCurrency.JPY,
-                                ticketedSeat: {
-                                    seatSection: sectionOffer.branchCode,
-                                    seatNumber: s.branchCode,
-                                    seatRow: '',
-                                    seatingType: <any>s.seatingType,
-                                    typeOf: factory.chevre.placeType.Seat
-                                }
-                                // ticketType: {
-                                //     ...ticketType,
-                                //     priceSpecification: {
-                                //         ...unitPriceSpec,
-                                //         price: 0 // 余分確保分の単価調整
-                                //     }
-                                // }
-                            },
-                            additionalProperty: additionalProperty4extra
-                        }
+            //     acceptedOffersWithoutDetail.push({
+            //         additionalProperty: offer.additionalProperty,
+            //         id: ticketOffer.id,
+            //         itemOffered: {
+            //             serviceOutput: {
+            //                 typeOf: factory.chevre.reservationType.EventReservation,
+            //                 additionalTicketText: additionalTicketText,
+            //                 reservedTicket: {
+            //                     typeOf: 'Ticket',
+            //                     ticketedSeat: {
+            //                         seatSection: sectionOffer.branchCode,
+            //                         seatNumber: s.branchCode,
+            //                         seatRow: '',
+            //                         seatingType: s.seatingType,
+            //                         typeOf: s.typeOf
+            //                     }
+            //                 },
+            //                 additionalProperty: additionalProperty4extra
+            //             }
 
-                    }
-                });
-            });
+            //         }
+            //     });
+            // });
         }
 
         return acceptedOffersWithoutDetail;

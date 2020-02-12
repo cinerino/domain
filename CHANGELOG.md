@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - メンバーシップ自動更新時もポイントインセンティブが付与されるように調整
 - ttts予約承認を本家予約承認に合わせるように調整
 - update @chevre/api-nodejs-client
+- 予約の余分確保分をsubReservationとして表現するように調整
 
 ### Deprecated
 
