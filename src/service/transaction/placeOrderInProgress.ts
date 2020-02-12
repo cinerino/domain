@@ -3,6 +3,7 @@
  */
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 import { format } from 'util';
 
 import * as factory from '../../factory';
@@ -419,15 +420,55 @@ function createConfirmationNumber(params: {
             url = params.result.order.url(params.order);
         }
 
+        const { confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({
+            confirmationNumber: confirmationNumber,
+            order: params.order
+        });
+
         // 識別子の指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (Array.isArray(params.result.order.identifier)) {
-            identifier = params.result.order.identifier;
-        }
+        identifier = [
+            ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
+            { name: 'confirmationNumber', value: confirmationNumber4identifier },
+            { name: 'confirmationPass', value: confirmationPass }
+        ];
 
         return { confirmationNumber, url, identifier };
     };
+}
+
+function createConfirmationNumber4identifier(params: {
+    confirmationNumber: string;
+    order: factory.order.IOrder;
+}) {
+    const confirmationNumber = params.confirmationNumber;
+
+    // tslint:disable-next-line:no-magic-numbers
+    const paymentNoMinLength = 6;
+    const paymentNo = (confirmationNumber.length < paymentNoMinLength)
+        // tslint:disable-next-line:no-magic-numbers
+        ? `000000${confirmationNumber}`.slice(-paymentNoMinLength)
+        : confirmationNumber;
+    let eventStartDateStr = moment(params.order.orderDate)
+        .tz('Asia/Tokyo')
+        .format('YYYYMMDD');
+    if (params.order.acceptedOffers.length > 0) {
+        const firstAcceptedOffer = params.order.acceptedOffers[0];
+        if (firstAcceptedOffer.itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
+            const event = firstAcceptedOffer.itemOffered.reservationFor;
+            eventStartDateStr = moment(event.startDate)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD');
+        }
+    }
+    const confirmationNumber4identifier = `${eventStartDateStr}${paymentNo}`;
+    const confirmationPass = (typeof params.order.customer.telephone === 'string')
+        // tslint:disable-next-line:no-magic-numbers
+        ? params.order.customer.telephone.slice(-4)
+        : '9999';
+
+    return { confirmationNumber4identifier, confirmationPass };
 }
 
 /**
