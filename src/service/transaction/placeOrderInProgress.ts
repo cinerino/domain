@@ -420,7 +420,7 @@ function createConfirmationNumber(params: {
             url = params.result.order.url(params.order);
         }
 
-        const { confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({
+        const { paymentNo, confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({
             confirmationNumber: confirmationNumber,
             order: params.order
         });
@@ -430,6 +430,7 @@ function createConfirmationNumber(params: {
         /* istanbul ignore if */
         identifier = [
             ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
+            { name: 'paymentNo', value: paymentNo },
             { name: 'confirmationNumber', value: confirmationNumber4identifier },
             { name: 'confirmationPass', value: confirmationPass }
         ];
@@ -438,37 +439,39 @@ function createConfirmationNumber(params: {
     };
 }
 
-function createConfirmationNumber4identifier(params: {
+export const PAYMENT_NO_MIN_LENGTH = 6;
+export function createConfirmationNumber4identifier(params: {
     confirmationNumber: string;
     order: factory.order.IOrder;
 }) {
     const confirmationNumber = params.confirmationNumber;
 
     // tslint:disable-next-line:no-magic-numbers
-    const paymentNoMinLength = 6;
-    const paymentNo = (confirmationNumber.length < paymentNoMinLength)
+    const paymentNo = (confirmationNumber.length < PAYMENT_NO_MIN_LENGTH)
         // tslint:disable-next-line:no-magic-numbers
-        ? `000000${confirmationNumber}`.slice(-paymentNoMinLength)
+        ? `000000${confirmationNumber}`.slice(-PAYMENT_NO_MIN_LENGTH)
         : confirmationNumber;
     let eventStartDateStr = moment(params.order.orderDate)
         .tz('Asia/Tokyo')
         .format('YYYYMMDD');
-    if (params.order.acceptedOffers.length > 0) {
+    if (Array.isArray(params.order.acceptedOffers) && params.order.acceptedOffers.length > 0) {
         const firstAcceptedOffer = params.order.acceptedOffers[0];
-        if (firstAcceptedOffer.itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-            const event = firstAcceptedOffer.itemOffered.reservationFor;
+        const itemOffered = firstAcceptedOffer.itemOffered;
+        if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
+            const event = itemOffered.reservationFor;
             eventStartDateStr = moment(event.startDate)
                 .tz('Asia/Tokyo')
                 .format('YYYYMMDD');
         }
     }
     const confirmationNumber4identifier = `${eventStartDateStr}${paymentNo}`;
-    const confirmationPass = (typeof params.order.customer.telephone === 'string')
+    const telephone = params.order.customer?.telephone;
+    const confirmationPass = (typeof telephone === 'string')
         // tslint:disable-next-line:no-magic-numbers
-        ? params.order.customer.telephone.slice(-4)
+        ? telephone.slice(-4)
         : '9999';
 
-    return { confirmationNumber4identifier, confirmationPass };
+    return { paymentNo, confirmationNumber4identifier, confirmationPass };
 }
 
 /**

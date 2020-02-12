@@ -614,6 +614,7 @@ function createConfirmReservationActionObject(params: {
 
     const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
         = [
+            ...(Array.isArray(order.identifier)) ? order.identifier : [],
             { name: 'orderNumber', value: order.orderNumber },
             // { name: 'customerGroup', value: 'Customer' },
             // { name: 'paymentNo', value: params.paymentNo },
