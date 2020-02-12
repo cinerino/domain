@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - ttts予約承認を本家予約承認に合わせるように調整
 - update @chevre/api-nodejs-client
 - 予約の余分確保分をsubReservationとして表現するように調整
+- デフォルトで確定予約へ連携する値を拡張
 
 ### Deprecated
 
