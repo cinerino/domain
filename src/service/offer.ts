@@ -36,6 +36,9 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
@@ -198,14 +201,20 @@ async function searchEventOffers4COA(params: {
 }): Promise<factory.chevre.place.movieTheater.IScreeningRoomSectionOffer[]> {
     const event = params.event;
 
-    const masterService = new COA.service.Master({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const masterService = new COA.service.Master(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     let coaInfo: any;
     if (Array.isArray(event.additionalProperty)) {
@@ -488,14 +497,20 @@ async function searchCOAAvailableTickets(params: {
         throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
     }
 
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
-    const masterService = new COA.service.Master({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
+    const masterService = new COA.service.Master(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     // 供給情報が適切かどうか確認
     const availableSalesTickets: IAvailableSalesTickets[] = [];
@@ -663,10 +678,13 @@ async function searchEventTicketOffers4COA(params: {
     const theaterCode = coaInfo.theaterCode;
 
     // COA販売可能券種検索
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
     const salesTickets = await reserveService.salesTicket({
         ...coaInfo,
         flgMember: COA.factory.reserve.FlgMember.Member

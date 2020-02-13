@@ -13,6 +13,9 @@ import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
@@ -53,10 +56,13 @@ async function createAcceptedOffersWithoutDetails(params: {
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
     coaInfo: factory.event.screeningEvent.ICOAInfo;
 }): Promise<IAcceptedOfferWithoutDetail[]> {
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     const { listSeat } = await reserveService.stateReserveSeat(params.coaInfo);
 
@@ -107,10 +113,13 @@ async function offer2availableSalesTicket(params: {
     const availableSalesTickets = params.availableSalesTickets;
     const coaInfo = params.coaInfo;
 
-    const masterService = new COA.service.Master({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const masterService = new COA.service.Master(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     // ポイント消費鑑賞券の場合
     if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
@@ -343,10 +352,13 @@ async function validateOffers(
     offers: IAcceptedOfferWithoutDetail[],
     coaTickets?: COA.factory.master.ITicketResult[]
 ): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> {
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     // 詳細情報ありの供給情報リストを初期化
     // 要求された各供給情報について、バリデーションをかけながら、このリストに追加していく
@@ -525,10 +537,13 @@ export function create(params: {
         let updTmpReserveSeatResult: COA.factory.reserve.IUpdTmpReserveSeatResult;
         try {
             debug('updTmpReserveSeat processing...', updTmpReserveSeatArgs);
-            const reserveService = new COA.service.Reserve({
-                endpoint: credentials.coa.endpoint,
-                auth: coaAuthClient
-            });
+            const reserveService = new COA.service.Reserve(
+                {
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                },
+                { timeout: COA_TIMEOUT }
+            );
             updTmpReserveSeatResult = await reserveService.updTmpReserveSeat(updTmpReserveSeatArgs);
             debug('updTmpReserveSeat processed', updTmpReserveSeatResult);
         } catch (error) {
@@ -630,10 +645,13 @@ export function cancel(params: {
         /* istanbul ignore else */
         if (actionResult.requestBody !== undefined && actionResult.responseBody !== undefined) {
             // 座席仮予約削除
-            const reserveService = new COA.service.Reserve({
-                endpoint: credentials.coa.endpoint,
-                auth: coaAuthClient
-            });
+            const reserveService = new COA.service.Reserve(
+                {
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                },
+                { timeout: COA_TIMEOUT }
+            );
 
             debug('delTmpReserve processing...', action);
             await reserveService.delTmpReserve({

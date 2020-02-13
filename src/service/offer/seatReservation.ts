@@ -33,6 +33,9 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
@@ -203,10 +206,13 @@ export function create(params: {
                     }
 
                     // COAにて仮予約
-                    reserveService = new COA.service.Reserve({
-                        endpoint: credentials.coa.endpoint,
-                        auth: coaAuthClient
-                    });
+                    reserveService = new COA.service.Reserve(
+                        {
+                            endpoint: credentials.coa.endpoint,
+                            auth: coaAuthClient
+                        },
+                        { timeout: COA_TIMEOUT }
+                    );
 
                     requestBody = {
                         theaterCode: coaInfo.theaterCode,
@@ -526,10 +532,13 @@ export function validateAcceptedOffers(params: {
         project: ProjectRepo;
         seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
-        const masterService = new COA.service.Master({
-            endpoint: credentials.coa.endpoint,
-            auth: coaAuthClient
-        });
+        const masterService = new COA.service.Master(
+            {
+                endpoint: credentials.coa.endpoint,
+                auth: coaAuthClient
+            },
+            { timeout: COA_TIMEOUT }
+        );
 
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = <factory.chevre.event.screeningEvent.ITicketOffer[]>await OfferService.searchEventTicketOffers({
@@ -997,10 +1006,13 @@ export function cancel(params: {
                         coaInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
                     }
 
-                    const coaReserveService = new COA.service.Reserve({
-                        endpoint: credentials.coa.endpoint,
-                        auth: coaAuthClient
-                    });
+                    const coaReserveService = new COA.service.Reserve(
+                        {
+                            endpoint: credentials.coa.endpoint,
+                            auth: coaAuthClient
+                        },
+                        { timeout: COA_TIMEOUT }
+                    );
 
                     await coaReserveService.delTmpReserve({
                         ...coaInfo,
