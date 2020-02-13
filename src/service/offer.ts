@@ -11,7 +11,6 @@ import * as ProgramMembershipOfferService from './offer/programMembership';
 import * as ReservationOfferService from './offer/reservation';
 import * as SeatReservationOfferService from './offer/seatReservation';
 import * as SeatReservation4coaOfferService from './offer/seatReservation4coa';
-import * as SeatReservation4tttsOfferService from './offer/seatReservation4ttts';
 
 import { credentials } from '../credentials';
 
@@ -28,7 +27,6 @@ export import programMembership = ProgramMembershipOfferService;
 export import reservation = ReservationOfferService;
 export import seatReservation = SeatReservationOfferService;
 export import seatReservation4coa = SeatReservation4coaOfferService;
-export import seatReservation4ttts = SeatReservation4tttsOfferService;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
