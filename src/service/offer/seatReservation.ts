@@ -155,7 +155,7 @@ export function create(params: {
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve | undefined;
         let reserveTransaction: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
-        let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
+        let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] = [];
 
         switch (bookingServiceIdentifier) {
             case factory.service.webAPI.Identifier.COA:
@@ -282,7 +282,7 @@ export function create(params: {
         }
 
         // 金額計算
-        const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffers });
+        const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffers4result });
 
         // アクションを完了
         const result: factory.action.authorize.offer.seatReservation.IResult<typeof offeredThrough.identifier> = {

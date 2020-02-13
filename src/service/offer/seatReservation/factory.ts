@@ -116,39 +116,47 @@ export function createAuthorizeSeatReservationActionAttributes(params: {
 }
 
 export function acceptedOffers2amount(params: {
-    acceptedOffers: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[];
+    acceptedOffers: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[];
 }): number {
-    const acceptedOffers = params.acceptedOffers
-        .filter((o) => {
-            const r = o.itemOffered.serviceOutput;
-            // 余分確保分を除く
-            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (r !== undefined && r !== null && Array.isArray(r.additionalProperty)) {
-                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            }
-
-            return extraProperty === undefined
-                || extraProperty.value !== '1';
-        });
+    const acceptedOffers = params.acceptedOffers;
 
     // 金額計算
-    const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
     let amount = acceptedOffers.reduce(
         (a, b) => {
-            return a + b.priceSpecification.priceComponent.reduce((a2, b2) => a2 + b2.price, 0);
+            if (b.priceSpecification === undefined || b.priceSpecification === null) {
+                throw new factory.errors.ServiceUnavailable('price specification of result accepted offer undefined');
+            }
+
+            if (b.priceSpecification.typeOf !== factory.chevre.priceSpecificationType.CompoundPriceSpecification) {
+                throw new factory.errors.ServiceUnavailable('price specification of result accepted offer must be CompoundPriceSpecification');
+            }
+
+            const priceSpecification = <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>b.priceSpecification;
+
+            return a + priceSpecification.priceComponent.reduce((a2, b2) => a2 + Number(b2.price), 0);
         },
         0
     );
 
-    // オファーIDごとに単価仕様を考慮して金額を調整
+    // オファーIDごとに座席の単価仕様を考慮して金額を調整
+    const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
     offerIds.forEach((offerId) => {
         const acceptedOffersByOfferId = acceptedOffers.filter((o) => o.id === offerId);
-        let referenceQuantityValue = 1;
-        const unitPriceSpec = <IUnitPriceSpecification>acceptedOffersByOfferId[0].priceSpecification.priceComponent.find(
-            (spec) => spec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+
+        const compoundPriceSpecification
+            = <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>acceptedOffersByOfferId[0].priceSpecification;
+
+        const unitPriceSpec = <IUnitPriceSpecification>compoundPriceSpecification.priceComponent.find(
+            (spec) => {
+                const priceSpec = <IUnitPriceSpecification>spec;
+
+                return priceSpec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+                    && (!Array.isArray(priceSpec.appliesToAddOn));
+            }
         );
-        if (unitPriceSpec !== undefined && unitPriceSpec.referenceQuantity.value !== undefined) {
-            referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
+        let referenceQuantityValue = unitPriceSpec.referenceQuantity?.value;
+        if (typeof referenceQuantityValue !== 'number') {
+            referenceQuantityValue = 1;
         }
 
         amount -= unitPriceSpec.price * (referenceQuantityValue - 1) * (acceptedOffersByOfferId.length / referenceQuantityValue);
@@ -162,8 +170,8 @@ export function responseBody2acceptedOffers4result(params: {
     event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     project: factory.project.IProject;
     seller: factory.transaction.placeOrder.ISeller;
-}): factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined {
-    let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] | undefined;
+}): factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] {
+    let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] = [];
 
     const event = params.event;
     const seller = params.seller;
