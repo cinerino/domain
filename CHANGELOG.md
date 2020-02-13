@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
+- COAのXMLスケジュール抽出を、screener.timeが配列でない場合に対応
+
 ### Security
 
 ## v1.2.0 - 2020-01-24
