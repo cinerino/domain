@@ -127,12 +127,12 @@ export function abort(params: {
         debug('abortedTask found', abortedTask);
 
         // 開発者へ報告
-        const lastExecutionResult = (abortedTask.executionResults.length > 0)
-            ? abortedTask.executionResults[abortedTask.executionResults.length - 1]
-            : undefined;
-        const lastMessage: string = (lastExecutionResult !== undefined)
-            ? (typeof lastExecutionResult.error === 'string') ? lastExecutionResult.error : lastExecutionResult.error.message
-            : '';
+        const lastExecutionResult = (abortedTask.executionResults.length > 0) ? abortedTask.executionResults.slice(-1)[0] : undefined;
+        let lastError = lastExecutionResult?.error;
+        if (typeof lastError === 'string') {
+            lastError = { message: lastError };
+        }
+        const lastMessage: string = `${String(lastError?.name)} ${String(lastError?.message)}`;
 
         await NotificationService.report2developers(
             ABORT_REPORT_SUBJECT,
