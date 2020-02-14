@@ -28,6 +28,7 @@ async function main() {
         //         reservationFor: { ids: ['xxx'] }
         //     }
         // },
+        price: { $gte: 500, $lte: 1000 },
         sort: { orderDate: -1 }
     });
     console.log(orders);

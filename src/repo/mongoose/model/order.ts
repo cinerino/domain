@@ -386,6 +386,16 @@ schema.index(
     }
 );
 
+schema.index(
+    { price: 1, orderDate: -1 },
+    {
+        name: 'searchByPrice',
+        partialFilterExpression: {
+            price: { $exists: true }
+        }
+    }
+);
+
 mongoose.model(modelName, schema)
     .on(
         'index',

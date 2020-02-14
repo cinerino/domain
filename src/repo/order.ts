@@ -548,6 +548,26 @@ export class MongoRepository {
             }
         }
 
+        if ((<any>params).price !== undefined && (<any>params).price !== null) {
+            if (typeof (<any>params).price.$gte === 'number') {
+                andConditions.push({
+                    price: {
+                        $exists: true,
+                        $gte: (<any>params).price.$gte
+                    }
+                });
+            }
+
+            if (typeof (<any>params).price.$lte === 'number') {
+                andConditions.push({
+                    price: {
+                        $exists: true,
+                        $lte: (<any>params).price.$lte
+                    }
+                });
+            }
+        }
+
         return andConditions;
     }
 
