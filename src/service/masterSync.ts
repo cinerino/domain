@@ -18,6 +18,9 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('cinerino-domain:service');
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
@@ -820,10 +823,13 @@ export function updateEventAttendeeCapacity(params: factory.task.IData<factory.t
     return async (repos: {
         attendeeCapacity: EventAttendeeCapacityRepo;
     }) => {
-        const reserveService = new COA.service.Reserve({
-            endpoint: credentials.coa.endpoint,
-            auth: coaAuthClient
-        });
+        const reserveService = new COA.service.Reserve(
+            {
+                endpoint: credentials.coa.endpoint,
+                auth: coaAuthClient
+            },
+            { timeout: COA_TIMEOUT }
+        );
 
         // COAから空席状況取得
         const countFreeSeatResult = await reserveService.countFreeSeat({
