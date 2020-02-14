@@ -2,7 +2,6 @@
  * タスクサービス
  */
 import * as createDebug from 'debug';
-import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
@@ -10,6 +9,7 @@ import * as factory from '../factory';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as NotificationService from './notification';
+import { task2lineNotify } from './notification/factory';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -26,8 +26,6 @@ export interface IConnectionSettings {
 
 export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
 export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
-
-export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
 
 /**
  * タスク名でタスクをひとつ実行する
@@ -127,24 +125,7 @@ export function abort(params: {
         debug('abortedTask found', abortedTask);
 
         // 開発者へ報告
-        const lastExecutionResult = (abortedTask.executionResults.length > 0) ? abortedTask.executionResults.slice(-1)[0] : undefined;
-        let lastError = lastExecutionResult?.error;
-        if (typeof lastError === 'string') {
-            lastError = { message: lastError };
-        }
-        const lastMessage: string = `${String(lastError?.name)} ${String(lastError?.message)}`;
-
-        await NotificationService.report2developers(
-            ABORT_REPORT_SUBJECT,
-            `project:${(params.project !== undefined) ? params.project.id : ''}
-id:${abortedTask.id}
-name:${abortedTask.name}
-runsAt:${moment(abortedTask.runsAt)
-                .toISOString()}
-lastTriedAt:${moment(<Date>abortedTask.lastTriedAt)
-                .toISOString()}
-numberOfTried:${abortedTask.numberOfTried}
-lastMessage:${lastMessage}`
-        )();
+        const message = task2lineNotify({ task: abortedTask });
+        await NotificationService.report2developers(message.subject, message.content)();
     };
 }
