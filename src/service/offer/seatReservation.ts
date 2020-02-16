@@ -280,8 +280,17 @@ export function create(params: {
                 // no op
             }
 
-            error = handleCOAReserveTemporarilyError(error);
-            error = handleChevreError(error);
+            switch (bookingServiceIdentifier) {
+                case factory.service.webAPI.Identifier.COA:
+                    error = handleCOAReserveTemporarilyError(error);
+                    break;
+
+                case factory.service.webAPI.Identifier.Chevre:
+                    error = handleChevreError(error);
+                    break;
+
+                default:
+            }
 
             throw error;
         }
