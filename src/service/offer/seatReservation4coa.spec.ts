@@ -1107,7 +1107,7 @@ describe('action.authorize.seatReservation.create()', () => {
             transaction: transactionRepo
         })
             .catch((err) => err);
-        assert(result instanceof domain.factory.errors.ServiceUnavailable);
+        assert.deepEqual(result, updTmpReserveSeatResult);
         sandbox.verify();
     });
 
@@ -1201,7 +1201,7 @@ describe('action.authorize.seatReservation.create()', () => {
             transaction: transactionRepo
         })
             .catch((err) => err);
-        assert(result instanceof domain.factory.errors.ServiceUnavailable);
+        assert.deepEqual(result, updTmpReserveSeatResult);
         sandbox.verify();
     });
 
@@ -1399,7 +1399,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
-    it('COA仮予約が500以上のエラーであれば、承認アクションを諦めて、Argumentエラーになるはず', async () => {
+    it('COA仮予約が500以上のエラーであれば、承認アクションを諦めて、ServiceUnavailableエラーになるはず', async () => {
         const agent = {
             id: 'agentId'
         };

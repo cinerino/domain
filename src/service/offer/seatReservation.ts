@@ -15,6 +15,8 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { handleChevreError, handleCOAReserveTemporarilyError } from '../../errorHandler';
+
 import * as OfferService from '../../service/offer';
 import {
     acceptedOffers2amount,
@@ -278,7 +280,10 @@ export function create(params: {
                 // no op
             }
 
-            throw handleReserveTemporarilyError(error);
+            error = handleCOAReserveTemporarilyError(error);
+            error = handleChevreError(error);
+
+            throw error;
         }
 
         // 金額計算
@@ -922,33 +927,6 @@ export function validateAcceptedOffers(params: {
 
         return acceptedOffers;
     };
-}
-
-/**
- * 仮予約エラーハンドリング
- */
-function handleReserveTemporarilyError(error: any) {
-    let handledError: Error = new factory.errors.ServiceUnavailable('Unexepected error occurred');
-
-    // if (error.message === '座席取得失敗') {
-    // }
-
-    // メッセージ「既に予約済みです」の場合は、座席の重複とみなす
-    if (error.message === '既に予約済みです') {
-        handledError = new factory.errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
-    }
-
-    // Chevreが500未満であればクライアントエラーとみなす
-    const reserveServiceHttpStatusCode = error.code;
-    if (Number.isInteger(reserveServiceHttpStatusCode)) {
-        if (reserveServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
-            handledError = new factory.errors.Argument('Event', error.message);
-        } else {
-            handledError = new factory.errors.ServiceUnavailable('Reserve service temporarily unavailable');
-        }
-    }
-
-    return handledError;
 }
 
 /**

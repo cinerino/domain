@@ -2,8 +2,35 @@
  * エラーハンドラー
  * 外部サービスと連携している場合に、サービス(API)のエラーを本ドメインのエラーに変換する責任を担います。
  */
-import { BAD_REQUEST, FORBIDDEN, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
+import { BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
 import { errors } from './factory';
+
+/**
+ * COA仮予約エラーハンドリング
+ */
+export function handleCOAReserveTemporarilyError(error: any) {
+    let handledError: Error = error;
+
+    // if (error.message === '座席取得失敗') {
+    // }
+
+    // メッセージ「既に予約済みです」の場合は、座席の重複とみなす
+    if (error.message === '既に予約済みです') {
+        handledError = new errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
+    }
+
+    // Chevreが500未満であればクライアントエラーとみなす
+    const reserveServiceHttpStatusCode = error.code;
+    if (Number.isInteger(reserveServiceHttpStatusCode)) {
+        if (reserveServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
+            handledError = new errors.Argument('Event', error.message);
+        } else {
+            handledError = new errors.ServiceUnavailable('Reserve service temporarily unavailable');
+        }
+    }
+
+    return handledError;
+}
 
 /**
  * Chevreサービスエラーをハンドリングする

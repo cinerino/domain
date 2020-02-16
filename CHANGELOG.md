@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - デフォルトで確定予約へ連携する値を拡張
 - デフォルトで注文識別子にconfirmationNumberとconfirmationPassを追加
 - COAリクエストにタイムアウト設定
+- 予約承認時のエラーハンドリングを調整
 
 ### Deprecated
 

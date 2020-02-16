@@ -9,6 +9,8 @@ import { MongoRepository as EventRepo } from '../../repo/event';
 import { InMemoryRepository as OfferRepo } from '../../repo/offer';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { handleCOAReserveTemporarilyError } from '../../errorHandler';
+
 import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
@@ -554,7 +556,7 @@ export function create(params: {
                 // no op
             }
 
-            throw handleUpdTmpReserveSeatError(error);
+            throw handleCOAReserveTemporarilyError(error);
         }
 
         const { price, requiredPoint } = offers2resultPrice(acceptedOffer);
@@ -569,35 +571,6 @@ export function create(params: {
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
-}
-
-/**
- * COA仮予約エラーハンドリング
- */
-function handleUpdTmpReserveSeatError(error: any) {
-    let handledError: Error = new factory.errors.ServiceUnavailable('Unexepected error occurred');
-
-    // if (error.message === '座席取得失敗') {
-    // }
-
-    // メッセージ「既に予約済みです」の場合は、座席の重複とみなす
-    if (error.message === '既に予約済みです') {
-        handledError = new factory.errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
-    }
-
-    // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
-    const coaServiceHttpStatusCode = error.code;
-
-    // 500未満であればクライアントエラーとみなす
-    if (Number.isInteger(coaServiceHttpStatusCode)) {
-        if (coaServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
-            handledError = new factory.errors.Argument('Event', error.message);
-        } else {
-            handledError = new factory.errors.ServiceUnavailable('Reservation service temporarily unavailable.');
-        }
-    }
-
-    return handledError;
 }
 
 /**
