@@ -405,12 +405,14 @@ export function selectSeats(
             if (isWheelChairOffer) {
                 // 車椅子予約の場合、車椅子タイプ座席のみ
                 availableSeats = availableSeats.filter(
-                    (s) => typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Wheelchair
+                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Wheelchair)
+                        || (Array.isArray(s.seatingType) && s.seatingType.includes(<string>SeatingType.Wheelchair))
                 );
 
                 // 余分確保は一般座席から
                 availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
-                    (s) => typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal
+                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
+                        || (Array.isArray(s.seatingType) && s.seatingType.includes(<string>SeatingType.Normal))
                 );
 
                 // 車椅子確保分が一般座席になければ車椅子は0
@@ -419,7 +421,8 @@ export function selectSeats(
                 }
             } else {
                 availableSeats = availableSeats.filter(
-                    (s) => typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal
+                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
+                        || (Array.isArray(s.seatingType) && s.seatingType.includes(<string>SeatingType.Normal))
                 );
 
                 // 余分確保なし
