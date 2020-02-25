@@ -579,8 +579,15 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
         const acceptedOffer =
             (<factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>>a.object).acceptedOffer;
         acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
-            const offeredTicketedSeat = offer.ticketedSeat;
+            let offeredTicketedSeat = offer.ticketedSeat;
+            const acceptedTicketedSeatByItemOffered = offer.itemOffered?.serviceOutput?.reservedTicket?.ticketedSeat;
+            if (acceptedTicketedSeatByItemOffered !== undefined && acceptedTicketedSeatByItemOffered !== null) {
+                offeredTicketedSeat = acceptedTicketedSeatByItemOffered;
+            }
+
             if (offeredTicketedSeat !== undefined) {
+                const ticketedSeat4MovieTicket = offeredTicketedSeat;
+
                 offer.priceSpecification.priceComponent.forEach((component) => {
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
@@ -592,7 +599,7 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
                             serviceType: component.appliesToMovieTicketType,
                             serviceOutput: {
                                 reservationFor: { typeOf: event.typeOf, id: event.id },
-                                reservedTicket: { ticketedSeat: offeredTicketedSeat }
+                                reservedTicket: { ticketedSeat: ticketedSeat4MovieTicket }
                             }
                         });
                     }
