@@ -296,7 +296,7 @@ function availableSalesTicket2offerWithDetails(params: {
 
     offerWithDetails = {
         project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: 'Offer',
+        typeOf: factory.chevre.offerType.Offer,
         id: availableSalesTicket.ticketCode,
         name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
         alternateName: { ja: availableSalesTicket.ticketNameKana, en: '' },

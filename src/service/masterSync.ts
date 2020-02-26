@@ -292,7 +292,7 @@ function saveScreeningEvents(params: {
                 });
 
                 // スクリーン存在チェック
-                const screenRoom = <factory.chevre.place.movieTheater.IScreeningRoom | undefined>movieTheater.containsPlace.find(
+                const screenRoom = <factory.chevre.place.screeningRoom.IPlace | undefined>movieTheater.containsPlace.find(
                     (place) => place.branchCode === scheduleFromCOA.screenCode
                 );
                 if (screenRoom === undefined) {
@@ -440,7 +440,7 @@ function cancelDeletedEvents(params: {
 export function createScreeningEventFromCOA(params: {
     project: { typeOf: factory.organizationType.Project; id: string };
     performanceFromCOA: COA.factory.master.IScheduleResult;
-    screenRoom: factory.chevre.place.movieTheater.IScreeningRoom;
+    screenRoom: factory.chevre.place.screeningRoom.IPlace;
     superEvent: factory.event.screeningEventSeries.IEvent;
     serviceKubuns: COA.factory.master.IKubunNameResult[];
     acousticKubuns: COA.factory.master.IKubunNameResult[];
@@ -524,7 +524,7 @@ export function createScreeningEventFromCOA(params: {
             ja: '',
             en: ''
         },
-        typeOf: 'Offer',
+        typeOf: factory.chevre.offerType.Offer,
         priceCurrency: factory.priceCurrency.JPY,
         // acceptedPaymentMethod: acceptedPaymentMethod,
         availabilityEnds: validThrough,
@@ -680,7 +680,7 @@ export function createScreeningEventSeriesFromCOA(params: {
         coaInfo: coaInfo,
         offers: {
             project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: 'Offer',
+            typeOf: factory.chevre.offerType.Offer,
             priceCurrency: factory.chevre.priceCurrency.JPY,
             acceptedPaymentMethod: acceptedPaymentMethod
         },
@@ -771,8 +771,8 @@ export function createMovieTheaterFromCOA(
 export function createScreeningRoomFromCOA(
     project: { typeOf: factory.organizationType.Project; id: string },
     screenFromCOA: COA.factory.master.IScreenResult
-): factory.chevre.place.movieTheater.IScreeningRoom {
-    const sections: factory.chevre.place.movieTheater.IScreeningRoomSection[] = [];
+): factory.chevre.place.screeningRoom.IPlace {
+    const sections: factory.chevre.place.screeningRoomSection.IPlaceWithOffer[] = [];
     const sectionCodes: string[] = [];
     screenFromCOA.listSeat.forEach((seat) => {
         if (sectionCodes.indexOf(seat.seatSection) < 0) {

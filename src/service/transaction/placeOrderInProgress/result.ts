@@ -289,7 +289,7 @@ function createReservationAcceptedOffers(params: {
                                 ticketToken: ticketToken,
                                 ticketType: {
                                     project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
-                                    typeOf: <'Offer'>'Offer',
+                                    typeOf: factory.chevre.offerType.Offer,
                                     id: requestedOffer.id,
                                     identifier: <string>requestedOffer.identifier,
                                     name: <factory.multilingualString>requestedOffer.name,
@@ -378,7 +378,7 @@ function createMoneyTransferAcceptedOffers(params: {
 
             acceptedOffers.push({
                 project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
-                typeOf: 'Offer',
+                typeOf: factory.chevre.offerType.Offer,
                 // id: '',
                 // name: '',
                 itemOffered: {

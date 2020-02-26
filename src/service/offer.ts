@@ -139,7 +139,7 @@ export function searchEvents(params: {
 export function searchEventOffers(params: {
     project: factory.project.IProject;
     event: { id: string };
-}): ISearchEventOffersOperation<factory.chevre.place.movieTheater.IScreeningRoomSectionOffer[]> {
+}): ISearchEventOffersOperation<factory.chevre.place.screeningRoomSection.IPlaceWithOffer[]> {
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -198,7 +198,7 @@ export function searchEventOffers(params: {
 
 async function searchEventOffers4COA(params: {
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-}): Promise<factory.chevre.place.movieTheater.IScreeningRoomSectionOffer[]> {
+}): Promise<factory.chevre.place.screeningRoomSection.IPlace[]> {
     const event = params.event;
 
     const masterService = new COA.service.Master(
@@ -230,14 +230,14 @@ async function searchEventOffers4COA(params: {
         await masterService.theater(coaInfo),
         await masterService.screen(coaInfo)
     );
-    const screeningRoom = <chevre.factory.place.movieTheater.IScreeningRoom>movieTheater.containsPlace.find(
+    const screeningRoom = <chevre.factory.place.screeningRoom.IPlace>movieTheater.containsPlace.find(
         (p) => p.branchCode === event.location.branchCode
     );
     if (screeningRoom === undefined) {
         throw new chevre.factory.errors.NotFound('Screening room');
     }
     const screeningRoomSections = screeningRoom.containsPlace;
-    const offers: chevre.factory.place.movieTheater.IScreeningRoomSectionOffer[] = screeningRoomSections;
+    const offers: chevre.factory.place.screeningRoomSection.IPlaceWithOffer[] = screeningRoomSections;
     offers.forEach((offer) => {
         const seats = offer.containsPlace;
         const seatSection = offer.branchCode;
@@ -264,7 +264,7 @@ async function searchEventOffers4COA(params: {
 
             seat.offers = [{
                 project: { typeOf: params.event.project.typeOf, id: params.event.project.id },
-                typeOf: 'Offer',
+                typeOf: factory.chevre.offerType.Offer,
                 priceCurrency: chevre.factory.priceCurrency.JPY,
                 availability: (availableOffer !== undefined)
                     ? chevre.factory.itemAvailability.InStock
@@ -875,7 +875,7 @@ function coaSalesTicket2offer(params: {
 
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: 'Offer',
+        typeOf: factory.chevre.offerType.Offer,
         priceCurrency: factory.priceCurrency.JPY,
         id: `COA-${params.coaInfo.theaterCode}-${params.salesTicket.ticketCode}`,
         identifier: params.salesTicket.ticketCode,

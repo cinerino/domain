@@ -635,7 +635,7 @@ export function validateAcceptedOffers(params: {
                     ? offerWithoutDetail.addOn.map((a) => {
                         return {
                             project: params.project,
-                            typeOf: 'Offer',
+                            typeOf: factory.chevre.offerType.Offer,
                             id: a.id,
                             priceCurrency: offer.priceCurrency
                         };
