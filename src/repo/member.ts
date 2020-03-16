@@ -87,6 +87,16 @@ export class MongoRepository {
             }
         }
 
+        const memberNameRegex = params.member?.name?.$regex;
+        if (typeof memberNameRegex === 'string') {
+            andConditions.push({
+                'member.name': {
+                    $exists: true,
+                    $regex: new RegExp(memberNameRegex)
+                }
+            });
+        }
+
         return andConditions;
     }
 
