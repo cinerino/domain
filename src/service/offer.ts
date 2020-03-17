@@ -1,5 +1,6 @@
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
+import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
 import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
@@ -281,6 +282,7 @@ export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTick
 /**
  * イベントに対する券種オファーを検索する
  */
+// tslint:disable-next-line:max-func-body-length
 export function searchEventTicketOffers(params: {
     project: factory.project.IProject;
     /**
@@ -334,6 +336,8 @@ export function searchEventTicketOffers(params: {
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
+        const now = moment();
+
         const project = await repos.project.findById({ id: params.project.id });
         if (project.settings === undefined || project.settings.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
@@ -409,6 +413,22 @@ export function searchEventTicketOffers(params: {
                     }
                     offers = offers.filter((o) => availabilityAccepted.indexOf(<factory.chevre.itemAvailability>o.availability) >= 0);
                 }
+
+                // 有効期間を適用
+                offers = offers.filter((o) => {
+                    let isvalid = true;
+
+                    if (o.validFrom !== undefined && moment(o.validFrom)
+                        .isAfter(now)) {
+                        isvalid = false;
+                    }
+                    if (o.validThrough !== undefined && moment(o.validThrough)
+                        .isBefore(now)) {
+                        isvalid = false;
+                    }
+
+                    return isvalid;
+                });
         }
 
         return offers;
