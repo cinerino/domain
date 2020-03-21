@@ -331,6 +331,7 @@ export function searchEventTicketOffers(params: {
         kbnEisyahousiki: string;
     };
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[]> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         project: ProjectRepo;
@@ -411,7 +412,13 @@ export function searchEventTicketOffers(params: {
                             break;
                         default:
                     }
-                    offers = offers.filter((o) => availabilityAccepted.indexOf(<factory.chevre.itemAvailability>o.availability) >= 0);
+
+                    // アプリケーションが利用可能なオファーに絞る
+                    // offers = offers.filter((o) => availabilityAccepted.indexOf(<factory.chevre.itemAvailability>o.availability) >= 0);
+                    offers = offers.filter((o) => {
+                        return Array.isArray(o.availableAtOrFrom)
+                            && o.availableAtOrFrom.some((availableApplication) => availableApplication.id === specifiedStore.id);
+                    });
                 }
 
                 // 有効期間を適用
