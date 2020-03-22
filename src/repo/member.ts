@@ -87,6 +87,15 @@ export class MongoRepository {
             }
         }
 
+        const memberIdIn = params.member?.id?.$in;
+        if (Array.isArray(memberIdIn)) {
+            andConditions.push({
+                'member.id': {
+                    $in: memberIdIn
+                }
+            });
+        }
+
         const memberNameRegex = params.member?.name?.$regex;
         if (typeof memberNameRegex === 'string') {
             andConditions.push({
