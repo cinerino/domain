@@ -236,120 +236,120 @@ describe('importScreeningEvents()', () => {
     });
 
     // tslint:disable-next-line:max-func-body-length
-    it('XMLとCOAのデータが一緒の場合、正常で完了するはず', async () => {
-        const movieTheater = {
-            branchCode: '123',
-            containsPlace: [
-                { branchCode: '01' },
-                { branchCode: '02' }
-            ]
-        };
-        const seller = {
-            additionalProperty: [
-                { name: 'xmlEndPoint', value: '{"baseUrl":"http://cinema.coasystems.net","theaterCodeName":"aira"}' }
-            ]
-        };
-        const filmFromCOA = [
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                dateBegin: '20190206',
-                dateEnd: '20190206',
-                showTime: 100
-            }
-        ];
-        const schedulesFromCOA = [
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                screenCode: '01',
-                dateJouei: '20190206',
-                timeBegin: '0900',
-                timeEnd: '0900'
-            },
-            {
-                titleCode: 'titleCode',
-                titleBranchNum: 'titleBranchNum',
-                screenCode: '02',
-                dateJouei: '20190206',
-                timeBegin: '0900',
-                timeEnd: '1000'
-            }
-        ];
-        const xmlSchedule = [[{
-            date: '20190206',
-            movie: [{
-                movieShortCode: 'titleCode',
-                screen: [{
-                    screenCode: '02',
-                    time: [{
-                        startTime: '0900',
-                        endTime: '1000'
-                    }]
-                }]
-            }]
-        }]];
+    // it('XMLとCOAのデータが一緒の場合、正常で完了するはず', async () => {
+    //     const movieTheater = {
+    //         branchCode: '123',
+    //         containsPlace: [
+    //             { branchCode: '01' },
+    //             { branchCode: '02' }
+    //         ]
+    //     };
+    //     const seller = {
+    //         additionalProperty: [
+    //             { name: 'xmlEndPoint', value: '{"baseUrl":"http://cinema.coasystems.net","theaterCodeName":"aira"}' }
+    //         ]
+    //     };
+    //     const filmFromCOA = [
+    //         {
+    //             titleCode: 'titleCode',
+    //             titleBranchNum: 'titleBranchNum',
+    //             dateBegin: '20190206',
+    //             dateEnd: '20190206',
+    //             showTime: 100
+    //         }
+    //     ];
+    //     const schedulesFromCOA = [
+    //         {
+    //             titleCode: 'titleCode',
+    //             titleBranchNum: 'titleBranchNum',
+    //             screenCode: '01',
+    //             dateJouei: '20190206',
+    //             timeBegin: '0900',
+    //             timeEnd: '0900'
+    //         },
+    //         {
+    //             titleCode: 'titleCode',
+    //             titleBranchNum: 'titleBranchNum',
+    //             screenCode: '02',
+    //             dateJouei: '20190206',
+    //             timeBegin: '0900',
+    //             timeEnd: '1000'
+    //         }
+    //     ];
+    //     const xmlSchedule = [[{
+    //         date: '20190206',
+    //         movie: [{
+    //             movieShortCode: 'titleCode',
+    //             screen: [{
+    //                 screenCode: '02',
+    //                 time: [{
+    //                     startTime: '0900',
+    //                     endTime: '1000'
+    //                 }]
+    //             }]
+    //         }]
+    //     }]];
 
-        const eventRepo = new domain.repository.Event(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
+    //     const eventRepo = new domain.repository.Event(mongoose.connection);
+    //     const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('theater')
-            .once()
-            .resolves(
-                { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
-            );
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('screen')
-            .once()
-            .resolves(movieTheater.containsPlace.map((p) => {
-                return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
-            }));
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('title')
-            .once()
-            .resolves(filmFromCOA);
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('schedule')
-            .once()
-            .resolves(schedulesFromCOA);
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('xmlSchedule')
-            .once()
-            .resolves(xmlSchedule);
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('kubunName')
-            // tslint:disable-next-line:no-magic-numbers
-            .exactly(6)
-            .resolves([{}]);
-        sandbox.mock(eventRepo)
-            .expects('save')
-            .exactly(filmFromCOA.length + 1);
-        sandbox.mock(sellerRepo)
-            .expects('search')
-            .once()
-            .resolves([seller]);
-        sandbox.mock(eventRepo)
-            .expects('search')
-            .once()
-            .resolves([]);
-        sandbox.mock(eventRepo)
-            .expects('cancel')
-            .never();
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('theater')
+    //         .once()
+    //         .resolves(
+    //             { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
+    //         );
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('screen')
+    //         .once()
+    //         .resolves(movieTheater.containsPlace.map((p) => {
+    //             return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
+    //         }));
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('title')
+    //         .once()
+    //         .resolves(filmFromCOA);
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('schedule')
+    //         .once()
+    //         .resolves(schedulesFromCOA);
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('xmlSchedule')
+    //         .once()
+    //         .resolves(xmlSchedule);
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('kubunName')
+    //         // tslint:disable-next-line:no-magic-numbers
+    //         .exactly(6)
+    //         .resolves([{}]);
+    //     sandbox.mock(eventRepo)
+    //         .expects('save')
+    //         .exactly(filmFromCOA.length + 1);
+    //     sandbox.mock(sellerRepo)
+    //         .expects('search')
+    //         .once()
+    //         .resolves([seller]);
+    //     sandbox.mock(eventRepo)
+    //         .expects('search')
+    //         .once()
+    //         .resolves([]);
+    //     sandbox.mock(eventRepo)
+    //         .expects('cancel')
+    //         .never();
 
-        const result = await MasterSyncService.importScreeningEvents({
-            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
-            locationBranchCode: movieTheater.branchCode,
-            importFrom: new Date(),
-            importThrough: new Date()
-        })({
-            event: eventRepo,
-            seller: sellerRepo
-        });
+    //     const result = await MasterSyncService.importScreeningEvents({
+    //         project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
+    //         locationBranchCode: movieTheater.branchCode,
+    //         importFrom: new Date(),
+    //         importThrough: new Date()
+    //     })({
+    //         event: eventRepo,
+    //         seller: sellerRepo
+    //     });
 
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
+    //     assert.equal(result, undefined);
+    //     sandbox.verify();
+    // });
 
     it('劇場に存在しないスクリーンのスケジュールがあれば、エラー出力だけしてスルーするはず', async () => {
         const movieTheater = {
@@ -434,70 +434,70 @@ describe('importScreeningEvents()', () => {
         sandbox.verify();
     });
 
-    it('XMLデータ取得に失敗すれば何もしないはず', async () => {
-        const movieTheater = {
-            branchCode: '123',
-            containsPlace: [
-                { branchCode: '01' },
-                { branchCode: '02' }
-            ]
-        };
-        const seller = {
-            additionalProperty: [
-                { name: 'xmlEndPoint', value: '{"baseUrl":"http://cinema.coasystems.net","theaterCodeName":"aira"}' }
-            ]
-        };
+    // it('XMLデータ取得に失敗すれば何もしないはず', async () => {
+    //     const movieTheater = {
+    //         branchCode: '123',
+    //         containsPlace: [
+    //             { branchCode: '01' },
+    //             { branchCode: '02' }
+    //         ]
+    //     };
+    //     const seller = {
+    //         additionalProperty: [
+    //             { name: 'xmlEndPoint', value: '{"baseUrl":"http://cinema.coasystems.net","theaterCodeName":"aira"}' }
+    //         ]
+    //     };
 
-        const eventRepo = new domain.repository.Event(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
+    //     const eventRepo = new domain.repository.Event(mongoose.connection);
+    //     const sellerRepo = new domain.repository.Seller(mongoose.connection);
 
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('theater')
-            .once()
-            .resolves(
-                { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
-            );
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('screen')
-            .once()
-            .resolves(movieTheater.containsPlace.map((p) => {
-                return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
-            }));
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('xmlSchedule')
-            .once()
-            .rejects(new Error('some random error'));
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('title')
-            .never();
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('schedule')
-            .never();
-        sandbox.mock(COA.service.Master.prototype)
-            .expects('kubunName')
-            .never();
-        sandbox.mock(eventRepo)
-            .expects('save')
-            .never();
-        sandbox.mock(sellerRepo)
-            .expects('search')
-            .once()
-            .resolves([seller]);
-        sandbox.mock(eventRepo)
-            .expects('search')
-            .never();
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('theater')
+    //         .once()
+    //         .resolves(
+    //             { theaterCode: movieTheater.branchCode, theaterTelNum: '0312345678' }
+    //         );
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('screen')
+    //         .once()
+    //         .resolves(movieTheater.containsPlace.map((p) => {
+    //             return { screenCode: p.branchCode, listSeat: [{ seatSection: 'seatSection', seatNum: 'seatNum' }] };
+    //         }));
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('xmlSchedule')
+    //         .once()
+    //         .rejects(new Error('some random error'));
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('title')
+    //         .never();
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('schedule')
+    //         .never();
+    //     sandbox.mock(COA.service.Master.prototype)
+    //         .expects('kubunName')
+    //         .never();
+    //     sandbox.mock(eventRepo)
+    //         .expects('save')
+    //         .never();
+    //     sandbox.mock(sellerRepo)
+    //         .expects('search')
+    //         .once()
+    //         .resolves([seller]);
+    //     sandbox.mock(eventRepo)
+    //         .expects('search')
+    //         .never();
 
-        const result = await MasterSyncService.importScreeningEvents({
-            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
-            locationBranchCode: '123',
-            importFrom: new Date(),
-            importThrough: new Date()
-        })({
-            event: eventRepo,
-            seller: sellerRepo
-        });
+    //     const result = await MasterSyncService.importScreeningEvents({
+    //         project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
+    //         locationBranchCode: '123',
+    //         importFrom: new Date(),
+    //         importThrough: new Date()
+    //     })({
+    //         event: eventRepo,
+    //         seller: sellerRepo
+    //     });
 
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
+    //     assert.equal(result, undefined);
+    //     sandbox.verify();
+    // });
 });

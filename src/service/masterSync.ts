@@ -112,14 +112,15 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
         }
 
         let xmlEndPoint: any;
+        xmlEndPoint = undefined; // 強制的にxmlを参照しにいかないための処理
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (Array.isArray(seller.additionalProperty)) {
-            const xmlEndPointProperty = seller.additionalProperty.find(((p: any) => {
-                return p.name === 'xmlEndPoint';
-            }));
-            xmlEndPoint = (xmlEndPointProperty !== undefined) ? JSON.parse(xmlEndPointProperty.value) : undefined;
-        }
+        // if (Array.isArray(seller.additionalProperty)) {
+        //     const xmlEndPointProperty = seller.additionalProperty.find(((p: any) => {
+        //         return p.name === 'xmlEndPoint';
+        //     }));
+        //     xmlEndPoint = (xmlEndPointProperty !== undefined) ? JSON.parse(xmlEndPointProperty.value) : undefined;
+        // }
 
         const targetImportFrom = moment(`${moment(params.importFrom)
             .tz('Asia/Tokyo')
@@ -130,19 +131,19 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             .add(1, 'day');
         debug('importing screening events...', targetImportFrom, targetImportThrough);
 
-        let schedulesFromXML: COA.factory.master.IXMLScheduleResult[][] = [];
-        if (xmlEndPoint !== undefined) {
-            try {
-                debug('finding xmlSchedule...', xmlEndPoint.theaterCodeName);
-                schedulesFromXML = await masterService.xmlSchedule({
-                    baseUrl: xmlEndPoint.baseUrl,
-                    theaterCodeName: xmlEndPoint.theaterCodeName
-                });
-            } catch (err) {
-                // tslint:disable-next-line:no-console
-                console.error(err);
-            }
-        }
+        const schedulesFromXML: COA.factory.master.IXMLScheduleResult[][] = [];
+        // if (xmlEndPoint !== undefined) {
+        //     try {
+        //         debug('finding xmlSchedule...', xmlEndPoint.theaterCodeName);
+        //         schedulesFromXML = await masterService.xmlSchedule({
+        //             baseUrl: xmlEndPoint.baseUrl,
+        //             theaterCodeName: xmlEndPoint.theaterCodeName
+        //         });
+        //     } catch (err) {
+        //         // tslint:disable-next-line:no-console
+        //         console.error(err);
+        //     }
+        // }
 
         // xmlEndPointがない場合、処理を続きます
         if (xmlEndPoint === undefined || schedulesFromXML.length > 0) {
@@ -263,6 +264,7 @@ function saveScreeningEvents(params: {
         const schedulesFromCOA = await masterService.schedule({
             theaterCode: params.locationBranchCode,
             begin: moment(params.targetImportFrom)
+                .add(-1, 'day') // 深夜帯スケジュールが前日検索の結果に含まれるため
                 .tz('Asia/Tokyo')
                 .format('YYYYMMDD'), // COAは日本時間で判断
             end: moment(params.targetImportThrough)
