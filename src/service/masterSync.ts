@@ -57,29 +57,6 @@ const coaAuthClient = new COA.auth.RefreshToken({
 // }
 
 /**
- * XMLに存在するスケジュールかどうかを判定する
- */
-export function matchWithXML(
-    xmlSchedules: COA.factory.master.IXMLScheduleResult[][],
-    coaSchedule: COA.factory.master.IScheduleResult
-): boolean {
-    return xmlSchedules.some((xmlSchedule) => {
-        return xmlSchedule.some((schedule) => {
-            return schedule.date === coaSchedule.dateJouei
-                && schedule.movie.some((movie) => {
-                    return movie.movieShortCode === coaSchedule.titleCode
-                        && movie.screen.some((screen) => {
-                            return screen.screenCode === coaSchedule.screenCode
-                                && screen.time.some(
-                                    (time) => time.startTime === coaSchedule.timeBegin && time.endTime === coaSchedule.timeEnd
-                                );
-                        });
-                });
-        });
-    });
-}
-
-/**
  * COAからイベントをインポートする
  */
 export function importScreeningEvents(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
@@ -111,17 +88,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             throw new factory.errors.NotFound('Seller');
         }
 
-        let xmlEndPoint: any;
-        xmlEndPoint = undefined; // 強制的にxmlを参照しにいかないための処理
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        // if (Array.isArray(seller.additionalProperty)) {
-        //     const xmlEndPointProperty = seller.additionalProperty.find(((p: any) => {
-        //         return p.name === 'xmlEndPoint';
-        //     }));
-        //     xmlEndPoint = (xmlEndPointProperty !== undefined) ? JSON.parse(xmlEndPointProperty.value) : undefined;
-        // }
-
         const targetImportFrom = moment(`${moment(params.importFrom)
             .tz('Asia/Tokyo')
             .format('YYYY-MM-DD')}T00:00:00+09:00`);
@@ -131,48 +97,29 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             .add(1, 'day');
         debug('importing screening events...', targetImportFrom, targetImportThrough);
 
-        const schedulesFromXML: COA.factory.master.IXMLScheduleResult[][] = [];
-        // if (xmlEndPoint !== undefined) {
-        //     try {
-        //         debug('finding xmlSchedule...', xmlEndPoint.theaterCodeName);
-        //         schedulesFromXML = await masterService.xmlSchedule({
-        //             baseUrl: xmlEndPoint.baseUrl,
-        //             theaterCodeName: xmlEndPoint.theaterCodeName
-        //         });
-        //     } catch (err) {
-        //         // tslint:disable-next-line:no-console
-        //         console.error(err);
-        //     }
-        // }
+        const screeningEventSerieses = await saveScreeningEventSeries({
+            locationBranchCode: params.locationBranchCode,
+            movieTheater: movieTheater,
+            project: project
+        })(repos);
 
-        // xmlEndPointがない場合、処理を続きます
-        if (xmlEndPoint === undefined || schedulesFromXML.length > 0) {
-            const screeningEventSerieses = await saveScreeningEventSeries({
-                locationBranchCode: params.locationBranchCode,
-                movieTheater: movieTheater,
-                project: project
-            })(repos);
+        // イベントごとに永続化トライ
+        const screeningEvents = await saveScreeningEvents({
+            locationBranchCode: params.locationBranchCode,
+            movieTheater: movieTheater,
+            screeningEventSerieses: screeningEventSerieses,
+            project: project,
+            targetImportFrom: targetImportFrom.toDate(),
+            targetImportThrough: targetImportThrough.toDate()
+        })(repos);
 
-            // イベントごとに永続化トライ
-            const screeningEvents = await saveScreeningEvents({
-                xmlEndPoint: xmlEndPoint,
-                schedulesFromXML: schedulesFromXML,
-                locationBranchCode: params.locationBranchCode,
-                movieTheater: movieTheater,
-                screeningEventSerieses: screeningEventSerieses,
-                project: project,
-                targetImportFrom: targetImportFrom.toDate(),
-                targetImportThrough: targetImportThrough.toDate()
-            })(repos);
-
-            // COAから削除されたイベントをキャンセル済ステータスへ変更
-            await cancelDeletedEvents({
-                locationBranchCode: params.locationBranchCode,
-                targetImportFrom: targetImportFrom.toDate(),
-                targetImportThrough: targetImportThrough.toDate(),
-                idsShouldBe: screeningEvents.map((e) => e.id)
-            })(repos);
-        }
+        // COAから削除されたイベントをキャンセル済ステータスへ変更
+        await cancelDeletedEvents({
+            locationBranchCode: params.locationBranchCode,
+            targetImportFrom: targetImportFrom.toDate(),
+            targetImportThrough: targetImportThrough.toDate(),
+            idsShouldBe: screeningEvents.map((e) => e.id)
+        })(repos);
     };
 }
 
@@ -237,8 +184,6 @@ function saveScreeningEventSeries(params: {
 }
 
 function saveScreeningEvents(params: {
-    xmlEndPoint?: any;
-    schedulesFromXML: COA.factory.master.IXMLScheduleResult[][];
     locationBranchCode: string;
     movieTheater: factory.chevre.place.movieTheater.IPlace;
     screeningEventSerieses: factory.event.IEvent<factory.chevre.eventType.ScreeningEventSeries>[];
@@ -249,8 +194,6 @@ function saveScreeningEvents(params: {
     return async (repos: {
         event: EventRepo;
     }): Promise<factory.event.screeningEvent.IEvent[]> => {
-        const xmlEndPoint = params.xmlEndPoint;
-        const schedulesFromXML = params.schedulesFromXML;
         const movieTheater = params.movieTheater;
         const screeningEventSerieses = params.screeningEventSerieses;
         const project = params.project;
@@ -286,43 +229,41 @@ function saveScreeningEvents(params: {
         // イベントごとに永続化トライ
         const screeningEvents: factory.event.screeningEvent.IEvent[] = [];
         schedulesFromCOA.forEach((scheduleFromCOA) => {
-            if (xmlEndPoint === undefined || matchWithXML(schedulesFromXML, scheduleFromCOA)) {
-                const screeningEventSeriesId = createScreeningEventSeriesId({
-                    theaterCode: params.locationBranchCode,
-                    titleCode: scheduleFromCOA.titleCode,
-                    titleBranchNum: scheduleFromCOA.titleBranchNum
-                });
+            const screeningEventSeriesId = createScreeningEventSeriesId({
+                theaterCode: params.locationBranchCode,
+                titleCode: scheduleFromCOA.titleCode,
+                titleBranchNum: scheduleFromCOA.titleBranchNum
+            });
 
-                // スクリーン存在チェック
-                const screenRoom = <factory.chevre.place.screeningRoom.IPlace | undefined>movieTheater.containsPlace.find(
-                    (place) => place.branchCode === scheduleFromCOA.screenCode
-                );
-                if (screenRoom === undefined) {
-                    // tslint:disable-next-line:no-console
-                    console.error('screenRoom not found.', scheduleFromCOA.screenCode);
+            // スクリーン存在チェック
+            const screenRoom = <factory.chevre.place.screeningRoom.IPlace | undefined>movieTheater.containsPlace.find(
+                (place) => place.branchCode === scheduleFromCOA.screenCode
+            );
+            if (screenRoom === undefined) {
+                // tslint:disable-next-line:no-console
+                console.error('screenRoom not found.', scheduleFromCOA.screenCode);
 
-                    return;
-                }
-
-                // イベントシリーズ取得
-                const screeningEventSeries = screeningEventSerieses.find((e) => e.id === screeningEventSeriesId);
-                if (screeningEventSeries === undefined) {
-                    // tslint:disable-next-line:no-console
-                    console.error('screeningEventSeries not found.', screeningEventSeriesId);
-
-                    return;
-                }
-
-                const screeningEvent = createScreeningEventFromCOA({
-                    project: project,
-                    performanceFromCOA: scheduleFromCOA,
-                    screenRoom: screenRoom,
-                    superEvent: screeningEventSeries,
-                    serviceKubuns: serviceKubuns,
-                    acousticKubuns: acousticKubuns
-                });
-                screeningEvents.push(screeningEvent);
+                return;
             }
+
+            // イベントシリーズ取得
+            const screeningEventSeries = screeningEventSerieses.find((e) => e.id === screeningEventSeriesId);
+            if (screeningEventSeries === undefined) {
+                // tslint:disable-next-line:no-console
+                console.error('screeningEventSeries not found.', screeningEventSeriesId);
+
+                return;
+            }
+
+            const screeningEvent = createScreeningEventFromCOA({
+                project: project,
+                performanceFromCOA: scheduleFromCOA,
+                screenRoom: screenRoom,
+                superEvent: screeningEventSeries,
+                serviceKubuns: serviceKubuns,
+                acousticKubuns: acousticKubuns
+            });
+            screeningEvents.push(screeningEvent);
         });
 
         // 永続化
