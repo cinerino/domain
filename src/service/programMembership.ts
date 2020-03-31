@@ -16,6 +16,7 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
+import * as AccountService from './account';
 import * as OfferService from './offer';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as TransactionService from './transaction';
@@ -501,18 +502,39 @@ function processPlaceOrder(params: {
         const membershipPointsEarned = programMembership.membershipPointsEarned;
         if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
             // ポイント口座を検索
-            const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-                // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
-                sort: { ownedFrom: factory.sortType.Ascending },
-                limit: 1,
-                typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                    accountType: factory.accountType.Point
-                },
-                ownedBy: { id: customer.id },
-                ownedFrom: now,
-                ownedThrough: now
+            // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+            let accountOwnershipInfos = await AccountService.search({
+                project: { typeOf: project.typeOf, id: project.id },
+                conditions: {
+                    sort: { ownedFrom: factory.sortType.Ascending },
+                    limit: 1,
+                    typeOfGood: {
+                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                        accountType: factory.accountType.Point
+                    },
+                    ownedBy: { id: customer.id },
+                    ownedFrom: now,
+                    ownedThrough: now
+                }
+            })({
+                ownershipInfo: repos.ownershipInfo,
+                project: repos.project
             });
+
+            // 開設口座に絞る
+            accountOwnershipInfos = accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+
+            // const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+            //     sort: { ownedFrom: factory.sortType.Ascending },
+            //     limit: 1,
+            //     typeOfGood: {
+            //         typeOf: factory.ownershipInfo.AccountGoodType.Account,
+            //         accountType: factory.accountType.Point
+            //     },
+            //     ownedBy: { id: customer.id },
+            //     ownedFrom: now,
+            //     ownedThrough: now
+            // });
             if (accountOwnershipInfos.length === 0) {
                 throw new factory.errors.NotFound('accountOwnershipInfos');
             }
