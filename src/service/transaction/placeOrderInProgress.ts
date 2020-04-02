@@ -579,7 +579,7 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
         const acceptedOffer =
             (<factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>>a.object).acceptedOffer;
         acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
-            let offeredTicketedSeat = offer.ticketedSeat;
+            let offeredTicketedSeat = (<any>offer).ticketedSeat;
             const acceptedTicketedSeatByItemOffered = offer.itemOffered?.serviceOutput?.reservedTicket?.ticketedSeat;
             if (acceptedTicketedSeatByItemOffered !== undefined && acceptedTicketedSeatByItemOffered !== null) {
                 offeredTicketedSeat = acceptedTicketedSeatByItemOffered;

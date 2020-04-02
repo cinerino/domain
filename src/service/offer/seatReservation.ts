@@ -225,8 +225,8 @@ export function create(params: {
                         screenCode: coaInfo.screenCode,
                         listSeat: params.object.acceptedOffer.map((offer) => {
                             return {
-                                seatSection: (offer.ticketedSeat !== undefined) ? offer.ticketedSeat.seatSection : '',
-                                seatNum: (offer.ticketedSeat !== undefined) ? offer.ticketedSeat.seatNumber : ''
+                                seatSection: ((<any>offer).ticketedSeat !== undefined) ? (<any>offer).ticketedSeat.seatSection : '',
+                                seatNum: ((<any>offer).ticketedSeat !== undefined) ? (<any>offer).ticketedSeat.seatNumber : ''
                             };
                         })
                     };
@@ -459,7 +459,7 @@ export function selectSeats(
 
             acceptedOffersWithoutDetail.push({
                 additionalProperty: offer.additionalProperty,
-                id: ticketOffer.id,
+                id: <string>ticketOffer.id,
                 itemOffered: {
                     serviceOutput: {
                         typeOf: factory.chevre.reservationType.EventReservation,
@@ -582,7 +582,7 @@ export function validateAcceptedOffers(params: {
 
             // 座席指定であれば、座席タイプチャージを検索する
             let seatPriceComponent: factory.chevre.place.seat.IPriceComponent[] | undefined;
-            let ticketedSeat = offerWithoutDetail.ticketedSeat;
+            let ticketedSeat = (<any>offerWithoutDetail).ticketedSeat; // 互換性維持対応
             if (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null) {
                 if (offerWithoutDetail.itemOffered.serviceOutput !== undefined && offerWithoutDetail.itemOffered.serviceOutput !== null) {
                     if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== undefined
@@ -802,7 +802,7 @@ export function validateAcceptedOffers(params: {
                             addGlasses: 0, // まずメガネ代金なしでデータをセット
                             mvtkAppPrice: mvtkTicketCodeIn.appPrice,
                             ticketCount: 1,
-                            seatNum: (acceptedOffer.ticketedSeat !== undefined) ? acceptedOffer.ticketedSeat.seatNumber : '',
+                            seatNum: ((<any>acceptedOffer).ticketedSeat !== undefined) ? (<any>acceptedOffer).ticketedSeat.seatNumber : '',
                             kbnEisyahousiki: mvtkTicketCodeIn.kbnEisyahousiki,
                             mvtkNum: movieTicket.identifier,
                             mvtkKbnDenshiken: mvtkTicketCodeIn.kbnDenshiken,
@@ -832,7 +832,7 @@ export function validateAcceptedOffers(params: {
                                 price: 0,
                                 priceCurrency: factory.chevre.priceCurrency.JPY,
                                 valueAddedTaxIncluded: true,
-                                appliesToVideoFormat: factory.chevre.videoFormatType['2D'],
+                                appliesToVideoFormat: '2D',
                                 appliesToMovieTicketType: mvtkTicketCodeIn.kbnKensyu
                             }
                         ];
@@ -857,7 +857,7 @@ export function validateAcceptedOffers(params: {
                             addGlasses: 0,
                             mvtkAppPrice: 0,
                             ticketCount: 1,
-                            seatNum: (acceptedOffer.ticketedSeat !== undefined) ? acceptedOffer.ticketedSeat.seatNumber : '',
+                            seatNum: ((<any>acceptedOffer).ticketedSeat !== undefined) ? (<any>acceptedOffer).ticketedSeat.seatNumber : '',
                             kbnEisyahousiki: '00', // ムビチケを使用しない場合の初期値をセット
                             mvtkNum: '', // ムビチケを使用しない場合の初期値をセット
                             mvtkKbnDenshiken: '00', // ムビチケを使用しない場合の初期値をセット

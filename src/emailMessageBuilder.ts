@@ -193,8 +193,8 @@ export function createOrderItems(params: {
             );
             const locationName = util.format(
                 '%s %s%s',
-                event.superEvent.location.name.ja,
-                event.location.name.ja,
+                event.superEvent.location.name?.ja,
+                event.location.name?.ja,
                 (event.location.address !== undefined) ? `(${event.location.address.ja})` : ''
             );
 
@@ -250,7 +250,9 @@ export function createOrderItems(params: {
                 (reservation.reservedTicket.ticketedSeat !== undefined)
                     ? reservation.reservedTicket.ticketedSeat.seatNumber
                     : 'Non-reserved Seat',
-                reservation.reservedTicket.ticketType.name.ja,
+                (typeof reservation.reservedTicket.ticketType.name === 'string')
+                    ? reservation.reservedTicket.ticketType.name
+                    : reservation.reservedTicket.ticketType.name?.ja,
                 priceStr,
                 o.priceCurrency,
                 option

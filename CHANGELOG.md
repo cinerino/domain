@@ -30,6 +30,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 場所(オンラインとストア)インターフェースを削除
+
 ### Fixed
 
 - COAのXMLスケジュール抽出を、screener.timeが配列でない場合に対応

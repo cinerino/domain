@@ -181,9 +181,9 @@ function createReservationAcceptedOffers(params: {
                             } else {
                                 offer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4chevre>o;
 
-                                return (offer.ticketedSeat !== undefined
-                                    && offer.ticketedSeat.seatNumber === tmpReserve.seatNum
-                                    && offer.ticketedSeat.seatSection === tmpReserve.seatSection);
+                                return ((<any>offer).ticketedSeat !== undefined
+                                    && (<any>offer).ticketedSeat.seatNumber === tmpReserve.seatNum
+                                    && (<any>offer).ticketedSeat.seatSection === tmpReserve.seatSection);
 
                             }
                         });

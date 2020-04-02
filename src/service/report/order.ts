@@ -270,7 +270,9 @@ export function order2report(params: {
 
                     name = [
                         (ticketedSeat !== undefined) ? ticketedSeat.seatNumber : '',
-                        itemOffered.reservedTicket.ticketType.name.ja
+                        (typeof itemOffered.reservedTicket.ticketType.name === 'string')
+                            ? itemOffered.reservedTicket.ticketType.name
+                            : itemOffered.reservedTicket.ticketType.name?.ja
                     ].join(' ');
 
                     if (itemOffered.numSeats !== undefined) {
@@ -286,14 +288,20 @@ export function order2report(params: {
                         event: {
                             typeOf: (event !== undefined) ? event.typeOf : '',
                             id: (event !== undefined) ? event.id : '',
-                            name: (event !== undefined) ? event.name.ja : '',
+                            name: (typeof event.name.ja === 'string')
+                                ? event.name.ja
+                                : '',
                             startDate: (event !== undefined) ? moment(event.startDate)
                                 .toISOString() : '',
                             endDate: (event !== undefined) ? moment(event.endDate)
                                 .toISOString() : '',
-                            location: (event !== undefined) ? event.location.name.ja : '',
+                            location: (typeof event.location.name?.ja === 'string')
+                                ? event.location.name.ja
+                                : '',
                             superEventLocationBranchCode: (event !== undefined) ? event.superEvent.location.branchCode : '',
-                            superEventLocation: (event !== undefined) ? event.superEvent.location.name.ja : ''
+                            superEventLocation: (typeof event.superEvent.location.name?.ja === 'string')
+                                ? event.superEvent.location.name.ja
+                                : ''
                         }
                     };
                     break;
@@ -325,7 +333,7 @@ export function order2report(params: {
                 id: (typeof acceptedOffer.id === 'string') ? acceptedOffer.id : '',
                 name: (typeof acceptedOffer.name === 'string')
                     ? acceptedOffer.name
-                    : (acceptedOffer.name !== undefined && acceptedOffer.name !== null) ? acceptedOffer.name.ja : '',
+                    : (typeof acceptedOffer.name?.ja === 'string') ? acceptedOffer.name.ja : '',
                 unitPriceSpecification: {
                     price: (unitPriceSpecification !== undefined) ? unitPriceSpecification.price : '',
                     priceCurrency: (unitPriceSpecification !== undefined) ? unitPriceSpecification.priceCurrency : ''

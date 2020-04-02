@@ -250,7 +250,9 @@ export function transaction2report(params: {
                                 (offer.reservedTicket.ticketedSeat !== undefined)
                                     ? offer.reservedTicket.ticketedSeat.seatNumber
                                     : '',
-                                offer.reservedTicket.ticketType.name.ja
+                                (typeof offer.reservedTicket.ticketType.name === 'string')
+                                    ? offer.reservedTicket.ticketType.name
+                                    : offer.reservedTicket.ticketType.name?.ja
                             );
                         }
                         if (offer.numSeats !== undefined) {
@@ -265,14 +267,20 @@ export function transaction2report(params: {
                             event: {
                                 typeOf: (event !== undefined) ? event.typeOf : '',
                                 id: (event !== undefined) ? event.id : '',
-                                name: (event !== undefined) ? event.name.ja : '',
+                                name: (typeof event.name?.ja === 'string')
+                                    ? event.name.ja
+                                    : '',
                                 startDate: (event !== undefined) ? moment(event.startDate)
                                     .toISOString() : '',
                                 endDate: (event !== undefined) ? moment(event.endDate)
                                     .toISOString() : '',
-                                location: (event !== undefined) ? event.location.name.ja : '',
+                                location: (typeof event.location.name?.ja === 'string')
+                                    ? event.location.name?.ja
+                                    : '',
                                 superEventLocationBranchCode: (event !== undefined) ? event.superEvent.location.branchCode : '',
-                                superEventLocation: (event !== undefined) ? event.superEvent.location.name.ja : ''
+                                superEventLocation: (typeof event.superEvent.location.name?.ja === 'string')
+                                    ? event.superEvent.location.name?.ja
+                                    : ''
                             }
                         };
                         break;

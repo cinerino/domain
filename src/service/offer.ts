@@ -384,37 +384,15 @@ export function searchEventTicketOffers(params: {
                 offers = await eventService.searchTicketOffers({ id: params.event.id });
 
                 // 店舗条件によって対象を絞る
-                if (params.seller.typeOf !== factory.organizationType.Corporation
-                    && params.seller.typeOf !== factory.organizationType.MovieTheater) {
-                    throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
-                }
-                const seller = await repos.seller.findById({ id: params.seller.id });
-                debug('seller.areaServed is', seller.areaServed);
+                // if (params.seller.typeOf !== factory.organizationType.Corporation
+                //     && params.seller.typeOf !== factory.organizationType.MovieTheater) {
+                //     throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
+                // }
+                // const seller = await repos.seller.findById({ id: params.seller.id });
 
                 const specifiedStore = params.store;
-                if (specifiedStore !== undefined && Array.isArray(seller.areaServed)) {
-                    // 店舗指定がある場合、販売者の対応店舗を確認
-                    const store = seller.areaServed.find((area) => area.id === specifiedStore.id);
-                    debug('store is', store);
-                    // 販売者の店舗に登録されていなければNotFound
-                    if (store === undefined) {
-                        throw new factory.errors.NotFound('Store', 'Store not found in a seller\'s served area');
-                    }
-
-                    // 店舗タイプによって、利用可能なオファーを絞る
-                    const availabilityAccepted: factory.chevre.itemAvailability[] = [factory.chevre.itemAvailability.InStock];
-                    switch (store.typeOf) {
-                        case factory.placeType.Online:
-                            availabilityAccepted.push(factory.chevre.itemAvailability.OnlineOnly);
-                            break;
-                        case factory.placeType.Store:
-                            availabilityAccepted.push(factory.chevre.itemAvailability.InStoreOnly);
-                            break;
-                        default:
-                    }
-
+                if (specifiedStore !== undefined) {
                     // アプリケーションが利用可能なオファーに絞る
-                    // offers = offers.filter((o) => availabilityAccepted.indexOf(<factory.chevre.itemAvailability>o.availability) >= 0);
                     offers = offers.filter((o) => {
                         return Array.isArray(o.availableAtOrFrom)
                             && o.availableAtOrFrom.some((availableApplication) => availableApplication.id === specifiedStore.id);
@@ -717,10 +695,11 @@ async function searchEventTicketOffers4COA(params: {
         flgMember: COA.factory.reserve.FlgMember.Member
     });
 
-    const searchOffersResult = await offerService.searchTicketTypes({
+    const searchOffersResult = await offerService.search({
         limit: 100,
-        project: { ids: [params.project.id] },
-        ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
+        project: { id: { $eq: params.project.id } },
+        itemOffered: { typeOf: { $eq: 'EventService' } },
+        id: { $in: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`) }
     });
 
     // ChevreオファーにCOA券種情報を付加して返却
