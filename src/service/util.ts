@@ -89,17 +89,26 @@ export function uploadFileFromStream(params: {
                 .on('pipe', () => {
                     // tslint:disable-next-line:no-console
                     console.log('uploadFileFromStream: something is piping into the writer.');
-                })
-                .on('error', (err) => {
-                    reject(err);
                 });
 
             params.text.pipe(writeStream)
+                .on('drain', () => {
+                    // tslint:disable-next-line:no-console
+                    console.log('uploadFileFromStream: writeStream.on(drain)');
+                })
                 .on('error', (err) => {
+                    // tslint:disable-next-line:no-console
+                    console.error('uploadFileFromStream: writeStream.on(error): ', err);
                     reject(err);
                 })
                 .on('finish', () => {
+                    // tslint:disable-next-line:no-console
+                    console.log('uploadFileFromStream: writeStream.on(finish)');
                     resolve();
+                })
+                .on('close', () => {
+                    // tslint:disable-next-line:no-console
+                    console.log('uploadFileFromStream: writeStream.on(close)');
                 });
         });
 

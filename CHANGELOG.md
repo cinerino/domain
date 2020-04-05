@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 - 注文レポート作成タスクを実験的に追加
+- 販売者に返品ポリシー属性を追加
 
 ### Changed
 
