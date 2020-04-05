@@ -9,62 +9,7 @@ const debug = createDebug('cinerino-domain:service');
 
 const CONTAINER = 'files-from-cinerino-domain-util-service';
 
-/**
- * ファイルをアップロードする
- */
-export function uploadFile(params: {
-    fileName: string;
-    text: string | Buffer;
-    expiryDate?: Date;
-}) {
-    return async () => {
-        return new Promise<string>((resolve, reject) => {
-            // save to blob
-            const blobService = azureStorage.createBlobService();
-            blobService.createContainerIfNotExists(
-                CONTAINER,
-                {
-                    // publicAccessLevel: 'blob'
-                },
-                (createContainerError) => {
-                    if (createContainerError instanceof Error) {
-                        reject(createContainerError);
-
-                        return;
-                    }
-
-                    blobService.createBlockBlobFromText(
-                        CONTAINER, params.fileName, params.text, (createBlockBlobError, result, response) => {
-                            debug(createBlockBlobError, result, response);
-                            if (createBlockBlobError instanceof Error) {
-                                reject(createBlockBlobError);
-
-                                return;
-                            }
-
-                            try {
-                                const url = publishBlob(params);
-
-                                resolve(url);
-                            } catch (error) {
-                                reject(error);
-                            }
-                        }
-                    );
-                }
-            );
-        });
-    };
-}
-
-/**
- * ファイルをアップロードする
- */
-export function uploadFileFromStream(params: {
-    fileName: string;
-    text: Stream;
-    expiryDate?: Date;
-}) {
+function createContainerIfNotExists() {
     return async () => {
         const blobService = azureStorage.createBlobService();
 
@@ -86,9 +31,60 @@ export function uploadFileFromStream(params: {
                 }
             );
         });
+    };
+}
+
+/**
+ * ファイルをアップロードする
+ */
+export function uploadFile(params: {
+    fileName: string;
+    text: string | Buffer;
+    expiryDate?: Date;
+}) {
+    return async () => {
+        // コンテナ作成
+        await createContainerIfNotExists()();
+
+        // ブロブ作成
+        await new Promise<string>((resolve, reject) => {
+            // save to blob
+            const blobService = azureStorage.createBlobService();
+
+            blobService.createBlockBlobFromText(
+                CONTAINER, params.fileName, params.text, (createBlockBlobError, result, response) => {
+                    debug(createBlockBlobError, result, response);
+                    if (createBlockBlobError instanceof Error) {
+                        reject(createBlockBlobError);
+
+                        return;
+                    }
+
+                    resolve();
+                }
+            );
+        });
+
+        return publishBlob(params);
+    };
+}
+
+/**
+ * ファイルをアップロードする
+ */
+export function uploadFileFromStream(params: {
+    fileName: string;
+    text: Stream;
+    expiryDate?: Date;
+}) {
+    return async () => {
+        // コンテナ作成
+        await createContainerIfNotExists()();
 
         // ブロブ作成
         await new Promise(async (resolve, reject) => {
+            const blobService = azureStorage.createBlobService();
+
             const writeStream = blobService.createWriteStreamToBlockBlob(CONTAINER, params.fileName)
                 .on('pipe', () => {
                     // tslint:disable-next-line:no-console
