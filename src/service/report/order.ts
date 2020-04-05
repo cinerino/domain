@@ -1,6 +1,7 @@
 /**
  * 注文レポートサービス
  */
+import * as createDebug from 'debug';
 import * as json2csv from 'json2csv';
 // @ts-ignore
 import * as JSONStream from 'JSONStream';
@@ -8,13 +9,14 @@ import * as moment from 'moment';
 import { Stream } from 'stream';
 
 import * as factory from '../../factory';
+
+import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
-export type ITaskAndTransactionOperation<T> = (repos: {
-    order: OrderRepo;
-    task: TaskRepo;
-}) => Promise<T>;
+import { uploadFile } from '../util';
+
+const debug = createDebug('cinerino-domain:service');
 
 export interface ISeller {
     typeOf: string;
@@ -83,6 +85,202 @@ export interface IOrderReport {
     paymentMethodType: string[];
     paymentMethodId: string[];
     identifier: string;
+}
+
+export interface IReport {
+    project: factory.project.IProject;
+    typeOf: 'Report';
+    about?: string;
+    reportNumber?: string;
+    mentions?: {
+        typeOf: 'SearchAction';
+        query?: any;
+        object: {
+            typeOf: 'Order';
+        };
+    };
+    dateCreated?: Date;
+    dateModified?: Date;
+    datePublished?: Date;
+    encodingFormat?: string;
+    expires?: Date;
+    text?: string;
+    url?: string;
+}
+
+export interface ICreateReportActionAttributes extends factory.action.IAttributes<any, IReport, any> {
+    typeOf: 'CreateAction';
+    // object: IReport;
+    // format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    potentialActions?: {
+        sendEmailMessage?: factory.action.transfer.send.message.email.IAttributes[];
+    };
+}
+
+export interface ICreateReportParams {
+    project: factory.project.IProject;
+    object: IReport;
+    // conditions: factory.order.ISearchConditions;
+    // format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    potentialActions?: {
+        sendEmailMessage?: {
+            object?: factory.creativeWork.message.email.ICustomization;
+        }[];
+    };
+}
+
+// tslint:disable-next-line:max-func-body-length
+export function createReport(params: ICreateReportActionAttributes) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: ActionRepo;
+        order: OrderRepo;
+        task: TaskRepo;
+    }): Promise<void> => {
+        const conditions: factory.order.ISearchConditions = {
+            project: { id: { $eq: params.project.id } },
+            orderDate: {
+                $gte: moment(params.object.mentions?.query.orderDateFrom)
+                    .toDate(),
+                $lte: moment(params.object.mentions?.query.orderDateThrough)
+                    .toDate()
+            }
+        };
+        const format = params.object.encodingFormat;
+        if (conditions === undefined) {
+            throw new factory.errors.ArgumentNull('object.mentions');
+        }
+        if (typeof format !== 'string') {
+            throw new factory.errors.ArgumentNull('object.encodingFormat');
+        }
+
+        // アクション開始
+        const createReportActionAttributes = params;
+        const report: IReport = {
+            ...createReportActionAttributes.object
+        };
+        const action = await repos.action.start<any>({
+            ...createReportActionAttributes,
+            object: report
+        });
+        let downloadUrl: string;
+
+        try {
+            const reportStream = await stream({
+                conditions,
+                format: <any>format
+            })(repos);
+
+            const bufs: Buffer[] = [];
+            const buffer = await new Promise<Buffer>((resolve) => {
+                reportStream.on('data', (chunk) => {
+                    if (Buffer.isBuffer(chunk)) {
+                        bufs.push(chunk);
+                    } else {
+                        // debug(`Received ${chunk.length} bytes of data. ${typeof chunk}`);
+                        bufs.push(Buffer.from(chunk));
+                    }
+                });
+                reportStream.on('end', () => { resolve(Buffer.concat(bufs)); });
+            });
+
+            // ブロブストレージへアップロード
+            downloadUrl = await uploadFile({
+                fileName: (typeof createReportActionAttributes.object.about === 'string') ? createReportActionAttributes.object.about : 'OrderReport.csv',
+                text: buffer,
+                expiryDate: createReportActionAttributes.object.expires
+            })();
+            debug('downloadUrl:', downloadUrl);
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp<any>({ typeOf: createReportActionAttributes.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        report.url = downloadUrl;
+        await repos.action.complete<any>({
+            typeOf: createReportActionAttributes.typeOf,
+            id: action.id,
+            result: report
+        });
+
+        const sendEmailMessageParams = params.potentialActions?.sendEmailMessage;
+        if (Array.isArray(sendEmailMessageParams)) {
+            (<any>createReportActionAttributes.potentialActions).sendEmailMessage = sendEmailMessageParams.map((a) => {
+                const emailText = `
+レポートが使用可能です。
+
+名称: ${report.about}
+フォーマット: ${report.encodingFormat}
+期限: ${report.expires}
+
+${downloadUrl}
+`;
+
+                return {
+                    project: params.project,
+                    typeOf: factory.actionType.SendAction,
+                    object: {
+                        ...a.object,
+                        text: emailText
+                    },
+                    // agent: createReportActionAttributes.agent,
+                    recipient: createReportActionAttributes.agent,
+                    potentialActions: {},
+                    purpose: report
+                };
+            });
+        }
+
+        await onDownloaded(createReportActionAttributes)(repos);
+    };
+}
+
+function onDownloaded(
+    actionAttributes: ICreateReportActionAttributes
+    // url: string
+) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: { task: TaskRepo }) => {
+        const potentialActions = actionAttributes.potentialActions;
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (potentialActions !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.sendEmailMessage)) {
+                potentialActions.sendEmailMessage.forEach((s) => {
+                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                        project: s.project,
+                        name: factory.taskName.SendEmailMessage,
+                        status: factory.taskStatus.Ready,
+                        runsAt: now, // なるはやで実行
+                        remainingNumberOfTries: 3,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: {
+                            actionAttributes: s
+                        }
+                    };
+                    taskAttributes.push(sendEmailMessageTask);
+                });
+            }
+
+            // タスク保管
+            await Promise.all(taskAttributes.map(async (taskAttribute) => {
+                return repos.task.save(taskAttribute);
+            }));
+        }
+    };
 }
 
 /**
