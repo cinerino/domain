@@ -188,7 +188,10 @@ export function createReport(params: ICreateReportActionAttributes) {
             downloadUrl = await uploadFile({
                 fileName: (typeof createReportActionAttributes.object.about === 'string') ? createReportActionAttributes.object.about : 'OrderReport.csv',
                 text: buffer,
-                expiryDate: createReportActionAttributes.object.expires
+                expiryDate: (createReportActionAttributes.object.expires !== undefined)
+                    ? moment(createReportActionAttributes.object.expires)
+                        .toDate()
+                    : undefined
             })();
             debug('downloadUrl:', downloadUrl);
         } catch (error) {

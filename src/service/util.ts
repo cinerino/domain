@@ -47,7 +47,7 @@ export function uploadFile(
 
                             // 期限つきのURLを発行する
                             const startDate = new Date();
-                            const expiryDate = (params.expiryDate === undefined) ? new Date(startDate) : params.expiryDate;
+                            const expiryDate = (params.expiryDate instanceof Date) ? params.expiryDate : new Date(startDate);
                             // tslint:disable-next-line:no-magic-numbers
                             expiryDate.setMinutes(startDate.getMinutes() + 10);
                             // tslint:disable-next-line:no-magic-numbers
