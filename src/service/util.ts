@@ -91,7 +91,8 @@ export function uploadFileFromStream(params: {
         await new Promise(async (resolve, reject) => {
             const writeStream = blobService.createWriteStreamToBlockBlob(CONTAINER, params.fileName)
                 .on('pipe', () => {
-                    debug('Something is piping into the writer.');
+                    // tslint:disable-next-line:no-console
+                    console.log('uploadFileFromStream: something is piping into the writer.');
                 })
                 .on('error', (err) => {
                     reject(err);
