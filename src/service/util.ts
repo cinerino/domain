@@ -8,17 +8,12 @@ const debug = createDebug('cinerino-domain:service');
 
 /**
  * ファイルをアップロードする
- * @param params.fileName ファイル
- * @param params.text ファイルコンテンツ
- * @param [params.expiryDate] ファイルコンテンツ
  */
-export function uploadFile(
-    params: {
-        fileName: string;
-        text: string | Buffer;
-        expiryDate?: Date;
-    }
-) {
+export function uploadFile(params: {
+    fileName: string;
+    text: string | Buffer;
+    expiryDate?: Date;
+}) {
     return async () => {
         return new Promise<string>((resolve, reject) => {
             // save to blob
@@ -45,25 +40,31 @@ export function uploadFile(
                                 return;
                             }
 
-                            // 期限つきのURLを発行する
-                            const startDate = new Date();
-                            const expiryDate = (params.expiryDate instanceof Date) ? params.expiryDate : new Date(startDate);
-                            // tslint:disable-next-line:no-magic-numbers
-                            expiryDate.setMinutes(startDate.getMinutes() + 10);
-                            // tslint:disable-next-line:no-magic-numbers
-                            startDate.setMinutes(startDate.getMinutes() - 10);
-                            const sharedAccessPolicy = {
-                                AccessPolicy: {
-                                    Permissions: azureStorage.BlobUtilities.SharedAccessPermissions.READ,
-                                    Start: startDate,
-                                    Expiry: expiryDate
-                                }
-                            };
-                            const token = blobService.generateSharedAccessSignature(
-                                result.container, result.name, sharedAccessPolicy
-                            );
+                            try {
+                                // 期限つきのURLを発行する
+                                const startDate = new Date();
+                                const expiryDate = (params.expiryDate instanceof Date) ? params.expiryDate : new Date(startDate);
+                                // tslint:disable-next-line:no-magic-numbers
+                                expiryDate.setMinutes(startDate.getMinutes() + 10);
+                                // tslint:disable-next-line:no-magic-numbers
+                                startDate.setMinutes(startDate.getMinutes() - 10);
+                                const sharedAccessPolicy = {
+                                    AccessPolicy: {
+                                        Permissions: azureStorage.BlobUtilities.SharedAccessPermissions.READ,
+                                        Start: startDate,
+                                        Expiry: expiryDate
+                                    }
+                                };
+                                const token = blobService.generateSharedAccessSignature(
+                                    result.container, result.name, sharedAccessPolicy
+                                );
 
-                            resolve(blobService.getUrl(result.container, result.name, token));
+                                const url = blobService.getUrl(result.container, result.name, token);
+
+                                resolve(url);
+                            } catch (error) {
+                                reject(error);
+                            }
                         }
                     );
                 }

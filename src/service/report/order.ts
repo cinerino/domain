@@ -172,7 +172,7 @@ export function createReport(params: ICreateReportActionAttributes) {
             })(repos);
 
             const bufs: Buffer[] = [];
-            const buffer = await new Promise<Buffer>((resolve) => {
+            const buffer = await new Promise<Buffer>((resolve, reject) => {
                 reportStream.on('data', (chunk) => {
                     if (Buffer.isBuffer(chunk)) {
                         bufs.push(chunk);
@@ -180,8 +180,19 @@ export function createReport(params: ICreateReportActionAttributes) {
                         // debug(`Received ${chunk.length} bytes of data. ${typeof chunk}`);
                         bufs.push(Buffer.from(chunk));
                     }
-                });
-                reportStream.on('end', () => { resolve(Buffer.concat(bufs)); });
+                })
+                    .on('error', (err) => {
+                        // tslint:disable-next-line:no-console
+                        console.error('createReport stream error:', err);
+                        reject(err);
+                    })
+                    .on('end', () => {
+                        resolve(Buffer.concat(bufs));
+                    })
+                    .on('finish', async () => {
+                        // tslint:disable-next-line:no-console
+                        console.info('createReport stream finished.');
+                    });
             });
 
             // ブロブストレージへアップロード
