@@ -9,12 +9,12 @@ async function main() {
     const orderRepo = new domain.repository.Order(mongoose.connection);
     const taskRepo = new domain.repository.Task(mongoose.connection);
 
-    await domain.service.task.executeByName({
-        project: { id: 'cinerino' },
-        name: 'createOrderReport'
-    })({ connection: mongoose.connection });
+    // await domain.service.task.executeByName({
+    //     project: { id: 'cinerino' },
+    //     name: 'createOrderReport'
+    // })({ connection: mongoose.connection });
 
-    return;
+    // return;
 
     await domain.service.report.order.createReport({
         typeOf: 'CreateAction',
@@ -23,11 +23,11 @@ async function main() {
         // recipient: { name: 'recipientName' },
         object: {
             typeOf: 'Report',
-            about: `OrderReport${moment().unix()}`,
+            about: 'OrderReport',
             mentions: {
                 typeOf: 'SearchAction',
                 query: {
-                    orderDateFrom: moment().add(-1, 'week').toDate(),
+                    orderDateFrom: moment().add(-3, 'years').toDate(),
                     orderDateThrough: moment().toDate(),
                 },
                 object: {

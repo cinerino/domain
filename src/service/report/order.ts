@@ -14,7 +14,7 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
-import { uploadFile } from '../util';
+import { uploadFileFromStream } from '../util';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -129,7 +129,6 @@ export interface ICreateReportParams {
     };
 }
 
-// tslint:disable-next-line:max-func-body-length
 export function createReport(params: ICreateReportActionAttributes) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -166,39 +165,71 @@ export function createReport(params: ICreateReportActionAttributes) {
         let downloadUrl: string;
 
         try {
+            let extension: string;
+
+            switch (params.object.encodingFormat) {
+                case factory.encodingFormat.Application.json:
+                    extension = 'json';
+                    break;
+                case factory.encodingFormat.Text.csv:
+                    extension = 'csv';
+                    break;
+
+                default:
+                    throw new factory.errors.Argument('object.encodingFormat', `${params.object.encodingFormat} not implemented`);
+            }
+
             const reportStream = await stream({
                 conditions,
                 format: <any>format
             })(repos);
 
-            const bufs: Buffer[] = [];
-            const buffer = await new Promise<Buffer>((resolve, reject) => {
-                reportStream.on('data', (chunk) => {
-                    if (Buffer.isBuffer(chunk)) {
-                        bufs.push(chunk);
-                    } else {
-                        // debug(`Received ${chunk.length} bytes of data. ${typeof chunk}`);
-                        bufs.push(Buffer.from(chunk));
-                    }
-                })
-                    .on('error', (err) => {
-                        // tslint:disable-next-line:no-console
-                        console.error('createReport stream error:', err);
-                        reject(err);
-                    })
-                    .on('end', () => {
-                        resolve(Buffer.concat(bufs));
-                    })
-                    .on('finish', async () => {
-                        // tslint:disable-next-line:no-console
-                        console.info('createReport stream finished.');
-                    });
-            });
+            // const bufs: Buffer[] = [];
+            // const buffer = await new Promise<Buffer>((resolve, reject) => {
+            //     reportStream.on('data', (chunk) => {
+            //         try {
+            //             if (Buffer.isBuffer(chunk)) {
+            //                 bufs.push(chunk);
+            //             } else {
+            //                 // tslint:disable-next-line:no-console
+            //                 console.info(`Received ${chunk.length} bytes of data. ${typeof chunk}`);
+            //                 bufs.push(Buffer.from(chunk));
+            //             }
+            //         } catch (error) {
+            //             reject(error);
+            //         }
+            //     })
+            //         .on('error', (err) => {
+            //             // tslint:disable-next-line:no-console
+            //             console.error('createReport stream error:', err);
+            //             reject(err);
+            //         })
+            //         .on('end', () => {
+            //             resolve(Buffer.concat(bufs));
+            //         })
+            //         .on('finish', async () => {
+            //             // tslint:disable-next-line:no-console
+            //             console.info('createReport stream finished.');
+            //         });
+            // });
 
             // ブロブストレージへアップロード
-            downloadUrl = await uploadFile({
-                fileName: (typeof createReportActionAttributes.object.about === 'string') ? createReportActionAttributes.object.about : 'OrderReport.csv',
-                text: buffer,
+            const fileName: string = (typeof createReportActionAttributes.object.about === 'string')
+                ? `${createReportActionAttributes.object.about}[${params.project.id}][${moment()
+                    .format('YYYYMMDDHHmmss')}].${extension}`
+                : `OrderReport[${params.project.id}][${moment()
+                    .format('YYYYMMDDHHmmss')}].${extension}`;
+            // downloadUrl = await uploadFile({
+            //     fileName: fileName,
+            //     text: buffer,
+            //     expiryDate: (createReportActionAttributes.object.expires !== undefined)
+            //         ? moment(createReportActionAttributes.object.expires)
+            //             .toDate()
+            //         : undefined
+            // })();
+            downloadUrl = await uploadFileFromStream({
+                fileName: fileName,
+                text: reportStream,
                 expiryDate: (createReportActionAttributes.object.expires !== undefined)
                     ? moment(createReportActionAttributes.object.expires)
                         .toDate()
