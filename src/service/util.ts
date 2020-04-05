@@ -66,9 +66,10 @@ export function uploadFileFromStream(params: {
     expiryDate?: Date;
 }) {
     return async () => {
-        return new Promise<string>((resolve, reject) => {
-            // save to blob
-            const blobService = azureStorage.createBlobService();
+        const blobService = azureStorage.createBlobService();
+
+        // コンテナ作成
+        await new Promise((resolve, reject) => {
             blobService.createContainerIfNotExists(
                 CONTAINER,
                 {
@@ -81,31 +82,31 @@ export function uploadFileFromStream(params: {
                         return;
                     }
 
-                    const writeStream = blobService.createWriteStreamToBlockBlob(CONTAINER, params.fileName)
-                        .on('pipe', () => {
-                            debug('Something is piping into the writer.');
-                        });
-
-                    await new Promise((resolveWriteStream, rejectWriteStream) => {
-                        params.text.pipe(writeStream)
-                            .on('error', async (err) => {
-                                rejectWriteStream(err);
-                            })
-                            .on('finish', async () => {
-                                resolveWriteStream();
-                            });
-                    });
-
-                    try {
-                        const url = publishBlob(params);
-
-                        resolve(url);
-                    } catch (error) {
-                        reject(error);
-                    }
+                    resolve();
                 }
             );
         });
+
+        // ブロブ作成
+        await new Promise(async (resolve, reject) => {
+            const writeStream = blobService.createWriteStreamToBlockBlob(CONTAINER, params.fileName)
+                .on('pipe', () => {
+                    debug('Something is piping into the writer.');
+                })
+                .on('error', (err) => {
+                    reject(err);
+                });
+
+            params.text.pipe(writeStream)
+                .on('error', (err) => {
+                    reject(err);
+                })
+                .on('finish', () => {
+                    resolve();
+                });
+        });
+
+        return publishBlob(params);
     };
 }
 
