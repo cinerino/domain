@@ -91,7 +91,15 @@ export function uploadFileFromStream(params: {
                     console.log('uploadFileFromStream: something is piping into the writer.');
                 });
 
-            params.text.pipe(writeStream)
+            let finished = false;
+
+            params.text
+                .on('error', (err) => {
+                    // tslint:disable-next-line:no-console
+                    console.error('uploadFileFromStream: readStream.on(error): ', err);
+                    reject(err);
+                })
+                .pipe(writeStream)
                 .on('drain', () => {
                     // tslint:disable-next-line:no-console
                     console.log('uploadFileFromStream: writeStream.on(drain)');
@@ -104,11 +112,12 @@ export function uploadFileFromStream(params: {
                 .on('finish', () => {
                     // tslint:disable-next-line:no-console
                     console.log('uploadFileFromStream: writeStream.on(finish)');
+                    finished = true;
                     resolve();
                 })
                 .on('close', () => {
                     // tslint:disable-next-line:no-console
-                    console.log('uploadFileFromStream: writeStream.on(close)');
+                    console.log('uploadFileFromStream: writeStream.on(close)', 'finished:', finished);
                 });
         });
 
