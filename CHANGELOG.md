@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - デフォルトで注文識別子にconfirmationNumberとconfirmationPassを追加
 - COAリクエストにタイムアウト設定
 - 予約承認時のエラーハンドリングを調整
+- 返品取引開始時に返品ポリシー確認を追加
 
 ### Deprecated
 
