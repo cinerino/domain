@@ -136,19 +136,40 @@ export function createReport(params: ICreateReportActionAttributes) {
         order: OrderRepo;
         task: TaskRepo;
     }): Promise<void> => {
+        const orderDateFrom = params.object.mentions?.query?.orderDateFrom;
+        const orderDateThrough = params.object.mentions?.query?.orderDateThrough;
+        const eventStartFrom = params.object.mentions?.query?.acceptedOffers?.itemOffered?.reservationFor?.startFrom;
+        const eventStartThrough = params.object.mentions?.query?.acceptedOffers?.itemOffered?.reservationFor?.startThrough;
+
         const conditions: factory.order.ISearchConditions = {
             project: { id: { $eq: params.project.id } },
             orderDate: {
-                $gte: moment(params.object.mentions?.query.orderDateFrom)
-                    .toDate(),
-                $lte: moment(params.object.mentions?.query.orderDateThrough)
-                    .toDate()
+                $gte: (typeof orderDateFrom === 'string')
+                    ? moment(orderDateFrom)
+                        .toDate()
+                    : undefined,
+                $lte: (typeof orderDateThrough === 'string')
+                    ? moment(orderDateThrough)
+                        .toDate()
+                    : undefined
+            },
+            acceptedOffers: {
+                itemOffered: {
+                    reservationFor: {
+                        startFrom: (typeof eventStartFrom === 'string')
+                            ? moment(eventStartFrom)
+                                .toDate()
+                            : undefined,
+                        startThrough: (typeof eventStartThrough === 'string')
+                            ? moment(eventStartThrough)
+                                .toDate()
+                            : undefined
+                    }
+                }
             }
         };
+
         const format = params.object.encodingFormat;
-        if (conditions === undefined) {
-            throw new factory.errors.ArgumentNull('object.mentions');
-        }
         if (typeof format !== 'string') {
             throw new factory.errors.ArgumentNull('object.encodingFormat');
         }
