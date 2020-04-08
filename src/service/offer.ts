@@ -124,7 +124,7 @@ export function searchEvents(params: {
                 project: { ids: [project.id] }
             });
             data = searchEventsResult.data;
-            totalCount = searchEventsResult.totalCount;
+            totalCount = <number>searchEventsResult.totalCount;
         }
 
         return {
