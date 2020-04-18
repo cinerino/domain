@@ -10,7 +10,6 @@ import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
 import { IEvent as IEventCapcity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
-import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as factory from '../factory';
 
@@ -27,42 +26,11 @@ const coaAuthClient = new COA.auth.RefreshToken({
 });
 
 /**
- * 映画作品インポート
- */
-// export function importMovies(theaterCode: string) {
-//     return async (repos: { creativeWork: CreativeWorkRepo }) => {
-//         // COAから作品取得
-//         const filmsFromCOA = await masterService.title({ theaterCode: theaterCode });
-
-//         // 永続化
-//         await Promise.all(filmsFromCOA.map(async (filmFromCOA) => {
-//             const movie = createMovieFromCOA(filmFromCOA);
-//             debug('storing movie...', movie);
-//             await repos.creativeWork.saveMovie(movie);
-//             debug('movie stored.');
-//         }));
-//     };
-// }
-
-// tslint:disable-next-line:no-single-line-block-comment
-/* istanbul ignore next */
-// function createMovieFromCOA(filmFromCOA: COA.factory.master.ITitleResult): factory.chevre.creativeWork.movie.ICreativeWork {
-//     return {
-//         identifier: filmFromCOA.titleCode,
-//         name: filmFromCOA.titleNameOrig,
-//         duration: moment.duration(filmFromCOA.showTime, 'm').toISOString(),
-//         contentRating: filmFromCOA.kbnEirin,
-//         typeOf: factory.creativeWorkType.Movie
-//     };
-// }
-
-/**
  * COAからイベントをインポートする
  */
 export function importScreeningEvents(params: factory.task.IData<factory.taskName.ImportScreeningEvents>) {
     return async (repos: {
         event: EventRepo;
-        seller: SellerRepo;
     }) => {
         const project: factory.project.IProject = params.project;
 
@@ -77,16 +45,6 @@ export function importScreeningEvents(params: factory.task.IData<factory.taskNam
             await masterService.theater({ theaterCode: params.locationBranchCode }),
             await masterService.screen({ theaterCode: params.locationBranchCode })
         );
-
-        const sellers = await repos.seller.search({
-            location: { branchCodes: [params.locationBranchCode] }
-        });
-        const seller = sellers.shift();
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (seller === undefined) {
-            throw new factory.errors.NotFound('Seller');
-        }
 
         const targetImportFrom = moment(`${moment(params.importFrom)
             .tz('Asia/Tokyo')
@@ -321,60 +279,6 @@ function cancelDeletedEvents(params: {
 }
 
 /**
- * 劇場インポート
- */
-// export function importMovieTheater(theaterCode: string) {
-//     return async (repos: {
-//         place: PlaceRepo;
-//         seller: SellerRepo;
-//     }): Promise<void> => {
-//         const movieTheater = createMovieTheaterFromCOA(
-//             await masterService.theater({ theaterCode: theaterCode }),
-//             await masterService.screen({ theaterCode: theaterCode })
-//         );
-
-//         // 場所を保管
-//         debug('storing movieTheater...', movieTheater);
-//         await repos.place.saveMovieTheater(movieTheater);
-//         debug('movieTheater stored.');
-
-//         // 日本語フォーマットで電話番号が提供される想定なので変換
-//         let formatedPhoneNumber: string;
-//         try {
-//             const phoneUtil = PhoneNumberUtil.getInstance();
-//             const phoneNumber = phoneUtil.parse(movieTheater.telephone, 'JP');
-//             // tslint:disable-next-line:no-single-line-block-comment
-//             /* istanbul ignore if */
-//             if (!phoneUtil.isValidNumber(phoneNumber)) {
-//                 throw new Error('Invalid phone number format.');
-//             }
-
-//             formatedPhoneNumber = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
-//         } catch (error) {
-//             // tslint:disable-next-line:no-single-line-block-comment
-//             /* istanbul ignore next */
-//             throw new Error(`電話番号フォーマット時に問題が発生しました:${error.message}`);
-//         }
-
-//         // 組織の属性を更新
-//         await repos.seller.organizationModel.findOneAndUpdate(
-//             {
-//                 typeOf: factory.organizationType.MovieTheater,
-//                 'location.branchCode': movieTheater.branchCode
-//             },
-//             {
-//                 'name.ja': movieTheater.name.ja,
-//                 'name.en': movieTheater.name.en,
-//                 'location.name.ja': movieTheater.name.ja,
-//                 'location.name.en': movieTheater.name.en,
-//                 telephone: formatedPhoneNumber
-//             }
-//         )
-//             .exec();
-//     };
-// }
-
-/**
  * コアデータからイベントを作成する
  */
 // tslint:disable-next-line:no-single-line-block-comment
@@ -456,9 +360,6 @@ export function createScreeningEventFromCOA(params: {
         flgEarlyBooking: params.performanceFromCOA.flgEarlyBooking
     };
 
-    // const acceptedPaymentMethod: factory.paymentMethodType[] | undefined =
-    //     (params.screeningEventSeries.offers !== undefined) ? params.screeningEventSeries.offers.acceptedPaymentMethod : undefined;
-
     const offers: factory.event.screeningEvent.IOffer = {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         id: '',
@@ -469,7 +370,6 @@ export function createScreeningEventFromCOA(params: {
         },
         typeOf: factory.chevre.offerType.Offer,
         priceCurrency: factory.priceCurrency.JPY,
-        // acceptedPaymentMethod: acceptedPaymentMethod,
         availabilityEnds: validThrough,
         availabilityStarts: validFrom,
         validFrom: validFrom,
