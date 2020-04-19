@@ -1,4 +1,3 @@
-import * as COA from '@motionpicture/coa-service';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 
@@ -7,10 +6,13 @@ import { credentials } from '../../credentials';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as EventRepo } from '../../repo/event';
 import { InMemoryRepository as OfferRepo } from '../../repo/offer';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleCOAReserveTemporarilyError } from '../../errorHandler';
 
+import * as chevre from '../../chevre';
+import * as COA from '../../coa';
 import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
@@ -23,12 +25,21 @@ const coaAuthClient = new COA.auth.RefreshToken({
     refreshToken: credentials.coa.refreshToken
 });
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
     event: EventRepo;
     action: ActionRepo;
     offer?: OfferRepo;
+    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 export type IActionAndTransactionOperation<T> = (repos: {
@@ -473,14 +484,17 @@ function createUpdTmpReserveSeatArgs(params: {
  * 承認アクションオブジェクトが返却されます。
  */
 export function create(params: {
+    project: factory.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
     agent: { id: string };
     transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
         action: ActionRepo;
         offer?: OfferRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -492,10 +506,29 @@ export function create(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
+        const project = await repos.project.findById({ id: params.project.id });
+        const useEventRepo = project.settings?.useEventRepo === true;
+
         // イベントを取得
-        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-            id: params.object.event.id
-        });
+        let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+        if (useEventRepo) {
+            screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: params.object.event.id
+            });
+        } else {
+            if (project.settings?.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
+            const eventService = new chevre.service.Event({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: params.object.event.id
+            });
+        }
 
         // 必ず定義されている前提
         const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
@@ -644,6 +677,7 @@ export function cancel(params: {
  * 座席予約承認アクションの供給情報を変更する
  */
 export function changeOffers(params: {
+    project: factory.project.IProject;
     id: string;
     agent: { id: string };
     transaction: { id: string };
@@ -654,6 +688,7 @@ export function changeOffers(params: {
         event: EventRepo;
         action: ActionRepo;
         offer?: OfferRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -702,10 +737,29 @@ export function changeOffers(params: {
             throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
         }
 
+        const project = await repos.project.findById({ id: params.project.id });
+        const useEventRepo = project.settings?.useEventRepo === true;
+
         // イベントを取得
-        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-            id: params.object.event.id
-        });
+        let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+        if (useEventRepo) {
+            screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: params.object.event.id
+            });
+        } else {
+            if (project.settings?.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
+            const eventService = new chevre.service.Event({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: params.object.event.id
+            });
+        }
 
         // 供給情報の有効性を確認
         const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = acceptedOfferParams.map((offer) => {

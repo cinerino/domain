@@ -9,6 +9,14 @@ import * as domain from '../../index';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
 
+const project = {
+    typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project,
+    id: 'id',
+    settings: {
+        useEventRepo: true
+    }
+};
+
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -62,12 +70,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -94,6 +107,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -103,6 +117,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -152,11 +167,17 @@ describe('action.authorize.seatReservation.create()', () => {
         };
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -187,6 +208,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -196,6 +218,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
         assert.deepEqual(result, action);
@@ -248,12 +271,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -280,6 +308,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -289,6 +318,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -350,12 +380,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -386,6 +421,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -395,6 +431,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -454,12 +491,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -490,6 +532,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -499,6 +542,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -550,12 +594,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -583,6 +632,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -592,6 +642,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -642,12 +693,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -676,6 +732,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -685,6 +742,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -732,12 +790,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -766,6 +829,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -775,6 +839,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -824,12 +889,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -857,6 +927,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -866,6 +937,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -911,12 +983,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -940,6 +1017,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -949,6 +1027,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -982,12 +1061,16 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .never();
         sandbox.mock(eventRepo)
             .expects('findById')
             .never();
@@ -999,6 +1082,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1008,6 +1092,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1016,6 +1101,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('COA仮予約が原因不明のサーバーエラーであれば、承認アクションを諦めて、ServiceUnavailableエラーになるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -1059,12 +1145,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1095,6 +1186,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1104,6 +1196,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1154,12 +1247,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1189,6 +1287,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1198,6 +1297,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1205,6 +1305,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('COA仮予約が座席重複エラーであれば、承認アクションを諦めて、AlreadyInUseエラーになるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -1248,12 +1349,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1285,6 +1391,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1294,6 +1401,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1301,6 +1409,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('COA仮予約が500未満のエラーであれば、承認アクションを諦めて、Argumentエラーになるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -1346,12 +1455,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1383,6 +1497,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1392,6 +1507,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1399,6 +1515,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('COA仮予約が500以上のエラーであれば、承認アクションを諦めて、ServiceUnavailableエラーになるはず', async () => {
         const agent = {
             id: 'agentId'
@@ -1444,12 +1561,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1481,6 +1603,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1490,6 +1613,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1565,12 +1689,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1597,6 +1726,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .never();
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1606,6 +1736,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1685,12 +1816,17 @@ describe('action.authorize.seatReservation.create()', () => {
 
         const eventRepo = new domain.repository.Event(mongoose.connection);
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(eventRepo)
             .expects('findById')
             .once()
@@ -1717,6 +1853,7 @@ describe('action.authorize.seatReservation.create()', () => {
             .resolves(action);
 
         const result = await domain.service.offer.seatReservation4coa.create({
+            project: project,
             agent: agent,
             transaction: transaction,
             object: {
@@ -1726,6 +1863,7 @@ describe('action.authorize.seatReservation.create()', () => {
         })({
             event: eventRepo,
             action: actionRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
         assert.deepEqual(result, action);
