@@ -32,17 +32,24 @@ describe('searchEvents4cinemasunshine()', () => {
             superEventLocationIdentifiers: ['12345']
         };
         const eventRepo = new domain.repository.Event(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(eventRepo)
             .expects('search')
             .once()
             .resolves(events);
+        sandbox.mock(eventRepo)
+            .expects('count')
+            .once()
+            .resolves(events.length);
 
         const result = await OfferService.searchEvents4cinemasunshine(<any>searchConditions)({
-            event: eventRepo
+            event: eventRepo,
+            project: projectRepo
         });
-        assert(Array.isArray(result));
-        assert.equal(result.length, events.length);
+        assert(Array.isArray(result.data));
+        assert(typeof result.totalCount === 'number');
+        assert.equal(result.data.length, events.length);
         sandbox.verify();
     });
 });
@@ -60,6 +67,7 @@ describe('findEventById4cinemasunshine()', () => {
             identifier: 'identifier'
         };
         const eventRepo = new domain.repository.Event(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(eventRepo)
             .expects('findById')
@@ -69,7 +77,8 @@ describe('findEventById4cinemasunshine()', () => {
         const result = await OfferService.findEventById4cinemasunshine(
             event.identifier
         )({
-            event: eventRepo
+            event: eventRepo,
+            project: projectRepo
         });
 
         assert.equal(result.identifier, event.identifier);

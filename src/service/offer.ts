@@ -65,6 +65,7 @@ export type ISearchEventTicketOffersOperation<T> = (repos: {
 export type IEventOperation4cinemasunshine<T> = (repos: {
     event: EventRepo;
     attendeeCapacity?: EventAttendeeCapacityRepo;
+    project: ProjectRepo;
 }) => Promise<T>;
 
 export interface ISearchEventsResult {
@@ -917,23 +918,28 @@ function coaSalesTicket2offer(params: {
  * 個々のイベントを検索する
  * 在庫状況リポジトリをパラメーターとして渡せば、在庫状況も取得してくれる
  */
-export function searchEvents4cinemasunshine(
-    searchConditions: factory.event.screeningEvent.ISearchConditions
-): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent[]> {
+export function searchEvents4cinemasunshine(params: {
+    project: factory.project.IProject;
+    conditions: factory.event.screeningEvent.ISearchConditions;
+}): IEventOperation4cinemasunshine<ISearchEventsResult> {
     return async (repos: {
         event: EventRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
+        project: ProjectRepo;
     }) => {
-        debug('finding screeningEvents...', searchConditions);
-        const events = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(searchConditions);
+        let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
+        let totalCount: number;
+
+        data = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
+        totalCount = await repos.event.count(params.conditions);
 
         let capacities: IEventCapacity[] = [];
         if (repos.attendeeCapacity !== undefined) {
-            const eventIds = events.map((e) => e.id);
+            const eventIds = data.map((e) => e.id);
             capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
         }
 
-        return events.map((e) => {
+        data = data.map((e) => {
             const capacity = capacities.find((c) => c.id === e.id);
 
             // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
@@ -964,6 +970,11 @@ export function searchEvents4cinemasunshine(
                     : undefined
             };
         });
+
+        return {
+            data: data,
+            totalCount: totalCount
+        };
     };
 }
 
@@ -976,6 +987,7 @@ export function findEventById4cinemasunshine(
     return async (repos: {
         event: EventRepo;
         attendeeCapacity?: EventAttendeeCapacityRepo;
+        project: ProjectRepo;
     }) => {
         const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: id
