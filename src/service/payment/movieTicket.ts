@@ -92,25 +92,20 @@ export function authorize(params: {
         const movieTicketIdentifier = movieTicketIdentifiers[0];
 
         // イベント情報取得
-        const useEventRepo = project.settings?.useEventRepo === true;
-
         let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (useEventRepo) {
-            screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
-        } else {
-            if (project.settings === undefined || project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: eventIds[0]
-            });
+        if (project.settings === undefined || project.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+            id: eventIds[0]
+        });
 
         // ショップ情報取得
         const movieTheater = await repos.seller.findById({
@@ -261,7 +256,6 @@ export function checkMovieTicket(
         paymentMethod: PaymentMethodRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings?.useEventRepo === true;
 
         const actionAttributes: factory.action.check.paymentMethod.movieTicket.IAttributes = {
             project: params.project,
@@ -280,22 +274,18 @@ export function checkMovieTicket(
 
             // イベント情報取得
             let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-            if (useEventRepo) {
-                screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventIds[0] });
-            } else {
-                if (project.settings === undefined || project.settings.chevre === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-                }
-
-                const eventService = new chevre.service.Event({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
-
-                screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                    id: eventIds[0]
-                });
+            if (project.settings === undefined || project.settings.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
+
+            const eventService = new chevre.service.Event({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: eventIds[0]
+            });
 
             // ショップ情報取得
             const movieTheater = await repos.seller.findById({
@@ -380,8 +370,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
-        const useEventRepo = project.settings?.useEventRepo === true;
-
         // アクション開始
         const action = await repos.action.start(params);
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
@@ -399,22 +387,18 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             // イベント情報取得
             let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-            if (useEventRepo) {
-                screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
-            } else {
-                if (project.settings === undefined || project.settings.chevre === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-                }
-
-                const eventService = new chevre.service.Event({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
-
-                screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                    id: eventId
-                });
+            if (project.settings === undefined || project.settings.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
+
+            const eventService = new chevre.service.Event({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+                id: eventId
+            });
 
             const order = params.purpose;
 
