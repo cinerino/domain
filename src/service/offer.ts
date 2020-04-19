@@ -88,7 +88,7 @@ export function searchEvents(params: {
         let totalCount: number;
 
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
+        const useEventRepo = project.settings?.useEventRepo === true;
 
         if (useEventRepo) {
             data = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
@@ -146,7 +146,7 @@ export function searchEventOffers(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
+        const useEventRepo = project.settings?.useEventRepo === true;
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
         if (useEventRepo) {
@@ -344,7 +344,7 @@ export function searchEventTicketOffers(params: {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
-        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
+        const useEventRepo = project.settings?.useEventRepo === true;
 
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
