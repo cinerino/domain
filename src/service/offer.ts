@@ -895,71 +895,6 @@ export function searchEvents4cinemasunshine(params: {
         data = searchEventsResult.data;
         totalCount = <number>searchEventsResult.totalCount;
 
-        // let capacities: IEventCapacity[] = [];
-        // if (repos.attendeeCapacity !== undefined) {
-        //     const eventIds = data.map((e) => e.id);
-        //     capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
-        // }
-
-        // data = data.map((e) => {
-        //     const capacity = capacities.find((c) => c.id === e.id);
-
-        //     // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-        //     const offers = (e.offers !== undefined)
-        //         ? {
-        //             ...e.offers,
-        //             // tslint:disable-next-line:no-magic-numbers
-        //             availability: (e.offers !== undefined && e.offers.availability !== undefined) ? e.offers.availability : 100
-        //         }
-        //         : undefined;
-
-        //     if (offers !== undefined
-        //         && capacity !== undefined
-        //         && capacity.remainingAttendeeCapacity !== undefined
-        //         && e.maximumAttendeeCapacity !== undefined) {
-        //         // tslint:disable-next-line:no-magic-numbers
-        //         offers.availability = Math.floor(Number(capacity.remainingAttendeeCapacity) / Number(e.maximumAttendeeCapacity) * 100);
-        //     }
-
-        //     return {
-        //         ...e,
-        //         ...capacity,
-        //         ...(offers !== undefined)
-        //             ? {
-        //                 offer: offers, // 本来不要だが、互換性維持のため
-        //                 offers: offers
-        //             }
-        //             : undefined
-        //     };
-        // });
-
-        data = data.map((e) => {
-            // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-            const offers = (e.offers !== undefined)
-                ? {
-                    ...e.offers,
-                    availability: 100
-                }
-                : undefined;
-
-            if (offers !== undefined
-                && typeof e.remainingAttendeeCapacity === 'number'
-                && typeof e.maximumAttendeeCapacity === 'number') {
-                // tslint:disable-next-line:no-magic-numbers
-                offers.availability = Math.floor(Number(e.remainingAttendeeCapacity) / Number(e.maximumAttendeeCapacity) * 100);
-            }
-
-            return {
-                ...e,
-                ...(offers !== undefined)
-                    ? {
-                        offer: offers, // 本来不要だが、互換性維持のため
-                        offers: offers
-                    }
-                    : undefined
-            };
-        });
-
         return {
             data: data,
             totalCount: totalCount
@@ -979,8 +914,6 @@ export function findEventById4cinemasunshine(params: {
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-
         if (project.settings?.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
@@ -990,58 +923,8 @@ export function findEventById4cinemasunshine(params: {
             auth: chevreAuthClient
         });
 
-        event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+        return eventService.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.id
         });
-
-        // let capacities: IEventCapacity[] = [];
-        // if (repos.attendeeCapacity !== undefined) {
-        //     const eventIds = [event.id];
-        //     capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
-        // }
-
-        // const capacity = capacities.find((c) => c.id === event.id);
-
-        // // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-        // const offers = (event.offers !== undefined)
-        //     ? {
-        //         ...event.offers,
-        //         availability: 100
-        //     }
-        //     : undefined;
-
-        // if (offers !== undefined
-        //     && capacity !== undefined
-        //     && capacity.remainingAttendeeCapacity !== undefined
-        //     && event.maximumAttendeeCapacity !== undefined) {
-        //     // tslint:disable-next-line:no-magic-numbers
-        //     offers.availability = Math.floor(Number(capacity.remainingAttendeeCapacity) / Number(event.maximumAttendeeCapacity) * 100);
-        // }
-
-        // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-        const offers = (event.offers !== undefined)
-            ? {
-                ...event.offers,
-                availability: 100
-            }
-            : undefined;
-
-        if (offers !== undefined
-            && typeof event.remainingAttendeeCapacity === 'number'
-            && typeof event.maximumAttendeeCapacity === 'number') {
-            // tslint:disable-next-line:no-magic-numbers
-            offers.availability = Math.floor(Number(event.remainingAttendeeCapacity) / Number(event.maximumAttendeeCapacity) * 100);
-        }
-
-        return {
-            ...event,
-            // ...capacity,
-            ...(offers !== undefined)
-                ? {
-                    offer: offers, // 本来不要だが、互換性維持のため
-                    offers: offers
-                }
-                : undefined
-        };
     };
 }
