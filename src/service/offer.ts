@@ -56,17 +56,13 @@ export type ISearchEventTicketOffersOperation<T> = (repos: {
     seller: SellerRepo;
 }) => Promise<T>;
 
-export type IEventOperation4cinemasunshine<T> = (repos: {
-    project: ProjectRepo;
-}) => Promise<T>;
-
 export interface ISearchEventsResult {
     data: factory.event.screeningEvent.IEvent[];
-    totalCount: number;
+    totalCount?: number;
 }
 
 /**
- * 残席数情報も含めてイベントを検索する
+ * イベント検索
  */
 export function searchEvents(params: {
     project: factory.project.IProject;
@@ -75,9 +71,6 @@ export function searchEvents(params: {
     return async (repos: {
         project: ProjectRepo;
     }) => {
-        let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
-        let totalCount: number;
-
         const project = await repos.project.findById({ id: params.project.id });
 
         if (project.settings?.chevre === undefined) {
@@ -89,17 +82,10 @@ export function searchEvents(params: {
             auth: chevreAuthClient
         });
 
-        const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
+        return eventService.search<factory.chevre.eventType.ScreeningEvent>({
             ...params.conditions,
             project: { ids: [project.id] }
         });
-        data = searchEventsResult.data;
-        totalCount = <number>searchEventsResult.totalCount;
-
-        return {
-            data: data,
-            totalCount: totalCount
-        };
     };
 }
 
@@ -859,72 +845,5 @@ function coaSalesTicket2offer(params: {
                 typeOf: 'CategoryCode'
             }
         }
-    };
-}
-
-/**
- * 個々のイベントを検索する
- * 在庫状況リポジトリをパラメーターとして渡せば、在庫状況も取得してくれる
- */
-export function searchEvents4cinemasunshine(params: {
-    project: factory.project.IProject;
-    conditions: factory.event.screeningEvent.ISearchConditions;
-}): IEventOperation4cinemasunshine<ISearchEventsResult> {
-    // tslint:disable-next-line:max-func-body-length
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
-        let totalCount: number;
-
-        const project = await repos.project.findById({ id: params.project.id });
-
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
-            ...params.conditions,
-            project: { ids: [project.id] }
-        });
-        data = searchEventsResult.data;
-        totalCount = <number>searchEventsResult.totalCount;
-
-        return {
-            data: data,
-            totalCount: totalCount
-        };
-    };
-}
-
-/**
- * 個々のイベントを識別子で取得する
- */
-export function findEventById4cinemasunshine(params: {
-    id: string;
-    project: { id: string };
-}): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        return eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-            id: params.id
-        });
     };
 }

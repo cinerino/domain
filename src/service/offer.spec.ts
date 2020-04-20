@@ -23,17 +23,14 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('searchEvents4cinemasunshine()', () => {
+describe('searchEvents()', () => {
     afterEach(() => {
         sandbox.restore();
     });
 
     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
         const event = {
-            coaInfo: {
-                dateJouei: '20170831'
-            },
-            identifier: 'identifier'
+            id: 'id'
         };
         const events = [event];
         const searchConditions = {
@@ -54,7 +51,7 @@ describe('searchEvents4cinemasunshine()', () => {
             .once()
             .resolves(project);
 
-        const result = await OfferService.searchEvents4cinemasunshine({
+        const result = await OfferService.searchEvents({
             project: project,
             conditions: <any>searchConditions
         })({
@@ -63,42 +60,6 @@ describe('searchEvents4cinemasunshine()', () => {
         assert(Array.isArray(result.data));
         assert(typeof result.totalCount === 'number');
         assert.equal(result.data.length, events.length);
-        sandbox.verify();
-    });
-});
-
-describe('findEventById4cinemasunshine()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
-        const event = {
-            coaInfo: {
-                dateJouei: '20170831'
-            },
-            id: 'id'
-        };
-
-        const projectRepo = new domain.repository.Project(mongoose.connection);
-
-        sandbox.mock(domain.chevre.service.Event.prototype)
-            .expects('findById')
-            .once()
-            .resolves(event);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
-
-        const result = await OfferService.findEventById4cinemasunshine({
-            id: event.id,
-            project: { id: 'id' }
-        })({
-            project: projectRepo
-        });
-
-        assert.equal(result.id, event.id);
         sandbox.verify();
     });
 });
