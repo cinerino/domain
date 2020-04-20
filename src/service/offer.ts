@@ -2,7 +2,6 @@ import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as EventRepo } from '../repo/event';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
@@ -58,7 +57,6 @@ export type ISearchEventTicketOffersOperation<T> = (repos: {
 }) => Promise<T>;
 
 export type IEventOperation4cinemasunshine<T> = (repos: {
-    event: EventRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
@@ -874,7 +872,6 @@ export function searchEvents4cinemasunshine(params: {
 }): IEventOperation4cinemasunshine<ISearchEventsResult> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         project: ProjectRepo;
     }) => {
         let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
@@ -978,7 +975,6 @@ export function findEventById4cinemasunshine(params: {
     project: { id: string };
 }): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
     return async (repos: {
-        event: EventRepo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });

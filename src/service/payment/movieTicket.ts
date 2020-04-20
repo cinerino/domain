@@ -12,7 +12,6 @@ import { handleMvtkReserveError } from '../../errorHandler';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as EventRepo } from '../../repo/event';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as PaymentMethodRepo } from '../../repo/paymentMethod';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
@@ -31,7 +30,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
-    event: EventRepo;
     project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
@@ -40,7 +38,6 @@ export type IAuthorizeOperation<T> = (repos: {
 
 export type ICheckMovieTicketOperation<T> = (repos: {
     action: ActionRepo;
-    event: EventRepo;
     project: ProjectRepo;
     seller: SellerRepo;
     movieTicket: MovieTicketRepo;
@@ -58,7 +55,6 @@ export function authorize(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
@@ -249,7 +245,6 @@ export function checkMovieTicket(
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         movieTicket: MovieTicketRepo;
@@ -360,7 +355,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        event: EventRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
         seller: SellerRepo;

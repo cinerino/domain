@@ -9,6 +9,14 @@ import * as domain from '../index';
 
 import * as OfferService from './offer';
 
+const project = {
+    typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project,
+    id: 'id',
+    settings: {
+        chevre: { endpoint: '' }
+    }
+};
+
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -21,11 +29,6 @@ describe('searchEvents4cinemasunshine()', () => {
     });
 
     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
-        const project = {
-            typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project,
-            id: 'id',
-            settings: { useEventRepo: true }
-        };
         const event = {
             coaInfo: {
                 dateJouei: '20170831'
@@ -36,17 +39,16 @@ describe('searchEvents4cinemasunshine()', () => {
         const searchConditions = {
             superEventLocationIdentifiers: ['12345']
         };
-        const eventRepo = new domain.repository.Event(mongoose.connection);
+
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
-        sandbox.mock(eventRepo)
+        sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('search')
             .once()
-            .resolves(events);
-        sandbox.mock(eventRepo)
-            .expects('count')
-            .once()
-            .resolves(events.length);
+            .resolves({
+                totalCount: events.length,
+                data: events
+            });
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
@@ -56,7 +58,6 @@ describe('searchEvents4cinemasunshine()', () => {
             project: project,
             conditions: <any>searchConditions
         })({
-            event: eventRepo,
             project: projectRepo
         });
         assert(Array.isArray(result.data));
@@ -72,21 +73,16 @@ describe('findEventById4cinemasunshine()', () => {
     });
 
     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
-        const project = {
-            typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project,
-            id: 'id',
-            settings: { useEventRepo: true }
-        };
         const event = {
             coaInfo: {
                 dateJouei: '20170831'
             },
             id: 'id'
         };
-        const eventRepo = new domain.repository.Event(mongoose.connection);
+
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
-        sandbox.mock(eventRepo)
+        sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
             .resolves(event);
@@ -99,7 +95,6 @@ describe('findEventById4cinemasunshine()', () => {
             id: event.id,
             project: { id: 'id' }
         })({
-            event: eventRepo,
             project: projectRepo
         });
 

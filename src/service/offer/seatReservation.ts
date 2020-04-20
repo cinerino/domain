@@ -9,7 +9,6 @@ import * as COA from '../../coa';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as EventRepo } from '../../repo/event';
 import { MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
@@ -51,7 +50,6 @@ enum SeatingType {
 }
 
 export type ICreateOperation<T> = (repos: {
-    event: EventRepo;
     action: ActionRepo;
     movieTicket: MovieTicketRepo;
     project: ProjectRepo;
@@ -82,7 +80,6 @@ export function create(params: {
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
-        event: EventRepo;
         action: ActionRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
@@ -538,7 +535,6 @@ export function validateAcceptedOffers(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
         seller: SellerRepo;

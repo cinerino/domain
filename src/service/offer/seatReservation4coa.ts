@@ -4,7 +4,6 @@ import { INTERNAL_SERVER_ERROR } from 'http-status';
 import { credentials } from '../../credentials';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as EventRepo } from '../../repo/event';
 import { InMemoryRepository as OfferRepo } from '../../repo/offer';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -36,7 +35,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
-    event: EventRepo;
     action: ActionRepo;
     offer?: OfferRepo;
     project: ProjectRepo;
@@ -491,7 +489,6 @@ export function create(params: {
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         action: ActionRepo;
         offer?: OfferRepo;
         project: ProjectRepo;
@@ -679,7 +676,6 @@ export function changeOffers(params: {
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         action: ActionRepo;
         offer?: OfferRepo;
         project: ProjectRepo;
