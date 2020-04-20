@@ -507,28 +507,22 @@ export function create(params: {
         }
 
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings?.useEventRepo === true;
 
         // イベントを取得
         let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (useEventRepo) {
-            screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.object.event.id
-            });
-        } else {
-            if (project.settings?.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.object.event.id
-            });
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+            id: params.object.event.id
+        });
 
         // 必ず定義されている前提
         const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
@@ -738,28 +732,22 @@ export function changeOffers(params: {
         }
 
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings?.useEventRepo === true;
 
         // イベントを取得
         let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (useEventRepo) {
-            screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.object.event.id
-            });
-        } else {
-            if (project.settings?.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.object.event.id
-            });
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+            id: params.object.event.id
+        });
 
         // 供給情報の有効性を確認
         const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = acceptedOfferParams.map((offer) => {

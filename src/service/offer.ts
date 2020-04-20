@@ -3,7 +3,6 @@ import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as EventRepo } from '../repo/event';
-// import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
@@ -46,7 +45,6 @@ const coaAuthClient = new COA.auth.RefreshToken({
 });
 
 export type ISearchEventsOperation<T> = (repos: {
-    // attendeeCapacity?: EventAttendeeCapacityRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
@@ -61,7 +59,6 @@ export type ISearchEventTicketOffersOperation<T> = (repos: {
 
 export type IEventOperation4cinemasunshine<T> = (repos: {
     event: EventRepo;
-    // attendeeCapacity?: EventAttendeeCapacityRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
@@ -78,7 +75,6 @@ export function searchEvents(params: {
     conditions: factory.event.screeningEvent.ISearchConditions;
 }): ISearchEventsOperation<ISearchEventsResult> {
     return async (repos: {
-        // attendeeCapacity?: EventAttendeeCapacityRepo;
         project: ProjectRepo;
     }) => {
         let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
@@ -879,35 +875,28 @@ export function searchEvents4cinemasunshine(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: EventRepo;
-        // attendeeCapacity?: EventAttendeeCapacityRepo;
         project: ProjectRepo;
     }) => {
         let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
         let totalCount: number;
 
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings?.useEventRepo === true;
 
-        if (useEventRepo) {
-            data = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
-            totalCount = await repos.event.count(params.conditions);
-        } else {
-            if (project.settings?.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
-
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
-                ...params.conditions,
-                project: { ids: [project.id] }
-            });
-            data = searchEventsResult.data;
-            totalCount = <number>searchEventsResult.totalCount;
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
+            ...params.conditions,
+            project: { ids: [project.id] }
+        });
+        data = searchEventsResult.data;
+        totalCount = <number>searchEventsResult.totalCount;
 
         // let capacities: IEventCapacity[] = [];
         // if (repos.attendeeCapacity !== undefined) {
@@ -990,31 +979,24 @@ export function findEventById4cinemasunshine(params: {
 }): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
     return async (repos: {
         event: EventRepo;
-        // attendeeCapacity?: EventAttendeeCapacityRepo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings?.useEventRepo === true;
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (useEventRepo) {
-            event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.id
-            });
-        } else {
-            if (project.settings?.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.id
-            });
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+            id: params.id
+        });
 
         // let capacities: IEventCapacity[] = [];
         // if (repos.attendeeCapacity !== undefined) {
