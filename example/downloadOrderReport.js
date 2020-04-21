@@ -5,21 +5,62 @@ const domain = require('../');
 async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
+    const actionRepo = new domain.repository.Action(mongoose.connection);
     const orderRepo = new domain.repository.Order(mongoose.connection);
-    const readable = await domain.service.report.order.stream({
-        conditions: {
-            orderDateFrom: moment().add(-1, 'week').toDate,
-            orderDateThrough: moment().toDate,
+    const taskRepo = new domain.repository.Task(mongoose.connection);
+
+    // await domain.service.task.executeByName({
+    //     project: { id: 'cinerino' },
+    //     name: 'createOrderReport'
+    // })({ connection: mongoose.connection });
+
+    // return;
+
+    await domain.service.report.order.createReport({
+        typeOf: 'CreateAction',
+        project: { id: 'cinerino' },
+        agent: { name: 'sampleCode' },
+        // recipient: { name: 'recipientName' },
+        object: {
+            typeOf: 'Report',
+            about: 'OrderReport',
+            mentions: {
+                typeOf: 'SearchAction',
+                query: {
+                    orderDateFrom: moment().add(-3, 'years').toDate(),
+                    orderDateThrough: moment().toDate(),
+                },
+                object: {
+                    typeOf: 'Order'
+                }
+            },
+            // format: domain.factory.encodingFormat.Application.json
+            encodingFormat: domain.factory.encodingFormat.Text.csv,
+            expires: moment().add(1, 'hour').toDate()
         },
-        // format: domain.factory.encodingFormat.Application.json
-        format: domain.factory.encodingFormat.Text.csv
+        potentialActions: {
+            sendEmailMessage: [
+                {
+                    object: {
+                        about: 'レポートが使用可能です',
+                        sender: {
+                            name: 'Cinerino Report',
+                            email: 'noreply@example.com'
+                        },
+                        toRecipient: { email: 'ilovegadd@gmail.com' }
+                    }
+                }
+            ]
+        }
     })({
-        order: orderRepo
+        action: actionRepo,
+        order: orderRepo,
+        task: taskRepo
     });
 
-    readable.on('data', function (data) {
-        console.log(data);
-    });
+    // readable.on('data', function (data) {
+    //     console.log(data);
+    // });
 }
 
 main().then(() => {

@@ -18,6 +18,43 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v2.0.0 - 2020-04-21
+
+### Added
+
+- 注文レポート作成タスクを実験的に追加
+- 販売者に返品ポリシー属性を追加
+
+### Changed
+
+- 注文検索条件拡張
+- 注文CSVレポート拡張
+- update @chevre/factory
+- String型の座席タイプに対応
+- Array型の座席タイプに対応
+- 座席タイプチャージを予約の価格要素に追加
+- 座席順が異なっていてもCOA座席予約の券種を変更できるように調整
+- メンバーシップ自動更新時もポイントインセンティブが付与されるように調整
+- ttts予約承認を本家予約承認に合わせるように調整
+- update @chevre/api-nodejs-client
+- 予約の余分確保分をsubReservationとして表現するように調整
+- デフォルトで確定予約へ連携する値を拡張
+- デフォルトで注文識別子にconfirmationNumberとconfirmationPassを追加
+- COAリクエストにタイムアウト設定
+- 予約承認時のエラーハンドリングを調整
+- 返品取引開始時に返品ポリシー確認を追加
+
+### Removed
+
+- 場所(オンラインとストア)インターフェースを削除
+- プロジェクトのイベントリポジトリ使用設定を廃止
+- イベントリポジトリを削除
+- イベントキャパシティリポジトリを削除
+
+### Fixed
+
+- COAのXMLスケジュール抽出を、screener.timeが配列でない場合に対応
+
 ## v1.2.0 - 2020-01-24
 
 ### Changed

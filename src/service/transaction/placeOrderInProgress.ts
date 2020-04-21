@@ -3,6 +3,7 @@
  */
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 import { format } from 'util';
 
 import * as factory from '../../factory';
@@ -419,15 +420,58 @@ function createConfirmationNumber(params: {
             url = params.result.order.url(params.order);
         }
 
+        const { paymentNo, confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({
+            confirmationNumber: confirmationNumber,
+            order: params.order
+        });
+
         // 識別子の指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (Array.isArray(params.result.order.identifier)) {
-            identifier = params.result.order.identifier;
-        }
+        identifier = [
+            ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
+            { name: 'paymentNo', value: paymentNo },
+            { name: 'confirmationNumber', value: confirmationNumber4identifier },
+            { name: 'confirmationPass', value: confirmationPass }
+        ];
 
         return { confirmationNumber, url, identifier };
     };
+}
+
+export const PAYMENT_NO_MIN_LENGTH = 6;
+export function createConfirmationNumber4identifier(params: {
+    confirmationNumber: string;
+    order: factory.order.IOrder;
+}) {
+    const confirmationNumber = params.confirmationNumber;
+
+    // tslint:disable-next-line:no-magic-numbers
+    const paymentNo = (confirmationNumber.length < PAYMENT_NO_MIN_LENGTH)
+        // tslint:disable-next-line:no-magic-numbers
+        ? `000000${confirmationNumber}`.slice(-PAYMENT_NO_MIN_LENGTH)
+        : confirmationNumber;
+    let eventStartDateStr = moment(params.order.orderDate)
+        .tz('Asia/Tokyo')
+        .format('YYYYMMDD');
+    if (Array.isArray(params.order.acceptedOffers) && params.order.acceptedOffers.length > 0) {
+        const firstAcceptedOffer = params.order.acceptedOffers[0];
+        const itemOffered = firstAcceptedOffer.itemOffered;
+        if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
+            const event = itemOffered.reservationFor;
+            eventStartDateStr = moment(event.startDate)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD');
+        }
+    }
+    const confirmationNumber4identifier = `${eventStartDateStr}${paymentNo}`;
+    const telephone = params.order.customer?.telephone;
+    const confirmationPass = (typeof telephone === 'string')
+        // tslint:disable-next-line:no-magic-numbers
+        ? telephone.slice(-4)
+        : '9999';
+
+    return { paymentNo, confirmationNumber4identifier, confirmationPass };
 }
 
 /**
@@ -535,8 +579,15 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
         const acceptedOffer =
             (<factory.action.authorize.offer.seatReservation.IObject<factory.service.webAPI.Identifier.Chevre>>a.object).acceptedOffer;
         acceptedOffer.forEach((offer: factory.chevre.event.screeningEvent.IAcceptedTicketOffer) => {
-            const offeredTicketedSeat = offer.ticketedSeat;
+            let offeredTicketedSeat = (<any>offer).ticketedSeat;
+            const acceptedTicketedSeatByItemOffered = offer.itemOffered?.serviceOutput?.reservedTicket?.ticketedSeat;
+            if (acceptedTicketedSeatByItemOffered !== undefined && acceptedTicketedSeatByItemOffered !== null) {
+                offeredTicketedSeat = acceptedTicketedSeatByItemOffered;
+            }
+
             if (offeredTicketedSeat !== undefined) {
+                const ticketedSeat4MovieTicket = offeredTicketedSeat;
+
                 offer.priceSpecification.priceComponent.forEach((component) => {
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
@@ -548,7 +599,7 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
                             serviceType: component.appliesToMovieTicketType,
                             serviceOutput: {
                                 reservationFor: { typeOf: event.typeOf, id: event.id },
-                                reservedTicket: { ticketedSeat: offeredTicketedSeat }
+                                reservedTicket: { ticketedSeat: ticketedSeat4MovieTicket }
                             }
                         });
                     }

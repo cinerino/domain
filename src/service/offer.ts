@@ -1,8 +1,7 @@
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
+import * as moment from 'moment-timezone';
 
-import { MongoRepository as EventRepo } from '../repo/event';
-import { IEvent as IEventCapacity, RedisRepository as EventAttendeeCapacityRepo } from '../repo/event/attendeeCapacity';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
@@ -11,15 +10,12 @@ import * as ProgramMembershipOfferService from './offer/programMembership';
 import * as ReservationOfferService from './offer/reservation';
 import * as SeatReservationOfferService from './offer/seatReservation';
 import * as SeatReservation4coaOfferService from './offer/seatReservation4coa';
-import * as SeatReservation4tttsOfferService from './offer/seatReservation4ttts';
 
 import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
-
-import * as MasterSync from './masterSync';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -28,7 +24,6 @@ export import programMembership = ProgramMembershipOfferService;
 export import reservation = ReservationOfferService;
 export import seatReservation = SeatReservationOfferService;
 export import seatReservation4coa = SeatReservation4coaOfferService;
-export import seatReservation4ttts = SeatReservation4tttsOfferService;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -38,97 +33,57 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
 });
 
 export type ISearchEventsOperation<T> = (repos: {
-    event: EventRepo;
-    attendeeCapacity?: EventAttendeeCapacityRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
 export type ISearchEventOffersOperation<T> = (repos: {
-    event: EventRepo;
     project: ProjectRepo;
 }) => Promise<T>;
 
 export type ISearchEventTicketOffersOperation<T> = (repos: {
-    event: EventRepo;
     project: ProjectRepo;
     seller: SellerRepo;
 }) => Promise<T>;
 
-export type IEventOperation4cinemasunshine<T> = (repos: {
-    event: EventRepo;
-    attendeeCapacity?: EventAttendeeCapacityRepo;
-}) => Promise<T>;
-
 export interface ISearchEventsResult {
     data: factory.event.screeningEvent.IEvent[];
-    totalCount: number;
+    totalCount?: number;
 }
 
 /**
- * 残席数情報も含めてイベントを検索する
+ * イベント検索
  */
 export function searchEvents(params: {
     project: factory.project.IProject;
     conditions: factory.event.screeningEvent.ISearchConditions;
 }): ISearchEventsOperation<ISearchEventsResult> {
     return async (repos: {
-        event: EventRepo;
-        attendeeCapacity?: EventAttendeeCapacityRepo;
         project: ProjectRepo;
     }) => {
-        let data: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>[];
-        let totalCount: number;
-
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
-        if (useEventRepo) {
-            data = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(params.conditions);
-
-            let capacities: IEventCapacity[] = [];
-            if (repos.attendeeCapacity !== undefined) {
-                const eventIds = data.map((e) => e.id);
-                capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
-            }
-
-            data = data.map((e) => {
-                const capacity = capacities.find((c) => c.id === e.id);
-
-                return {
-                    ...e,
-                    ...capacity
-                };
-            });
-
-            totalCount = await repos.event.count(params.conditions);
-        } else {
-            if (project.settings === undefined || project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
-
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            const searchEventsResult = await eventService.search<factory.chevre.eventType.ScreeningEvent>({
-                ...params.conditions,
-                project: { ids: [project.id] }
-            });
-            data = searchEventsResult.data;
-            totalCount = searchEventsResult.totalCount;
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
-        return {
-            data: data,
-            totalCount: totalCount
-        };
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        return eventService.search<factory.chevre.eventType.ScreeningEvent>({
+            ...params.conditions,
+            project: { ids: [project.id] }
+        });
     };
 }
 
@@ -138,33 +93,26 @@ export function searchEvents(params: {
 export function searchEventOffers(params: {
     project: factory.project.IProject;
     event: { id: string };
-}): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+}): ISearchEventOffersOperation<factory.chevre.place.screeningRoomSection.IPlaceWithOffer[]> {
     return async (repos: {
-        event: EventRepo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (useEventRepo) {
-            event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.event.id
-            });
-        } else {
-            if (project.settings === undefined || project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
-            const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.event.id
-            });
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+            id: params.event.id
+        });
 
         const eventOffers = event.offers;
         if (eventOffers === undefined) {
@@ -180,14 +128,9 @@ export function searchEventOffers(params: {
                 return searchEventOffers4COA({ event });
 
             default:
-                if (project.settings === undefined || project.settings.chevre === undefined) {
+                if (project.settings?.chevre === undefined) {
                     throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
                 }
-
-                const eventService = new chevre.service.Event({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
 
                 // 基本的にはCHEVREへ空席確認
                 return eventService.searchOffers({ id: params.event.id });
@@ -195,19 +138,128 @@ export function searchEventOffers(params: {
     };
 }
 
+/**
+ * コアスクリーン抽出結果から上映室を作成する
+ */
+// tslint:disable-next-line:no-single-line-block-comment
+/* istanbul ignore next */
+export function createScreeningRoomFromCOA(
+    project: { typeOf: 'Project'; id: string },
+    screenFromCOA: COA.factory.master.IScreenResult
+): factory.chevre.place.screeningRoom.IPlace {
+    const sections: factory.chevre.place.screeningRoomSection.IPlaceWithOffer[] = [];
+    const sectionCodes: string[] = [];
+    screenFromCOA.listSeat.forEach((seat) => {
+        if (sectionCodes.indexOf(seat.seatSection) < 0) {
+            sectionCodes.push(seat.seatSection);
+            sections.push({
+                project: { typeOf: project.typeOf, id: project.id },
+                branchCode: seat.seatSection,
+                name: {
+                    ja: `セクション${seat.seatSection}`,
+                    en: `section${seat.seatSection}`
+                },
+                containsPlace: [],
+                typeOf: factory.chevre.placeType.ScreeningRoomSection
+            });
+        }
+
+        sections[sectionCodes.indexOf(seat.seatSection)].containsPlace.push({
+            project: { typeOf: project.typeOf, id: project.id },
+            branchCode: seat.seatNum,
+            typeOf: factory.chevre.placeType.Seat,
+            additionalProperty: [
+                { name: 'flgFree', value: String(seat.flgFree) },
+                { name: 'flgHc', value: String(seat.flgHc) },
+                { name: 'flgPair', value: String(seat.flgPair) },
+                { name: 'flgSpare', value: String(seat.flgSpare) },
+                { name: 'flgSpecial', value: String(seat.flgSpecial) }
+            ]
+        });
+    });
+
+    return {
+        project: { typeOf: project.typeOf, id: project.id },
+        containsPlace: sections,
+        branchCode: screenFromCOA.screenCode,
+        name: {
+            ja: screenFromCOA.screenName,
+            en: screenFromCOA.screenNameEng
+        },
+        typeOf: factory.chevre.placeType.ScreeningRoom,
+        maximumAttendeeCapacity: sections[0].containsPlace.length
+    };
+}
+
+/**
+ * コアマスター抽出結果から作成する
+ */
+// tslint:disable-next-line:no-single-line-block-comment
+/* istanbul ignore next */
+export function createMovieTheaterFromCOA(
+    project: { typeOf: 'Project'; id: string },
+    theaterFromCOA: COA.factory.master.ITheaterResult,
+    screensFromCOA: COA.factory.master.IScreenResult[]
+): factory.chevre.place.movieTheater.IPlace {
+    const id = `MovieTheater-${theaterFromCOA.theaterCode}`;
+
+    return {
+        project: { typeOf: project.typeOf, id: project.id },
+        id: id,
+        screenCount: screensFromCOA.length,
+        branchCode: theaterFromCOA.theaterCode,
+        name: {
+            ja: theaterFromCOA.theaterName,
+            en: theaterFromCOA.theaterNameEng
+        },
+        kanaName: theaterFromCOA.theaterNameKana,
+        containsPlace: screensFromCOA.map((screenFromCOA) => {
+            return createScreeningRoomFromCOA(project, screenFromCOA);
+        }),
+        typeOf: factory.chevre.placeType.MovieTheater,
+        telephone: theaterFromCOA.theaterTelNum,
+        offers: {
+            project: { typeOf: project.typeOf, id: project.id },
+            priceCurrency: factory.priceCurrency.JPY,
+            typeOf: factory.chevre.offerType.Offer,
+            eligibleQuantity: {
+                typeOf: 'QuantitativeValue',
+                maxValue: 6,
+                unitCode: factory.unitCode.C62
+            },
+            availabilityStartsGraceTime: {
+                typeOf: 'QuantitativeValue',
+                value: -2,
+                unitCode: factory.unitCode.Day
+            },
+            availabilityEndsGraceTime: {
+                typeOf: 'QuantitativeValue',
+                value: 1200,
+                unitCode: factory.unitCode.Sec
+            }
+        }
+    };
+}
+
 async function searchEventOffers4COA(params: {
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-}): Promise<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
+}): Promise<factory.chevre.place.screeningRoomSection.IPlace[]> {
     const event = params.event;
 
-    const masterService = new COA.service.Master({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const masterService = new COA.service.Master(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     let coaInfo: any;
     if (Array.isArray(event.additionalProperty)) {
@@ -218,19 +270,19 @@ async function searchEventOffers4COA(params: {
     // イベント提供者がCOAであればCOAへ空席状況確認
     const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
 
-    const movieTheater = MasterSync.createMovieTheaterFromCOA(
+    const movieTheater = createMovieTheaterFromCOA(
         { typeOf: factory.organizationType.Project, id: event.project.id },
         await masterService.theater(coaInfo),
         await masterService.screen(coaInfo)
     );
-    const screeningRoom = <chevre.factory.place.movieTheater.IScreeningRoom>movieTheater.containsPlace.find(
+    const screeningRoom = <chevre.factory.place.screeningRoom.IPlace>movieTheater.containsPlace.find(
         (p) => p.branchCode === event.location.branchCode
     );
     if (screeningRoom === undefined) {
         throw new chevre.factory.errors.NotFound('Screening room');
     }
     const screeningRoomSections = screeningRoom.containsPlace;
-    const offers: chevre.factory.event.screeningEvent.IScreeningRoomSectionOffer[] = screeningRoomSections;
+    const offers: chevre.factory.place.screeningRoomSection.IPlaceWithOffer[] = screeningRoomSections;
     offers.forEach((offer) => {
         const seats = offer.containsPlace;
         const seatSection = offer.branchCode;
@@ -256,7 +308,8 @@ async function searchEventOffers4COA(params: {
             seat.additionalProperty = additionalProperty;
 
             seat.offers = [{
-                typeOf: 'Offer',
+                project: { typeOf: params.event.project.typeOf, id: params.event.project.id },
+                typeOf: factory.chevre.offerType.Offer,
                 priceCurrency: chevre.factory.priceCurrency.JPY,
                 availability: (availableOffer !== undefined)
                     ? chevre.factory.itemAvailability.InStock
@@ -273,6 +326,7 @@ export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTick
 /**
  * イベントに対する券種オファーを検索する
  */
+// tslint:disable-next-line:max-func-body-length
 export function searchEventTicketOffers(params: {
     project: factory.project.IProject;
     /**
@@ -321,17 +375,17 @@ export function searchEventTicketOffers(params: {
         kbnEisyahousiki: string;
     };
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[]> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
+        const now = moment();
+
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined || project.settings.chevre === undefined) {
+        if (project.settings?.chevre === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
-
-        const useEventRepo = project.settings !== undefined && project.settings.useEventRepo === true;
 
         const eventService = new chevre.service.Event({
             endpoint: project.settings.chevre.endpoint,
@@ -340,15 +394,10 @@ export function searchEventTicketOffers(params: {
 
         debug('searching screeninf event offers...', params);
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-        if (useEventRepo) {
-            event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.event.id
-            });
-        } else {
-            event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: params.event.id
-            });
-        }
+
+        event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+            id: params.event.id
+        });
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[];
         const eventOffers = event.offers;
@@ -371,35 +420,36 @@ export function searchEventTicketOffers(params: {
                 offers = await eventService.searchTicketOffers({ id: params.event.id });
 
                 // 店舗条件によって対象を絞る
-                if (params.seller.typeOf !== factory.organizationType.MovieTheater) {
-                    throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
-                }
-                const seller = await repos.seller.findById({ id: params.seller.id });
-                debug('seller.areaServed is', seller.areaServed);
+                // if (params.seller.typeOf !== factory.organizationType.Corporation
+                //     && params.seller.typeOf !== factory.organizationType.MovieTheater) {
+                //     throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
+                // }
+                // const seller = await repos.seller.findById({ id: params.seller.id });
 
                 const specifiedStore = params.store;
-                if (specifiedStore !== undefined && Array.isArray(seller.areaServed)) {
-                    // 店舗指定がある場合、販売者の対応店舗を確認
-                    const store = seller.areaServed.find((area) => area.id === specifiedStore.id);
-                    debug('store is', store);
-                    // 販売者の店舗に登録されていなければNotFound
-                    if (store === undefined) {
-                        throw new factory.errors.NotFound('Store', 'Store not found in a seller\'s served area');
+                if (specifiedStore !== undefined) {
+                    // アプリケーションが利用可能なオファーに絞る
+                    offers = offers.filter((o) => {
+                        return Array.isArray(o.availableAtOrFrom)
+                            && o.availableAtOrFrom.some((availableApplication) => availableApplication.id === specifiedStore.id);
+                    });
+                }
+
+                // 有効期間を適用
+                offers = offers.filter((o) => {
+                    let isvalid = true;
+
+                    if (o.validFrom !== undefined && moment(o.validFrom)
+                        .isAfter(now)) {
+                        isvalid = false;
+                    }
+                    if (o.validThrough !== undefined && moment(o.validThrough)
+                        .isBefore(now)) {
+                        isvalid = false;
                     }
 
-                    // 店舗タイプによって、利用可能なオファーを絞る
-                    const availabilityAccepted: factory.chevre.itemAvailability[] = [factory.chevre.itemAvailability.InStock];
-                    switch (store.typeOf) {
-                        case factory.placeType.Online:
-                            availabilityAccepted.push(factory.chevre.itemAvailability.OnlineOnly);
-                            break;
-                        case factory.placeType.Store:
-                            availabilityAccepted.push(factory.chevre.itemAvailability.InStoreOnly);
-                            break;
-                        default:
-                    }
-                    offers = offers.filter((o) => availabilityAccepted.indexOf(<factory.chevre.itemAvailability>o.availability) >= 0);
-                }
+                    return isvalid;
+                });
         }
 
         return offers;
@@ -484,18 +534,24 @@ async function searchCOAAvailableTickets(params: {
 }): Promise<IAvailableSalesTickets[]> {
     const event = params.event;
     const project = params.project;
-    if (project.settings === undefined || project.settings.chevre === undefined) {
+    if (project.settings?.chevre === undefined) {
         throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
     }
 
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
-    const masterService = new COA.service.Master({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
+    const masterService = new COA.service.Master(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     // 供給情報が適切かどうか確認
     const availableSalesTickets: IAvailableSalesTickets[] = [];
@@ -635,7 +691,7 @@ async function searchEventTicketOffers4COA(params: {
 }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     const event = params.event;
     const project = params.project;
-    if (project.settings === undefined || project.settings.chevre === undefined) {
+    if (project.settings?.chevre === undefined) {
         throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
     }
 
@@ -663,19 +719,23 @@ async function searchEventTicketOffers4COA(params: {
     const theaterCode = coaInfo.theaterCode;
 
     // COA販売可能券種検索
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
     const salesTickets = await reserveService.salesTicket({
         ...coaInfo,
         flgMember: COA.factory.reserve.FlgMember.Member
     });
 
-    const searchOffersResult = await offerService.searchTicketTypes({
+    const searchOffersResult = await offerService.search({
         limit: 100,
-        project: { ids: [params.project.id] },
-        ids: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`)
+        project: { id: { $eq: params.project.id } },
+        itemOffered: { typeOf: { $eq: 'EventService' } },
+        id: { $in: salesTickets.map((t) => `COA-${theaterCode}-${t.ticketCode}`) }
     });
 
     // ChevreオファーにCOA券種情報を付加して返却
@@ -856,7 +916,8 @@ function coaSalesTicket2offer(params: {
     // }
 
     return {
-        typeOf: 'Offer',
+        project: { typeOf: params.project.typeOf, id: params.project.id },
+        typeOf: factory.chevre.offerType.Offer,
         priceCurrency: factory.priceCurrency.JPY,
         id: `COA-${params.coaInfo.theaterCode}-${params.salesTicket.ticketCode}`,
         identifier: params.salesTicket.ticketCode,
@@ -880,118 +941,10 @@ function coaSalesTicket2offer(params: {
             value: 1
         },
         itemOffered: {
-            serviceType: {
+            serviceType: <any>{
                 project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: 'ServiceType',
-                id: '',
-                identifier: '',
-                name: ''
+                typeOf: 'CategoryCode'
             }
         }
-    };
-}
-
-/**
- * 個々のイベントを検索する
- * 在庫状況リポジトリをパラメーターとして渡せば、在庫状況も取得してくれる
- */
-export function searchEvents4cinemasunshine(
-    searchConditions: factory.event.screeningEvent.ISearchConditions
-): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent[]> {
-    return async (repos: {
-        event: EventRepo;
-        attendeeCapacity?: EventAttendeeCapacityRepo;
-    }) => {
-        debug('finding screeningEvents...', searchConditions);
-        const events = await repos.event.search<factory.chevre.eventType.ScreeningEvent>(searchConditions);
-
-        let capacities: IEventCapacity[] = [];
-        if (repos.attendeeCapacity !== undefined) {
-            const eventIds = events.map((e) => e.id);
-            capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
-        }
-
-        return events.map((e) => {
-            const capacity = capacities.find((c) => c.id === e.id);
-
-            // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-            const offers = (e.offers !== undefined)
-                ? {
-                    ...e.offers,
-                    // tslint:disable-next-line:no-magic-numbers
-                    availability: (e.offers !== undefined && e.offers.availability !== undefined) ? e.offers.availability : 100
-                }
-                : undefined;
-
-            if (offers !== undefined
-                && capacity !== undefined
-                && capacity.remainingAttendeeCapacity !== undefined
-                && e.maximumAttendeeCapacity !== undefined) {
-                // tslint:disable-next-line:no-magic-numbers
-                offers.availability = Math.floor(Number(capacity.remainingAttendeeCapacity) / Number(e.maximumAttendeeCapacity) * 100);
-            }
-
-            return {
-                ...e,
-                ...capacity,
-                ...(offers !== undefined)
-                    ? {
-                        offer: offers, // 本来不要だが、互換性維持のため
-                        offers: offers
-                    }
-                    : undefined
-            };
-        });
-    };
-}
-
-/**
- * 個々のイベントを識別子で取得する
- */
-export function findEventById4cinemasunshine(
-    id: string
-): IEventOperation4cinemasunshine<factory.event.screeningEvent.IEvent> {
-    return async (repos: {
-        event: EventRepo;
-        attendeeCapacity?: EventAttendeeCapacityRepo;
-    }) => {
-        const event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-            id: id
-        });
-
-        let capacities: IEventCapacity[] = [];
-        if (repos.attendeeCapacity !== undefined) {
-            const eventIds = [event.id];
-            capacities = await repos.attendeeCapacity.findByEventIds(eventIds);
-        }
-
-        const capacity = capacities.find((c) => c.id === event.id);
-
-        // シネマサンシャインではavailability属性を利用しているため、残席数から空席率情報を追加
-        const offers = (event.offers !== undefined)
-            ? {
-                ...event.offers,
-                availability: 100
-            }
-            : undefined;
-
-        if (offers !== undefined
-            && capacity !== undefined
-            && capacity.remainingAttendeeCapacity !== undefined
-            && event.maximumAttendeeCapacity !== undefined) {
-            // tslint:disable-next-line:no-magic-numbers
-            offers.availability = Math.floor(Number(capacity.remainingAttendeeCapacity) / Number(event.maximumAttendeeCapacity) * 100);
-        }
-
-        return {
-            ...event,
-            ...capacity,
-            ...(offers !== undefined)
-                ? {
-                    offer: offers, // 本来不要だが、互換性維持のため
-                    offers: offers
-                }
-                : undefined
-        };
     };
 }

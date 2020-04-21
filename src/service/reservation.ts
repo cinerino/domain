@@ -23,6 +23,9 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
@@ -92,10 +95,13 @@ async function processCancelReservation4coa(params: {
 }) {
     const cancelReservationObject = params.cancelReservationObject;
 
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
     const stateReserveResult = await reserveService.stateReserve(cancelReservationObject);
 
     if (stateReserveResult !== null) {
@@ -183,10 +189,13 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                     // リトライ可能な前提でつくる必要があるので、要注意
                     // すでに本予約済みかどうか確認
-                    reserveService = new COA.service.Reserve({
-                        endpoint: credentials.coa.endpoint,
-                        auth: coaAuthClient
-                    });
+                    reserveService = new COA.service.Reserve(
+                        {
+                            endpoint: credentials.coa.endpoint,
+                            auth: coaAuthClient
+                        },
+                        { timeout: COA_TIMEOUT }
+                    );
                     const stateReserveResult = await reserveService.stateReserve({
                         theaterCode: object.theaterCode,
                         reserveNum: object.tmpReserveNum,

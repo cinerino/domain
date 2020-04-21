@@ -110,8 +110,8 @@ function savePaymentMethods(params: {
                     reservationFor: { typeOf: factory.chevre.eventType.ScreeningEvent, id: '' },
                     reservedTicket: {
                         ticketedSeat: {
-                            typeOf: factory.chevre.placeType.ScreeningRoom,
-                            seatingType: { typeOf: <any>'Default' },
+                            typeOf: factory.chevre.placeType.Seat,
+                            // seatingType: 'Default',
                             seatNumber: '',
                             seatRow: '',
                             seatSection: ''
@@ -161,7 +161,7 @@ function seatSyncInfoIn2movieTickets(params: {
                             reservedTicket: {
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
-                                    seatingType: { typeOf: <any>'Default' }, // 情報空でよし
+                                    // seatingType: 'Default' // 情報空でよし
                                     seatNumber: '', // 情報空でよし
                                     seatRow: '', // 情報空でよし
                                     seatSection: '' // 情報空でよし

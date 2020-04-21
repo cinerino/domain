@@ -16,6 +16,7 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
+import * as AccountService from './account';
 import * as OfferService from './offer';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as TransactionService from './transaction';
@@ -154,7 +155,8 @@ function createOrderProgramMembershipActionAttributes(params: {
 
     // 受け入れれたオファーオブジェクトを作成
     const acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership> = {
-        typeOf: 'Offer',
+        project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
+        typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
         price: offer.price,
         priceCurrency: offer.priceCurrency,
@@ -496,26 +498,14 @@ function processPlaceOrder(params: {
             object: {}
         })(repos);
 
-        // 新規登録かどうか、所有権で確認
-        const programMembershipOwnershipInfos =
-            await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
-                limit: 1,
-                typeOfGood: {
-                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                    ids: [<string>programMembership.id]
-                },
-                ownedBy: { id: customer.id }
-            });
-
-        const isNewRegister = programMembershipOwnershipInfos.length === 0;
-
-        if (isNewRegister) {
-            // 新規登録時の獲得ポイント
-            const membershipPointsEarned = programMembership.membershipPointsEarned;
-            if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
-                // ポイント口座を検索
-                const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-                    // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+        // 新規登録時の獲得ポイント
+        const membershipPointsEarned = programMembership.membershipPointsEarned;
+        if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
+            // ポイント口座を検索
+            // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+            let accountOwnershipInfos = await AccountService.search({
+                project: { typeOf: project.typeOf, id: project.id },
+                conditions: {
                     sort: { ownedFrom: factory.sortType.Ascending },
                     limit: 1,
                     typeOfGood: {
@@ -525,30 +515,48 @@ function processPlaceOrder(params: {
                     ownedBy: { id: customer.id },
                     ownedFrom: now,
                     ownedThrough: now
-                });
-                if (accountOwnershipInfos.length === 0) {
-                    throw new factory.errors.NotFound('accountOwnershipInfos');
                 }
-                const toAccount = accountOwnershipInfos[0].typeOfGood;
+            })({
+                ownershipInfo: repos.ownershipInfo,
+                project: repos.project
+            });
 
-                await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
-                    agent: { id: transaction.agent.id },
-                    transaction: { id: transaction.id },
-                    object: {
-                        typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                        amount: Number(membershipPointsEarned.value),
-                        toAccountNumber: toAccount.accountNumber,
-                        notes: (typeof membershipPointsEarned.name === 'string')
-                            ? membershipPointsEarned.name
-                            : programMembership.programName
-                    }
-                })({
-                    action: repos.action,
-                    ownershipInfo: repos.ownershipInfo,
-                    project: repos.project,
-                    transaction: repos.transaction
-                });
+            // 開設口座に絞る
+            accountOwnershipInfos = accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+
+            // const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+            //     sort: { ownedFrom: factory.sortType.Ascending },
+            //     limit: 1,
+            //     typeOfGood: {
+            //         typeOf: factory.ownershipInfo.AccountGoodType.Account,
+            //         accountType: factory.accountType.Point
+            //     },
+            //     ownedBy: { id: customer.id },
+            //     ownedFrom: now,
+            //     ownedThrough: now
+            // });
+            if (accountOwnershipInfos.length === 0) {
+                throw new factory.errors.NotFound('accountOwnershipInfos');
             }
+            const toAccount = accountOwnershipInfos[0].typeOfGood;
+
+            await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+                agent: { id: transaction.agent.id },
+                transaction: { id: transaction.id },
+                object: {
+                    typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
+                    amount: Number(membershipPointsEarned.value),
+                    toAccountNumber: toAccount.accountNumber,
+                    notes: (typeof membershipPointsEarned.name === 'string')
+                        ? membershipPointsEarned.name
+                        : programMembership.programName
+                }
+            })({
+                action: repos.action,
+                ownershipInfo: repos.ownershipInfo,
+                project: repos.project,
+                transaction: repos.transaction
+            });
         }
 
         // 会員プログラムオファー承認
@@ -614,6 +622,19 @@ function processPlaceOrder(params: {
             (project.settings !== undefined && typeof project.settings.emailInformUpdateProgrammembership === 'string')
                 ? project.settings.emailInformUpdateProgrammembership
                 : undefined;
+
+        // 新規登録かどうか、所有権で確認
+        const programMembershipOwnershipInfos =
+            await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
+                limit: 1,
+                typeOfGood: {
+                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                    ids: [<string>programMembership.id]
+                },
+                ownedBy: { id: customer.id }
+            });
+
+        const isNewRegister = programMembershipOwnershipInfos.length === 0;
 
         if (!isNewRegister
             && emailInformUpdateProgrammembership !== undefined

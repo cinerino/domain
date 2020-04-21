@@ -62,6 +62,11 @@ export function start(
 
         await validateOrder({ order })(repos);
 
+        checkReturnPolicy({
+            reason: params.object.reason,
+            seller: seller
+        });
+
         const informOrderParams = createInformOrderParams({
             ...params,
             project: project
@@ -147,6 +152,26 @@ function validateOrder(params: {
             }
         }
     };
+}
+
+/**
+ * 販売者の返品ポリシーを確認する
+ */
+function checkReturnPolicy(
+    params: {
+        reason: factory.transaction.returnOrder.Reason;
+        seller: factory.seller.IOrganization<any>;
+    }) {
+    let returnPolicies = params.seller.hasMerchantReturnPolicy;
+    if (!Array.isArray(returnPolicies)) {
+        returnPolicies = [];
+    }
+
+    if (params.reason === factory.transaction.returnOrder.Reason.Customer) {
+        if (returnPolicies.length === 0) {
+            throw new factory.errors.Argument('Seller', 'has no return policy');
+        }
+    }
 }
 
 function createInformOrderParams(

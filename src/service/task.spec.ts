@@ -115,7 +115,6 @@ describe('abort()', () => {
         sandbox.mock(domain.service.notification)
             .expects('report2developers')
             .once()
-            .withArgs(domain.service.task.ABORT_REPORT_SUBJECT)
             .returns(async () => Promise.resolve());
 
         const result = await domain.service.task.abort({ project: project, intervalInMinutes: INTERVAL })({ task: taskRepo });

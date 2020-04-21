@@ -1,29 +1,43 @@
-import * as COA from '@motionpicture/coa-service';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 
 import { credentials } from '../../credentials';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as EventRepo } from '../../repo/event';
 import { InMemoryRepository as OfferRepo } from '../../repo/offer';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { handleCOAReserveTemporarilyError } from '../../errorHandler';
+
+import * as chevre from '../../chevre';
+import * as COA from '../../coa';
 import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
+
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
 
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
 });
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
-    event: EventRepo;
     action: ActionRepo;
     offer?: OfferRepo;
+    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 export type IActionAndTransactionOperation<T> = (repos: {
@@ -53,10 +67,13 @@ async function createAcceptedOffersWithoutDetails(params: {
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
     coaInfo: factory.event.screeningEvent.ICOAInfo;
 }): Promise<IAcceptedOfferWithoutDetail[]> {
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     const { listSeat } = await reserveService.stateReserveSeat(params.coaInfo);
 
@@ -107,10 +124,13 @@ async function offer2availableSalesTicket(params: {
     const availableSalesTickets = params.availableSalesTickets;
     const coaInfo = params.coaInfo;
 
-    const masterService = new COA.service.Master({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const masterService = new COA.service.Master(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     // ポイント消費鑑賞券の場合
     if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
@@ -251,6 +271,7 @@ async function offer2availableSalesTicket(params: {
 }
 
 function availableSalesTicket2offerWithDetails(params: {
+    project: factory.chevre.project.IProject;
     availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket;
     coaPointTicket: COA.factory.master.ITicketResult | undefined;
     offer: IAcceptedOfferWithoutDetail;
@@ -283,7 +304,8 @@ function availableSalesTicket2offerWithDetails(params: {
     ].reduce((a, b) => a + b, 0);
 
     offerWithDetails = {
-        typeOf: 'Offer',
+        project: { typeOf: params.project.typeOf, id: params.project.id },
+        typeOf: factory.chevre.offerType.Offer,
         id: availableSalesTicket.ticketCode,
         name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
         alternateName: { ja: availableSalesTicket.ticketNameKana, en: '' },
@@ -341,10 +363,13 @@ async function validateOffers(
     offers: IAcceptedOfferWithoutDetail[],
     coaTickets?: COA.factory.master.ITicketResult[]
 ): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> {
-    const reserveService = new COA.service.Reserve({
-        endpoint: credentials.coa.endpoint,
-        auth: coaAuthClient
-    });
+    const reserveService = new COA.service.Reserve(
+        {
+            endpoint: credentials.coa.endpoint,
+            auth: coaAuthClient
+        },
+        { timeout: COA_TIMEOUT }
+    );
 
     // 詳細情報ありの供給情報リストを初期化
     // 要求された各供給情報について、バリデーションをかけながら、このリストに追加していく
@@ -393,11 +418,16 @@ async function validateOffers(
         });
 
         const offerWithDetails = availableSalesTicket2offerWithDetails({
-            availableSalesTicket, coaPointTicket, offer, offerIndex
+            project: { typeOf: screeningEvent.project.typeOf, id: screeningEvent.project.id },
+            availableSalesTicket,
+            coaPointTicket,
+            offer,
+            offerIndex
         });
 
         offersWithDetails.push({
             ...offerWithDetails,
+            addOn: [],
             additionalProperty: offer.additionalProperty,
             id: <string>offerWithDetails.id,
             ...{
@@ -452,14 +482,16 @@ function createUpdTmpReserveSeatArgs(params: {
  * 承認アクションオブジェクトが返却されます。
  */
 export function create(params: {
+    project: factory.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
     agent: { id: string };
     transaction: { id: string };
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         action: ActionRepo;
         offer?: OfferRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -471,8 +503,21 @@ export function create(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
+        const project = await repos.project.findById({ id: params.project.id });
+
         // イベントを取得
-        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
+        let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 
@@ -518,10 +563,13 @@ export function create(params: {
         let updTmpReserveSeatResult: COA.factory.reserve.IUpdTmpReserveSeatResult;
         try {
             debug('updTmpReserveSeat processing...', updTmpReserveSeatArgs);
-            const reserveService = new COA.service.Reserve({
-                endpoint: credentials.coa.endpoint,
-                auth: coaAuthClient
-            });
+            const reserveService = new COA.service.Reserve(
+                {
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                },
+                { timeout: COA_TIMEOUT }
+            );
             updTmpReserveSeatResult = await reserveService.updTmpReserveSeat(updTmpReserveSeatArgs);
             debug('updTmpReserveSeat processed', updTmpReserveSeatResult);
         } catch (error) {
@@ -532,7 +580,7 @@ export function create(params: {
                 // no op
             }
 
-            throw handleUpdTmpReserveSeatError(error);
+            throw handleCOAReserveTemporarilyError(error);
         }
 
         const { price, requiredPoint } = offers2resultPrice(acceptedOffer);
@@ -547,35 +595,6 @@ export function create(params: {
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
-}
-
-/**
- * COA仮予約エラーハンドリング
- */
-function handleUpdTmpReserveSeatError(error: any) {
-    let handledError: Error = new factory.errors.ServiceUnavailable('Unexepected error occurred');
-
-    // if (error.message === '座席取得失敗') {
-    // }
-
-    // メッセージ「既に予約済みです」の場合は、座席の重複とみなす
-    if (error.message === '既に予約済みです') {
-        handledError = new factory.errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
-    }
-
-    // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
-    const coaServiceHttpStatusCode = error.code;
-
-    // 500未満であればクライアントエラーとみなす
-    if (Number.isInteger(coaServiceHttpStatusCode)) {
-        if (coaServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
-            handledError = new factory.errors.Argument('Event', error.message);
-        } else {
-            handledError = new factory.errors.ServiceUnavailable('Reservation service temporarily unavailable.');
-        }
-    }
-
-    return handledError;
 }
 
 /**
@@ -623,10 +642,13 @@ export function cancel(params: {
         /* istanbul ignore else */
         if (actionResult.requestBody !== undefined && actionResult.responseBody !== undefined) {
             // 座席仮予約削除
-            const reserveService = new COA.service.Reserve({
-                endpoint: credentials.coa.endpoint,
-                auth: coaAuthClient
-            });
+            const reserveService = new COA.service.Reserve(
+                {
+                    endpoint: credentials.coa.endpoint,
+                    auth: coaAuthClient
+                },
+                { timeout: COA_TIMEOUT }
+            );
 
             debug('delTmpReserve processing...', action);
             await reserveService.delTmpReserve({
@@ -646,6 +668,7 @@ export function cancel(params: {
  * 座席予約承認アクションの供給情報を変更する
  */
 export function changeOffers(params: {
+    project: factory.project.IProject;
     id: string;
     agent: { id: string };
     transaction: { id: string };
@@ -653,9 +676,9 @@ export function changeOffers(params: {
 }): ICreateOperation<factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        event: EventRepo;
         action: ActionRepo;
         offer?: OfferRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -691,22 +714,39 @@ export function changeOffers(params: {
         if (authorizeAction.object.event.id !== params.object.event.id) {
             throw new factory.errors.Argument('Event', 'Event ID not matched.');
         }
+
         // 座席セクションと座席番号が一致しているかどうか
-        const allSeatsMatched = authorizeAction.object.acceptedOffer.every((offer, index) => {
-            return (offer.seatSection === params.object.acceptedOffer[index].seatSection
-                && offer.seatNumber === params.object.acceptedOffer[index].seatNumber);
+        const acceptedOfferParams = (Array.isArray(params.object.acceptedOffer)) ? params.object.acceptedOffer : [];
+        const allSeatsExisted = authorizeAction.object.acceptedOffer.every((originalAcceptedOffer) => {
+            return acceptedOfferParams.some(
+                (o) => originalAcceptedOffer.seatSection === o.seatSection && originalAcceptedOffer.seatNumber === o.seatNumber
+            );
         });
+        const allSeatsMatched = (acceptedOfferParams.length === authorizeAction.object.acceptedOffer.length) && allSeatsExisted;
         if (!allSeatsMatched) {
             throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
         }
 
+        const project = await repos.project.findById({ id: params.project.id });
+
         // イベントを取得
-        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
+        let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const eventService = new chevre.service.Event({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = params.object.acceptedOffer.map((offer) => {
+        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = acceptedOfferParams.map((offer) => {
             const originalOffer = authorizeAction.object.acceptedOffer.find((o) => {
                 return o.seatSection === offer.seatSection
                     && o.seatNumber === offer.seatNumber;

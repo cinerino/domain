@@ -1,6 +1,7 @@
 /**
  * 注文レポートサービス
  */
+import * as createDebug from 'debug';
 import * as json2csv from 'json2csv';
 // @ts-ignore
 import * as JSONStream from 'JSONStream';
@@ -8,13 +9,14 @@ import * as moment from 'moment';
 import { Stream } from 'stream';
 
 import * as factory from '../../factory';
+
+import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
-export type ITaskAndTransactionOperation<T> = (repos: {
-    order: OrderRepo;
-    task: TaskRepo;
-}) => Promise<T>;
+import { uploadFileFromStream } from '../util';
+
+const debug = createDebug('cinerino-domain:service');
 
 export interface ISeller {
     typeOf: string;
@@ -28,12 +30,16 @@ export interface ICustomer {
     id: string;
     name: string;
     email: string;
+    givenName: string;
+    familyName: string;
     telephone: string;
     memberOf?: {
         membershipNumber?: string;
     };
     clientId: string;
     tokenIssuer: string;
+    additionalProperty: string;
+    identifier: string;
 }
 
 export interface IItem {
@@ -78,6 +84,269 @@ export interface IOrderReport {
     price: string;
     paymentMethodType: string[];
     paymentMethodId: string[];
+    identifier: string;
+}
+
+export interface IReport {
+    project: factory.project.IProject;
+    typeOf: 'Report';
+    about?: string;
+    reportNumber?: string;
+    mentions?: {
+        typeOf: 'SearchAction';
+        query?: any;
+        object: {
+            typeOf: 'Order';
+        };
+    };
+    dateCreated?: Date;
+    dateModified?: Date;
+    datePublished?: Date;
+    encodingFormat?: string;
+    expires?: Date;
+    text?: string;
+    url?: string;
+}
+
+export interface ICreateReportActionAttributes extends factory.action.IAttributes<any, IReport, any> {
+    typeOf: 'CreateAction';
+    // object: IReport;
+    // format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    potentialActions?: {
+        sendEmailMessage?: factory.action.transfer.send.message.email.IAttributes[];
+    };
+}
+
+export interface ICreateReportParams {
+    project: factory.project.IProject;
+    object: IReport;
+    // conditions: factory.order.ISearchConditions;
+    // format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    potentialActions?: {
+        sendEmailMessage?: {
+            object?: factory.creativeWork.message.email.ICustomization;
+        }[];
+    };
+}
+
+export function createReport(params: ICreateReportActionAttributes) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: ActionRepo;
+        order: OrderRepo;
+        task: TaskRepo;
+    }): Promise<void> => {
+        const orderDateFrom = params.object.mentions?.query?.orderDateFrom;
+        const orderDateThrough = params.object.mentions?.query?.orderDateThrough;
+        const eventStartFrom = params.object.mentions?.query?.acceptedOffers?.itemOffered?.reservationFor?.startFrom;
+        const eventStartThrough = params.object.mentions?.query?.acceptedOffers?.itemOffered?.reservationFor?.startThrough;
+
+        const conditions: factory.order.ISearchConditions = {
+            project: { id: { $eq: params.project.id } },
+            orderDate: {
+                $gte: (typeof orderDateFrom === 'string')
+                    ? moment(orderDateFrom)
+                        .toDate()
+                    : undefined,
+                $lte: (typeof orderDateThrough === 'string')
+                    ? moment(orderDateThrough)
+                        .toDate()
+                    : undefined
+            },
+            acceptedOffers: {
+                itemOffered: {
+                    reservationFor: {
+                        startFrom: (typeof eventStartFrom === 'string')
+                            ? moment(eventStartFrom)
+                                .toDate()
+                            : undefined,
+                        startThrough: (typeof eventStartThrough === 'string')
+                            ? moment(eventStartThrough)
+                                .toDate()
+                            : undefined
+                    }
+                }
+            }
+        };
+
+        const format = params.object.encodingFormat;
+        if (typeof format !== 'string') {
+            throw new factory.errors.ArgumentNull('object.encodingFormat');
+        }
+
+        // アクション開始
+        const createReportActionAttributes = params;
+        const report: IReport = {
+            ...createReportActionAttributes.object
+        };
+        const action = await repos.action.start<any>({
+            ...createReportActionAttributes,
+            object: report
+        });
+        let downloadUrl: string;
+
+        try {
+            let extension: string;
+
+            switch (params.object.encodingFormat) {
+                case factory.encodingFormat.Application.json:
+                    extension = 'json';
+                    break;
+                case factory.encodingFormat.Text.csv:
+                    extension = 'csv';
+                    break;
+
+                default:
+                    throw new factory.errors.Argument('object.encodingFormat', `${params.object.encodingFormat} not implemented`);
+            }
+
+            const reportStream = await stream({
+                conditions,
+                format: <any>format
+            })(repos);
+
+            // const bufs: Buffer[] = [];
+            // const buffer = await new Promise<Buffer>((resolve, reject) => {
+            //     reportStream.on('data', (chunk) => {
+            //         try {
+            //             if (Buffer.isBuffer(chunk)) {
+            //                 bufs.push(chunk);
+            //             } else {
+            //                 // tslint:disable-next-line:no-console
+            //                 console.info(`Received ${chunk.length} bytes of data. ${typeof chunk}`);
+            //                 bufs.push(Buffer.from(chunk));
+            //             }
+            //         } catch (error) {
+            //             reject(error);
+            //         }
+            //     })
+            //         .on('error', (err) => {
+            //             // tslint:disable-next-line:no-console
+            //             console.error('createReport stream error:', err);
+            //             reject(err);
+            //         })
+            //         .on('end', () => {
+            //             resolve(Buffer.concat(bufs));
+            //         })
+            //         .on('finish', async () => {
+            //             // tslint:disable-next-line:no-console
+            //             console.info('createReport stream finished.');
+            //         });
+            // });
+
+            // ブロブストレージへアップロード
+            const fileName: string = (typeof createReportActionAttributes.object.about === 'string')
+                ? `${createReportActionAttributes.object.about}[${params.project.id}][${moment()
+                    .format('YYYYMMDDHHmmss')}].${extension}`
+                : `OrderReport[${params.project.id}][${moment()
+                    .format('YYYYMMDDHHmmss')}].${extension}`;
+            // downloadUrl = await uploadFile({
+            //     fileName: fileName,
+            //     text: buffer,
+            //     expiryDate: (createReportActionAttributes.object.expires !== undefined)
+            //         ? moment(createReportActionAttributes.object.expires)
+            //             .toDate()
+            //         : undefined
+            // })();
+            downloadUrl = await uploadFileFromStream({
+                fileName: fileName,
+                text: reportStream,
+                expiryDate: (createReportActionAttributes.object.expires !== undefined)
+                    ? moment(createReportActionAttributes.object.expires)
+                        .toDate()
+                    : undefined
+            })();
+            debug('downloadUrl:', downloadUrl);
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp<any>({ typeOf: createReportActionAttributes.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        report.url = downloadUrl;
+        await repos.action.complete<any>({
+            typeOf: createReportActionAttributes.typeOf,
+            id: action.id,
+            result: report
+        });
+
+        const sendEmailMessageParams = params.potentialActions?.sendEmailMessage;
+        if (Array.isArray(sendEmailMessageParams)) {
+            (<any>createReportActionAttributes.potentialActions).sendEmailMessage = sendEmailMessageParams.map((a) => {
+                const emailText = `
+レポートが使用可能です。
+
+名称: ${report.about}
+フォーマット: ${report.encodingFormat}
+期限: ${report.expires}
+
+${downloadUrl}
+`;
+
+                return {
+                    project: params.project,
+                    typeOf: factory.actionType.SendAction,
+                    object: {
+                        ...a.object,
+                        text: emailText
+                    },
+                    // agent: createReportActionAttributes.agent,
+                    recipient: createReportActionAttributes.agent,
+                    potentialActions: {},
+                    purpose: report
+                };
+            });
+        }
+
+        await onDownloaded(createReportActionAttributes)(repos);
+    };
+}
+
+function onDownloaded(
+    actionAttributes: ICreateReportActionAttributes
+    // url: string
+) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: { task: TaskRepo }) => {
+        const potentialActions = actionAttributes.potentialActions;
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (potentialActions !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.sendEmailMessage)) {
+                potentialActions.sendEmailMessage.forEach((s) => {
+                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                        project: s.project,
+                        name: factory.taskName.SendEmailMessage,
+                        status: factory.taskStatus.Ready,
+                        runsAt: now, // なるはやで実行
+                        remainingNumberOfTries: 3,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: {
+                            actionAttributes: s
+                        }
+                    };
+                    taskAttributes.push(sendEmailMessageTask);
+                });
+            }
+
+            // タスク保管
+            await Promise.all(taskAttributes.map(async (taskAttribute) => {
+                return repos.task.save(taskAttribute);
+            }));
+        }
+    };
 }
 
 /**
@@ -114,15 +383,20 @@ export function stream(params: {
                     { label: '注文日時', default: '', value: 'orderDate' },
                     { label: '注文番号', default: '', value: 'orderNumber' },
                     { label: '確認番号', default: '', value: 'confirmationNumber' },
+                    { label: '注文識別子', default: '', value: 'identifier' },
                     { label: '金額', default: '', value: 'price' },
                     { label: '購入者タイプ', default: '', value: 'customer.typeOf' },
                     { label: '購入者ID', default: '', value: 'customer.id' },
                     { label: '購入者名称', default: '', value: 'customer.name' },
+                    { label: '購入者名', default: '', value: 'customer.givenName' },
+                    { label: '購入者性', default: '', value: 'customer.familyName' },
                     { label: '購入者メールアドレス', default: '', value: 'customer.email' },
                     { label: '購入者電話番号', default: '', value: 'customer.telephone' },
                     { label: '購入者会員番号', default: '', value: 'customer.memberOf.membershipNumber' },
                     { label: '購入者トークン発行者', default: '', value: 'customer.tokenIssuer' },
                     { label: '購入者クライアント', default: '', value: 'customer.clientId' },
+                    { label: '購入者追加特性', default: '', value: 'customer.additionalProperty' },
+                    { label: '購入者識別子', default: '', value: 'customer.identifier' },
                     { label: '販売者タイプ', default: '', value: 'seller.typeOf' },
                     { label: '販売者ID', default: '', value: 'seller.id' },
                     { label: '販売者名称', default: '', value: 'seller.name' },
@@ -260,7 +534,9 @@ export function order2report(params: {
 
                     name = [
                         (ticketedSeat !== undefined) ? ticketedSeat.seatNumber : '',
-                        itemOffered.reservedTicket.ticketType.name.ja
+                        (typeof itemOffered.reservedTicket.ticketType.name === 'string')
+                            ? itemOffered.reservedTicket.ticketType.name
+                            : itemOffered.reservedTicket.ticketType.name?.ja
                     ].join(' ');
 
                     if (itemOffered.numSeats !== undefined) {
@@ -276,14 +552,20 @@ export function order2report(params: {
                         event: {
                             typeOf: (event !== undefined) ? event.typeOf : '',
                             id: (event !== undefined) ? event.id : '',
-                            name: (event !== undefined) ? event.name.ja : '',
+                            name: (typeof event.name.ja === 'string')
+                                ? event.name.ja
+                                : '',
                             startDate: (event !== undefined) ? moment(event.startDate)
                                 .toISOString() : '',
                             endDate: (event !== undefined) ? moment(event.endDate)
                                 .toISOString() : '',
-                            location: (event !== undefined) ? event.location.name.ja : '',
+                            location: (typeof event.location.name?.ja === 'string')
+                                ? event.location.name.ja
+                                : '',
                             superEventLocationBranchCode: (event !== undefined) ? event.superEvent.location.branchCode : '',
-                            superEventLocation: (event !== undefined) ? event.superEvent.location.name.ja : ''
+                            superEventLocation: (typeof event.superEvent.location.name?.ja === 'string')
+                                ? event.superEvent.location.name.ja
+                                : ''
                         }
                     };
                     break;
@@ -315,7 +597,7 @@ export function order2report(params: {
                 id: (typeof acceptedOffer.id === 'string') ? acceptedOffer.id : '',
                 name: (typeof acceptedOffer.name === 'string')
                     ? acceptedOffer.name
-                    : (acceptedOffer.name !== undefined && acceptedOffer.name !== null) ? acceptedOffer.name.ja : '',
+                    : (typeof acceptedOffer.name?.ja === 'string') ? acceptedOffer.name.ja : '',
                 unitPriceSpecification: {
                     price: (unitPriceSpecification !== undefined) ? unitPriceSpecification.price : '',
                     priceCurrency: (unitPriceSpecification !== undefined) ? unitPriceSpecification.priceCurrency : ''
@@ -342,11 +624,15 @@ export function order2report(params: {
             typeOf: order.customer.typeOf,
             id: order.customer.id,
             name: String(order.customer.name),
+            givenName: String(order.customer.givenName),
+            familyName: String(order.customer.familyName),
             email: String(order.customer.email),
             telephone: String(order.customer.telephone),
             memberOf: order.customer.memberOf,
             clientId: (clientIdProperty !== undefined) ? clientIdProperty.value : '',
-            tokenIssuer: (tokenIssuerProperty !== undefined) ? tokenIssuerProperty.value : ''
+            tokenIssuer: (tokenIssuerProperty !== undefined) ? tokenIssuerProperty.value : '',
+            additionalProperty: (Array.isArray(order.customer.additionalProperty)) ? JSON.stringify(order.customer.additionalProperty) : '',
+            identifier: (Array.isArray(order.customer.identifier)) ? JSON.stringify(order.customer.identifier) : ''
         },
         acceptedOffers: acceptedOffers,
         orderNumber: order.orderNumber,
@@ -354,6 +640,7 @@ export function order2report(params: {
         confirmationNumber: order.confirmationNumber.toString(),
         price: `${order.price} ${order.priceCurrency}`,
         paymentMethodType: order.paymentMethods.map((method) => method.typeOf),
-        paymentMethodId: order.paymentMethods.map((method) => method.paymentMethodId)
+        paymentMethodId: order.paymentMethods.map((method) => method.paymentMethodId),
+        identifier: (Array.isArray(order.identifier)) ? JSON.stringify(order.identifier) : ''
     };
 }

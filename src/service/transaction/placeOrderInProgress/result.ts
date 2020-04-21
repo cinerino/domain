@@ -181,9 +181,9 @@ function createReservationAcceptedOffers(params: {
                             } else {
                                 offer = <factory.action.authorize.offer.seatReservation.IAcceptedOffer4chevre>o;
 
-                                return (offer.ticketedSeat !== undefined
-                                    && offer.ticketedSeat.seatNumber === tmpReserve.seatNum
-                                    && offer.ticketedSeat.seatSection === tmpReserve.seatSection);
+                                return ((<any>offer).ticketedSeat !== undefined
+                                    && (<any>offer).ticketedSeat.seatNumber === tmpReserve.seatNum
+                                    && (<any>offer).ticketedSeat.seatSection === tmpReserve.seatSection);
 
                             }
                         });
@@ -280,7 +280,7 @@ function createReservationAcceptedOffers(params: {
                                 dateIssued: params.orderDate,
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
-                                    seatingType: { typeOf: <any>'Default' },
+                                    // seatingType: 'Default',
                                     seatNumber: tmpReserve.seatNum,
                                     seatRow: '',
                                     seatSection: tmpReserve.seatSection
@@ -289,7 +289,7 @@ function createReservationAcceptedOffers(params: {
                                 ticketToken: ticketToken,
                                 ticketType: {
                                     project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
-                                    typeOf: <'Offer'>'Offer',
+                                    typeOf: factory.chevre.offerType.Offer,
                                     id: requestedOffer.id,
                                     identifier: <string>requestedOffer.identifier,
                                     name: <factory.multilingualString>requestedOffer.name,
@@ -301,6 +301,7 @@ function createReservationAcceptedOffers(params: {
                         };
 
                         return {
+                            project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                             typeOf: <factory.chevre.offerType>'Offer',
                             id: requestedOffer.id,
                             name: <factory.multilingualString>requestedOffer.name,
@@ -376,7 +377,8 @@ function createMoneyTransferAcceptedOffers(params: {
                 : undefined;
 
             acceptedOffers.push({
-                typeOf: 'Offer',
+                project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
+                typeOf: factory.chevre.offerType.Offer,
                 // id: '',
                 // name: '',
                 itemOffered: {

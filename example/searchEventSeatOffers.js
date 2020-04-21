@@ -14,7 +14,6 @@ async function main() {
             id: '12116221020200121901710'
         }
     })({
-        event: new domain.repository.Event(mongoose.connection),
         project: new domain.repository.Project(mongoose.connection),
     });
 

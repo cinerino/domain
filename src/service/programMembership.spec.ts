@@ -24,7 +24,10 @@ describe('会員プログラム注文タスクを作成する', () => {
         const programMembership = {
             offers: [{ price: 123 }]
         };
-        const seller = { name: {} };
+        const seller = {
+            project: { id: '' },
+            name: {}
+        };
         const task = {};
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);

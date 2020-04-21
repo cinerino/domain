@@ -480,17 +480,6 @@ async function createConfirmReservationActions(params: {
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
 
-    let confirmReservationParams: factory.transaction.placeOrder.IConfirmReservationParams[] = [];
-    if (params.potentialActions !== undefined
-        && params.potentialActions.order !== undefined
-        && params.potentialActions.order.potentialActions !== undefined
-        && params.potentialActions.order.potentialActions.sendOrder !== undefined
-        && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
-        && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.confirmReservation)) {
-        confirmReservationParams =
-            params.potentialActions.order.potentialActions.sendOrder.potentialActions.confirmReservation;
-    }
-
     // tslint:disable-next-line:max-func-body-length
     seatReservationAuthorizeActions.forEach((a) => {
         const actionResult = a.result;
@@ -571,87 +560,13 @@ async function createConfirmReservationActions(params: {
                 default:
                     // tslint:disable-next-line:max-line-length
                     const reserveTransaction = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>>responseBody;
-                    const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
-                        = [{ name: 'orderNumber', value: params.order.orderNumber }];
 
-                    const confirmReservationObject:
-                        factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
-                        typeOf: factory.chevre.transactionType.Reserve,
-                        id: reserveTransaction.id,
-                        object: {
-                            reservations: (Array.isArray(reserveTransaction.object.reservations))
-                                ? reserveTransaction.object.reservations.map((r) => {
-                                    // 購入者や販売者の情報を連携する
-                                    return {
-                                        id: r.id,
-                                        reservedTicket: {
-                                            issuedBy: {
-                                                typeOf: params.order.seller.typeOf,
-                                                name: params.order.seller.name
-                                            }
-                                        },
-                                        underName: {
-                                            typeOf: params.order.customer.typeOf,
-                                            id: params.order.customer.id,
-                                            name: String(params.order.customer.name),
-                                            familyName: params.order.customer.familyName,
-                                            givenName: params.order.customer.givenName,
-                                            email: params.order.customer.email,
-                                            telephone: params.order.customer.telephone,
-                                            identifier: defaultUnderNameIdentifiers
-                                        }
-                                    };
-                                })
-                                : []
-                        }
-                    };
-
-                    const confirmReservationObjectParams = confirmReservationParams.find((p) => {
-                        const object = <factory.action.interact.confirm.reservation.IObject4Chevre>p.object;
-
-                        return object !== undefined
-                            && object.typeOf === factory.chevre.transactionType.Reserve
-                            && object.id === reserveTransaction.id;
+                    const confirmReservationObject = createConfirmReservationActionObject({
+                        order: params.order,
+                        potentialActions: params.potentialActions,
+                        transaction: params.transaction,
+                        reserveTransaction: reserveTransaction
                     });
-                    // 予約確定パラメータの指定があれば上書きする
-                    if (confirmReservationObjectParams !== undefined) {
-                        const customizedConfirmReservationObject =
-                            <factory.action.interact.confirm.reservation.IObject4Chevre>confirmReservationObjectParams.object;
-
-                        // 予約取引確定オブジェクトの指定があれば上書き
-                        if (customizedConfirmReservationObject.object !== undefined) {
-                            if (Array.isArray(customizedConfirmReservationObject.object.reservations)) {
-                                customizedConfirmReservationObject.object.reservations.forEach((r) => {
-                                    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-                                        r.underName.identifier.push(...defaultUnderNameIdentifiers);
-                                    }
-
-                                    if (r.reservedTicket !== undefined
-                                        && r.reservedTicket.underName !== undefined
-                                        && Array.isArray(r.reservedTicket.underName.identifier)) {
-                                        r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
-                                    }
-                                });
-                            }
-
-                            confirmReservationObject.object = customizedConfirmReservationObject.object;
-                        }
-
-                        // 予約取引確定後アクションの指定があれば上書き
-                        const confirmReservePotentialActions = customizedConfirmReservationObject.potentialActions;
-                        if (confirmReservePotentialActions !== undefined
-                            && confirmReservePotentialActions.reserve !== undefined
-                            && confirmReservePotentialActions.reserve.potentialActions !== undefined
-                            && Array.isArray(confirmReservePotentialActions.reserve.potentialActions.informReservation)) {
-                            confirmReservationObject.potentialActions = {
-                                reserve: {
-                                    potentialActions: {
-                                        informReservation: confirmReservePotentialActions.reserve.potentialActions.informReservation
-                                    }
-                                }
-                            };
-                        }
-                    }
 
                     confirmReservationActions.push({
                         project: params.transaction.project,
@@ -676,6 +591,128 @@ async function createConfirmReservationActions(params: {
     });
 
     return confirmReservationActions;
+}
+
+// tslint:disable-next-line:max-func-body-length
+function createConfirmReservationActionObject(params: {
+    order: factory.order.IOrder;
+    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+    transaction: factory.transaction.placeOrder.ITransaction;
+    reserveTransaction: factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>;
+}): factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> {
+    // let confirmReservationParams: factory.transaction.placeOrder.IConfirmReservationParams[] = [];
+    let confirmReservationParams
+        = params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.confirmReservation;
+    if (!Array.isArray(confirmReservationParams)) {
+        confirmReservationParams = [];
+    }
+
+    const order = params.order;
+    const customer = order.customer;
+    const paymentMethodNames = order.paymentMethods.map((p) => String(p.name))
+        .join(',');
+
+    const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
+        = [
+            ...(Array.isArray(order.identifier)) ? order.identifier : [],
+            { name: 'orderNumber', value: order.orderNumber },
+            // { name: 'customerGroup', value: 'Customer' },
+            // { name: 'paymentNo', value: params.paymentNo },
+            { name: 'transaction', value: params.transaction.id },
+            // { name: 'gmoOrderId', value: params.gmoOrderId },
+            { name: 'paymentMethod', value: paymentMethodNames },
+            ...(typeof customer.age === 'string')
+                ? [{ name: 'age', value: customer.age }]
+                : [],
+            ...(Array.isArray(customer.identifier)) ? customer.identifier : [],
+            ...(typeof customer.memberOf?.membershipNumber === 'string')
+                ? [{ name: 'username', value: customer.memberOf?.membershipNumber }]
+                : []
+        ];
+
+    const confirmReservationObject:
+        factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
+        typeOf: factory.chevre.transactionType.Reserve,
+        id: params.reserveTransaction.id,
+        object: {
+            reservations: (Array.isArray(params.reserveTransaction.object.reservations))
+                ? params.reserveTransaction.object.reservations.map((r, index) => {
+                    // 購入者や販売者の情報を連携する
+                    return {
+                        id: r.id,
+                        additionalProperty: [
+                            { name: 'paymentSeatIndex', value: index.toString() }
+                        ],
+                        reservedTicket: {
+                            issuedBy: {
+                                typeOf: order.seller.typeOf,
+                                name: order.seller.name
+                            }
+                        },
+                        underName: {
+                            ...order.customer,
+                            // typeOf: params.order.customer.typeOf,
+                            // id: params.order.customer.id,
+                            name: String(params.order.customer.name),
+                            // familyName: params.order.customer.familyName,
+                            // givenName: params.order.customer.givenName,
+                            // email: params.order.customer.email,
+                            // telephone: params.order.customer.telephone,
+                            identifier: defaultUnderNameIdentifiers
+                        }
+                    };
+                })
+                : []
+        }
+    };
+
+    const confirmReservationObjectParams = confirmReservationParams.find((p) => {
+        const object = <factory.action.interact.confirm.reservation.IObject4Chevre>p.object;
+
+        return object !== undefined
+            && object.typeOf === factory.chevre.transactionType.Reserve
+            && object.id === params.reserveTransaction.id;
+    });
+
+    // 予約確定パラメータの指定があれば上書きする
+    if (confirmReservationObjectParams !== undefined) {
+        const customizedConfirmReservationObject =
+            <factory.action.interact.confirm.reservation.IObject4Chevre>confirmReservationObjectParams.object;
+
+        // 予約取引確定オブジェクトの指定があれば上書き
+        if (customizedConfirmReservationObject.object !== undefined) {
+            if (Array.isArray(customizedConfirmReservationObject.object.reservations)) {
+                customizedConfirmReservationObject.object.reservations.forEach((r) => {
+                    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                        r.underName.identifier.push(...defaultUnderNameIdentifiers);
+                    }
+
+                    if (r.reservedTicket !== undefined
+                        && r.reservedTicket.underName !== undefined
+                        && Array.isArray(r.reservedTicket.underName.identifier)) {
+                        r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
+                    }
+                });
+            }
+
+            confirmReservationObject.object = customizedConfirmReservationObject.object;
+        }
+
+        // 予約取引確定後アクションの指定があれば上書き
+        const informReservationParams
+            = customizedConfirmReservationObject.potentialActions?.reserve?.potentialActions?.informReservation;
+        if (Array.isArray(informReservationParams)) {
+            confirmReservationObject.potentialActions = {
+                reserve: {
+                    potentialActions: {
+                        informReservation: informReservationParams
+                    }
+                }
+            };
+        }
+    }
+
+    return confirmReservationObject;
 }
 
 async function createMoneyTransferActions(params: {

@@ -12,7 +12,6 @@ async function main() {
         },
         seller: { id: '59d20831e53ebc2b4e774467' }
     })({
-        event: new domain.repository.Event(mongoose.connection),
         project: new domain.repository.Project(mongoose.connection),
     });
 

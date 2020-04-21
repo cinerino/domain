@@ -4,60 +4,6 @@ const modelName = 'Organization';
 
 const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
-const parentOrganizationSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const locationSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const paymentAcceptedSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const hasPOSSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const areaServedSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const makesOfferSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 組織スキーマ
  */
@@ -73,14 +19,15 @@ const schema = new mongoose.Schema(
         legalName: mongoose.SchemaTypes.Mixed,
         sameAs: String,
         url: String,
-        parentOrganization: parentOrganizationSchema,
+        parentOrganization: mongoose.SchemaTypes.Mixed,
         telephone: String,
-        location: locationSchema,
+        location: mongoose.SchemaTypes.Mixed,
         branchCode: String,
-        paymentAccepted: [paymentAcceptedSchema],
-        hasPOS: [hasPOSSchema],
-        areaServed: [areaServedSchema],
-        makesOffer: [makesOfferSchema],
+        paymentAccepted: [mongoose.SchemaTypes.Mixed],
+        hasMerchantReturnPolicy: [mongoose.SchemaTypes.Mixed],
+        hasPOS: [mongoose.SchemaTypes.Mixed],
+        areaServed: [mongoose.SchemaTypes.Mixed],
+        makesOffer: [mongoose.SchemaTypes.Mixed],
         additionalProperty: [mongoose.SchemaTypes.Mixed]
     },
     {

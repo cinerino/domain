@@ -17,6 +17,9 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+// tslint:disable-next-line:no-magic-numbers
+const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
+
 const coaAuthClient = new COA.auth.RefreshToken({
     endpoint: credentials.coa.endpoint,
     refreshToken: credentials.coa.refreshToken
@@ -90,10 +93,13 @@ async function processVoidTransaction4coa(params: {
         if (updTmpReserveSeatArgs !== undefined && updTmpReserveSeatResult !== undefined) {
             // COAで仮予約取消
             try {
-                const reserveService = new COA.service.Reserve({
-                    endpoint: credentials.coa.endpoint,
-                    auth: coaAuthClient
-                });
+                const reserveService = new COA.service.Reserve(
+                    {
+                        endpoint: credentials.coa.endpoint,
+                        auth: coaAuthClient
+                    },
+                    { timeout: COA_TIMEOUT }
+                );
 
                 await reserveService.delTmpReserve({
                     theaterCode: updTmpReserveSeatArgs.theaterCode,
