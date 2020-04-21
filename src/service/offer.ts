@@ -17,8 +17,6 @@ import * as chevre from '../chevre';
 import * as COA from '../coa';
 import * as factory from '../factory';
 
-import * as MasterSync from './masterSync';
-
 const debug = createDebug('cinerino-domain:service');
 
 export import monetaryAmount = MonetaryAmountOfferService;
@@ -140,6 +138,109 @@ export function searchEventOffers(params: {
     };
 }
 
+/**
+ * コアスクリーン抽出結果から上映室を作成する
+ */
+// tslint:disable-next-line:no-single-line-block-comment
+/* istanbul ignore next */
+export function createScreeningRoomFromCOA(
+    project: { typeOf: 'Project'; id: string },
+    screenFromCOA: COA.factory.master.IScreenResult
+): factory.chevre.place.screeningRoom.IPlace {
+    const sections: factory.chevre.place.screeningRoomSection.IPlaceWithOffer[] = [];
+    const sectionCodes: string[] = [];
+    screenFromCOA.listSeat.forEach((seat) => {
+        if (sectionCodes.indexOf(seat.seatSection) < 0) {
+            sectionCodes.push(seat.seatSection);
+            sections.push({
+                project: { typeOf: project.typeOf, id: project.id },
+                branchCode: seat.seatSection,
+                name: {
+                    ja: `セクション${seat.seatSection}`,
+                    en: `section${seat.seatSection}`
+                },
+                containsPlace: [],
+                typeOf: factory.chevre.placeType.ScreeningRoomSection
+            });
+        }
+
+        sections[sectionCodes.indexOf(seat.seatSection)].containsPlace.push({
+            project: { typeOf: project.typeOf, id: project.id },
+            branchCode: seat.seatNum,
+            typeOf: factory.chevre.placeType.Seat,
+            additionalProperty: [
+                { name: 'flgFree', value: String(seat.flgFree) },
+                { name: 'flgHc', value: String(seat.flgHc) },
+                { name: 'flgPair', value: String(seat.flgPair) },
+                { name: 'flgSpare', value: String(seat.flgSpare) },
+                { name: 'flgSpecial', value: String(seat.flgSpecial) }
+            ]
+        });
+    });
+
+    return {
+        project: { typeOf: project.typeOf, id: project.id },
+        containsPlace: sections,
+        branchCode: screenFromCOA.screenCode,
+        name: {
+            ja: screenFromCOA.screenName,
+            en: screenFromCOA.screenNameEng
+        },
+        typeOf: factory.chevre.placeType.ScreeningRoom,
+        maximumAttendeeCapacity: sections[0].containsPlace.length
+    };
+}
+
+/**
+ * コアマスター抽出結果から作成する
+ */
+// tslint:disable-next-line:no-single-line-block-comment
+/* istanbul ignore next */
+export function createMovieTheaterFromCOA(
+    project: { typeOf: 'Project'; id: string },
+    theaterFromCOA: COA.factory.master.ITheaterResult,
+    screensFromCOA: COA.factory.master.IScreenResult[]
+): factory.chevre.place.movieTheater.IPlace {
+    const id = `MovieTheater-${theaterFromCOA.theaterCode}`;
+
+    return {
+        project: { typeOf: project.typeOf, id: project.id },
+        id: id,
+        screenCount: screensFromCOA.length,
+        branchCode: theaterFromCOA.theaterCode,
+        name: {
+            ja: theaterFromCOA.theaterName,
+            en: theaterFromCOA.theaterNameEng
+        },
+        kanaName: theaterFromCOA.theaterNameKana,
+        containsPlace: screensFromCOA.map((screenFromCOA) => {
+            return createScreeningRoomFromCOA(project, screenFromCOA);
+        }),
+        typeOf: factory.chevre.placeType.MovieTheater,
+        telephone: theaterFromCOA.theaterTelNum,
+        offers: {
+            project: { typeOf: project.typeOf, id: project.id },
+            priceCurrency: factory.priceCurrency.JPY,
+            typeOf: factory.chevre.offerType.Offer,
+            eligibleQuantity: {
+                typeOf: 'QuantitativeValue',
+                maxValue: 6,
+                unitCode: factory.unitCode.C62
+            },
+            availabilityStartsGraceTime: {
+                typeOf: 'QuantitativeValue',
+                value: -2,
+                unitCode: factory.unitCode.Day
+            },
+            availabilityEndsGraceTime: {
+                typeOf: 'QuantitativeValue',
+                value: 1200,
+                unitCode: factory.unitCode.Sec
+            }
+        }
+    };
+}
+
 async function searchEventOffers4COA(params: {
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 }): Promise<factory.chevre.place.screeningRoomSection.IPlace[]> {
@@ -169,7 +270,7 @@ async function searchEventOffers4COA(params: {
     // イベント提供者がCOAであればCOAへ空席状況確認
     const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
 
-    const movieTheater = MasterSync.createMovieTheaterFromCOA(
+    const movieTheater = createMovieTheaterFromCOA(
         { typeOf: factory.organizationType.Project, id: event.project.id },
         await masterService.theater(coaInfo),
         await masterService.screen(coaInfo)

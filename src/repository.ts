@@ -7,8 +7,6 @@ import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterProgramMembershipActionInProgress } from './repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
-import { MongoRepository as EventRepo } from './repo/event';
-import { RedisRepository as EventAttendeeCapacityRepo } from './repo/event/attendeeCapacity';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
 import { MongoRepository as MemberRepo } from './repo/member';
 import { InMemoryRepository as OfferRepo } from './repo/offer';
@@ -50,15 +48,6 @@ export class Code extends CodeRepo { }
  * 確認番号リポジトリ
  */
 export class ConfirmationNumber extends ConfirmationNumberRepo { }
-
-export namespace event {
-    export class AttendeeCapacityRepo extends EventAttendeeCapacityRepo { }
-}
-
-/**
- * イベントリポジトリ
- */
-export class Event extends EventRepo { }
 
 /**
  * 請求書リポジトリ
