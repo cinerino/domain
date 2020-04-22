@@ -18,15 +18,17 @@ async function main() {
 
     const cursor = await oldOrderRepo.orderModel.find(
         {
-            'project.id': { $exists: true, $eq: 'ttts-production' },
+            'project.id': { $exists: true, $eq: 'sskts-production' },
             orderDate: {
-                $gte: moment('2019-08-01T00:00:00+09:00').toDate(),
-                // $lt: moment('2019-11-10T00:00:00+09:00').toDate()
-            },
-            orderStatus: { $in: [domain.factory.orderStatus.OrderReturned] }
+                $gte: moment('2020-04-22T00:00:00+09:00').toDate(),
+                // $lt: moment('2020-04-22T00:00:00+09:00').toDate()
+                // $lt: moment('2020-04-22T00:00:00+09:00').toDate()
+            }
+            // orderStatus: { $in: [domain.factory.orderStatus.OrderReturned] }
         },
         { createdAt: 0, updatedAt: 0 }
     )
+        .sort({ orderDate: 1 })
         .cursor();
     console.log('orders found');
 
@@ -35,6 +37,7 @@ async function main() {
         i += 1;
         const order = doc.toObject();
         const orderNumber = order.orderNumber;
+        console.log('migrating order...', order.orderNumber, order.orderDate);
 
         // 注文取引検索
         const placeOrderTransactions = await oldTransactionRepo.search({
@@ -93,14 +96,13 @@ async function main() {
         });
         console.log(returnActions.length, 'returnActions found');
 
-
         // 注文移行(ステータス変更されるので要調整)
         delete order._id;
         delete order.id;
         await orderRepo.orderModel.updateOne(
             { orderNumber: orderNumber },
-            // { $setOnInsert: { ...order } },
-            order,
+            { $setOnInsert: { ...order } },
+            // order,
             { upsert: true }
         ).exec();
 
