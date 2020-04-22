@@ -476,7 +476,7 @@ function processPlaceOrder(params: {
         const project = await repos.project.findById({ id: params.project.id });
 
         const acceptedOffer = params.acceptedOffer;
-        const programMembership = acceptedOffer.itemOffered;
+        let programMembership = acceptedOffer.itemOffered;
         const customer = params.customer;
         const seller = params.seller;
 
@@ -497,6 +497,9 @@ function processPlaceOrder(params: {
             seller: { typeOf: seller.typeOf, id: seller.id },
             object: {}
         })(repos);
+
+        // 最新のプログラム情報を取得
+        programMembership = await repos.programMembership.findById({ id: <string>programMembership.id });
 
         // 新規登録時の獲得ポイント
         const membershipPointsEarned = programMembership.membershipPointsEarned;
