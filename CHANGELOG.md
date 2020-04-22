@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 会員プログラム注文プロセスにおいて最新の会員プログラム情報を取得するように変更
+
 ### Deprecated
 
 ### Removed
