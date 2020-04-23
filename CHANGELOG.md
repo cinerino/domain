@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v2.1.1 - 2020-04-23
+
+### Changed
+
+- ウェブフック通知のエラーハンドリング調整
+
 ## v2.1.0 - 2020-04-22
 
 ### Changed

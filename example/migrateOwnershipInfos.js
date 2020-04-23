@@ -14,12 +14,13 @@ async function main() {
             'project.id': { $exists: true, $eq: 'sskts-production' },
             ownedFrom: {
                 $exists: true,
-                $gte: moment('2020-04-22T00:00:00+09:00').toDate(),
-                // $lte: moment('2020-04-22T00:00:00+09:00').toDate()
+                $gte: moment('2019-12-22T00:00:00+09:00').toDate(),
+                $lte: moment('2020-01-22T00:00:00+09:00').toDate()
             },
             ownedThrough: {
                 $exists: true,
-                $gte: moment('2020-04-22T00:00:00+09:00').toDate()
+                $lte: moment('2020-04-22T00:00:00+09:00').toDate()
+                // $gte: moment('2020-04-22T00:00:00+09:00').toDate()
             }
         },
         { createdAt: 0, updatedAt: 0 }
