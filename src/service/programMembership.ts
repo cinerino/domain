@@ -135,7 +135,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         id: programMembership.id,
         name: programMembership.name,
         programName: programMembership.programName,
-        award: programMembership.award,
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: seller.project,

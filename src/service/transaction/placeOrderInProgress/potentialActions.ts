@@ -910,8 +910,7 @@ function createRegisterProgramMembershipActions(params: {
                     hostingOrganization: programMembership.hostingOrganization,
                     name: programMembership.name,
                     programName: programMembership.programName,
-                    project: programMembership.project,
-                    award: programMembership.award
+                    project: programMembership.project
                 },
                 potentialActions: {
                     orderProgramMembership: [orderProgramMembershipTask]

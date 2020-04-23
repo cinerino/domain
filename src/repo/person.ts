@@ -101,7 +101,6 @@ export class CognitoRepository {
             id: '',
             identifier: identifier,
             memberOf: {
-                award: [],
                 membershipNumber: params.username,
                 programName: 'Amazon Cognito',
                 project: <any>{},

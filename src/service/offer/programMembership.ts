@@ -84,7 +84,6 @@ export function authorize(params: {
                     id: programMembership.id,
                     name: programMembership.name,
                     programName: programMembership.programName,
-                    award: programMembership.award,
                     // 会員プログラムのホスト組織
                     hostingOrganization: {
                         project: seller.project,
