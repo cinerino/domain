@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 所有権対象のメンバーシップの属性を最適化
+
 ### Deprecated
 
 ### Removed

@@ -19,6 +19,7 @@ export function authorize(params: {
     object: factory.action.authorize.offer.programMembership.IObject;
     purpose: factory.action.authorize.offer.programMembership.IPurpose;
 }): ICreateOperation<factory.action.authorize.offer.programMembership.IAction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         programMembership: ProgramMembershipRepo;
@@ -34,6 +35,8 @@ export function authorize(params: {
         if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
+
+        const seller = transaction.seller;
 
         // 会員プログラム検索
         const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.id } });
@@ -65,9 +68,36 @@ export function authorize(params: {
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
-            project: transaction.project,
+            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
             typeOf: factory.actionType.AuthorizeAction,
-            object: params.object,
+            object: {
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                typeOf: acceptedOffer.typeOf,
+                id: acceptedOffer.id,
+                identifier: acceptedOffer.identifier,
+                price: acceptedOffer.price,
+                priceCurrency: acceptedOffer.priceCurrency,
+                eligibleDuration: acceptedOffer.eligibleDuration,
+                itemOffered: {
+                    project: programMembership.project,
+                    typeOf: programMembership.typeOf,
+                    id: programMembership.id,
+                    name: programMembership.name,
+                    programName: programMembership.programName,
+                    award: programMembership.award,
+                    // 会員プログラムのホスト組織
+                    hostingOrganization: {
+                        project: seller.project,
+                        id: seller.id,
+                        name: seller.name,
+                        typeOf: seller.typeOf
+                    }
+                },
+                seller: {
+                    typeOf: seller.typeOf,
+                    name: seller.name.ja
+                }
+            },
             agent: transaction.seller,
             recipient: transaction.agent,
             purpose: {
