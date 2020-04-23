@@ -91,6 +91,12 @@ export function authorize(params: {
                         id: seller.id,
                         name: seller.name,
                         typeOf: seller.typeOf
+                    },
+                    ...{
+                        membershipFor: {
+                            typeOf: 'MembershipService',
+                            id: programMembership.id
+                        }
                     }
                 },
                 seller: {
