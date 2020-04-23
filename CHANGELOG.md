@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- ウェブフック通知のエラーハンドリング調整
+
 ### Deprecated
 
 ### Removed

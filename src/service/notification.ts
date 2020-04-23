@@ -176,7 +176,7 @@ export function triggerWebhook(params: factory.task.IData<factory.taskName.Trigg
         let result: any = {};
 
         try {
-            if (params.recipient !== undefined && typeof params.recipient.url === 'string') {
+            if (typeof params.recipient?.url === 'string') {
                 const url = params.recipient.url;
 
                 await new Promise<void>((resolve, reject) => {
@@ -206,7 +206,10 @@ export function triggerWebhook(params: factory.task.IData<factory.taskName.Trigg
                                         break;
 
                                     default:
-                                        reject(body);
+                                        reject({
+                                            statusCode: response.statusCode,
+                                            body: body
+                                        });
                                 }
                             }
                         }

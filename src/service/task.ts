@@ -74,6 +74,10 @@ export function execute(task: factory.task.ITask<factory.taskName>): IOperation<
             };
             await taskRepo.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
         } catch (error) {
+            if (typeof error !== 'object') {
+                error = { message: String(error) };
+            }
+
             // 実行結果追加
             const result = {
                 executedAt: now,
