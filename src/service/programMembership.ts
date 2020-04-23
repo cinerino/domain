@@ -121,7 +121,7 @@ export function createRegisterTask(params: {
 function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
-    programMembership: factory.programMembership.IProgramMembership;
+    programMembership: factory.programMembership.IMembershipService;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
@@ -131,8 +131,8 @@ function createOrderProgramMembershipActionAttributes(params: {
 
     const itemOffered: factory.programMembership.IProgramMembership = {
         project: programMembership.project,
-        typeOf: programMembership.typeOf,
-        id: programMembership.id,
+        typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+        // id: programMembership.id,
         name: programMembership.name,
         programName: programMembership.programName,
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
@@ -141,6 +141,10 @@ function createOrderProgramMembershipActionAttributes(params: {
             id: seller.id,
             name: seller.name,
             typeOf: seller.typeOf
+        },
+        membershipFor: {
+            typeOf: 'MembershipService',
+            id: <string>programMembership.id
         }
     };
 
@@ -196,8 +200,9 @@ export function orderProgramMembership(
         const acceptedOffer = params.object;
 
         const programMembership = acceptedOffer.itemOffered;
-        if (programMembership.id === undefined) {
-            throw new factory.errors.ArgumentNull('ProgramMembership ID');
+        const membershipService = acceptedOffer.itemOffered.membershipFor;
+        if (typeof membershipService?.id !== 'string') {
+            throw new factory.errors.ArgumentNull('MembershipService ID');
         }
 
         const seller = programMembership.hostingOrganization;
@@ -207,31 +212,20 @@ export function orderProgramMembership(
 
         const programMemberships = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
             typeOfGood: {
-                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                ids: [programMembership.id]
+                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                // ids: [programMembership.id]
             },
             ownedBy: { id: customer.id },
             ownedFrom: now,
             ownedThrough: now
         });
         // すでに会員プログラムに加入済であれば何もしない
-        const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.id === programMembership.id);
+        const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.membershipFor?.id === membershipService.id);
         if (selectedProgramMembership !== undefined) {
             // Already registered
 
             return;
         }
-
-        // 新規登録かどうか、所有権で確認
-        // const programMembershipOwnershipInfos = await repos.ownershipInfo.search<'ProgramMembership'>({
-        //     limit: 1,
-        //     typeOfGood: {
-        //         typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-        //         ids: [programMembership.id]
-        //     },
-        //     ownedBy: { id: customer.id }
-        // });
-        // const isNewRegister = programMembershipOwnershipInfos.length === 0;
 
         let lockNumber: number | undefined;
         try {
@@ -239,7 +233,7 @@ export function orderProgramMembership(
             lockNumber = await repos.registerActionInProgressRepo.lock(
                 {
                     id: customer.id,
-                    programMembershipId: programMembership.id
+                    programMembershipId: membershipService.id
                 },
                 // action.id
                 '1' // いったん値はなんでもよい
@@ -260,7 +254,7 @@ export function orderProgramMembership(
                 if (lockNumber !== undefined) {
                     await repos.registerActionInProgressRepo.unlock({
                         id: customer.id,
-                        programMembershipId: programMembership.id
+                        programMembershipId: membershipService.id
                     });
                 }
             } catch (error) {
@@ -289,16 +283,15 @@ export function register(
             userId: params.agent.id
         });
 
-        const acceptedOffer = params.object;
-        if (acceptedOffer.typeOf !== factory.programMembership.ProgramMembershipType.ProgramMembership) {
+        const programMembership = params.object;
+        if (programMembership.typeOf !== factory.programMembership.ProgramMembershipType.ProgramMembership) {
             throw new factory.errors.Argument('Object', 'Object type must be ProgramMembership');
         }
 
-        const programMembership = acceptedOffer;
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (programMembership.id === undefined) {
-            throw new factory.errors.ArgumentNull('ProgramMembership ID');
+        if (typeof programMembership.membershipFor?.id !== 'string') {
+            throw new factory.errors.ArgumentNull('MembershipService ID');
         }
 
         const seller = programMembership.hostingOrganization;
@@ -356,7 +349,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         const action = await repos.action.start(params);
 
         try {
-            const programMembershipId = params.object.id;
+            const programMembershipId = params.object.membershipFor?.id;
             if (programMembershipId !== undefined) {
                 if (Array.isArray(params.object.member)) {
                     const customers = params.object.member;
@@ -467,7 +460,7 @@ function processPlaceOrder(params: {
         const project = await repos.project.findById({ id: params.project.id });
 
         const acceptedOffer = params.acceptedOffer;
-        let programMembership = acceptedOffer.itemOffered;
+        const programMembership = acceptedOffer.itemOffered;
         const customer = params.customer;
         const seller = params.seller;
 
@@ -490,10 +483,10 @@ function processPlaceOrder(params: {
         })(repos);
 
         // 最新のプログラム情報を取得
-        programMembership = await repos.programMembership.findById({ id: <string>programMembership.id });
+        const membershipService = await repos.programMembership.findById({ id: programMembership.membershipFor?.id });
 
         // 新規登録時の獲得ポイント
-        const membershipPointsEarned = programMembership.membershipPointsEarned;
+        const membershipPointsEarned = membershipService.membershipPointsEarned;
         if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
             // ポイント口座を検索
             // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
@@ -543,7 +536,7 @@ function processPlaceOrder(params: {
                     toAccountNumber: toAccount.accountNumber,
                     notes: (typeof membershipPointsEarned.name === 'string')
                         ? membershipPointsEarned.name
-                        : programMembership.programName
+                        : membershipService.programName
                 }
             })({
                 action: repos.action,
@@ -602,8 +595,8 @@ function processPlaceOrder(params: {
             await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
                 limit: 1,
                 typeOfGood: {
-                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                    ids: [<string>programMembership.id]
+                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                    // ids: [<string>membershipService.id]
                 },
                 ownedBy: { id: customer.id }
             });

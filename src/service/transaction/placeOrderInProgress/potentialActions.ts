@@ -813,7 +813,7 @@ function createRegisterProgramMembershipActions(params: {
                 const registerParams =
                     params.potentialActions.order.potentialActions.sendOrder.potentialActions.registerProgramMembership.find((r) => {
                         return r.object !== undefined
-                            && r.object.id === programMembership.id
+                            && r.object.membershipFor?.id === programMembership.membershipFor?.id
                             && r.object.typeOf === programMembership.typeOf;
                     });
                 if (registerParams !== undefined) {
@@ -843,7 +843,7 @@ function createRegisterProgramMembershipActions(params: {
                             potentialActions: {
                                 registerProgramMembership: [
                                     {
-                                        object: { typeOf: programMembership.typeOf, id: <string>programMembership.id },
+                                        object: { typeOf: programMembership.typeOf, membershipFor: programMembership.membershipFor },
                                         potentialActions: {
                                             orderProgramMembership: {
                                                 potentialActions: {
@@ -906,11 +906,12 @@ function createRegisterProgramMembershipActions(params: {
                 agent: params.transaction.agent,
                 object: {
                     typeOf: programMembership.typeOf,
-                    id: programMembership.id,
+                    // id: programMembership.id,
                     hostingOrganization: programMembership.hostingOrganization,
                     name: programMembership.name,
                     programName: programMembership.programName,
-                    project: programMembership.project
+                    project: programMembership.project,
+                    membershipFor: programMembership.membershipFor
                 },
                 potentialActions: {
                     orderProgramMembership: [orderProgramMembershipTask]

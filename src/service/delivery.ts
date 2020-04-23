@@ -77,7 +77,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 // const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
                 await repos.registerActionInProgress.unlock({
                     id: customer.id,
-                    programMembershipId: <string>o.typeOfGood.id
+                    programMembershipId: o.typeOfGood.membershipFor?.id
                 });
             }));
         } catch (error) {

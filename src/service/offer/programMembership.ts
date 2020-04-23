@@ -39,19 +39,19 @@ export function authorize(params: {
         const seller = transaction.seller;
 
         // 会員プログラム検索
-        const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.id } });
-        const programMembership = programMemberships.shift();
+        const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.membershipFor?.id } });
+        const membershipService = programMemberships.shift();
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (programMembership === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership');
+        if (membershipService === undefined) {
+            throw new factory.errors.NotFound('MembershipService');
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (programMembership.offers === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership.Offer');
+        if (membershipService.offers === undefined) {
+            throw new factory.errors.NotFound('MembershipService.Offer');
         }
-        const acceptedOffer = programMembership.offers.find((o) => o.identifier === params.object.identifier);
+        const acceptedOffer = membershipService.offers.find((o) => o.identifier === params.object.identifier);
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (acceptedOffer === undefined) {
@@ -79,11 +79,10 @@ export function authorize(params: {
                 priceCurrency: acceptedOffer.priceCurrency,
                 eligibleDuration: acceptedOffer.eligibleDuration,
                 itemOffered: {
-                    project: programMembership.project,
-                    typeOf: programMembership.typeOf,
-                    id: programMembership.id,
-                    name: programMembership.name,
-                    programName: programMembership.programName,
+                    project: membershipService.project,
+                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                    name: membershipService.name,
+                    programName: membershipService.programName,
                     // 会員プログラムのホスト組織
                     hostingOrganization: {
                         project: seller.project,
@@ -91,11 +90,9 @@ export function authorize(params: {
                         name: seller.name,
                         typeOf: seller.typeOf
                     },
-                    ...{
-                        membershipFor: {
-                            typeOf: 'MembershipService',
-                            id: programMembership.id
-                        }
+                    membershipFor: {
+                        typeOf: 'MembershipService',
+                        id: <string>membershipService.id
                     }
                 },
                 seller: {

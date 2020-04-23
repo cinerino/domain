@@ -58,7 +58,7 @@ export class MongoRepository {
     /**
      * 検索する
      */
-    public async search(params: factory.programMembership.ISearchConditions): Promise<factory.programMembership.IProgramMembership[]> {
+    public async search(params: factory.programMembership.ISearchConditions): Promise<factory.programMembership.IMembershipService[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.programMembershipModel.find(
@@ -96,7 +96,7 @@ export class MongoRepository {
             id: string;
         },
         projection?: any
-    ): Promise<factory.programMembership.IProgramMembership> {
+    ): Promise<factory.programMembership.IMembershipService> {
         const doc = await this.programMembershipModel.findOne(
             {
                 _id: conditions.id

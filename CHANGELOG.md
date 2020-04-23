@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 所有権対象のメンバーシップの属性を最適化
 - ssktsにおける会員プログラムの特典管理を削除
 - 所有権対象のメンバーシップにmembershipFor属性を追加
+- メンバーシップインターフェースをメンバーシップとプログラムに分離
 
 ### Deprecated
 
