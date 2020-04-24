@@ -349,8 +349,8 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         const action = await repos.action.start(params);
 
         try {
-            const programMembershipId = params.object.membershipFor?.id;
-            if (programMembershipId !== undefined) {
+            const membershipServiceId = params.object.membershipFor?.id;
+            if (typeof membershipServiceId === 'string') {
                 if (Array.isArray(params.object.member)) {
                     const customers = params.object.member;
 
@@ -364,9 +364,9 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                                     $exists: true,
                                     $eq: customer.id
                                 },
-                                'data.object.itemOffered.id': {
+                                'data.object.itemOffered.membershipFor.id': {
                                     $exists: true,
-                                    $eq: programMembershipId
+                                    $eq: membershipServiceId
                                 },
                                 status: factory.taskStatus.Ready
                             },
@@ -379,8 +379,8 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                             .toDate();
                         const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
                             typeOfGood: {
-                                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                                id: programMembershipId
+                                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                                // id: programMembershipId
                             },
                             ownedBy: { id: customer.id },
                             ownedFrom: now,

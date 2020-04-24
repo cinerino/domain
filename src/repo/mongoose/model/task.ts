@@ -132,6 +132,16 @@ schema.index(
 );
 
 schema.index(
+    { 'data.object.itemOffered.membershipFor.id': 1, runsAt: -1 },
+    {
+        name: 'searchByDataObjectItemOfferedMembershipForId',
+        partialFilterExpression: {
+            'data.object.itemOffered.membershipFor.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'data.purpose.id': 1, runsAt: -1 },
     {
         name: 'searchByDataPurposeId',

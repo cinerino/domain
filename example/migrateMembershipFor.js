@@ -7,9 +7,14 @@ async function main() {
 
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(connection);
 
+    const membershipFor4update = {
+        typeOf: 'MembershipService',
+        id: '5b1874be4e1537775703963e'
+    };
+
     const cursor = await ownershipInfoRepo.ownershipInfoModel.find(
         {
-            'project.id': { $exists: true, $eq: 'sskts-production' },
+            'project.id': { $exists: true, $eq: '' },
             'typeOfGood.typeOf': {
                 $exists: true,
                 $eq: 'ProgramMembership'
@@ -35,12 +40,20 @@ async function main() {
         i += 1;
         const ownershipInfo = doc.toObject();
         const identifier = ownershipInfo.identifier;
-        console.log('migrating ownershipInfo...', ownershipInfo.identifier, ownershipInfo.ownedFrom);
 
-        // 移行
-        // delete ownershipInfo._id;
-        // delete ownershipInfo.id;
-        // await ownershipInfoRepo.saveByIdentifier(ownershipInfo);
+        const membershipFor = ownershipInfo.typeOfGood.membershipFor;
+        if (membershipFor === undefined || membershipFor === null) {
+            console.log('membershipFor undefined');
+            console.log('migrating ownershipInfo...', ownershipInfo.identifier, ownershipInfo.ownedFrom);
+
+            // 移行
+            await ownershipInfoRepo.ownershipInfoModel.findOneAndUpdate(
+                { _id: ownershipInfo.id },
+                { 'typeOfGood.membershipFor': membershipFor4update }
+            ).exec();
+        } else {
+            console.log('membershipFor exists');
+        }
 
         console.log('added', identifier, i);
     });
