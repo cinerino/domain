@@ -82,7 +82,7 @@ export function authorize(params: {
                     project: membershipService.project,
                     typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
                     name: membershipService.name,
-                    programName: membershipService.programName,
+                    programName: <any>membershipService.name,
                     // 会員プログラムのホスト組織
                     hostingOrganization: {
                         project: seller.project,

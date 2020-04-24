@@ -133,7 +133,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: programMembership.project,
         typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
         name: programMembership.name,
-        programName: programMembership.programName,
+        programName: <any>programMembership.name,
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: seller.project,
@@ -480,7 +480,11 @@ function processPlaceOrder(params: {
         })(repos);
 
         // 最新のプログラム情報を取得
-        const membershipService = await repos.programMembership.findById({ id: programMembership.membershipFor?.id });
+        const membershipServiceId = programMembership.membershipFor?.id;
+        if (typeof membershipServiceId !== 'string') {
+            throw new Error('membershipServiceId undefined');
+        }
+        const membershipService = await repos.programMembership.findById({ id: membershipServiceId });
 
         // 新規登録時の獲得ポイント
         const membershipPointsEarned = membershipService.membershipPointsEarned;
@@ -507,18 +511,6 @@ function processPlaceOrder(params: {
 
             // 開設口座に絞る
             accountOwnershipInfos = accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
-
-            // const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
-            //     sort: { ownedFrom: factory.sortType.Ascending },
-            //     limit: 1,
-            //     typeOfGood: {
-            //         typeOf: factory.ownershipInfo.AccountGoodType.Account,
-            //         accountType: factory.accountType.Point
-            //     },
-            //     ownedBy: { id: customer.id },
-            //     ownedFrom: now,
-            //     ownedThrough: now
-            // });
             if (accountOwnershipInfos.length === 0) {
                 throw new factory.errors.NotFound('accountOwnershipInfos');
             }
@@ -533,7 +525,7 @@ function processPlaceOrder(params: {
                     toAccountNumber: toAccount.accountNumber,
                     notes: (typeof membershipPointsEarned.name === 'string')
                         ? membershipPointsEarned.name
-                        : membershipService.programName
+                        : membershipService.typeOf
                 }
             })({
                 action: repos.action,

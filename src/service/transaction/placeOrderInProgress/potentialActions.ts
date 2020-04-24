@@ -650,7 +650,7 @@ function createConfirmReservationActionObject(params: {
                             }
                         },
                         underName: {
-                            ...order.customer,
+                            ...<any>order.customer,
                             // typeOf: params.order.customer.typeOf,
                             // id: params.order.customer.id,
                             name: String(params.order.customer.name),
@@ -757,7 +757,7 @@ async function createMoneyTransferActions(params: {
                     : {
                         typeOf: params.transaction.agent.typeOf,
                         id: params.transaction.agent.id,
-                        name: params.transaction.agent.name
+                        name: <string>params.transaction.agent.name
                     },
                 toLocation: pendingTransaction.object.toLocation,
                 purpose: {
@@ -823,6 +823,10 @@ function createRegisterProgramMembershipActions(params: {
                         }
                     }
                 }
+            }
+
+            if (programMembership.membershipFor === undefined) {
+                throw new Error('programMembership.membershipFor undefined');
             }
 
             // 次回の会員プログラム注文確定後アクションを設定
