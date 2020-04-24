@@ -18,6 +18,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v3.0.0 - 2020-04-24
+
+### Changed
+
+- 所有権対象のメンバーシップの属性を最適化
+- ssktsにおける会員プログラムの特典管理を削除
+- 所有権対象のメンバーシップにmembershipFor属性を追加
+- メンバーシップインターフェースをメンバーシップとプログラムに分離
+- 所有権コレクションのインデックス調整
+
 ## v2.1.1 - 2020-04-23
 
 ### Changed

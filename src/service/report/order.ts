@@ -575,7 +575,7 @@ export function order2report(params: {
                         typeOf: String(itemOffered.typeOf),
                         name: (typeof itemOffered.name === 'string') ? itemOffered.name : '',
                         numItems: 1,
-                        id: (typeof itemOffered.id === 'string') ? itemOffered.id : '',
+                        id: (typeof (<any>itemOffered).id === 'string') ? (<any>itemOffered).id : '',
                         event: {
                             typeOf: '',
                             id: '',

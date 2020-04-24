@@ -19,6 +19,7 @@ export function authorize(params: {
     object: factory.action.authorize.offer.programMembership.IObject;
     purpose: factory.action.authorize.offer.programMembership.IPurpose;
 }): ICreateOperation<factory.action.authorize.offer.programMembership.IAction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         programMembership: ProgramMembershipRepo;
@@ -35,20 +36,22 @@ export function authorize(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
+        const seller = transaction.seller;
+
         // 会員プログラム検索
-        const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.id } });
-        const programMembership = programMemberships.shift();
+        const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.membershipFor?.id } });
+        const membershipService = programMemberships.shift();
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (programMembership === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership');
+        if (membershipService === undefined) {
+            throw new factory.errors.NotFound('MembershipService');
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (programMembership.offers === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership.Offer');
+        if (membershipService.offers === undefined) {
+            throw new factory.errors.NotFound('MembershipService.Offer');
         }
-        const acceptedOffer = programMembership.offers.find((o) => o.identifier === params.object.identifier);
+        const acceptedOffer = membershipService.offers.find((o) => o.identifier === params.object.identifier);
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (acceptedOffer === undefined) {
@@ -65,9 +68,38 @@ export function authorize(params: {
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
-            project: transaction.project,
+            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
             typeOf: factory.actionType.AuthorizeAction,
-            object: params.object,
+            object: {
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                typeOf: acceptedOffer.typeOf,
+                id: acceptedOffer.id,
+                identifier: acceptedOffer.identifier,
+                price: acceptedOffer.price,
+                priceCurrency: acceptedOffer.priceCurrency,
+                eligibleDuration: acceptedOffer.eligibleDuration,
+                itemOffered: {
+                    project: membershipService.project,
+                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                    name: membershipService.name,
+                    programName: membershipService.programName,
+                    // 会員プログラムのホスト組織
+                    hostingOrganization: {
+                        project: seller.project,
+                        id: seller.id,
+                        name: seller.name,
+                        typeOf: seller.typeOf
+                    },
+                    membershipFor: {
+                        typeOf: 'MembershipService',
+                        id: <string>membershipService.id
+                    }
+                },
+                seller: {
+                    typeOf: seller.typeOf,
+                    name: seller.name.ja
+                }
+            },
             agent: transaction.seller,
             recipient: transaction.agent,
             purpose: {

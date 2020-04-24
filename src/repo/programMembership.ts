@@ -47,18 +47,10 @@ export class MongoRepository {
         return andConditions;
     }
 
-    public async count(params: factory.programMembership.ISearchConditions): Promise<number> {
-        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-
-        return this.programMembershipModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
-            .setOptions({ maxTimeMS: 10000 })
-            .exec();
-    }
-
     /**
      * 検索する
      */
-    public async search(params: factory.programMembership.ISearchConditions): Promise<factory.programMembership.IProgramMembership[]> {
+    public async search(params: factory.programMembership.ISearchConditions): Promise<factory.programMembership.IMembershipService[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.programMembershipModel.find(
@@ -96,7 +88,7 @@ export class MongoRepository {
             id: string;
         },
         projection?: any
-    ): Promise<factory.programMembership.IProgramMembership> {
+    ): Promise<factory.programMembership.IMembershipService> {
         const doc = await this.programMembershipModel.findOne(
             {
                 _id: conditions.id

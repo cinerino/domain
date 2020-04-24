@@ -804,32 +804,22 @@ function createRegisterProgramMembershipActions(params: {
             // 会員プログラム更新時のメール送信アクション
             let sendEmailMessageOnUpdate: factory.transaction.placeOrder.ISendEmailMessageParams[] = [];
 
-            if (params.potentialActions !== undefined
-                && params.potentialActions.order !== undefined
-                && params.potentialActions.order.potentialActions !== undefined
-                && params.potentialActions.order.potentialActions.sendOrder !== undefined
-                && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
-                && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.registerProgramMembership)) {
+            if (Array.isArray(params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.registerProgramMembership)) {
                 const registerParams =
-                    params.potentialActions.order.potentialActions.sendOrder.potentialActions.registerProgramMembership.find((r) => {
+                    params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.registerProgramMembership.find((r) => {
                         return r.object !== undefined
-                            && r.object.id === programMembership.id
+                            && r.object.membershipFor?.id === programMembership.membershipFor?.id
                             && r.object.typeOf === programMembership.typeOf;
                     });
                 if (registerParams !== undefined) {
                     const registerPotentialActions = registerParams.potentialActions;
-                    if (registerPotentialActions !== undefined
-                        && registerPotentialActions.orderProgramMembership !== undefined
-                        && registerPotentialActions.orderProgramMembership.potentialActions !== undefined
-                        && registerPotentialActions.orderProgramMembership.potentialActions.order !== undefined) {
+                    if (registerPotentialActions?.orderProgramMembership?.potentialActions?.order !== undefined) {
                         const orderProgramMembershipPotentialActions =
                             registerPotentialActions.orderProgramMembership.potentialActions.order.potentialActions;
-                        if (orderProgramMembershipPotentialActions !== undefined
-                            && orderProgramMembershipPotentialActions.sendOrder !== undefined
-                            && orderProgramMembershipPotentialActions.sendOrder.potentialActions !== undefined
-                            && Array.isArray(orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage)) {
-                            sendEmailMessageOnUpdate =
-                                orderProgramMembershipPotentialActions.sendOrder.potentialActions.sendEmailMessage;
+                        const sendEmailMessageOnSentParams =
+                            orderProgramMembershipPotentialActions?.sendOrder?.potentialActions?.sendEmailMessage;
+                        if (Array.isArray(sendEmailMessageOnSentParams)) {
+                            sendEmailMessageOnUpdate = sendEmailMessageOnSentParams;
                         }
                     }
                 }
@@ -843,7 +833,7 @@ function createRegisterProgramMembershipActions(params: {
                             potentialActions: {
                                 registerProgramMembership: [
                                     {
-                                        object: { typeOf: programMembership.typeOf, id: <string>programMembership.id },
+                                        object: { typeOf: programMembership.typeOf, membershipFor: programMembership.membershipFor },
                                         potentialActions: {
                                             orderProgramMembership: {
                                                 potentialActions: {
@@ -906,12 +896,12 @@ function createRegisterProgramMembershipActions(params: {
                 agent: params.transaction.agent,
                 object: {
                     typeOf: programMembership.typeOf,
-                    id: programMembership.id,
+                    // id: programMembership.id,
                     hostingOrganization: programMembership.hostingOrganization,
                     name: programMembership.name,
                     programName: programMembership.programName,
                     project: programMembership.project,
-                    award: programMembership.award
+                    membershipFor: programMembership.membershipFor
                 },
                 potentialActions: {
                     orderProgramMembership: [orderProgramMembershipTask]

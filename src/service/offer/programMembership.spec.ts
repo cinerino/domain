@@ -25,7 +25,7 @@ describe('会員プログラムオファーを承認する', () => {
             identifier: 'identifier',
             itemOffered: { id: 'programMembershipId' }
         };
-        const transaction = { id: 'transactionId', agent: { id: 'agentId' } };
+        const transaction = { project: {}, id: 'transactionId', agent: { id: 'agentId' }, seller: { name: {} } };
         const programMembership = {
             offers: [{ identifier: 'identifier', price: 123 }]
         };

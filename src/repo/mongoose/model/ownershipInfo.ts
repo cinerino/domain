@@ -79,9 +79,15 @@ schema.index(
     { createdAt: 1 },
     { name: 'searchByCreatedAt' }
 );
+
 schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
+);
+
+schema.index(
+    { ownedFrom: -1 },
+    { name: 'searchByOwnedFrom-v3' }
 );
 
 schema.index(
@@ -98,6 +104,7 @@ schema.index(
     { typeOf: 1, ownedFrom: -1 },
     { name: 'searchByTypeOf-v2' }
 );
+
 schema.index(
     { identifier: 1, ownedFrom: -1 },
     {
@@ -107,6 +114,7 @@ schema.index(
         }
     }
 );
+
 schema.index(
     { 'acquiredFrom.id': 1, ownedFrom: -1 },
     {
@@ -116,15 +124,7 @@ schema.index(
         }
     }
 );
-schema.index(
-    { 'typeOfGood.typeOf': 1, ownedFrom: -1 },
-    {
-        name: 'searchByTypeOfGoodTypeOf-v2',
-        partialFilterExpression: {
-            'typeOfGood.typeOf': { $exists: true }
-        }
-    }
-);
+
 schema.index(
     { 'ownedBy.id': 1, ownedFrom: -1 },
     {
@@ -134,6 +134,7 @@ schema.index(
         }
     }
 );
+
 schema.index(
     { 'ownedBy.memberOf.membershipNumber': 1, ownedFrom: -1 },
     {
@@ -143,15 +144,7 @@ schema.index(
         }
     }
 );
-schema.index(
-    { ownedFrom: -1 },
-    {
-        name: 'searchByOwnedFrom-v2',
-        partialFilterExpression: {
-            ownedFrom: { $exists: true }
-        }
-    }
-);
+
 schema.index(
     { ownedThrough: -1, ownedFrom: -1 },
     {
@@ -161,12 +154,63 @@ schema.index(
         }
     }
 );
+
+schema.index(
+    { 'typeOfGood.typeOf': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodTypeOf-v2',
+        partialFilterExpression: {
+            'typeOfGood.typeOf': { $exists: true }
+        }
+    }
+);
+
 schema.index(
     { 'typeOfGood.reservedTicket.ticketToken': 1, ownedFrom: -1 },
     {
         name: 'searchByTypeOfGoofReservedTicketToken',
         partialFilterExpression: {
             'typeOfGood.reservedTicket.ticketToken': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'typeOfGood.id': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodId',
+        partialFilterExpression: {
+            'typeOfGood.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'typeOfGood.membershipFor.id': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodMembershipForId',
+        partialFilterExpression: {
+            'typeOfGood.membershipFor.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'typeOfGood.accountNumber': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodAccountNumber',
+        partialFilterExpression: {
+            'typeOfGood.accountNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'typeOfGood.reservationNumber': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodReservationNumber',
+        partialFilterExpression: {
+            'typeOfGood.reservationNumber': { $exists: true }
         }
     }
 );
