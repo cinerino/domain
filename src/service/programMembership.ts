@@ -132,7 +132,6 @@ function createOrderProgramMembershipActionAttributes(params: {
     const itemOffered: factory.programMembership.IProgramMembership = {
         project: programMembership.project,
         typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-        // id: programMembership.id,
         name: programMembership.name,
         programName: programMembership.programName,
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
@@ -213,7 +212,6 @@ export function orderProgramMembership(
         const programMemberships = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
             typeOfGood: {
                 typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
-                // ids: [programMembership.id]
             },
             ownedBy: { id: customer.id },
             ownedFrom: now,
@@ -380,7 +378,6 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                         const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
                             typeOfGood: {
                                 typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
-                                // id: programMembershipId
                             },
                             ownedBy: { id: customer.id },
                             ownedFrom: now,
@@ -596,7 +593,6 @@ function processPlaceOrder(params: {
                 limit: 1,
                 typeOfGood: {
                     typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
-                    // ids: [<string>membershipService.id]
                 },
                 ownedBy: { id: customer.id }
             });

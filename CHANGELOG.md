@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - ssktsにおける会員プログラムの特典管理を削除
 - 所有権対象のメンバーシップにmembershipFor属性を追加
 - メンバーシップインターフェースをメンバーシップとプログラムに分離
+- 所有権コレクションのインデックス調整
 
 ### Deprecated
 

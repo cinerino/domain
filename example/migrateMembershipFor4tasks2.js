@@ -31,7 +31,7 @@ async function main() {
         i += 1;
         const task = doc.toObject();
 
-        const membershipFor = task.data.object.membershipFor;
+        const membershipFor = task.data.object.itemOffered.membershipFor;
         if (membershipFor === undefined || membershipFor === null) {
             console.log('membershipFor undefined');
             console.log('migrating task...', task.id, task.runsAt);
@@ -39,7 +39,7 @@ async function main() {
             // 移行
             await taskRepo.taskModel.findOneAndUpdate(
                 { _id: task.id },
-                { 'data.object.membershipFor': membershipFor4update }
+                { 'data.object.itemOffered.membershipFor': membershipFor4update }
             ).exec();
         } else {
             console.log('membershipFor exists');

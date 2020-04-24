@@ -47,14 +47,6 @@ export class MongoRepository {
         return andConditions;
     }
 
-    public async count(params: factory.programMembership.ISearchConditions): Promise<number> {
-        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-
-        return this.programMembershipModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
-            .setOptions({ maxTimeMS: 10000 })
-            .exec();
-    }
-
     /**
      * 検索する
      */
