@@ -27,7 +27,7 @@ describe('会員プログラムオファーを承認する', () => {
         };
         const transaction = { project: {}, id: 'transactionId', agent: { id: 'agentId' }, seller: { name: {} } };
         const programMembership = {
-            offers: [{ identifier: 'identifier', price: 123 }]
+            offers: [{ identifier: 'identifier', priceSpecification: { price: 123 } }]
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
