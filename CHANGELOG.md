@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v3.3.0 - 2020-04-25
+
+### Changed
+
+- 会員プログラムの価格仕様参照をeligibleDurationからpriceSpecificationへ変更
+
 ## v3.2.0 - 2020-04-25
 
 ### Changed
