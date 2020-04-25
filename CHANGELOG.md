@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 会員プログラムの価格仕様参照をeligibleDurationからpriceSpecificationへ変更
+
 ### Deprecated
 
 ### Removed

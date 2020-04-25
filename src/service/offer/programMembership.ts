@@ -75,9 +75,10 @@ export function authorize(params: {
                 typeOf: acceptedOffer.typeOf,
                 id: acceptedOffer.id,
                 identifier: acceptedOffer.identifier,
-                price: acceptedOffer.price,
+                price: acceptedOffer.priceSpecification?.price,
                 priceCurrency: acceptedOffer.priceCurrency,
                 eligibleDuration: acceptedOffer.eligibleDuration,
+                priceSpecification: acceptedOffer.priceSpecification,
                 itemOffered: {
                     project: membershipService.project,
                     typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
@@ -123,8 +124,8 @@ export function authorize(params: {
         }
 
         const result: factory.action.authorize.offer.programMembership.IResult = {
-            price: acceptedOffer.price,
-            priceCurrency: acceptedOffer.priceCurrency
+            price: <number>acceptedOffer.priceSpecification?.price,
+            priceCurrency: <factory.chevre.priceCurrency>acceptedOffer.priceSpecification?.priceCurrency
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
