@@ -59,7 +59,7 @@ export function authorize(params: {
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (acceptedOffer.price === undefined) {
+        if (typeof acceptedOffer.priceSpecification?.price !== 'number') {
             throw new factory.errors.NotFound('Offer Price undefined');
         }
 
