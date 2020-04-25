@@ -59,7 +59,7 @@ export function authorize(params: {
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
-        if (acceptedOffer.price === undefined) {
+        if (typeof acceptedOffer.priceSpecification?.price !== 'number') {
             throw new factory.errors.NotFound('Offer Price undefined');
         }
 
@@ -124,7 +124,7 @@ export function authorize(params: {
         }
 
         const result: factory.action.authorize.offer.programMembership.IResult = {
-            price: <number>acceptedOffer.priceSpecification?.price,
+            price: acceptedOffer.priceSpecification?.price,
             priceCurrency: <factory.chevre.priceCurrency>acceptedOffer.priceSpecification?.priceCurrency
         };
 

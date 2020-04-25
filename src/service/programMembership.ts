@@ -559,7 +559,7 @@ function processPlaceOrder(params: {
             agent: customer,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,
-                amount: <number>acceptedOffer.price,
+                amount: <number>acceptedOffer.priceSpecification?.price,
                 method: GMO.utils.util.Method.Lump,
                 creditCard: {
                     memberId: gmoMemberId,
