@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 会員プログラムの価格仕様参照をeligibleDurationからpriceSpecificationへ変更
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v3.2.0 - 2020-04-25
+
+### Changed
+
+- 会員プログラムの価格仕様参照をeligibleDurationからpriceSpecificationへ変更
 
 ## v3.1.0 - 2020-04-24
 
