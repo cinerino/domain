@@ -154,7 +154,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         identifier: offer.identifier,
         price: offer.priceSpecification?.price,
         priceCurrency: offer.priceCurrency,
-        eligibleDuration: offer.eligibleDuration,
         priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,
         seller: {

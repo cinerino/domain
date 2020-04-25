@@ -77,7 +77,6 @@ export function authorize(params: {
                 identifier: acceptedOffer.identifier,
                 price: acceptedOffer.priceSpecification?.price,
                 priceCurrency: acceptedOffer.priceCurrency,
-                eligibleDuration: acceptedOffer.eligibleDuration,
                 priceSpecification: acceptedOffer.priceSpecification,
                 itemOffered: {
                     project: membershipService.project,
