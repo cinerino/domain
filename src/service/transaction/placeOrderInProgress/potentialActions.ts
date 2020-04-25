@@ -872,17 +872,23 @@ function createRegisterProgramMembershipActions(params: {
             };
 
             // どういう期間でいくらのオファーなのか
-            const eligibleDuration = o.eligibleDuration;
-            if (eligibleDuration === undefined) {
-                throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
+            const priceSpec =
+                <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                o.priceSpecification;
+            if (priceSpec === undefined) {
+                throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
             }
             // 期間単位としては秒のみ実装
-            if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
-                throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
+            if (priceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+                throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
+            }
+            const referenceQuantityValue = priceSpec.referenceQuantity.value;
+            if (typeof referenceQuantityValue !== 'number') {
+                throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification.referenceQuantity.value');
             }
             // プログラム更新日時は、今回のプログラムの所有期限
             const runsAt = moment(params.order.orderDate)
-                .add(eligibleDuration.value, 'seconds')
+                .add(referenceQuantityValue, 'seconds')
                 .toDate();
 
             const orderProgramMembershipTask: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {

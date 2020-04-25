@@ -238,16 +238,22 @@ function createProgramMembershipOwnershipInfo(params: {
     acquiredFrom: factory.ownershipInfo.IOwner;
 }): IOwnershipInfo {
     // どういう期間でいくらのオファーなのか
-    const eligibleDuration = params.acceptedOffer.eligibleDuration;
-    if (eligibleDuration === undefined) {
-        throw new factory.errors.NotFound('Order.acceptedOffers.eligibleDuration');
+    const priceSpec =
+        <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+        params.acceptedOffer.priceSpecification;
+    if (priceSpec === undefined) {
+        throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
     }
     // 期間単位としては秒のみ実装
-    if (eligibleDuration.unitCode !== factory.unitCode.Sec) {
-        throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for eligibleDuration.unitCode ');
+    if (priceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+        throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
+    }
+    const referenceQuantityValue = priceSpec.referenceQuantity.value;
+    if (typeof referenceQuantityValue !== 'number') {
+        throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification.referenceQuantity.value');
     }
     const ownedThrough = moment(params.ownedFrom)
-        .add(eligibleDuration.value, 'seconds')
+        .add(referenceQuantityValue, 'seconds')
         .toDate();
 
     return {

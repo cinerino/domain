@@ -152,9 +152,10 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
-        price: offer.price,
+        price: offer.priceSpecification?.price,
         priceCurrency: offer.priceCurrency,
         eligibleDuration: offer.eligibleDuration,
+        priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,
         seller: {
             typeOf: seller.typeOf,
