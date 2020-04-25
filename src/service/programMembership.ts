@@ -537,7 +537,7 @@ function processPlaceOrder(params: {
         }
 
         // 会員プログラムオファー承認
-        await OfferService.programMembership.authorize({
+        const authorizeProgramMembershipOfferResult = await OfferService.programMembership.authorize({
             project: { typeOf: project.typeOf, id: project.id },
             agent: { id: customer.id },
             object: acceptedOffer,
@@ -559,7 +559,7 @@ function processPlaceOrder(params: {
             agent: customer,
             object: {
                 typeOf: factory.paymentMethodType.CreditCard,
-                amount: <number>acceptedOffer.priceSpecification?.price,
+                amount: <number>authorizeProgramMembershipOfferResult.result?.price,
                 method: GMO.utils.util.Method.Lump,
                 creditCard: {
                     memberId: gmoMemberId,
