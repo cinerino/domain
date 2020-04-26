@@ -9,12 +9,10 @@ const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 
  */
 const schema = new mongoose.Schema(
     {
-        description: mongoose.SchemaTypes.Mixed,
-        hostingOrganization: mongoose.SchemaTypes.Mixed,
-        membershipPointsEarned: mongoose.SchemaTypes.Mixed,
         name: mongoose.SchemaTypes.Mixed,
         offers: [mongoose.SchemaTypes.Mixed],
         project: mongoose.SchemaTypes.Mixed,
+        serviceOutput: mongoose.SchemaTypes.Mixed,
         typeOf: {
             type: String,
             required: true
