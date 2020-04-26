@@ -21,10 +21,22 @@ import * as OfferService from './offer';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as TransactionService from './transaction';
 
+import { credentials } from '..//credentials';
+
+import * as chevre from '../chevre';
 import * as factory from '../factory';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
     programMembership: ProgramMembershipRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
     task: TaskRepo;
 }) => Promise<T>;
@@ -52,6 +64,7 @@ export type IRegisterOperation<T> = (repos: {
  * 会員プログラム登録タスクを作成する
  */
 export function createRegisterTask(params: {
+    project: { id: string };
     agent: factory.person.IPerson;
     /**
      * 会員プログラムのオファー識別子
@@ -63,31 +76,40 @@ export function createRegisterTask(params: {
     programMembershipId: string;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: {
-        /**
-         * 販売者タイプ
-         */
         typeOf: factory.organizationType;
-        /**
-         * 販売者ID
-         */
         id: string;
     };
 }): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
         programMembership: ProgramMembershipRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
         task: TaskRepo;
     }) => {
         const now = new Date();
 
-        const programMembership = await repos.programMembership.findById({ id: params.programMembershipId });
+        const project = await repos.project.findById({ id: params.project.id });
 
-        if (programMembership.offers === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership.offers');
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
-        const offer = programMembership.offers.find((o) => o.identifier === params.offerIdentifier);
-        if (offer === undefined) {
+        const membershipService = await repos.programMembership.findById({ id: params.programMembershipId });
+
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const offers = await productService.searchOffers({ id: String(membershipService.id) });
+        const acceptedOffer = offers.find((o) => o.identifier === params.offerIdentifier);
+
+        // if (membershipService.offers === undefined) {
+        //     throw new factory.errors.NotFound('ProgramMembership.offers');
+        // }
+
+        // const acceptedOffer = membershipService.offers.find((o) => o.identifier === params.offerIdentifier);
+        if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
 
@@ -96,8 +118,8 @@ export function createRegisterTask(params: {
         // 注文アクション属性を作成
         const data = createOrderProgramMembershipActionAttributes({
             agent: params.agent,
-            offer: offer,
-            programMembership: programMembership,
+            offer: acceptedOffer,
+            programMembership: membershipService,
             potentialActions: params.potentialActions,
             seller: seller
         });
@@ -152,7 +174,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
-        price: offer.priceSpecification?.price,
+        // price: offer.priceSpecification?.price,
         priceCurrency: offer.priceCurrency,
         priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,

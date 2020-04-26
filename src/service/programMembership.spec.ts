@@ -9,6 +9,8 @@ import * as sinon from 'sinon';
 require('sinon-mongoose');
 import * as domain from '../index';
 
+const project = { id: 'id', settings: { chevre: { endpoint: '' } } };
+
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -21,17 +23,25 @@ describe('会員プログラム注文タスクを作成する', () => {
     });
 
     it('リポジトリが正常であればタスクを作成できるはず', async () => {
+        const offers = [{ identifier: 'identifier' }];
         const programMembership = {
-            offers: [{ price: 123 }]
+            offers: offers
         };
         const seller = {
             project: { id: '' },
             name: {}
         };
         const task = {};
+
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
@@ -44,12 +54,19 @@ describe('会員プログラム注文タスクを作成する', () => {
             .expects('save')
             .once()
             .resolves(task);
+        sandbox.mock(domain.chevre.service.Product.prototype)
+            .expects('searchOffers')
+            .once()
+            .resolves(offers);
 
         const result = await domain.service.programMembership.createRegisterTask(<any>{
+            project: project,
             agent: {},
-            seller: {}
+            seller: {},
+            offerIdentifier: offers[0].identifier
         })({
             seller: sellerRepo,
+            project: projectRepo,
             programMembership: programMembershipRepo,
             task: taskRepo
         });

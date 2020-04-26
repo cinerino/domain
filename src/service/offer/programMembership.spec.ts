@@ -9,6 +9,8 @@ import * as domain from '../../index';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
 
+const project = { id: 'id', settings: { chevre: { endpoint: '' } } };
+
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -23,15 +25,26 @@ describe('会員プログラムオファーを承認する', () => {
     it('MongoDBが正常であればアクションを完了できるはず', async () => {
         const acceptedOffer = {
             identifier: 'identifier',
-            itemOffered: { id: 'programMembershipId' }
+            itemOffered: { membershipFor: { id: 'membershipForId' } },
+            priceSpecification: {
+                typeOf: domain.factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+                priceComponent: []
+            }
         };
         const transaction = { project: {}, id: 'transactionId', agent: { id: 'agentId' }, seller: { name: {} } };
         const programMembership = {
             offers: [{ identifier: 'identifier', priceSpecification: { price: 123 } }]
         };
+
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -40,6 +53,11 @@ describe('会員プログラムオファーを承認する', () => {
             .expects('search')
             .once()
             .resolves([programMembership]);
+        sandbox.mock(domain.chevre.service.Product.prototype)
+            .expects('searchOffers')
+            .once()
+            .resolves([acceptedOffer]);
+
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -49,13 +67,15 @@ describe('会員プログラムオファーを承認する', () => {
             .once()
             .resolves({});
 
-        const result = await domain.service.offer.programMembership.authorize(<any>{
+        const result = await domain.service.offer.programMembership.authorize({
+            project: <any>project,
             agent: { id: transaction.agent.id },
-            object: acceptedOffer,
-            purpose: { id: transaction.id }
+            object: <any>acceptedOffer,
+            purpose: <any>{ id: transaction.id }
         })({
             action: actionRepo,
             programMembership: programMembershipRepo,
+            project: projectRepo,
             transaction: transactionRepo
         });
         assert.equal(typeof result, 'object');
