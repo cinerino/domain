@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 会員サービスの特典ポイント属性をserviceOutputの中へ移行
+
 ### Deprecated
 
 ### Removed

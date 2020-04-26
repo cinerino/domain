@@ -487,8 +487,8 @@ function processPlaceOrder(params: {
         const membershipService = await repos.programMembership.findById({ id: membershipServiceId });
 
         // 新規登録時の獲得ポイント
-        const membershipPointsEarned = membershipService.membershipPointsEarned;
-        if (membershipPointsEarned !== undefined && membershipPointsEarned.value !== undefined) {
+        const membershipServiceOutput = membershipService.serviceOutput;
+        if (Array.isArray(membershipServiceOutput)) {
             // ポイント口座を検索
             // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
             let accountOwnershipInfos = await AccountService.search({
@@ -516,23 +516,29 @@ function processPlaceOrder(params: {
             }
             const toAccount = accountOwnershipInfos[0].typeOfGood;
 
-            await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
-                agent: { id: transaction.agent.id },
-                transaction: { id: transaction.id },
-                object: {
-                    typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                    amount: Number(membershipPointsEarned.value),
-                    toAccountNumber: toAccount.accountNumber,
-                    notes: (typeof membershipPointsEarned.name === 'string')
-                        ? membershipPointsEarned.name
-                        : membershipService.typeOf
+            await Promise.all(membershipServiceOutput.map(async (serviceOutput) => {
+                const membershipPointsEarnedName = serviceOutput.membershipPointsEarned?.name;
+                const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
+                if (typeof membershipPointsEarnedValue === 'number') {
+                    await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+                        agent: { id: transaction.agent.id },
+                        transaction: { id: transaction.id },
+                        object: {
+                            typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
+                            amount: membershipPointsEarnedValue,
+                            toAccountNumber: toAccount.accountNumber,
+                            notes: (typeof membershipPointsEarnedName === 'string')
+                                ? membershipPointsEarnedName
+                                : membershipService.typeOf
+                        }
+                    })({
+                        action: repos.action,
+                        ownershipInfo: repos.ownershipInfo,
+                        project: repos.project,
+                        transaction: repos.transaction
+                    });
                 }
-            })({
-                action: repos.action,
-                ownershipInfo: repos.ownershipInfo,
-                project: repos.project,
-                transaction: repos.transaction
-            });
+            }));
         }
 
         // 会員プログラムオファー承認
