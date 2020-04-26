@@ -873,16 +873,26 @@ function createRegisterProgramMembershipActions(params: {
 
             // どういう期間でいくらのオファーなのか
             const priceSpec =
-                <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>
                 o.priceSpecification;
             if (priceSpec === undefined) {
                 throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
             }
+
+            const unitPriceSpec =
+                <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                priceSpec.priceComponent.find(
+                    (p) => p.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+                );
+            if (unitPriceSpec === undefined) {
+                throw new factory.errors.NotFound('Unit Price Specification in Order.acceptedOffers.priceSpecification');
+            }
+
             // 期間単位としては秒のみ実装
-            if (priceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+            if (unitPriceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
                 throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
             }
-            const referenceQuantityValue = priceSpec.referenceQuantity.value;
+            const referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
             if (typeof referenceQuantityValue !== 'number') {
                 throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification.referenceQuantity.value');
             }
