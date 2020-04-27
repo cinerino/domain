@@ -2,7 +2,6 @@
  * 会員プログラムオファーサービス
  */
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProgramMembershipRepo } from '../../repo/programMembership';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -21,7 +20,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    programMembership: ProgramMembershipRepo;
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -35,11 +33,19 @@ export function authorize(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        programMembership: ProgramMembershipRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
@@ -60,21 +66,7 @@ export function authorize(params: {
         }
 
         // 会員プログラム検索
-        const programMemberships = await repos.programMembership.search({ id: { $eq: membershipServiceId } });
-        const membershipService = programMemberships.shift();
-        if (membershipService === undefined) {
-            throw new factory.errors.NotFound('MembershipService');
-        }
-
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
+        const membershipService = await productService.findById({ id: membershipServiceId });
         const offers = await productService.searchOffers({ id: String(membershipService.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.object.identifier);
         if (acceptedOffer === undefined) {
@@ -107,7 +99,7 @@ export function authorize(params: {
                     project: membershipService.project,
                     typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
                     name: membershipService.name,
-                    programName: <any>membershipService.name,
+                    programName: membershipService.name,
                     // 会員プログラムのホスト組織
                     hostingOrganization: {
                         project: seller.project,

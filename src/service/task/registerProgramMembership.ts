@@ -10,7 +10,6 @@ import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
-import { MongoRepository as ProgramMembershipRepo } from '../../repo/programMembership';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -57,7 +56,6 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                     seller: new SellerRepo(settings.connection),
                     ownershipInfo: new OwnershipInfoRepo(settings.connection),
                     person: personRepo,
-                    programMembership: new ProgramMembershipRepo(settings.connection),
                     project: new ProjectRepo(settings.connection),
                     registerActionInProgressRepo: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
                     transaction: new TransactionRepo(settings.connection)

@@ -24,9 +24,7 @@ describe('会員プログラム注文タスクを作成する', () => {
 
     it('リポジトリが正常であればタスクを作成できるはず', async () => {
         const offers = [{ identifier: 'identifier' }];
-        const programMembership = {
-            offers: offers
-        };
+        const membershipService = {};
         const seller = {
             project: { id: '' },
             name: {}
@@ -35,7 +33,6 @@ describe('会員プログラム注文タスクを作成する', () => {
 
         const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
-        const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -46,14 +43,14 @@ describe('会員プログラム注文タスクを作成する', () => {
             .expects('findById')
             .once()
             .resolves(seller);
-        sandbox.mock(programMembershipRepo)
-            .expects('findById')
-            .once()
-            .resolves(programMembership);
         sandbox.mock(taskRepo)
             .expects('save')
             .once()
             .resolves(task);
+        sandbox.mock(domain.chevre.service.Product.prototype)
+            .expects('findById')
+            .once()
+            .resolves(membershipService);
         sandbox.mock(domain.chevre.service.Product.prototype)
             .expects('searchOffers')
             .once()
@@ -67,7 +64,6 @@ describe('会員プログラム注文タスクを作成する', () => {
         })({
             seller: sellerRepo,
             project: projectRepo,
-            programMembership: programMembershipRepo,
             task: taskRepo
         });
         assert.equal(typeof result, 'object');

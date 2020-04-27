@@ -32,12 +32,9 @@ describe('会員プログラムオファーを承認する', () => {
             }
         };
         const transaction = { project: {}, id: 'transactionId', agent: { id: 'agentId' }, seller: { name: {} } };
-        const programMembership = {
-            offers: [{ identifier: 'identifier', priceSpecification: { price: 123 } }]
-        };
+        const membershipService = {};
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const programMembershipRepo = new domain.repository.ProgramMembership(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
@@ -49,10 +46,10 @@ describe('会員プログラムオファーを承認する', () => {
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(programMembershipRepo)
-            .expects('search')
+        sandbox.mock(domain.chevre.service.Product.prototype)
+            .expects('findById')
             .once()
-            .resolves([programMembership]);
+            .resolves(membershipService);
         sandbox.mock(domain.chevre.service.Product.prototype)
             .expects('searchOffers')
             .once()
@@ -74,7 +71,6 @@ describe('会員プログラムオファーを承認する', () => {
             purpose: <any>{ id: transaction.id }
         })({
             action: actionRepo,
-            programMembership: programMembershipRepo,
             project: projectRepo,
             transaction: transactionRepo
         });

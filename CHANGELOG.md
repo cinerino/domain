@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 会員サービスのオファー属性をChevreへ移行
+- 会員サービスリポジトリをChevreへ移行
 
 ### Deprecated
 

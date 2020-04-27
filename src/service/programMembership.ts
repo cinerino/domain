@@ -10,7 +10,6 @@ import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
-import { MongoRepository as ProgramMembershipRepo } from '../repo/programMembership';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -35,7 +34,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ICreateRegisterTaskOperation<T> = (repos: {
-    programMembership: ProgramMembershipRepo;
     project: ProjectRepo;
     seller: SellerRepo;
     task: TaskRepo;
@@ -47,7 +45,6 @@ export type IOrderOperation<T> = (repos: {
     orderNumber: OrderNumberRepo;
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
-    programMembership: ProgramMembershipRepo;
     project: ProjectRepo;
     registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
@@ -81,7 +78,6 @@ export function createRegisterTask(params: {
     };
 }): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
-        programMembership: ProgramMembershipRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         task: TaskRepo;
@@ -94,21 +90,14 @@ export function createRegisterTask(params: {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
-        const membershipService = await repos.programMembership.findById({ id: params.programMembershipId });
-
         const productService = new chevre.service.Product({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
 
+        const membershipService = await productService.findById({ id: params.programMembershipId });
         const offers = await productService.searchOffers({ id: String(membershipService.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.offerIdentifier);
-
-        // if (membershipService.offers === undefined) {
-        //     throw new factory.errors.NotFound('ProgramMembership.offers');
-        // }
-
-        // const acceptedOffer = membershipService.offers.find((o) => o.identifier === params.offerIdentifier);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
@@ -205,7 +194,6 @@ export function orderProgramMembership(
         orderNumber: OrderNumberRepo;
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
-        programMembership: ProgramMembershipRepo;
         project: ProjectRepo;
         registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
@@ -469,7 +457,6 @@ function processPlaceOrder(params: {
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        programMembership: ProgramMembershipRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -477,6 +464,15 @@ function processPlaceOrder(params: {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
+
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
 
         const acceptedOffer = params.acceptedOffer;
         const programMembership = acceptedOffer.itemOffered;
@@ -506,7 +502,8 @@ function processPlaceOrder(params: {
         if (typeof membershipServiceId !== 'string') {
             throw new Error('membershipServiceId undefined');
         }
-        const membershipService = await repos.programMembership.findById({ id: membershipServiceId });
+
+        const membershipService = await productService.findById({ id: membershipServiceId });
 
         // 新規登録時の獲得ポイント
         const membershipServiceOutput = membershipService.serviceOutput;
