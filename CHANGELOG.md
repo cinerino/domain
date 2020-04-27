@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 会員サービスのオファー属性をChevreへ移行
 - 会員サービスリポジトリをChevreへ移行
+- InMemoryオファーリポジトリをChevreへ移行
 
 ### Deprecated
 

@@ -9,7 +9,6 @@ import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
 import { MongoRepository as MemberRepo } from './repo/member';
-import { InMemoryRepository as OfferRepo } from './repo/offer';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
@@ -57,11 +56,6 @@ export class Invoice extends InvoiceRepo { }
  * プロジェクトメンバーリポジトリ
  */
 export class Member extends MemberRepo { }
-
-/**
- * オファーリポジトリ
- */
-export class Offer extends OfferRepo { }
 
 /**
  * 注文リポジトリ
