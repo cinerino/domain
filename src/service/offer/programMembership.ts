@@ -96,10 +96,10 @@ export function authorize(params: {
                 priceCurrency: acceptedOffer.priceCurrency,
                 priceSpecification: acceptedOffer.priceSpecification,
                 itemOffered: {
-                    project: membershipService.project,
+                    project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
                     typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                    name: membershipService.name,
-                    programName: membershipService.name,
+                    name: <any>membershipService.name,
+                    programName: <any>membershipService.name,
                     // 会員プログラムのホスト組織
                     hostingOrganization: {
                         project: seller.project,

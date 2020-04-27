@@ -32,7 +32,7 @@ describe('会員プログラムオファーを承認する', () => {
             }
         };
         const transaction = { project: {}, id: 'transactionId', agent: { id: 'agentId' }, seller: { name: {} } };
-        const membershipService = {};
+        const membershipService = { project: project };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);

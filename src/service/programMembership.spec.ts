@@ -24,7 +24,7 @@ describe('会員プログラム注文タスクを作成する', () => {
 
     it('リポジトリが正常であればタスクを作成できるはず', async () => {
         const offers = [{ identifier: 'identifier' }];
-        const membershipService = {};
+        const membershipService = { project: project };
         const seller = {
             project: { id: '' },
             name: {}

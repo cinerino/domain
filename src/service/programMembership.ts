@@ -132,7 +132,7 @@ export function createRegisterTask(params: {
 function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
-    programMembership: factory.programMembership.IMembershipService;
+    programMembership: factory.chevre.service.IService;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
@@ -141,9 +141,9 @@ function createOrderProgramMembershipActionAttributes(params: {
     const seller = params.seller;
 
     const itemOffered: factory.programMembership.IProgramMembership = {
-        project: programMembership.project,
+        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-        name: programMembership.name,
+        name: <any>programMembership.name,
         programName: <any>programMembership.name,
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
@@ -177,7 +177,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         agent: params.agent,
         object: acceptedOffer,
         potentialActions: params.potentialActions,
-        project: programMembership.project,
+        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.actionType.OrderAction
     };
 }
@@ -535,29 +535,30 @@ function processPlaceOrder(params: {
             }
             const toAccount = accountOwnershipInfos[0].typeOfGood;
 
-            await Promise.all(membershipServiceOutput.map(async (serviceOutput) => {
-                const membershipPointsEarnedName = serviceOutput.membershipPointsEarned?.name;
-                const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
-                if (typeof membershipPointsEarnedValue === 'number') {
-                    await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
-                        agent: { id: transaction.agent.id },
-                        transaction: { id: transaction.id },
-                        object: {
-                            typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                            amount: membershipPointsEarnedValue,
-                            toAccountNumber: toAccount.accountNumber,
-                            notes: (typeof membershipPointsEarnedName === 'string')
-                                ? membershipPointsEarnedName
-                                : membershipService.typeOf
-                        }
-                    })({
-                        action: repos.action,
-                        ownershipInfo: repos.ownershipInfo,
-                        project: repos.project,
-                        transaction: repos.transaction
-                    });
-                }
-            }));
+            await Promise.all((<factory.chevre.programMembership.IProgramMembership[]>membershipServiceOutput)
+                .map(async (serviceOutput) => {
+                    const membershipPointsEarnedName = (<any>serviceOutput).membershipPointsEarned?.name;
+                    const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
+                    if (typeof membershipPointsEarnedValue === 'number') {
+                        await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+                            agent: { id: transaction.agent.id },
+                            transaction: { id: transaction.id },
+                            object: {
+                                typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
+                                amount: membershipPointsEarnedValue,
+                                toAccountNumber: toAccount.accountNumber,
+                                notes: (typeof membershipPointsEarnedName === 'string')
+                                    ? membershipPointsEarnedName
+                                    : membershipService.typeOf
+                            }
+                        })({
+                            action: repos.action,
+                            ownershipInfo: repos.ownershipInfo,
+                            project: repos.project,
+                            transaction: repos.transaction
+                        });
+                    }
+                }));
         }
 
         // 会員プログラムオファー承認
