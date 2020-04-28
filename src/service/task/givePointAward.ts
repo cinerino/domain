@@ -3,6 +3,7 @@ import { IConnectionSettings, IOperation } from '../task';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 import * as DeliveryService from '../delivery';
 
@@ -11,9 +12,9 @@ import * as DeliveryService from '../delivery';
  */
 export function call(data: factory.task.IData<factory.taskName.GivePointAward>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        const actionRepo = new ActionRepo(settings.connection);
         await DeliveryService.givePointAward(data)({
-            action: actionRepo
+            action: new ActionRepo(settings.connection),
+            project: new ProjectRepo(settings.connection)
         });
     };
 }

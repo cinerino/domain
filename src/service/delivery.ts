@@ -19,6 +19,7 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
@@ -406,14 +407,21 @@ export function onSend(
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
+            const project = await repos.project.findById({ id: params.project.id });
+            const endpoint = project.settings?.pecorino?.endpoint;
+            if (typeof endpoint !== 'string') {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
             // 入金取引確定
             const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: params.object.pointAPIEndpoint,
+                endpoint: endpoint,
                 auth: pecorinoAuthClient
             });
             await depositService.confirm({ id: params.object.pointTransaction.id });
@@ -443,6 +451,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
     }) => {
         // アクション開始
         const givePointAwardAction = params.object;
@@ -451,10 +460,17 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
 
         let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<factory.accountType.Point>;
         const action = await repos.action.start(params);
+
         try {
+            const project = await repos.project.findById({ id: params.project.id });
+            const endpoint = project.settings?.pecorino?.endpoint;
+            if (typeof endpoint !== 'string') {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
             // 入金した分を引き出し取引実行
             const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                endpoint: givePointAwardActionObject.pointAPIEndpoint,
+                endpoint: endpoint,
                 auth: pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
@@ -479,9 +495,13 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 object: {
                     // amount: givePointAwardActionObject.pointTransaction.object.amount,
                     // fromLocation: givePointAwardActionObject.pointTransaction.object.toLocation,
-                    amount: (<any>givePointAwardActionObject).amount,
-                    fromLocation: (<any>givePointAwardActionObject).toLocation,
-                    description: `${(<any>givePointAwardActionObject).notes}取消`
+                    amount: givePointAwardActionObject.amount,
+                    fromLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountNumber: givePointAwardActionObject.toLocation.accountNumber,
+                        accountType: <factory.accountType.Point>givePointAwardActionObject.toLocation.accountType
+                    },
+                    description: `${givePointAwardActionObject.description}取消`
                 }
             });
 
@@ -513,7 +533,14 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
 export function cancelPointAward(params: factory.task.IData<factory.taskName.CancelPointAward>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+        const endpoint = project.settings?.pecorino?.endpoint;
+        if (typeof endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
         // ポイントインセンティブ承認アクションを取得
         const authorizeActions = <factory.action.authorize.award.point.IAction[]>
             await repos.action.searchByPurpose({
@@ -526,13 +553,14 @@ export function cancelPointAward(params: factory.task.IData<factory.taskName.Can
                 .then((actions) => actions
                     .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
                 );
+
         await Promise.all(authorizeActions.map(async (action) => {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore if */
             if (action.result !== undefined) {
                 // アクションステータスに関係なく取消処理実行
                 const depositService = new pecorinoapi.service.transaction.Deposit({
-                    endpoint: action.result.pointAPIEndpoint,
+                    endpoint: endpoint,
                     auth: pecorinoAuthClient
                 });
 

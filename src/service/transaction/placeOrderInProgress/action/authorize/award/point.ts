@@ -63,7 +63,6 @@ export function create(params: {
         if (project.settings === undefined || project.settings.pecorino === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
-        const pecorinoEndpoint = project.settings.pecorino.endpoint;
 
         // 承認アクションを開始する
         const seller = transaction.seller;
@@ -117,8 +116,7 @@ export function create(params: {
         const actionResult: factory.action.authorize.award.point.IResult = {
             price: 0, // JPYとして0円
             amount: params.object.amount,
-            pointTransaction: pointTransaction,
-            pointAPIEndpoint: pecorinoEndpoint
+            pointTransaction: pointTransaction
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });

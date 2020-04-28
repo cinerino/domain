@@ -3,6 +3,7 @@ import { IConnectionSettings, IOperation } from '../task';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 import * as DeliveryService from '../delivery';
 
@@ -12,7 +13,8 @@ import * as DeliveryService from '../delivery';
 export function call(data: factory.task.IData<factory.taskName.CancelPointAward>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         await DeliveryService.cancelPointAward(data)({
-            action: new ActionRepo(settings.connection)
+            action: new ActionRepo(settings.connection),
+            project: new ProjectRepo(settings.connection)
         });
     };
 }

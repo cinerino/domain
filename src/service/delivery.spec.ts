@@ -9,6 +9,8 @@ import * as sinon from 'sinon';
 require('sinon-mongoose');
 import * as domain from '../index';
 
+const project = { id: 'id', settings: { pecorino: { endpoint: '' } } };
+
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -22,11 +24,16 @@ describe('ポイントインセンティブを適用する', () => {
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('confirm')
             .once()
@@ -37,12 +44,13 @@ describe('ポイントインセンティブを適用する', () => {
             .resolves({});
 
         const result = await domain.service.delivery.givePointAward(<any>{
+            project: { id: project.id },
             object: {
-                pointAPIEndpoint: 'https://example.com',
                 pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         })({
-            action: actionRepo
+            action: actionRepo,
+            project: projectRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -51,11 +59,16 @@ describe('ポイントインセンティブを適用する', () => {
     it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
         const pecorinoError = new Error('pecorinoError');
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('confirm')
             .once()
@@ -69,12 +82,13 @@ describe('ポイントインセンティブを適用する', () => {
             .resolves({});
 
         const result = await domain.service.delivery.givePointAward(<any>{
+            project: { id: project.id },
             object: {
-                pointAPIEndpoint: 'https://example.com',
                 pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         })({
-            action: actionRepo
+            action: actionRepo,
+            project: projectRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, pecorinoError);
@@ -89,11 +103,16 @@ describe('ポイントインセンティブを返却する', () => {
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('start')
             .once()
@@ -108,12 +127,13 @@ describe('ポイントインセンティブを返却する', () => {
             .resolves({});
 
         const result = await domain.service.delivery.returnPointAward(<any>{
+            project: { id: project.id },
             agent: {},
             recipient: {},
             object: {
                 object: {
-                    pointAPIEndpoint: 'https://example.com',
-                    pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
+                    pointTransaction: { object: { fromLocation: {}, toLocation: {} } },
+                    toLocation: {}
                 },
                 purpose: {
                     project: {},
@@ -122,7 +142,8 @@ describe('ポイントインセンティブを返却する', () => {
                 }
             }
         })({
-            action: actionRepo
+            action: actionRepo,
+            project: projectRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -131,11 +152,16 @@ describe('ポイントインセンティブを返却する', () => {
     it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
         const pecorinoError = new Error('pecorinoError');
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('start')
             .once()
@@ -152,12 +178,13 @@ describe('ポイントインセンティブを返却する', () => {
             .resolves({});
 
         const result = await domain.service.delivery.returnPointAward(<any>{
+            project: { id: project.id },
             agent: {},
             recipient: {},
             object: {
                 object: {
-                    pointAPIEndpoint: 'https://example.com',
-                    pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
+                    pointTransaction: { object: { fromLocation: {}, toLocation: {} } },
+                    toLocation: {}
                 },
                 purpose: {
                     project: {},
@@ -166,7 +193,8 @@ describe('ポイントインセンティブを返却する', () => {
                 }
             }
         })({
-            action: actionRepo
+            action: actionRepo,
+            project: projectRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, pecorinoError);
@@ -184,12 +212,16 @@ describe('ポイントインセンティブ承認取消', () => {
             object: { typeOf: domain.factory.action.authorize.award.point.ObjectType.PointAward },
             actionStatus: domain.factory.actionStatusType.CompletedActionStatus,
             result: {
-                pointAPIEndpoint: 'https://example.com',
                 pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
             }
         }];
         const actionRepo = new domain.repository.Action(mongoose.connection);
+        const projectRepo = new domain.repository.Project(mongoose.connection);
 
+        sandbox.mock(projectRepo)
+            .expects('findById')
+            .once()
+            .resolves(project);
         sandbox.mock(actionRepo)
             .expects('searchByPurpose')
             .once()
@@ -203,8 +235,12 @@ describe('ポイントインセンティブ承認取消', () => {
             .once()
             .resolves({});
 
-        const result = await domain.service.delivery.cancelPointAward(<any>{ purpose: {} })({
-            action: actionRepo
+        const result = await domain.service.delivery.cancelPointAward(<any>{
+            project: { id: project.id },
+            purpose: {}
+        })({
+            action: actionRepo,
+            project: projectRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
