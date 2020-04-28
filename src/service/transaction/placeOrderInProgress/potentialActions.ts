@@ -3,6 +3,8 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
 import { format } from 'util';
 
+import { createGivePointAwardActions } from './potentialActions/givePointAward';
+
 import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
@@ -264,45 +266,6 @@ async function createSendEmailMessageActions(params: {
     }
 
     return sendEmailMessageActions;
-}
-
-async function createGivePointAwardActions(params: {
-    order: factory.order.IOrder;
-    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
-    transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.transfer.give.pointAward.IAttributes[]> {
-    // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
-    const pointAwardAuthorizeActions =
-        (<factory.action.authorize.award.point.IAction[]>params.transaction.object.authorizeActions)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
-
-    return pointAwardAuthorizeActions.map((a) => {
-        const actionResult = <factory.action.authorize.award.point.IResult>a.result;
-
-        return {
-            project: params.transaction.project,
-            typeOf: <factory.actionType.GiveAction>factory.actionType.GiveAction,
-            agent: params.transaction.seller,
-            recipient: params.transaction.agent,
-            object: {
-                typeOf: factory.action.transfer.give.pointAward.ObjectType.PointAward,
-                pointTransaction: actionResult.pointTransaction,
-                pointAPIEndpoint: actionResult.pointAPIEndpoint
-            },
-            purpose: {
-                project: params.order.project,
-                typeOf: params.order.typeOf,
-                seller: params.order.seller,
-                customer: params.order.customer,
-                confirmationNumber: params.order.confirmationNumber,
-                orderNumber: params.order.orderNumber,
-                price: params.order.price,
-                priceCurrency: params.order.priceCurrency,
-                orderDate: params.order.orderDate
-            }
-        };
-    });
 }
 
 async function createPayMovieTicketActions(params: {

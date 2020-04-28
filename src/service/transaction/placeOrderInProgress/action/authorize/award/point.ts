@@ -144,9 +144,9 @@ async function processAuthorize(params: {
             name: params.transaction.seller.name.ja,
             url: params.transaction.seller.url
         },
-        // 最大1ヵ月のオーソリ
+        // 最大1日のオーソリ
         expires: moment()
-            .add(1, 'month')
+            .add(1, 'day')
             .toDate(),
         recipient: {
             typeOf: params.transaction.agent.typeOf,

@@ -445,15 +445,16 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         action: ActionRepo;
     }) => {
         // アクション開始
-        const order = params.object.purpose;
-        const authorizePointAwardAction = params.object.object;
+        const givePointAwardAction = params.object;
+        const order = givePointAwardAction.purpose;
+        const givePointAwardActionObject = givePointAwardAction.object;
 
         let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<factory.accountType.Point>;
         const action = await repos.action.start(params);
         try {
             // 入金した分を引き出し取引実行
             const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                endpoint: authorizePointAwardAction.pointAPIEndpoint,
+                endpoint: givePointAwardActionObject.pointAPIEndpoint,
                 auth: pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
@@ -476,9 +477,11 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     url: params.recipient.url
                 },
                 object: {
-                    amount: authorizePointAwardAction.pointTransaction.object.amount,
-                    fromLocation: authorizePointAwardAction.pointTransaction.object.toLocation,
-                    description: '注文返品によるポイントインセンティブ取消'
+                    // amount: givePointAwardActionObject.pointTransaction.object.amount,
+                    // fromLocation: givePointAwardActionObject.pointTransaction.object.toLocation,
+                    amount: (<any>givePointAwardActionObject).amount,
+                    fromLocation: (<any>givePointAwardActionObject).toLocation,
+                    description: `${(<any>givePointAwardActionObject).notes}取消`
                 }
             });
 
