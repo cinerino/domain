@@ -8,7 +8,8 @@ export async function createGivePointAwardActions(params: {
     let actions: factory.action.transfer.give.pointAward.IAttributes[] = [];
 
     // インセンティブ付与アクションの指定があればそちらを反映
-    const givePointAwardParams = params.potentialActions?.order?.potentialActions?.givePointAward;
+    // const givePointAwardParams = params.potentialActions?.order?.potentialActions?.givePointAward;
+    const givePointAwardParams = (<any>params.transaction.object).potentialActions?.givePointAward;
     if (Array.isArray(givePointAwardParams)) {
         // メンバーシップごとに、会員プログラムの特典を確認してインセンティブ付与
         givePointAwardParams.forEach((givePointAwardParam) => {

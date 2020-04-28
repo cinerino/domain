@@ -505,60 +505,75 @@ function processPlaceOrder(params: {
 
         const membershipService = await productService.findById({ id: membershipServiceId });
 
-        // 新規登録時の獲得ポイント
+        // 登録時の獲得ポイント
         const membershipServiceOutput = membershipService.serviceOutput;
         if (Array.isArray(membershipServiceOutput)) {
-            // ポイント口座を検索
-            // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
-            let accountOwnershipInfos = await AccountService.search({
-                project: { typeOf: project.typeOf, id: project.id },
-                conditions: {
-                    sort: { ownedFrom: factory.sortType.Ascending },
-                    limit: 1,
-                    typeOfGood: {
-                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                        accountType: factory.accountType.Point
-                    },
-                    ownedBy: { id: customer.id },
-                    ownedFrom: now,
-                    ownedThrough: now
-                }
-            })({
-                ownershipInfo: repos.ownershipInfo,
-                project: repos.project
-            });
-
-            // 開設口座に絞る
-            accountOwnershipInfos = accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
-            if (accountOwnershipInfos.length === 0) {
-                throw new factory.errors.NotFound('accountOwnershipInfos');
-            }
-            const toAccount = accountOwnershipInfos[0].typeOfGood;
+            const givePointAwardParams: factory.transaction.placeOrder.IGivePointAwardParams[] = [];
 
             await Promise.all((<factory.chevre.programMembership.IProgramMembership[]>membershipServiceOutput)
                 .map(async (serviceOutput) => {
                     const membershipPointsEarnedName = (<any>serviceOutput).membershipPointsEarned?.name;
                     const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
-                    if (typeof membershipPointsEarnedValue === 'number') {
-                        await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
-                            agent: { id: transaction.agent.id },
-                            transaction: { id: transaction.id },
+                    const membershipPointsEarnedUnitCode = serviceOutput.membershipPointsEarned?.unitCode;
+
+                    if (typeof membershipPointsEarnedValue === 'number' && typeof membershipPointsEarnedUnitCode === 'string') {
+                        // 所有口座を検索
+                        // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+                        let accountOwnershipInfos = await AccountService.search({
+                            project: { typeOf: project.typeOf, id: project.id },
+                            conditions: {
+                                sort: { ownedFrom: factory.sortType.Ascending },
+                                limit: 1,
+                                typeOfGood: {
+                                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                                    accountType: <any>membershipPointsEarnedUnitCode
+                                },
+                                ownedBy: { id: customer.id },
+                                ownedFrom: now,
+                                ownedThrough: now
+                            }
+                        })({
+                            ownershipInfo: repos.ownershipInfo,
+                            project: repos.project
+                        });
+
+                        // 開設口座に絞る
+                        accountOwnershipInfos =
+                            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+                        if (accountOwnershipInfos.length === 0) {
+                            throw new factory.errors.NotFound('accountOwnershipInfos');
+                        }
+                        const toAccount = accountOwnershipInfos[0].typeOfGood;
+
+                        givePointAwardParams.push({
                             object: {
                                 typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
                                 amount: membershipPointsEarnedValue,
-                                toAccountNumber: toAccount.accountNumber,
-                                notes: (typeof membershipPointsEarnedName === 'string')
+                                toLocation: {
+                                    accountType: membershipPointsEarnedUnitCode,
+                                    accountNumber: toAccount.accountNumber
+                                },
+                                description: (typeof membershipPointsEarnedName === 'string')
                                     ? membershipPointsEarnedName
                                     : membershipService.typeOf
                             }
-                        })({
-                            action: repos.action,
-                            ownershipInfo: repos.ownershipInfo,
-                            project: repos.project,
-                            transaction: repos.transaction
                         });
                     }
                 }));
+
+            await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+                agent: { id: transaction.agent.id },
+                transaction: { id: transaction.id },
+                object: {
+                    potentialActions: {
+                        givePointAwardParams: givePointAwardParams
+                    }
+                }
+            })({
+                action: repos.action,
+                ownershipInfo: repos.ownershipInfo,
+                transaction: repos.transaction
+            });
         }
 
         // 会員プログラムオファー承認
