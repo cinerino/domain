@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 取引確定後アクションパラメータにインセンティブ付与を追加
+
 ### Changed
 
 - 会員サービスのオファー属性をChevreへ移行
