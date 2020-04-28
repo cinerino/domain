@@ -46,7 +46,7 @@ describe('ポイントインセンティブを適用する', () => {
         const result = await domain.service.delivery.givePointAward(<any>{
             project: { id: project.id },
             object: {
-                pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
+                pointTransaction: { id: '', object: { fromLocation: {}, toLocation: {} } }
             }
         })({
             action: actionRepo,
@@ -84,7 +84,7 @@ describe('ポイントインセンティブを適用する', () => {
         const result = await domain.service.delivery.givePointAward(<any>{
             project: { id: project.id },
             object: {
-                pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
+                pointTransaction: { id: '', object: { fromLocation: {}, toLocation: {} } }
             }
         })({
             action: actionRepo,
@@ -212,7 +212,7 @@ describe('ポイントインセンティブ承認取消', () => {
             object: { typeOf: domain.factory.action.authorize.award.point.ObjectType.PointAward },
             actionStatus: domain.factory.actionStatusType.CompletedActionStatus,
             result: {
-                pointTransaction: { object: { fromLocation: {}, toLocation: {} } }
+                pointTransaction: { id: '', object: { fromLocation: {}, toLocation: {} } }
             }
         }];
         const actionRepo = new domain.repository.Action(mongoose.connection);

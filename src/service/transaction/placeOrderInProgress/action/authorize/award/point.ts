@@ -2,7 +2,7 @@
  * ポイントインセンティブ承認アクションサービス
  */
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
-import * as moment from 'moment';
+// import * as moment from 'moment';
 
 import * as factory from '../../../../../../factory';
 
@@ -92,13 +92,14 @@ export function create(params: {
         };
         const action = await repos.action.start(actionAttributes);
 
-        let pointTransaction: factory.action.authorize.award.point.IPointTransaction;
+        const pointTransaction: factory.action.authorize.award.point.IPointTransaction | undefined = undefined;
+
         try {
-            pointTransaction = await processAuthorize({
-                object: params.object,
-                settings: project.settings.pecorino,
-                transaction: transaction
-            });
+            // pointTransaction = await processAuthorize({
+            //     object: params.object,
+            //     settings: project.settings.pecorino,
+            //     transaction: transaction
+            // });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -116,56 +117,56 @@ export function create(params: {
         const actionResult: factory.action.authorize.award.point.IResult = {
             price: 0, // JPYとして0円
             amount: params.object.amount,
-            pointTransaction: pointTransaction
+            ...(pointTransaction !== undefined) ? { pointTransaction } : undefined
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
 
-async function processAuthorize(params: {
-    object: factory.action.authorize.award.point.IObject;
-    settings: factory.project.IPecorinoSettings;
-    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
-}): Promise<factory.action.authorize.award.point.IPointTransaction> {
-    const depositService = new pecorinoapi.service.transaction.Deposit({
-        endpoint: params.settings.endpoint,
-        auth: pecorinoAuthClient
-    });
+// async function processAuthorize(params: {
+//     object: factory.action.authorize.award.point.IObject;
+//     settings: factory.project.IPecorinoSettings;
+//     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+// }): Promise<factory.action.authorize.award.point.IPointTransaction> {
+//     const depositService = new pecorinoapi.service.transaction.Deposit({
+//         endpoint: params.settings.endpoint,
+//         auth: pecorinoAuthClient
+//     });
 
-    return depositService.start<factory.accountType.Point>({
-        project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
-        typeOf: factory.pecorino.transactionType.Deposit,
-        agent: {
-            typeOf: params.transaction.seller.typeOf,
-            id: params.transaction.seller.id,
-            name: params.transaction.seller.name.ja,
-            url: params.transaction.seller.url
-        },
-        // 最大1日のオーソリ
-        expires: moment()
-            .add(1, 'day')
-            .toDate(),
-        recipient: {
-            typeOf: params.transaction.agent.typeOf,
-            id: params.transaction.agent.id,
-            name: `placeOrderTransaction-${params.transaction.id}`,
-            url: params.transaction.agent.url
-        },
-        object: {
-            amount: params.object.amount,
-            // tslint:disable-next-line:no-single-line-block-comment
-            description: (params.object.notes !== undefined)
-                ? /* istanbul ignore next */ params.object.notes
-                : '注文取引インセンティブ',
-            toLocation: {
-                typeOf: factory.pecorino.account.TypeOf.Account,
-                accountType: factory.accountType.Point,
-                accountNumber: params.object.toAccountNumber
-            }
-        }
-    });
-}
+//     return depositService.start<factory.accountType.Point>({
+//         project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
+//         typeOf: factory.pecorino.transactionType.Deposit,
+//         agent: {
+//             typeOf: params.transaction.seller.typeOf,
+//             id: params.transaction.seller.id,
+//             name: params.transaction.seller.name.ja,
+//             url: params.transaction.seller.url
+//         },
+//         // 最大1日のオーソリ
+//         expires: moment()
+//             .add(1, 'day')
+//             .toDate(),
+//         recipient: {
+//             typeOf: params.transaction.agent.typeOf,
+//             id: params.transaction.agent.id,
+//             name: `placeOrderTransaction-${params.transaction.id}`,
+//             url: params.transaction.agent.url
+//         },
+//         object: {
+//             amount: params.object.amount,
+//             // tslint:disable-next-line:no-single-line-block-comment
+//             description: (params.object.notes !== undefined)
+//                 ? /* istanbul ignore next */ params.object.notes
+//                 : '注文取引インセンティブ',
+//             toLocation: {
+//                 typeOf: factory.pecorino.account.TypeOf.Account,
+//                 accountType: factory.accountType.Point,
+//                 accountNumber: params.object.toAccountNumber
+//             }
+//         }
+//     });
+// }
 
 /**
  * ポイントインセンティブ承認を取り消す
@@ -213,16 +214,17 @@ export function cancel(params: {
         const actionResult = <factory.action.authorize.award.point.IResult>action.result;
 
         // Pecorinoで取引中止実行
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        const pendingTransactionId = actionResult.pointTransaction?.id;
+        if (typeof pendingTransactionId === 'string') {
+            if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
+            const depositService = new pecorinoapi.service.transaction.Deposit({
+                endpoint: project.settings.pecorino.endpoint,
+                auth: pecorinoAuthClient
+            });
+            await depositService.cancel({ id: pendingTransactionId });
         }
-        if (project.settings.pecorino === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-        const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        await depositService.cancel(actionResult.pointTransaction);
     };
 }
