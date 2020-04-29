@@ -34,7 +34,7 @@ const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
 /**
  * 口座開設
  */
-export function open<T extends factory.accountType>(params: {
+export function open<T extends string>(params: {
     project: factory.project.IProject;
     agent: factory.ownershipInfo.IOwner;
     name: string;
@@ -114,14 +114,14 @@ export function open<T extends factory.accountType>(params: {
 }
 
 export interface IClosingAccount {
-    accountType: factory.accountType;
+    accountType: string;
     accountNumber: string;
 }
 
 /**
  * 口座解約
  */
-export function close<T extends factory.accountType>(params: {
+export function close<T extends string>(params: {
     project: factory.project.IProject;
     /**
      * 所有者を指定しなければ、問答無用に口座番号から口座を解約します
@@ -252,7 +252,7 @@ export function search(params: {
 /**
  * 口座取引履歴検索
  */
-export function searchMoneyTransferActions<T extends factory.accountType>(params: {
+export function searchMoneyTransferActions<T extends string>(params: {
     project: factory.project.IProject;
     ownedBy: {
         id: string;
@@ -312,7 +312,7 @@ export function searchMoneyTransferActions<T extends factory.accountType>(params
 /**
  * 所有権なしにポイント口座を開設する
  */
-export function openWithoutOwnershipInfo<T extends factory.accountType>(params: {
+export function openWithoutOwnershipInfo<T extends string>(params: {
     project: factory.project.IProject;
     name: string;
     accountType: T;
@@ -362,7 +362,7 @@ export function openWithoutOwnershipInfo<T extends factory.accountType>(params: 
 export function deposit(params: {
     project: factory.project.IProject;
     agent: pecorinoapi.factory.transaction.deposit.IAgent;
-    object: pecorinoapi.factory.transaction.deposit.IObject<factory.accountType.Point>;
+    object: pecorinoapi.factory.transaction.deposit.IObject<'Point'>;
     recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
 }) {
     return async (repos: {
@@ -394,7 +394,7 @@ export function deposit(params: {
                     amount: params.object.amount,
                     toLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: factory.accountType.Point,
+                        accountType: 'Point',
                         accountNumber: params.object.toLocation.accountNumber
                     },
                     description: params.object.description

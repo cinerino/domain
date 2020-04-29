@@ -61,10 +61,6 @@ export function create(params: {
  */
 export function cancel(params: {
     /**
-     * 承認アクションID
-     */
-    id: string;
-    /**
      * 取引進行者
      */
     agent: { id: string };
@@ -88,6 +84,14 @@ export function cancel(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        // const project = await repos.project.findById({ id: transaction.project.id });
+        await repos.transaction.transactionModel.findOneAndUpdate(
+            { _id: transaction.id },
+            {
+                $unset: {
+                    'object.potentialActions.givePointAward': 1
+                }
+            }
+        )
+            .exec();
     };
 }

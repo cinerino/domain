@@ -147,19 +147,7 @@ export function exportTasksById(params: {
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
-                const cancelPointAwardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPointAward> = {
-                    project: { typeOf: project.typeOf, id: project.id },
-                    name: factory.taskName.CancelPointAward,
-                    status: factory.taskStatus.Ready,
-                    runsAt: taskRunsAt,
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        project: { typeOf: project.typeOf, id: project.id },
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                    }
-                };
+
                 const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
                     project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.VoidMoneyTransfer,
@@ -177,7 +165,6 @@ export function exportTasksById(params: {
                     cancelSeatReservationTaskAttributes,
                     cancelCreditCardTaskAttributes,
                     cancelAccountTaskAttributes,
-                    cancelPointAwardTaskAttributes,
                     voidMoneyTransferTaskAttributes
                 );
                 break;

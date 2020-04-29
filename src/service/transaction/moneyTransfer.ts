@@ -39,7 +39,7 @@ export type IConfirmOperation<T> = (repos: {
  * 取引開始
  * Pecorinoサービスを利用してWithdrawTransactionあるいはTransferTransactionを開始する
  */
-export function start<T extends factory.accountType, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
+export function start<T extends string, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
     params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T, T2>
 ): IStartOperation<factory.transaction.moneyTransfer.ITransaction<T, T2>> {
     return async (repos: {
@@ -108,7 +108,7 @@ export function start<T extends factory.accountType, T2 extends factory.transact
     };
 }
 
-function authorizeAccount<T extends factory.accountType>(params: {
+function authorizeAccount<T extends string>(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }) {
     return async (repos: {
@@ -156,7 +156,7 @@ function authorizeAccount<T extends factory.accountType>(params: {
     };
 }
 
-function fixFromLocation<T extends factory.accountType, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
+function fixFromLocation<T extends string, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
     params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T, T2>
 ) {
     return async (repos: {
@@ -166,8 +166,8 @@ function fixFromLocation<T extends factory.accountType, T2 extends factory.trans
 
         if (fromLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
             const fromLocationObject = fromLocation;
-            if (fromLocationObject.accountType !== factory.accountType.Coin) {
-                throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
+            if (fromLocationObject.accountType !== 'Coin') {
+                throw new factory.errors.Argument('toLocation', `account type must be ${'Coin'}`);
             }
 
             // 口座存在確認
@@ -198,7 +198,7 @@ function fixFromLocation<T extends factory.accountType, T2 extends factory.trans
     };
 }
 
-function fixToLocation<T extends factory.accountType, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
+function fixToLocation<T extends string, T2 extends factory.transaction.moneyTransfer.IToLocationType>(
     params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail<T, T2>
 ) {
     return async (repos: {
@@ -209,8 +209,8 @@ function fixToLocation<T extends factory.accountType, T2 extends factory.transac
         if (toLocation.typeOf === factory.pecorino.account.TypeOf.Account) {
             const toLocationObject
                 = <factory.transaction.moneyTransfer.IToLocation<T, factory.pecorino.account.TypeOf.Account>>params.object.toLocation;
-            if (toLocationObject.accountType !== factory.accountType.Coin) {
-                throw new factory.errors.Argument('toLocation', `account type must be ${factory.accountType.Coin}`);
+            if (toLocationObject.accountType !== 'Coin') {
+                throw new factory.errors.Argument('toLocation', `account type must be ${'Coin'}`);
             }
 
             // 口座存在確認
@@ -248,7 +248,7 @@ function fixToLocation<T extends factory.accountType, T2 extends factory.transac
 /**
  * 取引確定
  */
-export function confirm<T extends factory.accountType>(params: {
+export function confirm<T extends string>(params: {
     id: string;
 }): IConfirmOperation<void> {
     return async (repos: {

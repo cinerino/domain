@@ -425,50 +425,44 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 auth: pecorinoAuthClient
             });
 
-            const pendingTransactionId = params.object.pointTransaction?.id;
-            if (typeof pendingTransactionId === 'string') {
-                // 進行中取引が存在すれば、確定
-                await depositService.confirm({ id: pendingTransactionId });
-            } else {
-                const depositTransaction = await depositService.start<factory.accountType.Point>({
-                    project: { typeOf: params.project.typeOf, id: params.project.id },
-                    typeOf: factory.pecorino.transactionType.Deposit,
-                    agent: {
-                        typeOf: params.agent.typeOf,
-                        id: params.agent.id,
-                        name: (typeof params.agent.name === 'string')
-                            ? params.agent.name
-                            : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
-                        url: params.agent.url
-                    },
-                    expires: moment()
-                        // tslint:disable-next-line:no-magic-numbers
-                        .add(1, 'minutes')
-                        .toDate(),
-                    recipient: {
-                        typeOf: params.recipient.typeOf,
-                        id: params.recipient.id,
-                        name: (typeof params.recipient.name === 'string')
-                            ? params.recipient.name
-                            : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
-                                ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
-                                : ''
-                    },
-                    object: {
-                        amount: params.object.amount,
-                        description: (typeof params.object.description === 'string')
-                            ? params.object.description
-                            : params.purpose.typeOf,
-                        toLocation: {
-                            typeOf: factory.pecorino.account.TypeOf.Account,
-                            accountType: <factory.accountType.Point>params.object.toLocation.accountType,
-                            accountNumber: params.object.toLocation.accountNumber
-                        }
+            const depositTransaction = await depositService.start<'Point'>({
+                project: { typeOf: params.project.typeOf, id: params.project.id },
+                typeOf: factory.pecorino.transactionType.Deposit,
+                agent: {
+                    typeOf: params.agent.typeOf,
+                    id: params.agent.id,
+                    name: (typeof params.agent.name === 'string')
+                        ? params.agent.name
+                        : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
+                    url: params.agent.url
+                },
+                expires: moment()
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(1, 'minutes')
+                    .toDate(),
+                recipient: {
+                    typeOf: params.recipient.typeOf,
+                    id: params.recipient.id,
+                    name: (typeof params.recipient.name === 'string')
+                        ? params.recipient.name
+                        : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
+                            ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
+                            : ''
+                },
+                object: {
+                    amount: params.object.amount,
+                    description: (typeof params.object.description === 'string')
+                        ? params.object.description
+                        : params.purpose.typeOf,
+                    toLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountType: <'Point'>params.object.toLocation.accountType,
+                        accountNumber: params.object.toLocation.accountNumber
                     }
-                });
+                }
+            });
 
-                await depositService.confirm({ id: depositTransaction.id });
-            }
+            await depositService.confirm({ id: depositTransaction.id });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -502,7 +496,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<factory.accountType.Point>;
+        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<'Point'>;
         const action = await repos.action.start(params);
 
         try {
@@ -543,7 +537,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     fromLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
                         accountNumber: givePointAwardActionObject.toLocation.accountNumber,
-                        accountType: <factory.accountType.Point>givePointAwardActionObject.toLocation.accountType
+                        accountType: <'Point'>givePointAwardActionObject.toLocation.accountType
                     },
                     description: `${givePointAwardActionObject.description}取消`
                 }
@@ -568,55 +562,5 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             pointTransaction: withdrawTransaction
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-    };
-}
-
-/**
- * ポイントインセンティブ承認取消
- */
-export function cancelPointAward(params: factory.task.IData<factory.taskName.CancelPointAward>) {
-    return async (repos: {
-        action: ActionRepo;
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        const endpoint = project.settings?.pecorino?.endpoint;
-        if (typeof endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        // ポイントインセンティブ承認アクションを取得
-        const authorizeActions = <factory.action.authorize.award.point.IAction[]>
-            await repos.action.searchByPurpose({
-                typeOf: factory.actionType.AuthorizeAction,
-                purpose: {
-                    typeOf: params.purpose.typeOf,
-                    id: params.purpose.id
-                }
-            })
-                .then((actions) => actions
-                    .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
-                );
-
-        await Promise.all(authorizeActions.map(async (action) => {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (action.result !== undefined) {
-                const pendingTransactionId = action.result.pointTransaction?.id;
-                if (typeof pendingTransactionId === 'string') {
-                    // アクションステータスに関係なく取消処理実行
-                    const depositService = new pecorinoapi.service.transaction.Deposit({
-                        endpoint: endpoint,
-                        auth: pecorinoAuthClient
-                    });
-
-                    await depositService.cancel({
-                        id: pendingTransactionId
-                    });
-                }
-
-                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
-            }
-        }));
     };
 }

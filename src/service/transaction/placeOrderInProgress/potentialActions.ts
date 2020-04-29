@@ -9,7 +9,7 @@ import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<factory.accountType>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<string>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
@@ -335,14 +335,14 @@ async function createPayAccountActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[]> {
     // 口座決済アクション
-    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<string>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
 
     return authorizeAccountActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
+        const result = <factory.action.authorize.paymentMethod.account.IResult<string>>a.result;
 
         return {
             project: params.transaction.project,
@@ -358,7 +358,7 @@ async function createPayAccountActions(params: {
                     typeOf: <factory.paymentMethodType.Account>result.paymentMethod
                 },
                 pendingTransaction:
-                    (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
+                    (<factory.action.authorize.paymentMethod.account.IResult<string>>a.result).pendingTransaction
             }],
             agent: params.transaction.agent,
             purpose: {
@@ -682,8 +682,8 @@ async function createMoneyTransferActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[]> {
-    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[] = [];
+}): Promise<factory.action.transfer.moneyTransfer.IAttributes<string>[]> {
+    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<string>[] = [];
 
     const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)

@@ -21,6 +21,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- ポイントインセンティブ承認アクション取消タスクを削除
+- 口座タイプをChevre管理へ移行
+
 ### Fixed
 
 ### Security

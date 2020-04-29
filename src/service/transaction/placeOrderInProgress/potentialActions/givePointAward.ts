@@ -5,7 +5,7 @@ export async function createGivePointAwardActions(params: {
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.transfer.give.pointAward.IAttributes[]> {
-    let actions: factory.action.transfer.give.pointAward.IAttributes[] = [];
+    const actions: factory.action.transfer.give.pointAward.IAttributes[] = [];
 
     // インセンティブ付与アクションの指定があればそちらを反映
     // const givePointAwardParams = params.potentialActions?.order?.potentialActions?.givePointAward;
@@ -48,44 +48,6 @@ export async function createGivePointAwardActions(params: {
                     }
                 });
             }
-        });
-    } else {
-        // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
-        const pointAwardAuthorizeActions =
-            (<factory.action.authorize.award.point.IAction[]>params.transaction.object.authorizeActions)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
-
-        actions = pointAwardAuthorizeActions.map((a) => {
-            const actionResult = <factory.action.authorize.award.point.IResult>a.result;
-
-            return {
-                project: params.transaction.project,
-                typeOf: <factory.actionType.GiveAction>factory.actionType.GiveAction,
-                agent: params.transaction.seller,
-                recipient: params.transaction.agent,
-                object: {
-                    typeOf: factory.action.transfer.give.pointAward.ObjectType.PointAward,
-                    pointTransaction: actionResult.pointTransaction,
-                    amount: a.object.amount,
-                    toLocation: {
-                        accountType: factory.accountType.Point,
-                        accountNumber: a.object.toAccountNumber
-                    },
-                    description: (typeof a.object.notes === 'string') ? a.object.notes : ''
-                },
-                purpose: {
-                    project: params.order.project,
-                    typeOf: params.order.typeOf,
-                    seller: params.order.seller,
-                    customer: params.order.customer,
-                    confirmationNumber: params.order.confirmationNumber,
-                    orderNumber: params.order.orderNumber,
-                    price: params.order.price,
-                    priceCurrency: params.order.priceCurrency,
-                    orderDate: params.order.orderDate
-                }
-            };
         });
     }
 
