@@ -814,13 +814,17 @@ export function changeOffers(params: {
         (<any>authorizeAction.object).offers = acceptedOffer; // 互換性維持のため
 
         const { price, requiredPoint } = offers2resultPrice(acceptedOffer);
-        (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result).price
-            = price;
-        (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result).point
-            = requiredPoint;
 
-        const actionResult =
-            (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result);
+        const actionResult: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
+            ...<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result,
+            price: price,
+            point: requiredPoint,
+            amount: [{
+                typeOf: 'MonetaryAmount',
+                currency: 'Point',
+                value: requiredPoint
+            }]
+        };
 
         // 座席予約承認アクションの供給情報を変更する
         return repos.action.actionModel.findOneAndUpdate(
