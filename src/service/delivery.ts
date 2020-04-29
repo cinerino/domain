@@ -19,6 +19,7 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
@@ -239,16 +240,26 @@ function createProgramMembershipOwnershipInfo(params: {
 }): IOwnershipInfo {
     // どういう期間でいくらのオファーなのか
     const priceSpec =
-        <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+        <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>
         params.acceptedOffer.priceSpecification;
     if (priceSpec === undefined) {
         throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
     }
+
+    const unitPriceSpec =
+        <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+        priceSpec.priceComponent.find(
+            (p) => p.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+        );
+    if (unitPriceSpec === undefined) {
+        throw new factory.errors.NotFound('Unit Price Specification in Order.acceptedOffers.priceSpecification');
+    }
+
     // 期間単位としては秒のみ実装
-    if (priceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+    if (unitPriceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
         throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
     }
-    const referenceQuantityValue = priceSpec.referenceQuantity.value;
+    const referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
     if (typeof referenceQuantityValue !== 'number') {
         throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification.referenceQuantity.value');
     }
@@ -396,17 +407,62 @@ export function onSend(
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
+            const project = await repos.project.findById({ id: params.project.id });
+            const endpoint = project.settings?.pecorino?.endpoint;
+            if (typeof endpoint !== 'string') {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
             // 入金取引確定
             const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: params.object.pointAPIEndpoint,
+                endpoint: endpoint,
                 auth: pecorinoAuthClient
             });
-            await depositService.confirm({ id: params.object.pointTransaction.id });
+
+            const depositTransaction = await depositService.start<'Point'>({
+                project: { typeOf: params.project.typeOf, id: params.project.id },
+                typeOf: factory.pecorino.transactionType.Deposit,
+                agent: {
+                    typeOf: params.agent.typeOf,
+                    id: params.agent.id,
+                    name: (typeof params.agent.name === 'string')
+                        ? params.agent.name
+                        : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
+                    url: params.agent.url
+                },
+                expires: moment()
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(1, 'minutes')
+                    .toDate(),
+                recipient: {
+                    typeOf: params.recipient.typeOf,
+                    id: params.recipient.id,
+                    name: (typeof params.recipient.name === 'string')
+                        ? params.recipient.name
+                        : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
+                            ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
+                            : ''
+                },
+                object: {
+                    amount: params.object.amount,
+                    description: (typeof params.object.description === 'string')
+                        ? params.object.description
+                        : params.purpose.typeOf,
+                    toLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountType: <'Point'>params.object.toLocation.accountType,
+                        accountNumber: params.object.toLocation.accountNumber
+                    }
+                }
+            });
+
+            await depositService.confirm({ id: depositTransaction.id });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -433,17 +489,26 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
     }) => {
         // アクション開始
-        const order = params.object.purpose;
-        const authorizePointAwardAction = params.object.object;
+        const givePointAwardAction = params.object;
+        const order = givePointAwardAction.purpose;
+        const givePointAwardActionObject = givePointAwardAction.object;
 
-        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<factory.accountType.Point>;
+        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<'Point'>;
         const action = await repos.action.start(params);
+
         try {
+            const project = await repos.project.findById({ id: params.project.id });
+            const endpoint = project.settings?.pecorino?.endpoint;
+            if (typeof endpoint !== 'string') {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
+
             // 入金した分を引き出し取引実行
             const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                endpoint: authorizePointAwardAction.pointAPIEndpoint,
+                endpoint: endpoint,
                 auth: pecorinoAuthClient
             });
             withdrawTransaction = await withdrawService.start({
@@ -466,9 +531,15 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     url: params.recipient.url
                 },
                 object: {
-                    amount: authorizePointAwardAction.pointTransaction.object.amount,
-                    fromLocation: authorizePointAwardAction.pointTransaction.object.toLocation,
-                    description: '注文返品によるポイントインセンティブ取消'
+                    // amount: givePointAwardActionObject.pointTransaction.object.amount,
+                    // fromLocation: givePointAwardActionObject.pointTransaction.object.toLocation,
+                    amount: givePointAwardActionObject.amount,
+                    fromLocation: {
+                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        accountNumber: givePointAwardActionObject.toLocation.accountNumber,
+                        accountType: <'Point'>givePointAwardActionObject.toLocation.accountType
+                    },
+                    description: `${givePointAwardActionObject.description}取消`
                 }
             });
 
@@ -491,44 +562,5 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             pointTransaction: withdrawTransaction
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-    };
-}
-
-/**
- * ポイントインセンティブ承認取消
- */
-export function cancelPointAward(params: factory.task.IData<factory.taskName.CancelPointAward>) {
-    return async (repos: {
-        action: ActionRepo;
-    }) => {
-        // ポイントインセンティブ承認アクションを取得
-        const authorizeActions = <factory.action.authorize.award.point.IAction[]>
-            await repos.action.searchByPurpose({
-                typeOf: factory.actionType.AuthorizeAction,
-                purpose: {
-                    typeOf: params.purpose.typeOf,
-                    id: params.purpose.id
-                }
-            })
-                .then((actions) => actions
-                    .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward)
-                );
-        await Promise.all(authorizeActions.map(async (action) => {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if */
-            if (action.result !== undefined) {
-                // アクションステータスに関係なく取消処理実行
-                const depositService = new pecorinoapi.service.transaction.Deposit({
-                    endpoint: action.result.pointAPIEndpoint,
-                    auth: pecorinoAuthClient
-                });
-
-                await depositService.cancel({
-                    id: action.result.pointTransaction.id
-                });
-
-                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
-            }
-        }));
     };
 }

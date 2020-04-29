@@ -18,6 +18,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v4.0.0 - 2020-04-29
+
+### Added
+
+- 取引確定後アクションパラメータにインセンティブ付与を追加
+
+### Changed
+
+- 会員サービスのオファー属性をChevreへ移行
+- 会員サービスリポジトリをChevreへ移行
+- InMemoryオファーリポジトリをChevreへ移行
+- インセンティブ付与承認アクションを、取引確定後アクションパラメータへ移行
+
+### Removed
+
+- ポイントインセンティブ承認アクション取消タスクを削除
+- 口座タイプをChevre管理へ移行
+
 ## v3.6.0 - 2020-04-26
 
 ### Changed

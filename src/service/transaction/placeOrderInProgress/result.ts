@@ -5,7 +5,7 @@ import * as factory from '../../../factory';
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<factory.accountType>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<string>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
@@ -372,7 +372,7 @@ function createMoneyTransferAcceptedOffers(params: {
         const pendingTransaction = authorizeMoneyTansferAction.object.pendingTransaction;
         if (pendingTransaction !== undefined) {
             const accountType = pendingTransaction.object.toLocation.accountType;
-            const price = (accountType === factory.accountType.Coin)
+            const price = (accountType === 'Coin')
                 ? pendingTransaction.object.amount
                 : undefined;
 

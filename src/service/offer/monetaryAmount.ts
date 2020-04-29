@@ -27,7 +27,7 @@ export type ICreateOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export function authorize<T extends factory.accountType>(params: {
+export function authorize<T extends string>(params: {
     project: factory.project.IProject;
     agent: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
@@ -117,7 +117,7 @@ export function authorize<T extends factory.accountType>(params: {
     };
 }
 
-async function processStartDepositTransaction<T extends factory.accountType>(params: {
+async function processStartDepositTransaction<T extends string>(params: {
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
     object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
@@ -186,7 +186,7 @@ async function processStartDepositTransaction<T extends factory.accountType>(par
     return { requestBody, responseBody };
 }
 
-export function voidTransaction<T extends factory.accountType>(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {
+export function voidTransaction<T extends string>(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;

@@ -1,11 +1,11 @@
 import * as factory from '../../../factory';
 
-function createMoneyTransferActions<T extends factory.accountType>(params: {
+function createMoneyTransferActions<T extends string>(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }): factory.action.transfer.moneyTransfer.IAttributes<T>[] {
     // 通貨転送アクション属性作成
-    type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType>;
-    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+    type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<string>;
+    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<string>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
@@ -15,14 +15,14 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
         const actionResult = <factory.action.authorize.paymentMethod.account.IResult<T>>a.result;
 
         if (a.object.fromAccount !== undefined) {
-            if ((<IFromAccount>a.object.fromAccount).accountType !== factory.accountType.Coin) {
-                throw new factory.errors.Argument('Transaction', `account type must be ${factory.accountType.Coin}`);
+            if ((<IFromAccount>a.object.fromAccount).accountType !== 'Coin') {
+                throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
             }
         }
 
         if (a.object.toAccount !== undefined) {
-            if (a.object.toAccount.accountType !== factory.accountType.Coin) {
-                throw new factory.errors.Argument('Transaction', `account type must be ${factory.accountType.Coin}`);
+            if (a.object.toAccount.accountType !== 'Coin') {
+                throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
             }
         }
 
@@ -56,7 +56,7 @@ function createMoneyTransferActions<T extends factory.accountType>(params: {
 /**
  * 取引のポストアクションを作成する
  */
-export async function createPotentialActions<T extends factory.accountType>(params: {
+export async function createPotentialActions<T extends string>(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }): Promise<factory.transaction.IPotentialActions<factory.transactionType.MoneyTransfer>> {
     // 通貨転送アクション属性作成

@@ -37,7 +37,7 @@ describe('service.payment.account.authorize()', () => {
             },
             paymentAccepted: [{
                 paymentMethodType: domain.factory.paymentMethodType.Account,
-                accountType: domain.factory.accountType.Point
+                accountType: 'Point'
             }]
         };
         const transaction = {
@@ -86,11 +86,11 @@ describe('service.payment.account.authorize()', () => {
                 typeOf: domain.factory.paymentMethodType.Account,
                 amount: amount,
                 fromAccount: {
-                    accountType: domain.factory.accountType.Point,
+                    accountType: 'Point',
                     accountNumber: 'fromAccountNumber'
                 },
                 toAccount: {
-                    accountType: domain.factory.accountType.Point,
+                    accountType: 'Point',
                     accountNumber: 'toAccountNumber'
                 },
                 notes: 'notes'
@@ -125,7 +125,7 @@ describe('service.payment.account.authorize()', () => {
             paymentAccepted: [
                 {
                     paymentMethodType: domain.factory.paymentMethodType.Account,
-                    accountType: domain.factory.accountType.Point
+                    accountType: 'Point'
                 }
             ]
         };
@@ -181,11 +181,11 @@ describe('service.payment.account.authorize()', () => {
                 amount: amount,
                 currency: domain.factory.priceCurrency.JPY,
                 fromAccount: {
-                    accountType: domain.factory.accountType.Point,
+                    accountType: 'Point',
                     accountNumber: 'fromAccountNumber'
                 },
                 toAccount: {
-                    accountType: domain.factory.accountType.Point,
+                    accountType: 'Point',
                     accountNumber: 'toAccountNumber'
                 },
                 notes: 'notes'

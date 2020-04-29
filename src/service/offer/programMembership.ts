@@ -2,14 +2,25 @@
  * 会員プログラムオファーサービス
  */
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProgramMembershipRepo } from '../../repo/programMembership';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    programMembership: ProgramMembershipRepo;
+    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -22,9 +33,20 @@ export function authorize(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        programMembership: ProgramMembershipRepo;
+        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -38,30 +60,25 @@ export function authorize(params: {
 
         const seller = transaction.seller;
 
+        const membershipServiceId = params.object.itemOffered.membershipFor?.id;
+        if (typeof membershipServiceId !== 'string') {
+            throw new factory.errors.ArgumentNull('object.itemOffered.membershipFor.id');
+        }
+
         // 会員プログラム検索
-        const programMemberships = await repos.programMembership.search({ id: { $eq: params.object.itemOffered.membershipFor?.id } });
-        const membershipService = programMemberships.shift();
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (membershipService === undefined) {
-            throw new factory.errors.NotFound('MembershipService');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (membershipService.offers === undefined) {
-            throw new factory.errors.NotFound('MembershipService.Offer');
-        }
-        const acceptedOffer = membershipService.offers.find((o) => o.identifier === params.object.identifier);
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
+        const membershipService = await productService.findById({ id: membershipServiceId });
+        const offers = await productService.searchOffers({ id: String(membershipService.id) });
+        const acceptedOffer = offers.find((o) => o.identifier === params.object.identifier);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (typeof acceptedOffer.priceSpecification?.price !== 'number') {
-            throw new factory.errors.NotFound('Offer Price undefined');
+
+        // 金額計算
+        if (acceptedOffer.priceSpecification.typeOf !== factory.chevre.priceSpecificationType.CompoundPriceSpecification) {
+            throw new factory.errors.ServiceUnavailable('price specification of result accepted offer must be CompoundPriceSpecification');
         }
+        const priceSpecification = <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>acceptedOffer.priceSpecification;
+        const amount = priceSpecification.priceComponent.reduce((a2, b2) => a2 + Number(b2.price), 0);
 
         // 在庫確認は現時点で不要
         // 何かしら会員プログラムへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
@@ -75,13 +92,13 @@ export function authorize(params: {
                 typeOf: acceptedOffer.typeOf,
                 id: acceptedOffer.id,
                 identifier: acceptedOffer.identifier,
-                price: acceptedOffer.priceSpecification?.price,
+                // price: amount,
                 priceCurrency: acceptedOffer.priceCurrency,
                 priceSpecification: acceptedOffer.priceSpecification,
                 itemOffered: {
-                    project: membershipService.project,
+                    project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
                     typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                    name: membershipService.name,
+                    name: <any>membershipService.name,
                     programName: <any>membershipService.name,
                     // 会員プログラムのホスト組織
                     hostingOrganization: {
@@ -123,7 +140,7 @@ export function authorize(params: {
         }
 
         const result: factory.action.authorize.offer.programMembership.IResult = {
-            price: acceptedOffer.priceSpecification?.price,
+            price: amount,
             priceCurrency: <factory.chevre.priceCurrency>acceptedOffer.priceSpecification?.priceCurrency
         };
 

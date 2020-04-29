@@ -123,6 +123,7 @@ describe('action.authorize.seatReservation.create()', () => {
         sandbox.verify();
     });
 
+    // tslint:disable-next-line:max-func-body-length
     it('COAが正常であれば、エラーにならないはず(無料鑑賞券の場合)', async () => {
         const agent = {
             id: 'agentId'
@@ -180,6 +181,10 @@ describe('action.authorize.seatReservation.create()', () => {
             .expects('findById')
             .once()
             .resolves(event);
+        sandbox.mock(domain.chevre.service.Offer.prototype)
+            .expects('search')
+            .once()
+            .resolves({ data: [] });
         sandbox.mock(domain.COA.service.Reserve.prototype)
             .expects('salesTicket')
             .once()

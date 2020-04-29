@@ -34,7 +34,7 @@ export type IAuthorizeOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
-export function authorize<T extends factory.accountType>(params: {
+export function authorize<T extends string>(params: {
     project: factory.project.IProject;
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
@@ -134,7 +134,7 @@ export function authorize<T extends factory.accountType>(params: {
 }
 
 // tslint:disable-next-line:max-func-body-length
-async function processAccountTransaction<T extends factory.accountType>(params: {
+async function processAccountTransaction<T extends string>(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
         fromAccount?: factory.action.authorize.paymentMethod.account.IAccount<T>;
@@ -259,7 +259,7 @@ async function processAccountTransaction<T extends factory.accountType>(params: 
 /**
  * 口座承認取消
  */
-export function voidTransaction<T extends factory.accountType>(
+export function voidTransaction<T extends string>(
     params: factory.task.IData<factory.taskName.CancelAccount>
 ) {
     return async (repos: {

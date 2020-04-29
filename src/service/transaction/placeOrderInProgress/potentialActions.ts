@@ -3,11 +3,13 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
 import { format } from 'util';
 
+import { createGivePointAwardActions } from './potentialActions/givePointAward';
+
 import * as emailMessageBuilder from '../../../emailMessageBuilder';
 
 import * as factory from '../../../factory';
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<factory.accountType>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<string>;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
@@ -266,45 +268,6 @@ async function createSendEmailMessageActions(params: {
     return sendEmailMessageActions;
 }
 
-async function createGivePointAwardActions(params: {
-    order: factory.order.IOrder;
-    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
-    transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.transfer.give.pointAward.IAttributes[]> {
-    // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
-    const pointAwardAuthorizeActions =
-        (<factory.action.authorize.award.point.IAction[]>params.transaction.object.authorizeActions)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
-
-    return pointAwardAuthorizeActions.map((a) => {
-        const actionResult = <factory.action.authorize.award.point.IResult>a.result;
-
-        return {
-            project: params.transaction.project,
-            typeOf: <factory.actionType.GiveAction>factory.actionType.GiveAction,
-            agent: params.transaction.seller,
-            recipient: params.transaction.agent,
-            object: {
-                typeOf: factory.action.transfer.give.pointAward.ObjectType.PointAward,
-                pointTransaction: actionResult.pointTransaction,
-                pointAPIEndpoint: actionResult.pointAPIEndpoint
-            },
-            purpose: {
-                project: params.order.project,
-                typeOf: params.order.typeOf,
-                seller: params.order.seller,
-                customer: params.order.customer,
-                confirmationNumber: params.order.confirmationNumber,
-                orderNumber: params.order.orderNumber,
-                price: params.order.price,
-                priceCurrency: params.order.priceCurrency,
-                orderDate: params.order.orderDate
-            }
-        };
-    });
-}
-
 async function createPayMovieTicketActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
@@ -372,14 +335,14 @@ async function createPayAccountActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[]> {
     // 口座決済アクション
-    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<factory.accountType>[]>
+    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<string>[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
 
     return authorizeAccountActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result;
+        const result = <factory.action.authorize.paymentMethod.account.IResult<string>>a.result;
 
         return {
             project: params.transaction.project,
@@ -395,7 +358,7 @@ async function createPayAccountActions(params: {
                     typeOf: <factory.paymentMethodType.Account>result.paymentMethod
                 },
                 pendingTransaction:
-                    (<factory.action.authorize.paymentMethod.account.IResult<factory.accountType>>a.result).pendingTransaction
+                    (<factory.action.authorize.paymentMethod.account.IResult<string>>a.result).pendingTransaction
             }],
             agent: params.transaction.agent,
             purpose: {
@@ -719,8 +682,8 @@ async function createMoneyTransferActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[]> {
-    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<factory.accountType>[] = [];
+}): Promise<factory.action.transfer.moneyTransfer.IAttributes<string>[]> {
+    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<string>[] = [];
 
     const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -873,16 +836,26 @@ function createRegisterProgramMembershipActions(params: {
 
             // どういう期間でいくらのオファーなのか
             const priceSpec =
-                <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>
                 o.priceSpecification;
             if (priceSpec === undefined) {
                 throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
             }
+
+            const unitPriceSpec =
+                <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                priceSpec.priceComponent.find(
+                    (p) => p.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+                );
+            if (unitPriceSpec === undefined) {
+                throw new factory.errors.NotFound('Unit Price Specification in Order.acceptedOffers.priceSpecification');
+            }
+
             // 期間単位としては秒のみ実装
-            if (priceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+            if (unitPriceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
                 throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
             }
-            const referenceQuantityValue = priceSpec.referenceQuantity.value;
+            const referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
             if (typeof referenceQuantityValue !== 'number') {
                 throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification.referenceQuantity.value');
             }

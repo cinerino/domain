@@ -4,7 +4,6 @@ import { INTERNAL_SERVER_ERROR } from 'http-status';
 import { credentials } from '../../credentials';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { InMemoryRepository as OfferRepo } from '../../repo/offer';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -36,7 +35,6 @@ export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    offer?: OfferRepo;
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -108,12 +106,12 @@ async function createAcceptedOffersWithoutDetails(params: {
 
 // tslint:disable-next-line:max-func-body-length
 async function offer2availableSalesTicket(params: {
+    project: factory.project.IProject;
     offers: IAcceptedOfferWithoutDetail[];
     offer: IAcceptedOfferWithoutDetail;
     offerIndex: number;
     availableSalesTickets: COA.factory.reserve.ISalesTicketResult[];
     coaInfo: factory.event.screeningEvent.ICOAInfo;
-    coaTickets?: COA.factory.master.ITicketResult[];
 }) {
     let availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
     let coaPointTicket: COA.factory.master.ITicketResult | undefined;
@@ -139,11 +137,48 @@ async function offer2availableSalesTicket(params: {
         // 販売可能チケット情報に販売金額
         // を持っているので、処理が少し冗長になってしまうが、しょうがない
         try {
-            let availableTickets: COA.factory.master.ITicketResult[] | undefined = params.coaTickets;
+            let availableTickets: COA.factory.master.ITicketResult[] | undefined;
+
+            // Chevreでオファー検索トライ
+            const offerIdentifier = `COA=${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
+            const offerService = new chevre.service.Offer({
+                endpoint: <string>params.project.settings?.chevre?.endpoint,
+                auth: chevreAuthClient
+            });
+            const searchOffersResult = await offerService.search({
+                limit: 1,
+                project: { id: { $eq: params.project.id } },
+                itemOffered: { typeOf: { $eq: 'EventService' } },
+                identifier: { $eq: offerIdentifier }
+            });
+            if (searchOffersResult.data.length > 0) {
+                availableTickets = searchOffersResult.data.map((o) => {
+                    return {
+                        ticketCode: (typeof o.additionalProperty?.find((p) => p.name === 'ticketCode')?.value === 'string')
+                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketCode')?.value)
+                            : '',
+                        ticketName: (typeof o.additionalProperty?.find((p) => p.name === 'ticketName')?.value === 'string')
+                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketName')?.value)
+                            : '',
+                        ticketNameKana: (typeof o.additionalProperty?.find((p) => p.name === 'ticketNameKana')?.value === 'string')
+                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketNameKana')?.value)
+                            : '',
+                        ticketNameEng: (typeof o.additionalProperty?.find((p) => p.name === 'ticketNameEng')?.value === 'string')
+                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketNameEng')?.value)
+                            : '',
+                        usePoint: (typeof o.additionalProperty?.find((p) => p.name === 'usePoint')?.value === 'string')
+                            ? Number(o.additionalProperty?.find((p) => p.name === 'usePoint')?.value)
+                            : 0,
+                        flgMember: (typeof o.additionalProperty?.find((p) => p.name === 'flgMember')?.value === 'string')
+                            ? <COA.factory.master.FlgMember>String(o.additionalProperty?.find((p) => p.name === 'flgMember')?.value)
+                            : COA.factory.master.FlgMember.NonMember
+                    };
+                });
+            }
+
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (availableTickets === undefined) {
-                debug('finding mvtkTicket...', offer.ticketInfo.ticketCode);
                 availableTickets = await masterService.ticket({
                     theaterCode: coaInfo.theaterCode
                 });
@@ -358,10 +393,10 @@ function availableSalesTicket2offerWithDetails(params: {
  * バグ、不足等あれば、随時更新することが望ましい。
  */
 async function validateOffers(
+    project: factory.project.IProject,
     isMember: boolean,
     screeningEvent: factory.event.screeningEvent.IEvent,
-    offers: IAcceptedOfferWithoutDetail[],
-    coaTickets?: COA.factory.master.ITicketResult[]
+    offers: IAcceptedOfferWithoutDetail[]
 ): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> {
     const reserveService = new COA.service.Reserve(
         {
@@ -409,12 +444,12 @@ async function validateOffers(
     // オファーごとに確認
     await Promise.all(offers.map(async (offer, offerIndex) => {
         const { availableSalesTicket, coaPointTicket } = await offer2availableSalesTicket({
+            project: project,
             offers: offers,
             offer: offer,
             offerIndex: offerIndex,
             availableSalesTickets: availableSalesTickets,
-            coaInfo: coaInfo,
-            coaTickets: coaTickets
+            coaInfo: coaInfo
         });
 
         const offerWithDetails = availableSalesTicket2offerWithDetails({
@@ -490,7 +525,6 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        offer?: OfferRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
@@ -530,12 +564,10 @@ export function create(params: {
         });
 
         const acceptedOffer = await validateOffers(
+            project,
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
-            acceptedOffersWithoutDetails,
-            (repos.offer !== undefined)
-                ? /* istanbul ignore next */ repos.offer.searchCOATickets({ theaterCode: screeningEvent.superEvent.location.branchCode })
-                : undefined
+            acceptedOffersWithoutDetails
         );
 
         // 承認アクションを開始
@@ -677,7 +709,6 @@ export function changeOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        offer?: OfferRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
@@ -767,12 +798,10 @@ export function changeOffers(params: {
             };
         });
         const acceptedOffer = await validateOffers(
+            project,
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
-            acceptedOffersWithoutDetails,
-            (repos.offer !== undefined)
-                ? /* istanbul ignore next */ repos.offer.searchCOATickets({ theaterCode: screeningEvent.superEvent.location.branchCode })
-                : undefined
+            acceptedOffersWithoutDetails
         );
 
         // 供給情報と価格を変更してからDB更新

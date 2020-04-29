@@ -39,7 +39,7 @@ export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seat
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
 
-export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<factory.accountType.Point>;
+export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<'Point'>;
 
 export type IAuthorizeActionResultBySeller =
     // factory.action.authorize.offer.programMembership.IResult |
@@ -528,10 +528,10 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
 
     // 必要ポイントがある場合、ポイントのオーソリ金額と比較
     const authorizedPointAmount =
-        (<factory.action.authorize.paymentMethod.account.IAction<factory.accountType.Point>[]>transaction.object.authorizeActions)
+        (<factory.action.authorize.paymentMethod.account.IAction<'Point'>[]>transaction.object.authorizeActions)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-            .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === factory.accountType.Point)
+            .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === 'Point')
             .reduce((a, b) => a + b.object.amount, 0);
 
     // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定

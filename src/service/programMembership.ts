@@ -10,7 +10,6 @@ import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
-import { MongoRepository as ProgramMembershipRepo } from '../repo/programMembership';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -21,10 +20,21 @@ import * as OfferService from './offer';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as TransactionService from './transaction';
 
+import { credentials } from '..//credentials';
+
+import * as chevre from '../chevre';
 import * as factory from '../factory';
 
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
 export type ICreateRegisterTaskOperation<T> = (repos: {
-    programMembership: ProgramMembershipRepo;
+    project: ProjectRepo;
     seller: SellerRepo;
     task: TaskRepo;
 }) => Promise<T>;
@@ -35,7 +45,6 @@ export type IOrderOperation<T> = (repos: {
     orderNumber: OrderNumberRepo;
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
-    programMembership: ProgramMembershipRepo;
     project: ProjectRepo;
     registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
@@ -52,6 +61,7 @@ export type IRegisterOperation<T> = (repos: {
  * 会員プログラム登録タスクを作成する
  */
 export function createRegisterTask(params: {
+    project: { id: string };
     agent: factory.person.IPerson;
     /**
      * 会員プログラムのオファー識別子
@@ -63,31 +73,32 @@ export function createRegisterTask(params: {
     programMembershipId: string;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: {
-        /**
-         * 販売者タイプ
-         */
         typeOf: factory.organizationType;
-        /**
-         * 販売者ID
-         */
         id: string;
     };
 }): ICreateRegisterTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
-        programMembership: ProgramMembershipRepo;
+        project: ProjectRepo;
         seller: SellerRepo;
         task: TaskRepo;
     }) => {
         const now = new Date();
 
-        const programMembership = await repos.programMembership.findById({ id: params.programMembershipId });
+        const project = await repos.project.findById({ id: params.project.id });
 
-        if (programMembership.offers === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership.offers');
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
-        const offer = programMembership.offers.find((o) => o.identifier === params.offerIdentifier);
-        if (offer === undefined) {
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const membershipService = await productService.findById({ id: params.programMembershipId });
+        const offers = await productService.searchOffers({ id: String(membershipService.id) });
+        const acceptedOffer = offers.find((o) => o.identifier === params.offerIdentifier);
+        if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
 
@@ -96,8 +107,8 @@ export function createRegisterTask(params: {
         // 注文アクション属性を作成
         const data = createOrderProgramMembershipActionAttributes({
             agent: params.agent,
-            offer: offer,
-            programMembership: programMembership,
+            offer: acceptedOffer,
+            programMembership: membershipService,
             potentialActions: params.potentialActions,
             seller: seller
         });
@@ -121,7 +132,7 @@ export function createRegisterTask(params: {
 function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
-    programMembership: factory.programMembership.IMembershipService;
+    programMembership: factory.chevre.service.IService;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
@@ -130,9 +141,9 @@ function createOrderProgramMembershipActionAttributes(params: {
     const seller = params.seller;
 
     const itemOffered: factory.programMembership.IProgramMembership = {
-        project: programMembership.project,
+        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-        name: programMembership.name,
+        name: <any>programMembership.name,
         programName: <any>programMembership.name,
         // 会員プログラムのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
@@ -152,7 +163,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
-        price: offer.priceSpecification?.price,
+        // price: offer.priceSpecification?.price,
         priceCurrency: offer.priceCurrency,
         priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,
@@ -166,7 +177,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         agent: params.agent,
         object: acceptedOffer,
         potentialActions: params.potentialActions,
-        project: programMembership.project,
+        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.actionType.OrderAction
     };
 }
@@ -183,7 +194,6 @@ export function orderProgramMembership(
         orderNumber: OrderNumberRepo;
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
-        programMembership: ProgramMembershipRepo;
         project: ProjectRepo;
         registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
@@ -447,7 +457,6 @@ function processPlaceOrder(params: {
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        programMembership: ProgramMembershipRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -455,6 +464,15 @@ function processPlaceOrder(params: {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
+
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
 
         const acceptedOffer = params.acceptedOffer;
         const programMembership = acceptedOffer.itemOffered;
@@ -484,61 +502,78 @@ function processPlaceOrder(params: {
         if (typeof membershipServiceId !== 'string') {
             throw new Error('membershipServiceId undefined');
         }
-        const membershipService = await repos.programMembership.findById({ id: membershipServiceId });
 
-        // 新規登録時の獲得ポイント
+        const membershipService = await productService.findById({ id: membershipServiceId });
+
+        // 登録時の獲得ポイント
         const membershipServiceOutput = membershipService.serviceOutput;
         if (Array.isArray(membershipServiceOutput)) {
-            // ポイント口座を検索
-            // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
-            let accountOwnershipInfos = await AccountService.search({
-                project: { typeOf: project.typeOf, id: project.id },
-                conditions: {
-                    sort: { ownedFrom: factory.sortType.Ascending },
-                    limit: 1,
-                    typeOfGood: {
-                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                        accountType: factory.accountType.Point
-                    },
-                    ownedBy: { id: customer.id },
-                    ownedFrom: now,
-                    ownedThrough: now
+            const givePointAwardParams: factory.transaction.placeOrder.IGivePointAwardParams[] = [];
+
+            await Promise.all((<factory.chevre.programMembership.IProgramMembership[]>membershipServiceOutput)
+                .map(async (serviceOutput) => {
+                    const membershipPointsEarnedName = (<any>serviceOutput).membershipPointsEarned?.name;
+                    const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
+                    const membershipPointsEarnedUnitText = (<any>serviceOutput).membershipPointsEarned?.unitText;
+
+                    if (typeof membershipPointsEarnedValue === 'number' && typeof membershipPointsEarnedUnitText === 'string') {
+                        // 所有口座を検索
+                        // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+                        let accountOwnershipInfos = await AccountService.search({
+                            project: { typeOf: project.typeOf, id: project.id },
+                            conditions: {
+                                sort: { ownedFrom: factory.sortType.Ascending },
+                                limit: 1,
+                                typeOfGood: {
+                                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                                    accountType: <any>membershipPointsEarnedUnitText
+                                },
+                                ownedBy: { id: customer.id },
+                                ownedFrom: now,
+                                ownedThrough: now
+                            }
+                        })({
+                            ownershipInfo: repos.ownershipInfo,
+                            project: repos.project
+                        });
+
+                        // 開設口座に絞る
+                        accountOwnershipInfos =
+                            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+                        if (accountOwnershipInfos.length === 0) {
+                            throw new factory.errors.NotFound('accountOwnershipInfos');
+                        }
+                        const toAccount = accountOwnershipInfos[0].typeOfGood;
+
+                        givePointAwardParams.push({
+                            object: {
+                                typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
+                                amount: membershipPointsEarnedValue,
+                                toLocation: {
+                                    accountType: membershipPointsEarnedUnitText,
+                                    accountNumber: toAccount.accountNumber
+                                },
+                                description: (typeof membershipPointsEarnedName === 'string')
+                                    ? membershipPointsEarnedName
+                                    : membershipService.typeOf
+                            }
+                        });
+                    }
+                }));
+
+            await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+                agent: { id: transaction.agent.id },
+                transaction: { id: transaction.id },
+                object: {
+                    potentialActions: {
+                        givePointAwardParams: givePointAwardParams
+                    }
                 }
             })({
+                action: repos.action,
                 ownershipInfo: repos.ownershipInfo,
-                project: repos.project
+                transaction: repos.transaction
             });
-
-            // 開設口座に絞る
-            accountOwnershipInfos = accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
-            if (accountOwnershipInfos.length === 0) {
-                throw new factory.errors.NotFound('accountOwnershipInfos');
-            }
-            const toAccount = accountOwnershipInfos[0].typeOfGood;
-
-            await Promise.all(membershipServiceOutput.map(async (serviceOutput) => {
-                const membershipPointsEarnedName = serviceOutput.membershipPointsEarned?.name;
-                const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
-                if (typeof membershipPointsEarnedValue === 'number') {
-                    await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
-                        agent: { id: transaction.agent.id },
-                        transaction: { id: transaction.id },
-                        object: {
-                            typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                            amount: membershipPointsEarnedValue,
-                            toAccountNumber: toAccount.accountNumber,
-                            notes: (typeof membershipPointsEarnedName === 'string')
-                                ? membershipPointsEarnedName
-                                : membershipService.typeOf
-                        }
-                    })({
-                        action: repos.action,
-                        ownershipInfo: repos.ownershipInfo,
-                        project: repos.project,
-                        transaction: repos.transaction
-                    });
-                }
-            }));
         }
 
         // 会員プログラムオファー承認

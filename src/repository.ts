@@ -9,7 +9,6 @@ import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
 import { MongoRepository as MemberRepo } from './repo/member';
-import { InMemoryRepository as OfferRepo } from './repo/offer';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
@@ -17,7 +16,6 @@ import { MongoRepository as PaymentMethodRepo } from './repo/paymentMethod';
 import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard';
 import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTicket';
 import { CognitoRepository as PersonRepo } from './repo/person';
-import { MongoRepository as ProgramMembershipRepo } from './repo/programMembership';
 import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as RoleRepo } from './repo/role';
 import { MongoRepository as SellerRepo } from './repo/seller';
@@ -60,11 +58,6 @@ export class Invoice extends InvoiceRepo { }
 export class Member extends MemberRepo { }
 
 /**
- * オファーリポジトリ
- */
-export class Offer extends OfferRepo { }
-
-/**
  * 注文リポジトリ
  */
 export class Order extends OrderRepo { }
@@ -99,11 +92,6 @@ export namespace paymentMethod {
  * 顧客リポジトリ
  */
 export class Person extends PersonRepo { }
-
-/**
- * 会員プログラムリポジトリ
- */
-export class ProgramMembership extends ProgramMembershipRepo { }
 
 /**
  * プロジェクトリポジトリ
