@@ -514,9 +514,9 @@ function processPlaceOrder(params: {
                 .map(async (serviceOutput) => {
                     const membershipPointsEarnedName = (<any>serviceOutput).membershipPointsEarned?.name;
                     const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
-                    const membershipPointsEarnedUnitCode = serviceOutput.membershipPointsEarned?.unitCode;
+                    const membershipPointsEarnedUnitText = (<any>serviceOutput).membershipPointsEarned?.unitText;
 
-                    if (typeof membershipPointsEarnedValue === 'number' && typeof membershipPointsEarnedUnitCode === 'string') {
+                    if (typeof membershipPointsEarnedValue === 'number' && typeof membershipPointsEarnedUnitText === 'string') {
                         // 所有口座を検索
                         // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
                         let accountOwnershipInfos = await AccountService.search({
@@ -526,7 +526,7 @@ function processPlaceOrder(params: {
                                 limit: 1,
                                 typeOfGood: {
                                     typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                                    accountType: <any>membershipPointsEarnedUnitCode
+                                    accountType: <any>membershipPointsEarnedUnitText
                                 },
                                 ownedBy: { id: customer.id },
                                 ownedFrom: now,
@@ -550,7 +550,7 @@ function processPlaceOrder(params: {
                                 typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
                                 amount: membershipPointsEarnedValue,
                                 toLocation: {
-                                    accountType: membershipPointsEarnedUnitCode,
+                                    accountType: membershipPointsEarnedUnitText,
                                     accountNumber: toAccount.accountNumber
                                 },
                                 description: (typeof membershipPointsEarnedName === 'string')
