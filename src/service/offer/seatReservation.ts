@@ -294,6 +294,7 @@ export function create(params: {
             price: amount,
             priceCurrency: acceptedOffers[0].priceCurrency,
             point: 0,
+            amount: [],
             requestBody: requestBody,
             responseBody: responseBody,
             ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined

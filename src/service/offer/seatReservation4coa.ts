@@ -620,6 +620,11 @@ export function create(params: {
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
             point: requiredPoint,
+            amount: [{
+                typeOf: 'MonetaryAmount',
+                currency: 'Point',
+                value: requiredPoint
+            }],
             requestBody: updTmpReserveSeatArgs,
             responseBody: updTmpReserveSeatResult,
             ...{ updTmpReserveSeatArgs, updTmpReserveSeatResult } // 互換性維持のため

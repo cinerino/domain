@@ -11,6 +11,8 @@ import * as domain from '../index';
 let sandbox: sinon.SinonSandbox;
 let redisClient: redis.RedisClient;
 
+const project = { id: 'id', settings: { pecorino: { endpoint: '' } } };
+
 before(() => {
     sandbox = sinon.createSandbox();
     redisClient = redis.createClient();
@@ -22,7 +24,6 @@ describe('ポイント口座を開設する', () => {
     });
 
     it('口座リポジトリが正常であれば開設できるはず', async () => {
-        const project = { id: 'id', settings: { pecorino: {} } };
         const account = {};
         const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
@@ -53,7 +54,6 @@ describe('ポイント口座を開設する', () => {
     });
 
     it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
-        const project = { id: 'id', settings: { pecorino: {} } };
         const pecorinoRequestError = { name: 'PecorinoRequestError' };
         const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
@@ -91,7 +91,6 @@ describe('ポイントを入金する', () => {
     });
 
     it('Pecorinoサービスが正常であれば入金できるはず', async () => {
-        const project = { id: 'id', settings: { pecorino: {} } };
         const depositTransaction = {};
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
@@ -126,7 +125,6 @@ describe('ポイントを入金する', () => {
     });
 
     it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
-        const project = { id: 'id', settings: { pecorino: {} } };
         const pecorinoRequestError = { name: 'PecorinoRequestError' };
 
         const projectRepo = new domain.repository.Project(mongoose.connection);

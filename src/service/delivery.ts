@@ -401,8 +401,7 @@ export function onSend(
 }
 
 /**
- * ポイントインセンティブ入金実行
- * 取引中に入金取引の承認アクションを完了しているはずなので、その取引を確定するだけの処理です。
+ * インセンティブ入金実行
  */
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
@@ -425,7 +424,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 auth: pecorinoAuthClient
             });
 
-            const depositTransaction = await depositService.start<'Point'>({
+            const depositTransaction = await depositService.start<string>({
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
@@ -437,7 +436,6 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                     url: params.agent.url
                 },
                 expires: moment()
-                    // tslint:disable-next-line:no-magic-numbers
                     .add(1, 'minutes')
                     .toDate(),
                 recipient: {
@@ -456,7 +454,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                         : params.purpose.typeOf,
                     toLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: <'Point'>params.object.toLocation.accountType,
+                        accountType: params.object.toLocation.accountType,
                         accountNumber: params.object.toLocation.accountNumber
                     }
                 }
@@ -484,7 +482,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 }
 
 /**
- * ポイントインセンティブ返却実行
+ * インセンティブ返却実行
  */
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
@@ -496,7 +494,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<'Point'>;
+        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<string>;
         const action = await repos.action.start(params);
 
         try {
@@ -521,8 +519,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     url: params.agent.url
                 },
                 expires: moment()
-                    // tslint:disable-next-line:no-magic-numbers
-                    .add(5, 'minutes')
+                    .add(1, 'minutes')
                     .toDate(),
                 recipient: {
                     typeOf: params.recipient.typeOf,
@@ -531,13 +528,11 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     url: params.recipient.url
                 },
                 object: {
-                    // amount: givePointAwardActionObject.pointTransaction.object.amount,
-                    // fromLocation: givePointAwardActionObject.pointTransaction.object.toLocation,
                     amount: givePointAwardActionObject.amount,
                     fromLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
                         accountNumber: givePointAwardActionObject.toLocation.accountNumber,
-                        accountType: <'Point'>givePointAwardActionObject.toLocation.accountType
+                        accountType: givePointAwardActionObject.toLocation.accountType
                     },
                     description: `${givePointAwardActionObject.description}取消`
                 }

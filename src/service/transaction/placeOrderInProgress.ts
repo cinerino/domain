@@ -75,7 +75,8 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             },
             ...((<any>params.object).clientUser !== undefined && (<any>params.object).clientUser !== null)
                 ? { clientUser: (<any>params.object).clientUser }
-                : undefined
+                : undefined,
+            ...(typeof (<any>params).object?.name === 'string') ? { name: (<any>params).object?.name } : undefined
         };
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成

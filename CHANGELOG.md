@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- イベントオファー承認結果にamountを追加
+- 注文にnameを追加
+
 ### Changed
 
 ### Deprecated
