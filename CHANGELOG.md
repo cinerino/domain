@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - イベントオファー承認結果にamountを追加
 - 注文にnameを追加
+- COA予約承認にpriceSpecificationを追加
 
 ### Changed
 
