@@ -343,6 +343,7 @@ function availableSalesTicket2offerWithDetails(params: {
     const unitPriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+        name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
         price: Number(availableSalesTicket.stdPrice),
         priceCurrency: factory.chevre.priceCurrency.JPY,
         referenceQuantity: {
@@ -371,6 +372,7 @@ function availableSalesTicket2offerWithDetails(params: {
         movieTicketTypeChargePriceSpec = {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
+            name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
             price: Number(availableSalesTicket.addPrice),
             priceCurrency: factory.chevre.priceCurrency.JPY,
             valueAddedTaxIncluded: true,
