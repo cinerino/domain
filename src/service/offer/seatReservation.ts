@@ -293,7 +293,6 @@ export function create(params: {
         const result: factory.action.authorize.offer.seatReservation.IResult<typeof offeredThrough.identifier> = {
             price: amount,
             priceCurrency: acceptedOffers[0].priceCurrency,
-            point: 0,
             amount: [],
             requestBody: requestBody,
             responseBody: responseBody,

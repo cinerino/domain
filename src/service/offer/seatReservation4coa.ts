@@ -684,7 +684,6 @@ export function create(params: {
         const result: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
-            point: requiredPoint,
             amount: [{
                 typeOf: 'MonetaryAmount',
                 currency: 'Point',
@@ -883,7 +882,6 @@ export function changeOffers(params: {
         const actionResult: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
             ...<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result,
             price: price,
-            point: requiredPoint,
             amount: [{
                 typeOf: 'MonetaryAmount',
                 currency: 'Point',

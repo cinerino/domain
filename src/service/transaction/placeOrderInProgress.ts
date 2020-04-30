@@ -315,8 +315,8 @@ function createResult(params: IConfirmParams & {
         validateTransaction(transaction);
 
         // ムビチケ条件が整っているかどうか確認
-        const validateMovieTicket = project.settings !== undefined && project.settings.validateMovieTicket === true;
-        if (validateMovieTicket) {
+        const disableValidateMovieTicket = (<any>project.settings).validateMovieTicket === false;
+        if (!disableValidateMovieTicket) {
             processValidateMovieTicket(transaction);
         }
 

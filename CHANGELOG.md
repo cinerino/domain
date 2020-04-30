@@ -15,9 +15,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- イベントオファー承認結果のpointをamountへ移行
+
 ### Deprecated
 
 ### Removed
+
+- プロジェクトのvalidateMovieTicket設定を削除
 
 ### Fixed
 
