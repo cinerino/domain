@@ -684,11 +684,13 @@ export function create(params: {
         const result: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
-            amount: [{
-                typeOf: 'MonetaryAmount',
-                currency: 'Point',
-                value: requiredPoint
-            }],
+            amount: (requiredPoint > 0)
+                ? [{
+                    typeOf: 'MonetaryAmount',
+                    currency: 'Point',
+                    value: requiredPoint
+                }]
+                : [],
             requestBody: updTmpReserveSeatArgs,
             responseBody: updTmpReserveSeatResult,
             ...{ updTmpReserveSeatArgs, updTmpReserveSeatResult } // 互換性維持のため
@@ -882,11 +884,13 @@ export function changeOffers(params: {
         const actionResult: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
             ...<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result,
             price: price,
-            amount: [{
-                typeOf: 'MonetaryAmount',
-                currency: 'Point',
-                value: requiredPoint
-            }]
+            amount: (requiredPoint > 0)
+                ? [{
+                    typeOf: 'MonetaryAmount',
+                    currency: 'Point',
+                    value: requiredPoint
+                }]
+                : []
         };
 
         // 座席予約承認アクションの供給情報を変更する

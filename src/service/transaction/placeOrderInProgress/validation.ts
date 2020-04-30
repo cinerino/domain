@@ -111,10 +111,9 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
 
 function validateAccount(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
-    const authorizeMonetaryAmountActions =
-        (<factory.action.authorize.paymentMethod.account.IAction<string>[]>transaction.object.authorizeActions)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
+    const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.account.IAction<string>[]>authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
 
     const requiredMonetaryAmountByAccountType: {
         currency: string;
