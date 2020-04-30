@@ -520,7 +520,19 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
         .reduce(
             (a, b) => {
-                const point = (<IAuthorizeSeatReservationOfferResult>b.result).point;
+                // 口座タイプがPointのmonetaryAmountを合算
+                let point = 0;
+                const amount = (<IAuthorizeSeatReservationOfferResult>b.result).amount;
+                if (Array.isArray(amount)) {
+                    point += amount.filter((monetaryAmount) => monetaryAmount.currency === 'Point')
+                        .reduce(
+                            (a1, b1) => {
+                                return a1 + ((typeof b1.value === 'number') ? b1.value : 0);
+                            },
+                            0
+                        );
+                }
+                // point = (<IAuthorizeSeatReservationOfferResult>b.result).point;
 
                 return a + ((typeof point === 'number') ? point : 0);
             },
