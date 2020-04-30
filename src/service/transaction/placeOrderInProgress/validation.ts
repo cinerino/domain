@@ -58,17 +58,29 @@ export async function validateWaiterPassport(params: IStartParams): Promise<fact
  * 取引が確定可能な状態かどうかをチェックする
  */
 export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
-    const authorizeActions = transaction.object.authorizeActions;
-    const profile = transaction.agent;
-    let priceByAgent = 0;
-    let priceBySeller = 0;
+    validateProfile(transaction);
+    validatePrice(transaction);
+    validateMonetaryAmount(transaction);
+    validateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
+    // tslint:disable-next-line:no-suspicious-comment
+    // validateMovieTicket('MGTicket', transaction); // TODO 実装
+}
 
-    if (profile.email === undefined
-        || profile.familyName === undefined
-        || profile.givenName === undefined
-        || profile.telephone === undefined) {
+function validateProfile(transaction: factory.transaction.placeOrder.ITransaction) {
+    const profile = transaction.agent;
+
+    if (typeof profile.email !== 'string' || profile.email.length === 0
+        || typeof profile.familyName !== 'string' || profile.familyName.length === 0
+        || typeof profile.givenName !== 'string' || profile.givenName.length === 0
+        || typeof profile.telephone !== 'string' || profile.telephone.length === 0) {
         throw new factory.errors.Argument('Transaction', 'Customer Profile Required');
     }
+}
+
+function validatePrice(transaction: factory.transaction.placeOrder.ITransaction) {
+    const authorizeActions = transaction.object.authorizeActions;
+    let priceByAgent = 0;
+    let priceBySeller = 0;
 
     // 決済承認を確認
     Object.keys(factory.paymentMethodType)
@@ -91,6 +103,14 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
         .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
         .reduce((a, b) => a + (<IAuthorizeActionResultBySeller>b.result).price, 0);
     debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
+
+    if (priceByAgent !== priceBySeller) {
+        throw new factory.errors.Argument('Transaction', 'Transaction cannot be confirmed because prices are not matched');
+    }
+}
+
+function validateMonetaryAmount(transaction: factory.transaction.placeOrder.ITransaction) {
+    const authorizeActions = transaction.object.authorizeActions;
 
     // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
     const requiredPoint = (<IAuthorizeSeatReservationOffer[]>
@@ -126,28 +146,15 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
             .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === 'Point')
             .reduce((a, b) => a + b.object.amount, 0);
 
-    // ポイントインセンティブは複数可だが、現時点で1注文につき1ポイントに限定
-    const pointAwardAuthorizeActions = <factory.action.authorize.award.point.IAction[]>authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.award.point.ObjectType.PointAward);
-    const givenAmount = pointAwardAuthorizeActions.reduce((a, b) => a + b.object.amount, 0);
-    if (givenAmount > 1) {
-        throw new factory.errors.Argument('Transaction', 'Incentive amount must be 1');
-    }
-
     if (requiredPoint !== authorizedPointAmount) {
         throw new factory.errors.Argument('Transaction', 'Required point amount not satisfied');
-    }
-
-    if (priceByAgent !== priceBySeller) {
-        throw new factory.errors.Argument('Transaction', 'Transaction cannot be confirmed because prices are not matched');
     }
 }
 
 /**
  * 座席予約オファー承認に対してムビチケ承認条件が整っているかどうか検証する
  */
-export function processValidateMovieTicket(
+function validateMovieTicket(
     paymentMethodType: factory.paymentMethodType.MovieTicket,
     transaction: factory.transaction.placeOrder.ITransaction
 ) {

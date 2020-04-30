@@ -15,7 +15,6 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
 import { createOrder } from './placeOrderInProgress/result';
 import {
-    processValidateMovieTicket,
     validateEventOffers,
     validateNumItems,
     validateTransaction,
@@ -265,14 +264,6 @@ function createResult(params: IConfirmParams & {
 
         // 取引の確定条件が全て整っているかどうか確認
         validateTransaction(transaction);
-
-        // ムビチケ条件が整っているかどうか確認
-        const disableValidateMovieTicket = (<any>project.settings).validateMovieTicket === false;
-        if (!disableValidateMovieTicket) {
-            processValidateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
-            // tslint:disable-next-line:no-suspicious-comment
-            // processValidateMovieTicket('MGTicket', transaction); // TODO 実装
-        }
 
         // 注文作成
         const order = createOrder({
