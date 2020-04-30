@@ -141,12 +141,26 @@ function seatSyncInfoIn2movieTickets(params: {
 }): factory.action.authorize.paymentMethod.movieTicket.IObject[] {
     const authorizeActionObjects: factory.action.authorize.paymentMethod.movieTicket.IObject[] = [];
 
+    const seatNumbers = params.seatSyncInfoIn.zskInfo.reduce<string[]>(
+        (a, b) => {
+            return [...a, b.zskCd];
+        },
+        []
+    );
+
+    let i = 0;
     params.seatSyncInfoIn.knyknrNoInfo.forEach((knyknrNoInfo) => {
         if (knyknrNoInfo !== undefined) {
             const movieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
             knyknrNoInfo.knshInfo.forEach((knshInfo) => {
                 // tslint:disable-next-line:prefer-array-literal
                 [...Array(Number(knshInfo.miNum))].forEach(() => {
+                    i += 1;
+                    const seatNumber = seatNumbers[i - 1];
+                    if (typeof seatNumber !== 'string') {
+                        throw new factory.errors.Argument('seatInfoSyncIn', 'number of seat numbers not matched');
+                    }
+
                     movieTickets.push({
                         project: { typeOf: factory.organizationType.Project, id: params.event.project.id },
                         typeOf: factory.paymentMethodType.MovieTicket,
@@ -162,7 +176,7 @@ function seatSyncInfoIn2movieTickets(params: {
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
                                     // seatingType: 'Default' // 情報空でよし
-                                    seatNumber: '', // 情報空でよし
+                                    seatNumber: seatNumber,
                                     seatRow: '', // 情報空でよし
                                     seatSection: '' // 情報空でよし
                                 }
