@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - イベントオファー承認結果のpointをamountへ移行
 - ムビチケディスカウントサービスを前売券決済サービスとして再定義
+- 注文取引確定時の口座バリデーションを口座タイプ管理に対応
 
 ### Deprecated
 

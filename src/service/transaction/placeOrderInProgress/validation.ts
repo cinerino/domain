@@ -19,7 +19,7 @@ export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seat
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
 
-export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<'Point'>;
+export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<string>;
 
 export type IAuthorizeActionResultBySeller =
     // factory.action.authorize.offer.programMembership.IResult |
@@ -60,7 +60,7 @@ export async function validateWaiterPassport(params: IStartParams): Promise<fact
 export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
     validateProfile(transaction);
     validatePrice(transaction);
-    validateMonetaryAmount(transaction);
+    validateAccount(transaction);
     validateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
     // tslint:disable-next-line:no-suspicious-comment
     // validateMovieTicket('MGTicket', transaction); // TODO 実装
@@ -109,45 +109,57 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
     }
 }
 
-function validateMonetaryAmount(transaction: factory.transaction.placeOrder.ITransaction) {
+function validateAccount(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
+    const authorizeMonetaryAmountActions =
+        (<factory.action.authorize.paymentMethod.account.IAction<string>[]>transaction.object.authorizeActions)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
 
-    // ポイント鑑賞券によって必要なポイントがどのくらいあるか算出
-    const requiredPoint = (<IAuthorizeSeatReservationOffer[]>
-        authorizeActions)
+    const requiredMonetaryAmountByAccountType: {
+        currency: string;
+        value: number;
+    }[] = [];
+
+    (<IAuthorizeSeatReservationOffer[]>authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
-        .reduce(
-            (a, b) => {
-                // 口座タイプがPointのmonetaryAmountを合算
-                let point = 0;
-                const amount = (<IAuthorizeSeatReservationOfferResult>b.result).amount;
+        .forEach(
+            (a) => {
+                const amount = (<IAuthorizeSeatReservationOfferResult>a.result).amount;
                 if (Array.isArray(amount)) {
-                    point += amount.filter((monetaryAmount) => monetaryAmount.currency === 'Point')
-                        .reduce(
-                            (a1, b1) => {
-                                return a1 + ((typeof b1.value === 'number') ? b1.value : 0);
-                            },
-                            0
-                        );
+                    amount.forEach((monetaryAmount) => {
+                        if (typeof monetaryAmount.value === 'number') {
+                            requiredMonetaryAmountByAccountType.push({ currency: monetaryAmount.currency, value: monetaryAmount.value });
+                        }
+                    });
                 }
-                // point = (<IAuthorizeSeatReservationOfferResult>b.result).point;
-
-                return a + ((typeof point === 'number') ? point : 0);
             },
             0
         );
 
-    // 必要ポイントがある場合、ポイントのオーソリ金額と比較
-    const authorizedPointAmount =
-        (<factory.action.authorize.paymentMethod.account.IAction<'Point'>[]>transaction.object.authorizeActions)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
-            .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === 'Point')
+    const requiredAccountTypes = [...new Set(requiredMonetaryAmountByAccountType.map((m) => m.currency))];
+    const authorizedAccountTypes = [...new Set(authorizeMonetaryAmountActions.map(
+        (m) => (<IAuthorizePointAccountPayment>m.object.fromAccount).accountType
+    ))];
+
+    if (requiredAccountTypes.length !== authorizedAccountTypes.length) {
+        throw new factory.errors.Argument('Transaction', 'MonetaryAmount account types not matched');
+    }
+
+    const requireMonetaryAmountSatisfied = requiredAccountTypes.every((accountType) => {
+        const requiredMonetaryAmount = requiredMonetaryAmountByAccountType.filter((m) => m.currency === accountType)
+            .reduce((a, b) => a + b.value, 0);
+
+        const authorizedMonetaryAmount = authorizeMonetaryAmountActions
+            .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === accountType)
             .reduce((a, b) => a + b.object.amount, 0);
 
-    if (requiredPoint !== authorizedPointAmount) {
-        throw new factory.errors.Argument('Transaction', 'Required point amount not satisfied');
+        return requiredMonetaryAmount === authorizedMonetaryAmount;
+    });
+
+    if (!requireMonetaryAmountSatisfied) {
+        throw new factory.errors.Argument('Transaction', 'Required MonetaryAmount not satisfied');
     }
 }
 

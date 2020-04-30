@@ -27,26 +27,11 @@ export type IStartOperation<T> = (repos: {
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
-export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 
 export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
 };
-
-export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
-export type IAuthorizeSeatReservationOfferResult =
-    factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
-
-export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<'Point'>;
-
-export type IAuthorizeActionResultBySeller =
-    // factory.action.authorize.offer.programMembership.IResult |
-    IAuthorizeSeatReservationOfferResult |
-    factory.action.authorize.award.point.IResult;
-
-export type IUnitPriceSpecification =
-    factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
 
 /**
  * 取引開始
