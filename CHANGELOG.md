@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - イベントオファー承認結果のpointをamountへ移行
+- ムビチケディスカウントサービスを前売券決済サービスとして再定義
 
 ### Deprecated
 

@@ -12,8 +12,6 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as AuthorizeMvtkDiscountActionService from './placeOrderInProgress/action/authorize/discount/mvtk';
-
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
 import { createOrder } from './placeOrderInProgress/result';
 import {
@@ -139,24 +137,6 @@ function createInformOrderParams(params: IStartParams & {
     }
 
     return informOrderParams;
-}
-
-/**
- * 取引に対するアクション
- */
-export namespace action {
-    /**
-     * 取引に対する承認アクション
-     */
-    export namespace authorize {
-        export namespace discount {
-            /**
-             * ムビチケ承認アクションサービス
-             * @deprecated
-             */
-            export import mvtk = AuthorizeMvtkDiscountActionService;
-        }
-    }
 }
 
 export type IConfirmationNumberGenerator = (order: factory.order.IOrder) => string;
@@ -289,7 +269,9 @@ function createResult(params: IConfirmParams & {
         // ムビチケ条件が整っているかどうか確認
         const disableValidateMovieTicket = (<any>project.settings).validateMovieTicket === false;
         if (!disableValidateMovieTicket) {
-            processValidateMovieTicket(transaction);
+            processValidateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
+            // tslint:disable-next-line:no-suspicious-comment
+            // processValidateMovieTicket('MGTicket', transaction); // TODO 実装
         }
 
         // 注文作成

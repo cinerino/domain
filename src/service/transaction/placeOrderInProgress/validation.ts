@@ -147,12 +147,15 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
 /**
  * 座席予約オファー承認に対してムビチケ承認条件が整っているかどうか検証する
  */
-export function processValidateMovieTicket(transaction: factory.transaction.placeOrder.ITransaction) {
+export function processValidateMovieTicket(
+    paymentMethodType: factory.paymentMethodType.MovieTicket,
+    transaction: factory.transaction.placeOrder.ITransaction
+) {
     const authorizeActions = transaction.object.authorizeActions;
 
     const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.MovieTicket);
+        .filter((a) => a.object.typeOf === paymentMethodType);
 
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         authorizeActions
@@ -185,7 +188,7 @@ export function processValidateMovieTicket(transaction: factory.transaction.plac
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
                         requiredMovieTickets.push({
                             project: transaction.project,
-                            typeOf: factory.paymentMethodType.MovieTicket,
+                            typeOf: paymentMethodType,
                             identifier: '',
                             accessCode: '',
                             serviceType: component.appliesToMovieTicketType,
