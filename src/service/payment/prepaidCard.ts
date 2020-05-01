@@ -443,7 +443,7 @@ export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPr
 /**
  * プリペイド返金処理を実行する
  */
-export function refundAccount(params: factory.task.IData<factory.taskName.RefundPrepaidCard>) {
+export function refundPrepaidCard(params: factory.task.IData<factory.taskName.RefundPrepaidCard>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
