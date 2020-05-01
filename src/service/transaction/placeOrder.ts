@@ -148,6 +148,20 @@ export function exportTasksById(params: {
                     }
                 };
 
+                const cancelPrepaidCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPrepaidCard> = {
+                    project: { typeOf: project.typeOf, id: project.id },
+                    name: factory.taskName.CancelPrepaidCard,
+                    status: factory.taskStatus.Ready,
+                    runsAt: taskRunsAt,
+                    remainingNumberOfTries: 10,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        project: { typeOf: project.typeOf, id: project.id },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    }
+                };
+
                 const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
                     project: { typeOf: project.typeOf, id: project.id },
                     name: factory.taskName.VoidMoneyTransfer,
@@ -161,10 +175,12 @@ export function exportTasksById(params: {
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 };
+
                 taskAttributes.push(
                     cancelSeatReservationTaskAttributes,
                     cancelCreditCardTaskAttributes,
                     cancelAccountTaskAttributes,
+                    cancelPrepaidCardTaskAttributes,
                     voidMoneyTransferTaskAttributes
                 );
                 break;

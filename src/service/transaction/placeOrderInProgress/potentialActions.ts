@@ -8,6 +8,7 @@ import { createMoneyTransferActions } from './potentialActions/moneyTransfer';
 import { createPayAccountActions } from './potentialActions/payAccount';
 import { createPayCreditCardActions } from './potentialActions/payCreditCard';
 import { createPayMovieTicketActions } from './potentialActions/payMovieTicket';
+import { createPayPrepaidCardActions } from './potentialActions/payPrepaidCard';
 import { createRegisterProgramMembershipActions } from './potentialActions/registerProgramMembership';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
@@ -41,6 +42,8 @@ export async function createPotentialActions(params: {
 
     // ムビチケ決済アクション
     const payMovieTicketActions = await createPayMovieTicketActions(params);
+
+    const payPrepaidCardActions = await createPayPrepaidCardActions(params);
 
     // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
     const givePointAwardActions = await createGivePointAwardActions(params);
@@ -79,6 +82,7 @@ export async function createPotentialActions(params: {
                 payAccount: payAccountActions,
                 payCreditCard: payCreditCardActions,
                 payMovieTicket: payMovieTicketActions,
+                payPrepaidCard: payPrepaidCardActions,
                 sendOrder: sendOrderActionAttributes
             },
             purpose: {
