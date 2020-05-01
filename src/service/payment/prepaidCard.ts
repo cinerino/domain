@@ -110,7 +110,7 @@ export function authorize(params: {
                 ? params.object.fromLocation.accountNumber
                 : '',
             amount: params.object.amount,
-            paymentMethod: factory.paymentMethodType.Account,
+            paymentMethod: factory.paymentMethodType.PrepaidCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: pendingTransaction.id,
             name: (typeof params.object.name === 'string')
@@ -122,7 +122,7 @@ export function authorize(params: {
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
-                currency: (params.object.currency !== undefined) ? params.object.currency : factory.priceCurrency.JPY,
+                currency: factory.priceCurrency.JPY,
                 value: params.object.amount
             },
             ...(params.object.fromLocation !== undefined) ? { fromAccount: params.object.fromLocation } : {},
@@ -435,7 +435,7 @@ export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPr
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
+        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.PrepaidCard> = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
