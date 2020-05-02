@@ -4,15 +4,6 @@ const modelName = 'PaymentMethod';
 
 const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
-const serviceOutputSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 決済方法スキーマ
  */
@@ -25,8 +16,9 @@ const schema = new mongoose.Schema(
         },
         identifier: String,
         accessCode: String,
-        serviceType: String,
-        serviceOutput: serviceOutputSchema
+        amount: mongoose.SchemaTypes.Mixed,
+        serviceType: mongoose.SchemaTypes.Mixed,
+        serviceOutput: mongoose.SchemaTypes.Mixed
     },
     {
         collection: 'paymentMethods',
@@ -101,6 +93,16 @@ schema.index(
         name: 'searchByServiceType',
         partialFilterExpression: {
             serviceType: { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'amount.validFrom': 1 },
+    {
+        name: 'searchByAmountValidFrom',
+        partialFilterExpression: {
+            'amount.validFrom': { $exists: true }
         }
     }
 );

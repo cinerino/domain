@@ -128,6 +128,13 @@ export class MvtkRepository {
                                     typeOf: factory.paymentMethodType.MovieTicket,
                                     identifier: knyknrNoInfo.knyknrNo,
                                     accessCode: knyknrNoInfo.pinCd,
+                                    amount: {
+                                        typeOf: <'MonetaryAmount'>'MonetaryAmount',
+                                        currency: factory.priceCurrency.JPY,
+                                        validThrough: moment(`${mkknInfo.yykDt}+09:00`, 'YYYY/MM/DD HH:mm:ssZ')
+                                            .toDate()
+
+                                    },
                                     serviceType: mkknInfo.mkknshTyp,
                                     serviceOutput: {
                                         reservationFor: {
@@ -144,8 +151,10 @@ export class MvtkRepository {
                                             }
                                         }
                                     },
-                                    validThrough: moment(`${mkknInfo.yykDt}+09:00`, 'YYYY/MM/DD HH:mm:ssZ')
-                                        .toDate()
+                                    ...{
+                                        validThrough: moment(`${mkknInfo.yykDt}+09:00`, 'YYYY/MM/DD HH:mm:ssZ')
+                                            .toDate()
+                                    }
                                 });
                             });
                         });
