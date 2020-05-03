@@ -701,7 +701,7 @@ export function validateAcceptedOffers(params: {
                         const checkResult = await repos.movieTicket.checkByIdentifier({
                             movieTickets: [{
                                 project: { typeOf: factory.organizationType.Project, id: params.project.id },
-                                typeOf: movieTicket.typeOf,
+                                typeOf: <any>movieTicket.typeOf,
                                 identifier: movieTicket.identifier,
                                 accessCode: movieTicket.accessCode,
                                 serviceType: '',

@@ -676,6 +676,7 @@ export async function createPotentialActions(params: {
             informOrder: informOrderActionsOnReturn,
             refundCreditCard: refundCreditCardActions,
             refundAccount: refundAccountActions,
+            refundMGTicket: [],
             refundMovieTicket: refundMovieTicketActions,
             returnPointAward: returnPointAwardActions,
             sendEmailMessage: sendEmailMessaegActionsOnReturn
