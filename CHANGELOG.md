@@ -18,6 +18,30 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v5.0.0 - 2020-05-04
+
+### Added
+
+- イベントオファー承認結果にamountを追加
+- 注文にnameを追加
+- COA予約承認にpriceSpecificationを追加
+- ssktsムビチケ決済承認時に指定座席番号をムビチケに追加
+- 決済方法にMGTicketを追加
+- 決済方法にPrepaidCardを追加
+- プリペイドカードインターフェースを追加
+- プリペイドカード決済インターフェースを追加
+- プリペイドカード返金インターフェースを追加
+
+### Changed
+
+- イベントオファー承認結果のpointをamountへ移行
+- ムビチケディスカウントサービスを前売券決済サービスとして再定義
+- 注文取引確定時の口座バリデーションを口座タイプ管理に対応
+
+### Removed
+
+- プロジェクトのvalidateMovieTicket設定を削除
+
 ## v4.0.0 - 2020-04-29
 
 ### Added

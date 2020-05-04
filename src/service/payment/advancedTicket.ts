@@ -1,36 +1,42 @@
 /**
- * ムビチケ承認アクションサービス
+ * 前売券決済承認アクションサービス
+ * 基本的にsskts専用
  */
 import * as createDebug from 'debug';
 
-import { MongoRepository as ActionRepo } from '../../../../../../repo/action';
-import { MongoRepository as PaymentMethodRepo } from '../../../../../../repo/paymentMethod';
-import { MongoRepository as TransactionRepo } from '../../../../../../repo/transaction';
+import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as PaymentMethodRepo } from '../../repo/paymentMethod';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as factory from '../../../../../../factory';
+import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
 
-export type ICreateOperation<T> = (repos: {
+export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     paymentMethod?: PaymentMethodRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
 /**
- * 着券済ムビチケ決済承認アクション
+ * 着券済ムビチケ決済承認
  */
-export function createMovieTicketPaymentAuthorization(params: {
+export function authorize(params: {
     project: factory.project.IProject;
     agentId: string;
     transactionId: string;
-    authorizeObject: factory.action.authorize.discount.mvtk.IObject;
-}): ICreateOperation<factory.action.authorize.paymentMethod.movieTicket.IAction[]> {
+    authorizeObject: factory.action.authorize.paymentMethod.movieTicket.IObject4sskts;
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.movieTicket.IAction[]> {
     return async (repos: {
         action: ActionRepo;
         paymentMethod?: PaymentMethodRepo;
         transaction: TransactionRepo;
     }) => {
+        // 互換性維持対応tとして、デフォルト決済方法はMovieTicket
+        if (typeof params.authorizeObject.typeOf !== 'string') {
+            params.authorizeObject.typeOf = factory.paymentMethodType.MovieTicket;
+        }
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transactionId
@@ -44,6 +50,7 @@ export function createMovieTicketPaymentAuthorization(params: {
 
         // 着券結果からムビチケリストを作成する
         const authorizeActionObjects = seatSyncInfoIn2movieTickets({
+            typeOf: params.authorizeObject.typeOf,
             event: event,
             seatSyncInfoIn: params.authorizeObject.seatInfoSyncIn
         });
@@ -74,10 +81,10 @@ export function createMovieTicketPaymentAuthorization(params: {
             const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
                 accountId: authorizeActionObject.movieTickets[0].identifier,
                 amount: 0,
-                paymentMethod: factory.paymentMethodType.MovieTicket,
+                paymentMethod: params.authorizeObject.typeOf,
                 paymentStatus: factory.paymentStatusType.PaymentComplete, // すでに着券済なのでPaymentComplete
                 paymentMethodId: authorizeActionObject.movieTickets[0].identifier,
-                name: 'ムビチケ',
+                name: params.authorizeObject.typeOf,
                 totalPaymentDue: {
                     typeOf: 'MonetaryAmount',
                     currency: factory.unitCode.C62,
@@ -94,7 +101,7 @@ export function createMovieTicketPaymentAuthorization(params: {
 
 function savePaymentMethods(params: {
     project: factory.project.IProject;
-    authorizeObject: factory.action.authorize.discount.mvtk.IObject;
+    authorizeObject: factory.action.authorize.paymentMethod.movieTicket.IObject4sskts;
 }) {
     return async (repos: {
         paymentMethod?: PaymentMethodRepo;
@@ -102,7 +109,7 @@ function savePaymentMethods(params: {
         await Promise.all(params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.map(async (knyknrNoInfo) => {
             const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
                 project: params.project,
-                typeOf: factory.paymentMethodType.MovieTicket,
+                typeOf: <any>params.authorizeObject.typeOf,
                 identifier: knyknrNoInfo.knyknrNo,
                 accessCode: knyknrNoInfo.pinCd,
                 serviceType: (knyknrNoInfo.knshInfo[0] !== undefined) ? knyknrNoInfo.knshInfo[0].knshTyp : '',
@@ -123,7 +130,7 @@ function savePaymentMethods(params: {
             if (repos.paymentMethod !== undefined) {
                 await repos.paymentMethod.paymentMethodModel.findOneAndUpdate(
                     {
-                        typeOf: factory.paymentMethodType.MovieTicket,
+                        typeOf: <any>params.authorizeObject.typeOf,
                         identifier: movieTicket.identifier
                     },
                     movieTicket,
@@ -136,20 +143,35 @@ function savePaymentMethods(params: {
 }
 
 function seatSyncInfoIn2movieTickets(params: {
+    typeOf: factory.paymentMethodType.MovieTicket | string;
     event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     seatSyncInfoIn: factory.action.authorize.paymentMethod.movieTicket.ISeatInfoSyncIn;
 }): factory.action.authorize.paymentMethod.movieTicket.IObject[] {
     const authorizeActionObjects: factory.action.authorize.paymentMethod.movieTicket.IObject[] = [];
 
+    const seatNumbers = params.seatSyncInfoIn.zskInfo.reduce<string[]>(
+        (a, b) => {
+            return [...a, b.zskCd];
+        },
+        []
+    );
+
+    let i = 0;
     params.seatSyncInfoIn.knyknrNoInfo.forEach((knyknrNoInfo) => {
         if (knyknrNoInfo !== undefined) {
             const movieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
             knyknrNoInfo.knshInfo.forEach((knshInfo) => {
                 // tslint:disable-next-line:prefer-array-literal
                 [...Array(Number(knshInfo.miNum))].forEach(() => {
+                    i += 1;
+                    const seatNumber = seatNumbers[i - 1];
+                    if (typeof seatNumber !== 'string') {
+                        throw new factory.errors.Argument('seatInfoSyncIn', 'number of seat numbers not matched');
+                    }
+
                     movieTickets.push({
                         project: { typeOf: factory.organizationType.Project, id: params.event.project.id },
-                        typeOf: factory.paymentMethodType.MovieTicket,
+                        typeOf: <any>params.typeOf,
                         serviceType: knshInfo.knshTyp,
                         identifier: knyknrNoInfo.knyknrNo,
                         accessCode: knyknrNoInfo.pinCd,
@@ -162,7 +184,7 @@ function seatSyncInfoIn2movieTickets(params: {
                                 ticketedSeat: {
                                     typeOf: factory.chevre.placeType.Seat,
                                     // seatingType: 'Default' // 情報空でよし
-                                    seatNumber: '', // 情報空でよし
+                                    seatNumber: seatNumber,
                                     seatRow: '', // 情報空でよし
                                     seatSection: '' // 情報空でよし
                                 }
@@ -178,7 +200,7 @@ function seatSyncInfoIn2movieTickets(params: {
                 amount: 0,
                 movieTickets: movieTickets,
                 paymentMethodId: knyknrNoInfo.knyknrNo,
-                typeOf: factory.paymentMethodType.MovieTicket
+                typeOf: <any>params.typeOf
             });
         }
     });
@@ -186,10 +208,10 @@ function seatSyncInfoIn2movieTickets(params: {
     return authorizeActionObjects;
 }
 
-export function validate(params: {
+function validate(params: {
     transactionId: string;
-    authorizeObject: factory.action.authorize.discount.mvtk.IObject;
-}): ICreateOperation<factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>> {
+    authorizeObject: factory.action.authorize.paymentMethod.movieTicket.IObject4sskts;
+}) {
     return async (repos: {
         action: ActionRepo;
     }): Promise<factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>> => {
@@ -225,7 +247,7 @@ export function validate(params: {
  * 座席予約承認とムビチケ承認を比較する
  */
 function compareSeatReservationsAuthorizationAndMvtkAuthorization(params: {
-    authorizeObject: factory.action.authorize.discount.mvtk.IObject;
+    authorizeObject: factory.action.authorize.paymentMethod.movieTicket.IObject4sskts;
     seatReservationAuthorizeAction: factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier.COA>;
 }): factory.event.IEvent<factory.chevre.eventType.ScreeningEvent> {
     const seatReservationAuthorizeAction = params.seatReservationAuthorizeAction;
@@ -318,7 +340,7 @@ function compareSeatReservationsAuthorizationAndMvtkAuthorization(params: {
     return seatReservationAuthorizeActionObject.event;
 }
 
-export function cancel(params: {
+export function voidTransaction(params: {
     agentId: string;
     transactionId: string;
     actionId: string;

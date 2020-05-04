@@ -61,6 +61,9 @@ export function createOrder(params: {
 
     const discounts: factory.order.IDiscount[] = [];
 
+    const name: string | undefined =
+        (typeof (<any>params.transaction.object).name === 'string') ? (<any>params.transaction.object).name : undefined;
+
     return {
         project: params.transaction.project,
         typeOf: 'Order',
@@ -77,7 +80,8 @@ export function createOrder(params: {
         orderStatus: params.orderStatus,
         orderDate: params.orderDate,
         identifier: [],
-        isGift: params.isGift
+        isGift: params.isGift,
+        ...(typeof name === 'string') ? { name } : undefined
     };
 }
 

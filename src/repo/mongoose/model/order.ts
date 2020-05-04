@@ -60,6 +60,7 @@ const schema = new mongoose.Schema(
             required: true
         },
         identifier: [mongoose.SchemaTypes.Mixed],
+        name: mongoose.SchemaTypes.Mixed,
         seller: sellerSchema,
         customer: customerSchema,
         returner: mongoose.SchemaTypes.Mixed,

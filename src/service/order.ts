@@ -208,6 +208,25 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                     }));
             }
 
+            // プリペイドカード決済
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.payPrepaidCard)) {
+                taskAttributes.push(...potentialActions.payPrepaidCard.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayPrepaidCard> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.PayPrepaidCard,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
+            }
+
             // ポイント付与
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */

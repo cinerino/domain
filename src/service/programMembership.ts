@@ -561,7 +561,7 @@ function processPlaceOrder(params: {
                     }
                 }));
 
-            await TransactionService.placeOrderInProgress.action.authorize.award.point.create({
+            await TransactionService.placeOrderInProgress.authorizeAward({
                 agent: { id: transaction.agent.id },
                 transaction: { id: transaction.id },
                 object: {
@@ -571,7 +571,6 @@ function processPlaceOrder(params: {
                 }
             })({
                 action: repos.action,
-                ownershipInfo: repos.ownershipInfo,
                 transaction: repos.transaction
             });
         }

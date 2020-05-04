@@ -1,6 +1,7 @@
 import { Connection, Model } from 'mongoose';
 
 import * as factory from '../factory';
+
 import { modelName } from './mongoose/model/paymentMethod';
 
 /**
@@ -13,46 +14,57 @@ export class MongoRepository {
         this.paymentMethodModel = connection.model(modelName);
     }
 
-    public static CREATE_MOVIE_TICKET_MONGO_CONDITIONS(
-        params: factory.paymentMethod.ISearchConditions<factory.paymentMethodType.MovieTicket>
+    public static CREATE_MONGO_CONDITIONS<T extends factory.paymentMethodType>(
+        params: factory.paymentMethod.ISearchConditions<T>
     ) {
-        const andConditions: any[] = [
-            {
-                typeOf: factory.paymentMethodType.MovieTicket
-            }
-        ];
+        const andConditions: any[] = [];
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.project !== undefined) {
-            if (Array.isArray(params.project.ids)) {
-                andConditions.push({
-                    'project.id': {
-                        $exists: true,
-                        $in: params.project.ids
-                    }
-                });
-            }
+        const projectIdEq = params.project?.id?.$eq;
+        if (typeof projectIdEq === 'string') {
+            andConditions.push({
+                'project.id': {
+                    $exists: true,
+                    $eq: projectIdEq
+                }
+            });
         }
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (Array.isArray(params.identifiers)) {
+        const typeOfEq = (<any>params).typeOf?.$eq;
+        if (typeof typeOfEq === 'string') {
+            andConditions.push({
+                typeOf: {
+                    $eq: typeOfEq
+                }
+            });
+        }
+
+        const identifierIn = params.identifier?.$in;
+        if (Array.isArray(identifierIn)) {
             andConditions.push({
                 identifier: {
                     $exists: true,
-                    $in: params.identifiers
+                    $in: identifierIn
+                }
+            });
+        }
+
+        const identifierEq = params.identifier?.$eq;
+        if (typeof identifierEq === 'string') {
+            andConditions.push({
+                identifier: {
+                    $exists: true,
+                    $eq: identifierEq
                 }
             });
         }
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (Array.isArray(params.serviceTypes)) {
+        if (Array.isArray((<any>params).serviceTypes)) {
             andConditions.push({
                 serviceType: {
                     $exists: true,
-                    $in: params.serviceTypes
+                    $in: (<any>params).serviceTypes
                 }
             });
         }
@@ -60,20 +72,20 @@ export class MongoRepository {
         return andConditions;
     }
 
-    public async countMovieTickets(
-        params: factory.paymentMethod.ISearchConditions<factory.paymentMethodType.MovieTicket>
+    public async count<T extends factory.paymentMethodType>(
+        params: factory.paymentMethod.ISearchConditions<T>
     ): Promise<number> {
-        const conditions = MongoRepository.CREATE_MOVIE_TICKET_MONGO_CONDITIONS(params);
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.paymentMethodModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
             .setOptions({ maxTimeMS: 10000 })
             .exec();
     }
 
-    public async searchMovieTickets(
-        params: factory.paymentMethod.ISearchConditions<factory.paymentMethodType.MovieTicket>
-    ): Promise<factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[]> {
-        const conditions = MongoRepository.CREATE_MOVIE_TICKET_MONGO_CONDITIONS(params);
+    public async search<T extends factory.paymentMethodType>(
+        params: factory.paymentMethod.ISearchConditions<T>
+    ): Promise<factory.paymentMethod.IPaymentMethod<T>[]> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.paymentMethodModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},
             {

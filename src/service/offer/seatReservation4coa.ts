@@ -305,6 +305,7 @@ async function offer2availableSalesTicket(params: {
     };
 }
 
+// tslint:disable-next-line:max-func-body-length
 function availableSalesTicket2offerWithDetails(params: {
     project: factory.chevre.project.IProject;
     availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket;
@@ -338,6 +339,68 @@ function availableSalesTicket2offerWithDetails(params: {
         spseatAdd1
     ].reduce((a, b) => a + b, 0);
 
+    // tslint:disable-next-line:max-line-length
+    const unitPriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
+        project: { typeOf: params.project.typeOf, id: params.project.id },
+        typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+        name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
+        price: Number(availableSalesTicket.stdPrice),
+        priceCurrency: factory.chevre.priceCurrency.JPY,
+        referenceQuantity: {
+            typeOf: 'QuantitativeValue',
+            unitCode: factory.chevre.unitCode.C62,
+            value: 1
+        },
+        valueAddedTaxIncluded: true
+    };
+
+    switch ((<COA.factory.reserve.ISalesTicketResult>availableSalesTicket).limitUnit) {
+        case '001':
+            unitPriceSpec.referenceQuantity.value = (<COA.factory.reserve.ISalesTicketResult>availableSalesTicket).limitCount;
+            unitPriceSpec.price = (<COA.factory.reserve.ISalesTicketResult>availableSalesTicket).limitCount * availableSalesTicket.stdPrice;
+            break;
+        case '002':
+            unitPriceSpec.referenceQuantity.minValue = (<COA.factory.reserve.ISalesTicketResult>availableSalesTicket).limitCount;
+            break;
+        default:
+            unitPriceSpec.referenceQuantity.value = 1;
+    }
+
+    // tslint:disable-next-line:max-line-length
+    let movieTicketTypeChargePriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification> | undefined;
+    if (offer.ticketInfo.mvtkAppPrice > 0) {
+        movieTicketTypeChargePriceSpec = {
+            project: { typeOf: params.project.typeOf, id: params.project.id },
+            typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
+            name: { ja: availableSalesTicket.ticketName, en: availableSalesTicket.ticketNameEng },
+            price: Number(availableSalesTicket.addPrice),
+            priceCurrency: factory.chevre.priceCurrency.JPY,
+            valueAddedTaxIncluded: true,
+            appliesToMovieTicketType: offer.ticketInfo.mvtkKbnKensyu,
+            appliesToVideoFormat: offer.ticketInfo.kbnEisyahousiki
+        };
+    }
+
+    const priceSpecification: factory.chevre.compoundPriceSpecification.IPriceSpecification<any> = {
+        project: { typeOf: params.project.typeOf, id: params.project.id },
+        typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+        priceCurrency: factory.chevre.priceCurrency.JPY,
+        priceComponent: [
+            unitPriceSpec,
+            ...(movieTicketTypeChargePriceSpec !== undefined) ? [movieTicketTypeChargePriceSpec] : []
+        ],
+        valueAddedTaxIncluded: true
+    };
+
+    let eligibleMonetaryAmount: factory.chevre.offer.IEligibleMonetaryAmount | undefined;
+    if (coaPointTicket !== undefined) {
+        eligibleMonetaryAmount = {
+            typeOf: 'MonetaryAmount',
+            currency: 'Point',
+            value: coaPointTicket.usePoint
+        };
+    }
+
     offerWithDetails = {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.offerType.Offer,
@@ -346,6 +409,7 @@ function availableSalesTicket2offerWithDetails(params: {
         alternateName: { ja: availableSalesTicket.ticketNameKana, en: '' },
         price: price,
         priceCurrency: factory.priceCurrency.JPY,
+        priceSpecification: priceSpecification,
         seatNumber: offer.seatNumber,
         seatSection: offer.seatSection,
         ticketInfo: {
@@ -373,7 +437,8 @@ function availableSalesTicket2offerWithDetails(params: {
             mvtkSalesPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkSalesPrice : 0,
 
             usePoint: (coaPointTicket !== undefined) ? coaPointTicket.usePoint : 0
-        }
+        },
+        ...(eligibleMonetaryAmount !== undefined) ? { eligibleMonetaryAmount: [eligibleMonetaryAmount] } : undefined
     };
 
     // メガネ代込み要求の場合、チケット名調整特別対応
@@ -619,7 +684,13 @@ export function create(params: {
         const result: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
-            point: requiredPoint,
+            amount: (requiredPoint > 0)
+                ? [{
+                    typeOf: 'MonetaryAmount',
+                    currency: 'Point',
+                    value: requiredPoint
+                }]
+                : [],
             requestBody: updTmpReserveSeatArgs,
             responseBody: updTmpReserveSeatResult,
             ...{ updTmpReserveSeatArgs, updTmpReserveSeatResult } // 互換性維持のため
@@ -809,13 +880,18 @@ export function changeOffers(params: {
         (<any>authorizeAction.object).offers = acceptedOffer; // 互換性維持のため
 
         const { price, requiredPoint } = offers2resultPrice(acceptedOffer);
-        (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result).price
-            = price;
-        (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result).point
-            = requiredPoint;
 
-        const actionResult =
-            (<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result);
+        const actionResult: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
+            ...<factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA>>authorizeAction.result,
+            price: price,
+            amount: (requiredPoint > 0)
+                ? [{
+                    typeOf: 'MonetaryAmount',
+                    currency: 'Point',
+                    value: requiredPoint
+                }]
+                : []
+        };
 
         // 座席予約承認アクションの供給情報を変更する
         return repos.action.actionModel.findOneAndUpdate(

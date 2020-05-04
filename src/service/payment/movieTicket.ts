@@ -143,7 +143,7 @@ export function authorize(params: {
             });
 
             // 要求に対して十分かどうか検証する
-            const availableMovieTickets = checkResult.movieTickets.filter((t) => t.validThrough === undefined);
+            const availableMovieTickets = checkResult.movieTickets.filter((t) => t.amount?.validThrough === undefined);
 
             // 総数が足りているか
             if (availableMovieTickets.length < params.object.movieTickets.length) {

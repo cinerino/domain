@@ -362,7 +362,7 @@ export function openWithoutOwnershipInfo<T extends string>(params: {
 export function deposit(params: {
     project: factory.project.IProject;
     agent: pecorinoapi.factory.transaction.deposit.IAgent;
-    object: pecorinoapi.factory.transaction.deposit.IObject<'Point'>;
+    object: pecorinoapi.factory.transaction.deposit.IObject<string>;
     recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
 }) {
     return async (repos: {
@@ -370,13 +370,10 @@ export function deposit(params: {
     }) => {
         try {
             const project = await repos.project.findById({ id: params.project.id });
+            if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+            }
 
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
             const depositService = new pecorinoapi.service.transaction.Deposit({
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
@@ -394,7 +391,7 @@ export function deposit(params: {
                     amount: params.object.amount,
                     toLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: 'Point',
+                        accountType: params.object.toLocation.accountType,
                         accountNumber: params.object.toLocation.accountNumber
                     },
                     description: params.object.description

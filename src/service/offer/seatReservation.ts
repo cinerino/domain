@@ -293,7 +293,7 @@ export function create(params: {
         const result: factory.action.authorize.offer.seatReservation.IResult<typeof offeredThrough.identifier> = {
             price: amount,
             priceCurrency: acceptedOffers[0].priceCurrency,
-            point: 0,
+            amount: [],
             requestBody: requestBody,
             responseBody: responseBody,
             ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined
@@ -701,7 +701,7 @@ export function validateAcceptedOffers(params: {
                         const checkResult = await repos.movieTicket.checkByIdentifier({
                             movieTickets: [{
                                 project: { typeOf: factory.organizationType.Project, id: params.project.id },
-                                typeOf: movieTicket.typeOf,
+                                typeOf: <any>movieTicket.typeOf,
                                 identifier: movieTicket.identifier,
                                 accessCode: movieTicket.accessCode,
                                 serviceType: '',

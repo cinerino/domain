@@ -2,9 +2,16 @@
  * 決済サービス
  */
 import * as AccountPaymentService from './payment/account';
+import * as AdvancedTicketPaymentService from './payment/advancedTicket';
 import * as AnyPaymentService from './payment/any';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as MovieTicketPaymentService from './payment/movieTicket';
+import * as PrepaidCardPaymentService from './payment/prepaidCard';
+
+/**
+ * 前売券決済
+ */
+export import advancedTicket = AdvancedTicketPaymentService;
 
 /**
  * 口座決済
@@ -25,3 +32,8 @@ export import creditCard = CreditCardPaymentService;
  * ムビチケ決済
  */
 export import movieTicket = MovieTicketPaymentService;
+
+/**
+ * プリペイドカード決済
+ */
+export import prepaidCard = PrepaidCardPaymentService;
