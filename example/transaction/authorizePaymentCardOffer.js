@@ -19,6 +19,7 @@ async function main() {
         password: process.env.REDIS_KEY
     });
 
+    const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const projectRepo = new domain.repository.Project(mongoose.connection);
     const sellerRepo = new domain.repository.Seller(mongoose.connection);
@@ -56,7 +57,6 @@ async function main() {
     });
     console.log('transaction started', transaction);
 
-    const identifier = `CIN${(new Date()).valueOf()}`;
     const accessCode = '123';
 
     const authorizeAction = await domain.service.offer.paymentCard.authorize({
@@ -66,12 +66,10 @@ async function main() {
             itemOffered: {
                 id: '5eaf98ecbcba1736247577b0',
                 serviceOutput: {
-                    identifier: identifier,
                     accessCode: accessCode,
                     name: 'プリペイドカード',
                     additionalProperty: [
-                        { name: 'accountType', value: 'Prepaid' },
-                        { name: 'accountNumber', value: identifier },
+                        { name: 'accountType', value: 'Prepaid' }
                     ]
                 }
             }
@@ -84,6 +82,7 @@ async function main() {
         }
 
     })({
+        accountNumber: accountNumberRepo,
         action: actionRepo,
         project: projectRepo,
         seller: sellerRepo,
