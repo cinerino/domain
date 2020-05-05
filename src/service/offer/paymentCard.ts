@@ -179,6 +179,10 @@ export function validateAcceptedOffers(params: {
             factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+            name: {
+                ja: '発行手数料無料',
+                en: 'Free'
+            },
             priceCurrency: factory.chevre.priceCurrency.JPY,
             price: 0,
             referenceQuantity: {
@@ -199,6 +203,8 @@ export function validateAcceptedOffers(params: {
 
         return {
             ...acceptedOfferWithoutDetail,
+            id: 'dummy',
+            name: unitPriceSpec.name,
             // itemOffered: {
             //     serviceType: offer.itemOffered.serviceType,
             //     serviceOutput: (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null)

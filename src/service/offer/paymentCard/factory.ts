@@ -124,12 +124,19 @@ export function responseBody2acceptedOffers4result(params: {
 }): any[] {
     const seller = params.seller;
 
-    const paymentCard = params.responseBody.object.itemOffered?.serviceOutput;
+    const paymentCard = {
+        ...params.responseBody.object.itemOffered?.serviceOutput,
+        accessCode: 'xxx' // masked
+    };
 
     const unitPriceSpec:
         factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+        name: {
+            ja: '発行手数料無料',
+            en: 'Free'
+        },
         priceCurrency: factory.chevre.priceCurrency.JPY,
         price: 0,
         referenceQuantity: {
@@ -150,11 +157,9 @@ export function responseBody2acceptedOffers4result(params: {
 
     return [{
         project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: <factory.chevre.offerType>'Offer',
-        id: '',
-        name: {
-            ja: ''
-        },
+        typeOf: factory.chevre.offerType.Offer,
+        id: 'dummy',
+        name: unitPriceSpec.name,
         itemOffered: paymentCard,
         priceSpecification: priceSpecification,
         priceCurrency: factory.priceCurrency.JPY,

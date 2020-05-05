@@ -24,6 +24,7 @@ async function main() {
     const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
+    const confirmationNumberRepo = new domain.repository.ConfirmationNumber(redisClient);
 
     const project = await projectRepo.findById({ id: 'cinerino' });
 
@@ -66,7 +67,12 @@ async function main() {
                 id: '5eaf98ecbcba1736247577b0',
                 serviceOutput: {
                     identifier: identifier,
-                    accessCode: accessCode
+                    accessCode: accessCode,
+                    name: 'プリペイドカード',
+                    additionalProperty: [
+                        { name: 'accountType', value: 'Prepaid' },
+                        { name: 'accountNumber', value: identifier },
+                    ]
                 }
             }
         },
@@ -93,8 +99,8 @@ async function main() {
             id: transaction.agent.id,
             givenName: 'タロウ',
             familyName: 'モーション',
-            email: '',
-            telephone: ''
+            email: 'hello@motionpicture.jp',
+            telephone: '+819012345678'
         }
     })({
         transaction: transactionRepo
@@ -129,7 +135,8 @@ async function main() {
         project: projectRepo,
         seller: sellerRepo,
         transaction: transactionRepo,
-        orderNumber: orderNumberRepo
+        orderNumber: orderNumberRepo,
+        confirmationNumber: confirmationNumberRepo
     });
 }
 

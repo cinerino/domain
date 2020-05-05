@@ -10,6 +10,7 @@ import { createPayCreditCardActions } from './potentialActions/payCreditCard';
 import { createPayMovieTicketActions } from './potentialActions/payMovieTicket';
 import { createPayPrepaidCardActions } from './potentialActions/payPrepaidCard';
 import { createRegisterProgramMembershipActions } from './potentialActions/registerProgramMembership';
+import { createRegisterServiceActions } from './potentialActions/registerService';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
 import * as factory from '../../../factory';
@@ -27,6 +28,8 @@ export async function createPotentialActions(params: {
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // 予約確定アクション
     const confirmReservationActions = await createConfirmReservationActions(params);
+
+    const registerServiceActions = await createRegisterServiceActions(params);
 
     // 通貨転送アクション
     const moneyTransferActions = await createMoneyTransferActions(params);
@@ -66,6 +69,7 @@ export async function createPotentialActions(params: {
             informOrder: informOrderActionsOnSentOrder,
             moneyTransfer: moneyTransferActions,
             registerProgramMembership: registerProgramMembershipActions,
+            registerService: registerServiceActions,
             sendEmailMessage: sendEmailMessageActions
         }
     };

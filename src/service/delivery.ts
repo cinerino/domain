@@ -156,6 +156,14 @@ export function createOwnershipInfosFromOrder(params: {
                 break;
 
             case factory.paymentMethodType.PrepaidCard:
+                ownershipInfo = createPrepaidCardOwnershipInfo({
+                    order: params.order,
+                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    ownedFrom: ownedFrom,
+                    identifier: identifier,
+                    acquiredFrom: acquiredFrom
+                });
+
                 break;
 
             case 'MonetaryAmount':
@@ -234,6 +242,41 @@ function createReservationOwnershipInfo(params: {
     return ownershipInfo;
 }
 
+function createPrepaidCardOwnershipInfo(params: {
+    order: factory.order.IOrder;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.paymentMethod.paymentCard.prepaidCard.IPrepaidCard>;
+    ownedFrom: Date;
+    identifier: string;
+    acquiredFrom: factory.ownershipInfo.IOwner;
+}): IOwnershipInfo {
+    const itemOffered = params.acceptedOffer.itemOffered;
+
+    let ownershipInfo: IOwnershipInfo;
+
+    // tslint:disable-next-line:no-suspicious-comment
+    // TODO 要調整
+    const ownedThrough = moment(params.ownedFrom)
+        .add(1, 'year')
+        .toDate();
+
+    ownershipInfo = {
+        project: params.order.project,
+        typeOf: 'OwnershipInfo',
+        id: '',
+        identifier: params.identifier,
+        ownedBy: params.order.customer,
+        acquiredFrom: params.acquiredFrom,
+        ownedFrom: params.ownedFrom,
+        ownedThrough: ownedThrough,
+        typeOfGood: {
+            typeOf: itemOffered.typeOf,
+            identifier: itemOffered.identifier
+        }
+    };
+
+    return ownershipInfo;
+}
+
 function createProgramMembershipOwnershipInfo(params: {
     order: factory.order.IOrder;
     acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>;
@@ -308,6 +351,22 @@ export function onSend(
                         return {
                             project: a.project,
                             name: factory.taskName.ConfirmReservation,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
+            }
+
+            if (Array.isArray(potentialActions.registerService)) {
+                taskAttributes.push(...potentialActions.registerService.map(
+                    (a): factory.task.IAttributes<factory.taskName.RegisterService> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.RegisterService,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
