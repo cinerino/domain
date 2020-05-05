@@ -34,7 +34,7 @@ export function registerService(params: factory.action.interact.register.service
         const action = await repos.action.start(registerActionAttributes);
 
         try {
-            const object = <any>registerActionAttributes.object;
+            const object = registerActionAttributes.object;
 
             // 座席予約確定
             if (project.settings === undefined) {
