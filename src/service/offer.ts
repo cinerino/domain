@@ -6,6 +6,7 @@ import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as MonetaryAmountOfferService from './offer/monetaryAmount';
+import * as PaymentCardOfferService from './offer/paymentCard';
 import * as ProgramMembershipOfferService from './offer/programMembership';
 import * as ReservationOfferService from './offer/reservation';
 import * as SeatReservationOfferService from './offer/seatReservation';
@@ -20,6 +21,7 @@ import * as factory from '../factory';
 const debug = createDebug('cinerino-domain:service');
 
 export import monetaryAmount = MonetaryAmountOfferService;
+export import paymentCard = PaymentCardOfferService;
 export import programMembership = ProgramMembershipOfferService;
 export import reservation = ReservationOfferService;
 export import seatReservation = SeatReservationOfferService;

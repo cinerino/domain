@@ -155,6 +155,9 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
+            case factory.paymentMethodType.PrepaidCard:
+                break;
+
             case 'MonetaryAmount':
                 // no op
                 break;
