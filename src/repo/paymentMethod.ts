@@ -14,8 +14,8 @@ export class MongoRepository {
         this.paymentMethodModel = connection.model(modelName);
     }
 
-    public static CREATE_MONGO_CONDITIONS<T extends factory.paymentMethodType>(
-        params: factory.paymentMethod.ISearchConditions<T>
+    public static CREATE_MONGO_CONDITIONS(
+        params: factory.chevre.paymentMethod.ISearchConditions
     ) {
         const andConditions: any[] = [];
 
@@ -29,7 +29,7 @@ export class MongoRepository {
             });
         }
 
-        const typeOfEq = (<any>params).typeOf?.$eq;
+        const typeOfEq = params.typeOf?.$eq;
         if (typeof typeOfEq === 'string') {
             andConditions.push({
                 typeOf: {
@@ -60,11 +60,11 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (Array.isArray((<any>params).serviceTypes)) {
+        if (Array.isArray(params.serviceTypes)) {
             andConditions.push({
                 serviceType: {
                     $exists: true,
-                    $in: (<any>params).serviceTypes
+                    $in: params.serviceTypes
                 }
             });
         }
@@ -72,8 +72,8 @@ export class MongoRepository {
         return andConditions;
     }
 
-    public async count<T extends factory.paymentMethodType>(
-        params: factory.paymentMethod.ISearchConditions<T>
+    public async count(
+        params: factory.chevre.paymentMethod.ISearchConditions
     ): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
@@ -83,8 +83,8 @@ export class MongoRepository {
     }
 
     public async search<T extends factory.paymentMethodType>(
-        params: factory.paymentMethod.ISearchConditions<T>
-    ): Promise<factory.paymentMethod.IPaymentMethod<T>[]> {
+        params: factory.chevre.paymentMethod.ISearchConditions
+    ): Promise<factory.chevre.paymentMethod.IPaymentMethod<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.paymentMethodModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},

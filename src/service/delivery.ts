@@ -244,7 +244,7 @@ function createReservationOwnershipInfo(params: {
 
 function createPrepaidCardOwnershipInfo(params: {
     order: factory.order.IOrder;
-    acceptedOffer: factory.order.IAcceptedOffer<factory.paymentMethod.paymentCard.prepaidCard.IPrepaidCard>;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.prepaidCard.IPrepaidCard>;
     ownedFrom: Date;
     identifier: string;
     acquiredFrom: factory.ownershipInfo.IOwner;

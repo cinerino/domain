@@ -323,7 +323,7 @@ async function searchEventOffers4COA(params: {
     return screeningRoomSections;
 }
 
-export type IAcceptedPaymentMethod = factory.paymentMethod.paymentCard.movieTicket.IMovieTicket;
+export type IAcceptedPaymentMethod = factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket;
 
 /**
  * イベントに対する券種オファーを検索する

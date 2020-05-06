@@ -97,6 +97,11 @@ export function authorize(params: {
             id: params.object?.itemOffered?.id
         });
 
+        const accountType = (<any>product).serviceOutput?.typeOf;
+        if (typeof accountType !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Account type unknown');
+        }
+
         let acceptedOffer = await validateAcceptedOffers({
             project: { typeOf: project.typeOf, id: project.id },
             object: params.object,
@@ -121,7 +126,7 @@ export function authorize(params: {
         });
         const account = await accountService.open({
             project: { typeOf: project.typeOf, id: project.id },
-            accountType: factory.accountType.Prepaid,
+            accountType: accountType,
             accountNumber: accountNumber,
             name: String((<any>product).serviceOutput?.typeOf)
         });

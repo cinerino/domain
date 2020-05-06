@@ -107,8 +107,8 @@ function savePaymentMethods(params: {
         paymentMethod?: PaymentMethodRepo;
     }) => {
         await Promise.all(params.authorizeObject.seatInfoSyncIn.knyknrNoInfo.map(async (knyknrNoInfo) => {
-            const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
-                project: params.project,
+            const movieTicket: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
+                project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: <any>params.authorizeObject.typeOf,
                 identifier: knyknrNoInfo.knyknrNo,
                 accessCode: knyknrNoInfo.pinCd,
@@ -159,7 +159,7 @@ function seatSyncInfoIn2movieTickets(params: {
     let i = 0;
     params.seatSyncInfoIn.knyknrNoInfo.forEach((knyknrNoInfo) => {
         if (knyknrNoInfo !== undefined) {
-            const movieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
+            const movieTickets: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
             knyknrNoInfo.knshInfo.forEach((knshInfo) => {
                 // tslint:disable-next-line:prefer-array-literal
                 [...Array(Number(knshInfo.miNum))].forEach(() => {

@@ -303,7 +303,7 @@ export function checkMovieTicket(
 
             // 一度認証されたムビチケをDBに記録する(後で検索しやすいように)
             await Promise.all(checkResult.movieTickets.map(async (movieTicketResult) => {
-                const movieTicket: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
+                const movieTicket: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
                     project: params.project,
                     ...movieTicketResult,
                     serviceOutput: {
@@ -410,7 +410,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             }
 
             // 全購入管理番号のムビチケをマージ
-            const movieTickets = params.object.reduce<factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
+            const movieTickets = params.object.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
                 (a, b) => [...a, ...b.movieTickets], []
             );
 

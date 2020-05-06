@@ -18,9 +18,9 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
 
-export import IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
-export import IUncheckedCardTokenized = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
-export import IUnauthorizedCardOfMember = factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember;
+export import IUncheckedCardRaw = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
+export import IUncheckedCardTokenized = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
+export import IUnauthorizedCardOfMember = factory.chevre.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember;
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
