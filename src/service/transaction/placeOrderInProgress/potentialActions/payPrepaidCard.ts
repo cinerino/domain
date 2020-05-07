@@ -4,12 +4,14 @@ export async function createPayPrepaidCardActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.PrepaidCard>[]> {
+}): Promise<factory.action.trade.pay.IAttributes<any>[]> {
     // 口座決済アクション
     const authorizePrepaidCardActions = <factory.action.authorize.paymentMethod.prepaidCard.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO Chevre決済カードサービスに対して動的にコントロール
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.PrepaidCard);
 
     return authorizePrepaidCardActions.map((a) => {
@@ -26,7 +28,7 @@ export async function createPayPrepaidCardActions(params: {
                     name: result.name,
                     paymentMethodId: result.paymentMethodId,
                     totalPaymentDue: result.totalPaymentDue,
-                    typeOf: <factory.paymentMethodType.PrepaidCard>result.paymentMethod
+                    typeOf: result.paymentMethod
                 },
                 pendingTransaction:
                     (<factory.action.authorize.paymentMethod.prepaidCard.IResult>a.result).pendingTransaction

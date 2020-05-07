@@ -1,12 +1,13 @@
 /**
  * プリペイドカード決済サービス
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
 
 import * as factory from '../../factory';
+
+import * as chevre from '../../chevre';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
@@ -14,12 +15,12 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { handlePecorinoError } from '../../errorHandler';
+import { handleChevreError } from '../../errorHandler';
 
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
     scopes: [],
     state: ''
 });
@@ -38,7 +39,7 @@ export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.prepaidCard.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.prepaidCard.IAccount;
+        fromLocation?: factory.action.authorize.paymentMethod.prepaidCard.IPaymentCard;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
@@ -72,7 +73,7 @@ export function authorize(params: {
             object: {
                 ...params.object,
                 ...(params.object.fromLocation !== undefined)
-                    ? { accountId: params.object.fromLocation.accountNumber }
+                    ? { accountId: params.object.fromLocation.identifier }
                     : {}
             },
             agent: transaction.agent,
@@ -85,7 +86,7 @@ export function authorize(params: {
         let pendingTransaction: factory.action.authorize.paymentMethod.prepaidCard.IPendingTransaction;
 
         try {
-            pendingTransaction = await processAccountTransaction({
+            pendingTransaction = await processMoneyTransferTransaction({
                 project: project,
                 object: params.object,
                 recipient: recipient,
@@ -101,22 +102,22 @@ export function authorize(params: {
             }
 
             // PecorinoAPIのエラーをハンドリング
-            error = handlePecorinoError(error);
+            error = handleChevreError(error);
             throw error;
         }
 
         const actionResult: factory.action.authorize.paymentMethod.prepaidCard.IResult = {
             accountId: (params.object.fromLocation !== undefined)
-                ? params.object.fromLocation.accountNumber
+                ? params.object.fromLocation.identifier
                 : '',
             amount: params.object.amount,
-            paymentMethod: factory.paymentMethodType.PrepaidCard,
+            paymentMethod: params.object.fromLocation?.typeOf,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: pendingTransaction.id,
             name: (typeof params.object.name === 'string')
                 ? params.object.name
                 : (params.object.fromLocation !== undefined)
-                    ? String(params.object.fromLocation.accountType)
+                    ? String(params.object.fromLocation.typeOf)
                     : '',
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             pendingTransaction: pendingTransaction,
@@ -125,8 +126,8 @@ export function authorize(params: {
                 currency: factory.priceCurrency.JPY,
                 value: params.object.amount
             },
-            ...(params.object.fromLocation !== undefined) ? { fromAccount: params.object.fromLocation } : {},
-            ...(params.object.toLocation !== undefined) ? { toAccount: params.object.toLocation } : {}
+            ...(params.object.fromLocation !== undefined) ? { fromLocation: params.object.fromLocation } : {},
+            ...(params.object.toLocation !== undefined) ? { toLocation: params.object.toLocation } : {}
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
@@ -134,10 +135,10 @@ export function authorize(params: {
 }
 
 // tslint:disable-next-line:max-func-body-length
-async function processAccountTransaction(params: {
+async function processMoneyTransferTransaction(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.paymentMethod.prepaidCard.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.prepaidCard.IAccount;
+        fromLocation?: factory.action.authorize.paymentMethod.prepaidCard.IPaymentCard;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
@@ -147,7 +148,7 @@ async function processAccountTransaction(params: {
 
     const transaction = params.transaction;
 
-    if (typeof params.project.settings?.pecorino?.endpoint !== 'string') {
+    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
         throw new factory.errors.ServiceUnavailable('Project settings not found');
     }
 
@@ -179,74 +180,80 @@ async function processAccountTransaction(params: {
         .add(1, 'month')
         .toDate();
 
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore else *//* istanbul ignore next */
+    const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+        endpoint: params.project.settings?.chevre?.endpoint,
+        auth: chevreAuthClient
+    });
+
     if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
         // 転送先口座が指定されていない場合は、出金取引
-        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        pendingTransaction = await withdrawService.start<string>({
+        pendingTransaction = await moneyTransferService.start({
             project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.pecorino.transactionType.Withdraw,
             agent: agent,
             expires: expires,
             recipient: recipient,
             object: {
-                amount: params.object.amount,
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: params.object.amount,
+                    currency: chevre.factory.priceCurrency.JPY
+                },
                 description: description,
                 fromLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.fromLocation.accountType,
-                    accountNumber: params.object.fromLocation.accountNumber
+                    typeOf: params.object.fromLocation.typeOf,
+                    identifier: params.object.fromLocation.identifier,
+                    accessCode: params.object.fromLocation.accessCode
+                },
+                toLocation: <any>{
+                    name: recipient.name
                 }
             }
         });
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
-        const transferService = new pecorinoapi.service.transaction.Transfer({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        pendingTransaction = await transferService.start<string>({
+        pendingTransaction = await moneyTransferService.start({
             project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.pecorino.transactionType.Transfer,
             agent: agent,
             expires: expires,
             recipient: recipient,
             object: {
-                amount: params.object.amount,
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: params.object.amount,
+                    currency: chevre.factory.priceCurrency.JPY
+                },
                 description: description,
                 fromLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.fromLocation.accountType,
-                    accountNumber: params.object.fromLocation.accountNumber
+                    typeOf: params.object.fromLocation.typeOf,
+                    identifier: params.object.fromLocation.identifier,
+                    accessCode: params.object.fromLocation.accessCode
                 },
                 toLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.toLocation.accountType,
-                    accountNumber: params.object.toLocation.accountNumber
+                    typeOf: params.object.toLocation.typeOf,
+                    identifier: params.object.toLocation.identifier,
+                    accessCode: params.object.toLocation.accessCode
                 }
             }
         });
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
-        const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        pendingTransaction = await depositService.start<string>({
+        pendingTransaction = await moneyTransferService.start({
             project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.pecorino.transactionType.Deposit,
             agent: agent,
             expires: expires,
             recipient: recipient,
             object: {
-                amount: params.object.amount,
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: params.object.amount,
+                    currency: chevre.factory.priceCurrency.JPY
+                },
                 description: description,
+                fromLocation: <any>{
+                    name: agent.name
+                },
                 toLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.toLocation.accountType,
-                    accountNumber: params.object.toLocation.accountNumber
+                    typeOf: params.object.toLocation.typeOf,
+                    identifier: params.object.toLocation.identifier,
+                    accessCode: params.object.toLocation.accessCode
                 }
             }
         });
@@ -261,7 +268,7 @@ async function processAccountTransaction(params: {
  * プリペイドカード決済承認取消
  */
 export function voidTransaction(
-    params: factory.task.IData<factory.taskName.CancelAccount>
+    params: factory.task.IData<factory.taskName.CancelPrepaidCard>
 ) {
     return async (repos: {
         action: ActionRepo;
@@ -269,11 +276,11 @@ export function voidTransaction(
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+
+        const chevreEndpoint = project.settings?.chevre?.endpoint;
+        if (typeof chevreEndpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
-
-        const pecorinoSettings = project.settings.pecorino;
 
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
@@ -307,9 +314,16 @@ export function voidTransaction(
                     }
                 })
                     .then((actions) => actions
+                        // tslint:disable-next-line:no-suspicious-comment
+                        // TODO Chevre決済カードサービスに対して動的にコントロール
                         .filter((a) => a.object.typeOf === factory.paymentMethodType.PrepaidCard)
                     );
         }
+
+        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            endpoint: chevreEndpoint,
+            auth: chevreAuthClient
+        });
 
         await Promise.all(authorizeActions.map(async (action) => {
             await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
@@ -318,43 +332,7 @@ export function voidTransaction(
             /* istanbul ignore else */
             if (action.result !== undefined) {
                 const pendingTransaction = action.result.pendingTransaction;
-
-                // アクションステータスに関係なく取消処理実行
-                switch (action.result.pendingTransaction.typeOf) {
-                    case pecorinoapi.factory.transactionType.Deposit:
-                        const depositService = new pecorinoapi.service.transaction.Deposit({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await depositService.cancel({ id: pendingTransaction.id });
-
-                        break;
-
-                    case pecorinoapi.factory.transactionType.Withdraw:
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await withdrawService.cancel({ id: pendingTransaction.id });
-
-                        break;
-
-                    case pecorinoapi.factory.transactionType.Transfer:
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await transferService.cancel({ id: pendingTransaction.id });
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
+                await moneyTransferService.cancel({ id: pendingTransaction.id });
             }
         }));
     };
@@ -374,45 +352,19 @@ export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPr
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            const pecorinoSettings = project.settings.pecorino;
-            if (pecorinoSettings === undefined) {
+            const chevreEndpoint = project.settings?.chevre?.endpoint;
+            if (typeof chevreEndpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: chevreEndpoint,
+                auth: chevreAuthClient
+            });
+
             await Promise.all(params.object.map(async (paymentMethod) => {
                 const pendingTransaction = paymentMethod.pendingTransaction;
-
-                switch (pendingTransaction.typeOf) {
-                    case pecorinoapi.factory.transactionType.Withdraw:
-                        // 支払取引の場合、確定
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await withdrawService.confirm(pendingTransaction);
-
-                        break;
-
-                    case pecorinoapi.factory.transactionType.Transfer:
-                        // 転送取引の場合確定
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await transferService.confirm(pendingTransaction);
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
+                await moneyTransferService.confirm(pendingTransaction);
 
                 await repos.invoice.changePaymentStatus({
                     referencesOrder: { orderNumber: params.purpose.orderNumber },
@@ -435,7 +387,7 @@ export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPr
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.PrepaidCard> = {};
+        const actionResult: factory.action.trade.pay.IResult<any> = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -444,7 +396,6 @@ export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPr
  * プリペイド返金処理を実行する
  */
 export function refundPrepaidCard(params: factory.task.IData<factory.taskName.RefundPrepaidCard>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -454,107 +405,40 @@ export function refundPrepaidCard(params: factory.task.IData<factory.taskName.Re
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            const pecorinoSettings = project.settings.pecorino;
-            if (pecorinoSettings === undefined) {
+            const chevreEndpoint = project.settings?.chevre?.endpoint;
+            if (typeof chevreEndpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
 
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: chevreEndpoint,
+                auth: chevreAuthClient
+            });
+
             await Promise.all(payActionAttributes.object.map(async (paymentMethod) => {
                 const pendingTransaction = paymentMethod.pendingTransaction;
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
-                switch (pendingTransaction.typeOf) {
-                    case factory.pecorino.transactionType.Deposit:
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        const withdrawTransaction = await withdrawService.start({
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.pecorino.transactionType.Withdraw,
-                            agent: pendingTransaction.recipient,
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate(),
-                            recipient: pendingTransaction.agent,
-                            object: {
-                                amount: pendingTransaction.object.amount,
-                                description: description,
-                                fromLocation: pendingTransaction.object.toLocation,
-                                toLocation: pendingTransaction.object.fromLocation
-                            }
-                        });
+                const moneyTransferTransaction = await moneyTransferService.start({
+                    project: { typeOf: project.typeOf, id: project.id },
+                    agent: pendingTransaction.recipient,
+                    expires: moment()
+                        // tslint:disable-next-line:no-magic-numbers
+                        .add(5, 'minutes')
+                        .toDate(),
+                    recipient: pendingTransaction.agent,
+                    object: {
+                        amount: pendingTransaction.object.amount,
+                        description: description,
+                        fromLocation: pendingTransaction.object.toLocation,
+                        toLocation: pendingTransaction.object.fromLocation
+                    }
+                });
 
-                        await withdrawService.confirm(withdrawTransaction);
-
-                        break;
-
-                    case factory.pecorino.transactionType.Transfer:
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        const transferTransaction = await transferService.start({
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.pecorino.transactionType.Transfer,
-                            agent: pendingTransaction.recipient,
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate(),
-                            recipient: pendingTransaction.agent,
-                            object: {
-                                amount: pendingTransaction.object.amount,
-                                description: description,
-                                fromLocation: pendingTransaction.object.toLocation,
-                                toLocation: pendingTransaction.object.fromLocation
-                            }
-                        });
-
-                        await transferService.confirm(transferTransaction);
-
-                        break;
-
-                    case factory.pecorino.transactionType.Withdraw:
-                        const depositService = new pecorinoapi.service.transaction.Deposit({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        const depositTransaction = await depositService.start({
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.pecorino.transactionType.Deposit,
-                            agent: pendingTransaction.recipient,
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate(),
-                            recipient: pendingTransaction.agent,
-                            object: {
-                                amount: pendingTransaction.object.amount,
-                                description: description,
-                                fromLocation: pendingTransaction.object.toLocation,
-                                toLocation: pendingTransaction.object.fromLocation
-                            }
-                        });
-
-                        await depositService.confirm(depositTransaction);
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
+                await moneyTransferService.confirm({ id: moneyTransferTransaction.id });
             }));
         } catch (error) {
             // actionにエラー結果を追加

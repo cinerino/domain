@@ -155,6 +155,8 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO Chevre決済カードサービスに対して動的にコントロール
             case factory.paymentMethodType.PrepaidCard:
                 ownershipInfo = createPrepaidCardOwnershipInfo({
                     order: params.order,

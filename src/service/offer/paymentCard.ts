@@ -1,5 +1,3 @@
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
-
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -24,14 +22,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
     clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
     scopes: [],
     state: ''
 });
@@ -113,31 +103,13 @@ export function authorize(params: {
         // 口座番号を発行
         const accountNumber = await repos.accountNumber.publish(new Date());
 
-        // 口座開設
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (project.settings.pecorino === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-        const accountService = new pecorinoapi.service.Account({
-            endpoint: project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        const account = await accountService.open({
-            project: { typeOf: project.typeOf, id: project.id },
-            accountType: accountType,
-            accountNumber: accountNumber,
-            name: String((<any>product).serviceOutput?.typeOf)
-        });
-
         acceptedOffer = {
             ...acceptedOffer,
             itemOffered: {
                 ...acceptedOffer.itemOffered,
                 serviceOutput: {
                     ...acceptedOffer.itemOffered?.serviceOutput,
-                    identifier: account.accountNumber
+                    identifier: accountNumber
                 }
             }
         };
