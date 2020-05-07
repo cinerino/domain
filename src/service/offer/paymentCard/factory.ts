@@ -124,48 +124,55 @@ export function responseBody2acceptedOffers4result(params: {
 }): any[] {
     const seller = params.seller;
 
-    const paymentCard = {
-        ...params.responseBody.object.itemOffered?.serviceOutput,
-        accessCode: 'xxx' // masked
-    };
+    let acceptedOffers: any[] = [];
+    if (Array.isArray(params.responseBody.object)) {
+        acceptedOffers = params.responseBody.object.map((responseBodyObject: any) => {
+            const paymentCard = {
+                ...responseBodyObject.itemOffered?.serviceOutput,
+                accessCode: 'xxx' // masked
+            };
 
-    const unitPriceSpec:
-        factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
-        project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-        name: {
-            ja: '発行手数料無料',
-            en: 'Free'
-        },
-        priceCurrency: factory.chevre.priceCurrency.JPY,
-        price: 0,
-        referenceQuantity: {
-            typeOf: 'QuantitativeValue',
-            unitCode: factory.chevre.unitCode.Ann,
-            value: 1
-        },
-        valueAddedTaxIncluded: true
-    };
+            const unitPriceSpec:
+                factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
+                project: { typeOf: params.project.typeOf, id: params.project.id },
+                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                name: {
+                    ja: '発行手数料無料',
+                    en: 'Free'
+                },
+                priceCurrency: factory.chevre.priceCurrency.JPY,
+                price: 0,
+                referenceQuantity: {
+                    typeOf: 'QuantitativeValue',
+                    unitCode: factory.chevre.unitCode.Ann,
+                    value: 1
+                },
+                valueAddedTaxIncluded: true
+            };
 
-    const priceSpecification: factory.chevre.compoundPriceSpecification.IPriceSpecification<any> = {
-        project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-        priceCurrency: factory.chevre.priceCurrency.JPY,
-        priceComponent: [unitPriceSpec],
-        valueAddedTaxIncluded: true
-    };
+            const priceSpecification: factory.chevre.compoundPriceSpecification.IPriceSpecification<any> = {
+                project: { typeOf: params.project.typeOf, id: params.project.id },
+                typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+                priceCurrency: factory.chevre.priceCurrency.JPY,
+                priceComponent: [unitPriceSpec],
+                valueAddedTaxIncluded: true
+            };
 
-    return [{
-        project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: factory.chevre.offerType.Offer,
-        id: 'dummy',
-        name: unitPriceSpec.name,
-        itemOffered: paymentCard,
-        priceSpecification: priceSpecification,
-        priceCurrency: factory.priceCurrency.JPY,
-        seller: {
-            typeOf: seller.typeOf,
-            name: seller.name.ja
-        }
-    }];
+            return {
+                project: { typeOf: params.project.typeOf, id: params.project.id },
+                typeOf: responseBodyObject.typeOf,
+                id: responseBodyObject.id,
+                name: unitPriceSpec.name,
+                itemOffered: paymentCard,
+                priceSpecification: priceSpecification,
+                priceCurrency: factory.priceCurrency.JPY,
+                seller: {
+                    typeOf: seller.typeOf,
+                    name: seller.name.ja
+                }
+            };
+        });
+    }
+
+    return acceptedOffers;
 }
