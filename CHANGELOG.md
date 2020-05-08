@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 金額オファー承認をChevre通貨転送取引連携へ変更
+
 ### Deprecated
 
 ### Removed

@@ -7,7 +7,7 @@ import { createPaymentCardItems } from './result/acceptedOffers';
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<string>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
@@ -380,10 +380,8 @@ function createMoneyTransferAcceptedOffers(params: {
         // let responseBody = authorizeMoneyTansferAction.result.responseBody;
         const pendingTransaction = authorizeMoneyTansferAction.object.pendingTransaction;
         if (pendingTransaction !== undefined) {
-            const accountType = pendingTransaction.object.toLocation.accountType;
-            const price = (accountType === 'Coin')
-                ? pendingTransaction.object.amount
-                : undefined;
+            const accountType = factory.chevre.priceCurrency.JPY;
+            const price: number | undefined = pendingTransaction.object.amount.value;
 
             acceptedOffers.push({
                 project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },

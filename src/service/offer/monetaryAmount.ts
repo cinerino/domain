@@ -1,8 +1,8 @@
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
 
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
@@ -12,10 +12,10 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handlePecorinoError } from '../../errorHandler';
 
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
     scopes: [],
     state: ''
 });
@@ -27,12 +27,12 @@ export type ICreateOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export function authorize<T extends string>(params: {
+export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
+    object: factory.action.authorize.offer.monetaryAmount.IObject;
     purpose: factory.action.authorize.offer.monetaryAmount.IPurpose;
-}): ICreateOperation<factory.action.authorize.offer.monetaryAmount.IAction<T>> {
+}): ICreateOperation<factory.action.authorize.offer.monetaryAmount.IAction> {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -51,14 +51,14 @@ export function authorize<T extends string>(params: {
 
         const seller = transaction.seller;
 
-        const { requestBody, responseBody } = await processStartDepositTransaction<T>({
+        const { requestBody, responseBody } = await processStartDepositTransaction({
             project: project,
             transaction: transaction,
             object: params.object
         });
 
         // 承認アクションを開始
-        const actionAttributes: factory.action.authorize.offer.monetaryAmount.IAttributes<T> = {
+        const actionAttributes: factory.action.authorize.offer.monetaryAmount.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -106,7 +106,7 @@ export function authorize<T extends string>(params: {
             throw error;
         }
 
-        const result: factory.action.authorize.offer.monetaryAmount.IResult<T> = {
+        const result: factory.action.authorize.offer.monetaryAmount.IResult = {
             price: Number(params.object.itemOffered.value),
             priceCurrency: factory.priceCurrency.JPY,
             requestBody: requestBody,
@@ -117,26 +117,25 @@ export function authorize<T extends string>(params: {
     };
 }
 
-async function processStartDepositTransaction<T extends string>(params: {
+async function processStartDepositTransaction(params: {
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-    object: factory.action.authorize.offer.monetaryAmount.IObject<T>;
+    object: factory.action.authorize.offer.monetaryAmount.IObject;
 }): Promise<{
-    requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
-    responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody<T>;
+    requestBody: factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail;
+    responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 }> {
-    let requestBody: factory.pecorino.transaction.deposit.IStartParams<T>;
-    let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody<T>;
+    let requestBody: factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail;
+    let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
-    if (params.project.settings === undefined
-        || params.project.settings.pecorino === undefined) {
+    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
         throw new factory.errors.ServiceUnavailable('Project settings undefined');
     }
 
     try {
-        const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
+        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            endpoint: params.project.settings?.chevre?.endpoint,
+            auth: chevreAuthClient
         });
 
         const description = `for ${params.transaction.typeOf} Transaction ${params.transaction.id}`;
@@ -149,14 +148,17 @@ async function processStartDepositTransaction<T extends string>(params: {
         // 販売者が取引人に入金
         requestBody = {
             project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: pecorinoapi.factory.transactionType.Deposit,
             agent: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,
                 name: params.transaction.seller.name.ja
             },
             object: {
-                amount: Number(params.object.itemOffered.value),
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: Number(params.object.itemOffered.value),
+                    currency: factory.chevre.priceCurrency.JPY
+                },
                 fromLocation: {
                     typeOf: params.transaction.agent.typeOf,
                     id: params.transaction.agent.id,
@@ -177,7 +179,7 @@ async function processStartDepositTransaction<T extends string>(params: {
             expires: expires
         };
 
-        responseBody = await depositService.start(requestBody);
+        responseBody = await moneyTransferService.start(requestBody);
     } catch (error) {
         error = handlePecorinoError(error);
         throw error;
@@ -186,16 +188,21 @@ async function processStartDepositTransaction<T extends string>(params: {
     return { requestBody, responseBody };
 }
 
-export function voidTransaction<T extends string>(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined || project.settings.pecorino === undefined) {
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
+
+        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            endpoint: project.settings?.chevre?.endpoint,
+            auth: chevreAuthClient
+        });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
@@ -205,10 +212,10 @@ export function voidTransaction<T extends string>(params: factory.task.IData<fac
             });
         }
 
-        let authorizeActions: factory.action.authorize.offer.monetaryAmount.IAction<T>[];
+        let authorizeActions: factory.action.authorize.offer.monetaryAmount.IAction[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.offer.monetaryAmount.IAction<T>>
+            const authorizeAction = <factory.action.authorize.offer.monetaryAmount.IAction>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -220,7 +227,7 @@ export function voidTransaction<T extends string>(params: factory.task.IData<fac
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.offer.monetaryAmount.IAction<T>[]>await repos.action.searchByPurpose({
+            authorizeActions = <factory.action.authorize.offer.monetaryAmount.IAction[]>await repos.action.searchByPurpose({
                 typeOf: factory.actionType.AuthorizeAction,
                 purpose: {
                     typeOf: params.purpose.typeOf,
@@ -231,18 +238,13 @@ export function voidTransaction<T extends string>(params: factory.task.IData<fac
                 .filter((a) => a.object.itemOffered !== undefined && a.object.itemOffered.typeOf === 'MonetaryAmount');
         }
 
-        const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-
         await Promise.all(authorizeActions.map(async (action) => {
             await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
 
             const pendingTransaction = action.object.pendingTransaction;
 
             if (pendingTransaction !== undefined && pendingTransaction !== null) {
-                await depositService.cancel({ id: pendingTransaction.id });
+                await moneyTransferService.cancel({ id: pendingTransaction.id });
             }
         }));
     };
@@ -257,48 +259,18 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (project.settings === undefined
-                || project.settings.pecorino === undefined) {
+            if (typeof project.settings?.chevre?.endpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings undefined');
             }
 
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: project.settings?.chevre?.endpoint,
+                auth: chevreAuthClient
+            });
+
             const pendingTransaction = params.object.pendingTransaction;
 
-            switch (pendingTransaction.typeOf) {
-                case pecorinoapi.factory.transactionType.Deposit:
-                    const depositService = new pecorinoapi.service.transaction.Deposit({
-                        endpoint: project.settings.pecorino.endpoint,
-                        auth: pecorinoAuthClient
-                    });
-                    await depositService.confirm({ id: pendingTransaction.id });
-
-                    break;
-
-                case pecorinoapi.factory.transactionType.Transfer:
-                    const transferService = new pecorinoapi.service.transaction.Transfer({
-                        endpoint: project.settings.pecorino.endpoint,
-                        auth: pecorinoAuthClient
-                    });
-                    await transferService.confirm({ id: pendingTransaction.id });
-
-                    break;
-
-                case pecorinoapi.factory.transactionType.Withdraw:
-                    const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                        endpoint: project.settings.pecorino.endpoint,
-                        auth: pecorinoAuthClient
-                    });
-                    await withdrawService.confirm({ id: pendingTransaction.id });
-
-                    break;
-
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore next */
-                default:
-                    throw new factory.errors.NotImplemented(
-                        `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                    );
-            }
+            await moneyTransferService.confirm({ id: pendingTransaction.id });
         } catch (error) {
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
