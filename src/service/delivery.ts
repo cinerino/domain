@@ -132,11 +132,12 @@ export function createOwnershipInfosFromOrder(params: {
             offerIndex
         );
 
-        switch (itemOffered.typeOf) {
-            case factory.programMembership.ProgramMembershipType.ProgramMembership:
+        switch (true) {
+            case new RegExp(`^${factory.programMembership.ProgramMembershipType.ProgramMembership}$`).test(itemOffered.typeOf):
+                // case factory.programMembership.ProgramMembershipType.ProgramMembership:
                 ownershipInfo = createProgramMembershipOwnershipInfo({
                     order: params.order,
-                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
                     acquiredFrom: acquiredFrom
@@ -144,10 +145,10 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
-            case factory.chevre.reservationType.EventReservation:
+            case new RegExp(`^${factory.chevre.reservationType.EventReservation}$`).test(itemOffered.typeOf):
                 ownershipInfo = createReservationOwnershipInfo({
                     order: params.order,
-                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
                     acquiredFrom: acquiredFrom
@@ -157,10 +158,10 @@ export function createOwnershipInfosFromOrder(params: {
 
             // tslint:disable-next-line:no-suspicious-comment
             // TODO Chevre決済カードサービスに対して動的にコントロール
-            case factory.paymentMethodType.PrepaidCard:
+            case new RegExp(`PaymentCard$`).test(itemOffered.typeOf):
                 ownershipInfo = createPrepaidCardOwnershipInfo({
                     order: params.order,
-                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
                     acquiredFrom: acquiredFrom
@@ -168,7 +169,7 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
-            case 'MonetaryAmount':
+            case new RegExp(`^MonetaryAmount$`).test(itemOffered.typeOf):
                 // no op
                 break;
 

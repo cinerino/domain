@@ -116,7 +116,7 @@ function createPaymentMethods(params: {
                         name: result.name,
                         paymentMethodId: result.paymentMethodId,
                         totalPaymentDue: result.totalPaymentDue,
-                        typeOf: paymentMethodType
+                        typeOf: <any>result.paymentMethod
                     });
                 });
 
