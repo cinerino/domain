@@ -11,7 +11,7 @@ function createMoneyTransferActions(params: {
             .filter((a) => a.result !== undefined)
             // tslint:disable-next-line:no-suspicious-comment
             // TODO Chevre決済カードサービスに対して動的にコントロール
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.PrepaidCard);
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.PrepaidCard);
 
     return authorizePaymentCardActions.map((a) => {
         const actionResult = <factory.action.authorize.paymentMethod.prepaidCard.IResult>a.result;
