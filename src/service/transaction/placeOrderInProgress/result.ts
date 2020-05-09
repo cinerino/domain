@@ -107,7 +107,7 @@ function createPaymentMethods(params: {
             params.transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.result !== undefined)
-                .filter((a) => a.result.paymentMethod === paymentMethodType)
+                .filter((a) => a.object.typeOf === paymentMethodType)
                 .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
                     const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
                     paymentMethods.push({

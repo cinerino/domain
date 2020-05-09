@@ -74,7 +74,8 @@ export function authorize(params: {
                 ...params.object,
                 ...(params.object.fromLocation !== undefined)
                     ? { accountId: params.object.fromLocation.identifier }
-                    : {}
+                    : {},
+                typeOf: factory.paymentMethodType.PrepaidCard
             },
             agent: transaction.agent,
             recipient: recipient,
