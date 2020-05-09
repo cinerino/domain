@@ -235,7 +235,7 @@ export class MongoRepository {
         )
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Order');
+            throw new factory.errors.NotFound(this.invoiceModel.modelName);
         }
     }
 

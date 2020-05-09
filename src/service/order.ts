@@ -66,7 +66,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
 
                             // 決済方法と決済IDごとに金額をまとめて請求書を作成する
                             const existingInvoiceIndex = invoices.findIndex((i) => {
-                                return i.paymentMethod === paymentMethodType && i.paymentMethodId === result.paymentMethodId;
+                                return i.paymentMethod === result.paymentMethod && i.paymentMethodId === result.paymentMethodId;
                             });
 
                             if (existingInvoiceIndex < 0) {
@@ -76,7 +76,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
                                     accountId: result.accountId,
                                     confirmationNumber: order.confirmationNumber.toString(),
                                     customer: order.customer,
-                                    paymentMethod: paymentMethodType,
+                                    paymentMethod: <any>result.paymentMethod,
                                     paymentMethodId: result.paymentMethodId,
                                     paymentStatus: result.paymentStatus,
                                     referencesOrder: order,
