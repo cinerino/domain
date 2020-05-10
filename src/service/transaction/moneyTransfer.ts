@@ -11,7 +11,7 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as PaymentCardService from '../payment/prepaidCard';
+import * as PaymentCardService from '../payment/paymentCard';
 
 import { createPotentialActions } from './moneyTransfer/potentialActions';
 
@@ -345,9 +345,9 @@ export function exportTasksById(params: {
 
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                const cancelPrepaidCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPrepaidCard> = {
+                const cancelPaymentCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPaymentCard> = {
                     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                    name: factory.taskName.CancelPrepaidCard,
+                    name: factory.taskName.CancelPaymentCard,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
@@ -360,7 +360,7 @@ export function exportTasksById(params: {
                 };
 
                 taskAttributes.push(
-                    cancelPrepaidCardTaskAttributes
+                    cancelPaymentCardTaskAttributes
                 );
 
                 break;

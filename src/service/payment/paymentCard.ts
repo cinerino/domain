@@ -1,5 +1,5 @@
 /**
- * プリペイドカード決済サービス
+ * 決済カード決済サービス
  */
 import * as moment from 'moment';
 
@@ -38,12 +38,12 @@ export type IAuthorizeOperation<T> = (repos: {
 export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.prepaidCard.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.prepaidCard.IPaymentCard;
+    object: factory.action.authorize.paymentMethod.paymentCard.IObject & {
+        fromLocation?: factory.action.authorize.paymentMethod.paymentCard.IPaymentCard;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.prepaidCard.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.paymentCard.IAction> {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -67,7 +67,7 @@ export function authorize(params: {
         }
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.prepaidCard.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.paymentCard.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -75,7 +75,7 @@ export function authorize(params: {
                 ...(params.object.fromLocation !== undefined)
                     ? { accountId: params.object.fromLocation.identifier }
                     : {},
-                typeOf: factory.paymentMethodType.PrepaidCard
+                typeOf: factory.paymentMethodType.PaymentCard
             },
             agent: transaction.agent,
             recipient: recipient,
@@ -84,7 +84,7 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.prepaidCard.IPendingTransaction;
+        let pendingTransaction: factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction;
 
         try {
             pendingTransaction = await processMoneyTransferTransaction({
@@ -107,7 +107,7 @@ export function authorize(params: {
             throw error;
         }
 
-        const actionResult: factory.action.authorize.paymentMethod.prepaidCard.IResult = {
+        const actionResult: factory.action.authorize.paymentMethod.paymentCard.IResult = {
             accountId: (params.object.fromLocation !== undefined)
                 ? params.object.fromLocation.identifier
                 : '',
@@ -138,14 +138,14 @@ export function authorize(params: {
 // tslint:disable-next-line:max-func-body-length
 async function processMoneyTransferTransaction(params: {
     project: factory.project.IProject;
-    object: factory.action.authorize.paymentMethod.prepaidCard.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.prepaidCard.IPaymentCard;
+    object: factory.action.authorize.paymentMethod.paymentCard.IObject & {
+        fromLocation?: factory.action.authorize.paymentMethod.paymentCard.IPaymentCard;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.prepaidCard.IPendingTransaction> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.prepaidCard.IPendingTransaction;
+}): Promise<factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction> {
+    let pendingTransaction: factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction;
 
     const transaction = params.transaction;
 
@@ -269,7 +269,7 @@ async function processMoneyTransferTransaction(params: {
  * プリペイドカード決済承認取消
  */
 export function voidTransaction(
-    params: factory.task.IData<factory.taskName.CancelPrepaidCard>
+    params: factory.task.IData<factory.taskName.CancelPaymentCard>
 ) {
     return async (repos: {
         action: ActionRepo;
@@ -291,10 +291,10 @@ export function voidTransaction(
             });
         }
 
-        let authorizeActions: factory.action.authorize.paymentMethod.prepaidCard.IAction[];
+        let authorizeActions: factory.action.authorize.paymentMethod.paymentCard.IAction[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.paymentMethod.prepaidCard.IAction>
+            const authorizeAction = <factory.action.authorize.paymentMethod.paymentCard.IAction>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -306,7 +306,7 @@ export function voidTransaction(
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.paymentMethod.prepaidCard.IAction[]>
+            authorizeActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
                 await repos.action.searchByPurpose({
                     typeOf: factory.actionType.AuthorizeAction,
                     purpose: {
@@ -317,7 +317,7 @@ export function voidTransaction(
                     .then((actions) => actions
                         // tslint:disable-next-line:no-suspicious-comment
                         // TODO Chevre決済カードサービスに対して動的にコントロール
-                        .filter((a) => a.object.typeOf === factory.paymentMethodType.PrepaidCard)
+                        .filter((a) => a.object.typeOf === factory.paymentMethodType.PaymentCard)
                     );
         }
 
@@ -342,7 +342,7 @@ export function voidTransaction(
 /**
  * プリペイドカード決済実行
  */
-export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPrepaidCard>) {
+export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPaymentCard>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
@@ -396,7 +396,7 @@ export function payPrepaidCard(params: factory.task.IData<factory.taskName.PayPr
 /**
  * プリペイド返金処理を実行する
  */
-export function refundPrepaidCard(params: factory.task.IData<factory.taskName.RefundPrepaidCard>) {
+export function refundPaymentCard(params: factory.task.IData<factory.taskName.RefundPaymentCard>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;

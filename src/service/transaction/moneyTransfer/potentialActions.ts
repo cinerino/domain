@@ -4,17 +4,16 @@ function createMoneyTransferActions(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }): factory.action.transfer.moneyTransfer.IAttributes[] {
     // 通貨転送アクション属性作成
-    // type IFromLocation = factory.action.authorize.paymentMethod.prepaidCard.IPaymentCard;
-    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.prepaidCard.IAction[]>
+    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             // tslint:disable-next-line:no-suspicious-comment
             // TODO Chevre決済カードサービスに対して動的にコントロール
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.PrepaidCard);
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.PaymentCard);
 
     return authorizePaymentCardActions.map((a) => {
-        const actionResult = <factory.action.authorize.paymentMethod.prepaidCard.IResult>a.result;
+        const actionResult = <factory.action.authorize.paymentMethod.paymentCard.IResult>a.result;
 
         if (a.object.fromLocation !== undefined) {
             // if ((<IFromLocation>a.object.fromLocation).accountType !== 'Coin') {

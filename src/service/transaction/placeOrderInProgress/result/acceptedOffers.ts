@@ -2,8 +2,8 @@ import * as factory from '../../../../factory';
 
 export function createPaymentCardItems(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
-}): factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.prepaidCard.IPrepaidCard>[] {
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.prepaidCard.IPrepaidCard>[] = [];
+}): factory.order.IAcceptedOffer<any>[] {
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.IPaymentCard>[] = [];
 
     const authorizePaymentCardOfferActions = params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)

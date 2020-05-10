@@ -81,7 +81,7 @@ export function authorize(params: {
             const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
                 accountId: authorizeActionObject.movieTickets[0].identifier,
                 amount: 0,
-                paymentMethod: params.authorizeObject.typeOf,
+                paymentMethod: <any>params.authorizeObject.typeOf,
                 paymentStatus: factory.paymentStatusType.PaymentComplete, // すでに着券済なのでPaymentComplete
                 paymentMethodId: authorizeActionObject.movieTickets[0].identifier,
                 name: params.authorizeObject.typeOf,

@@ -159,7 +159,7 @@ export function createOwnershipInfosFromOrder(params: {
             // tslint:disable-next-line:no-suspicious-comment
             // TODO Chevre決済カードサービスに対して動的にコントロール
             case new RegExp(`PaymentCard$`).test(itemOffered.typeOf):
-                ownershipInfo = createPrepaidCardOwnershipInfo({
+                ownershipInfo = createPaymentCardOwnershipInfo({
                     order: params.order,
                     acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
@@ -245,9 +245,9 @@ function createReservationOwnershipInfo(params: {
     return ownershipInfo;
 }
 
-function createPrepaidCardOwnershipInfo(params: {
+function createPaymentCardOwnershipInfo(params: {
     order: factory.order.IOrder;
-    acceptedOffer: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.prepaidCard.IPrepaidCard>;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.IPaymentCard>;
     ownedFrom: Date;
     identifier: string;
     acquiredFrom: factory.ownershipInfo.IOwner;
