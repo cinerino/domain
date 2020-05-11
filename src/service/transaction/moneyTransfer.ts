@@ -35,7 +35,7 @@ export type IConfirmOperation<T> = (repos: {
 
 /**
  * 取引開始
- * Pecorinoサービスを利用してWithdrawTransactionあるいはTransferTransactionを開始する
+ * Chevre通貨転送サービスを利用して転送取引を開始する
  */
 export function start(
     params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail
@@ -169,10 +169,7 @@ function fixFromLocation(
 
             fromLocation = {
                 typeOf: fromLocationObject.typeOf,
-                identifier: fromLocationObject.identifier,
-                ...{
-                    accessCode: (<any>fromLocationObject).accessCode
-                }
+                identifier: fromLocationObject.identifier
             };
         } else {
             throw new factory.errors.Argument('fromLocation', 'location type must be specified');

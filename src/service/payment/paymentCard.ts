@@ -202,8 +202,7 @@ async function processMoneyTransferTransaction(params: {
                 description: description,
                 fromLocation: {
                     typeOf: params.object.fromLocation.typeOf,
-                    identifier: params.object.fromLocation.identifier,
-                    accessCode: params.object.fromLocation.accessCode
+                    identifier: params.object.fromLocation.identifier
                 },
                 toLocation: <any>{
                     name: recipient.name
@@ -225,13 +224,11 @@ async function processMoneyTransferTransaction(params: {
                 description: description,
                 fromLocation: {
                     typeOf: params.object.fromLocation.typeOf,
-                    identifier: params.object.fromLocation.identifier,
-                    accessCode: params.object.fromLocation.accessCode
+                    identifier: params.object.fromLocation.identifier
                 },
                 toLocation: {
                     typeOf: params.object.toLocation.typeOf,
-                    identifier: params.object.toLocation.identifier,
-                    accessCode: params.object.toLocation.accessCode
+                    identifier: params.object.toLocation.identifier
                 }
             }
         });
@@ -253,8 +250,7 @@ async function processMoneyTransferTransaction(params: {
                 },
                 toLocation: {
                     typeOf: params.object.toLocation.typeOf,
-                    identifier: params.object.toLocation.identifier,
-                    accessCode: params.object.toLocation.accessCode
+                    identifier: params.object.toLocation.identifier
                 }
             }
         });
