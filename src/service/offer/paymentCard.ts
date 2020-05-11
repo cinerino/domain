@@ -84,8 +84,12 @@ export function authorize(params: {
             auth: chevreAuthClient
         });
 
+        if (params.object.length === 0) {
+            throw new factory.errors.ArgumentNull('object');
+        }
+
         product = await productService.findById({
-            id: params.object?.itemOffered?.id
+            id: params.object[0]?.itemOffered?.id
         });
 
         const accountType = (<any>product).serviceOutput?.typeOf;
