@@ -71,7 +71,7 @@ export function acceptedOffers2amount(params: {
     const acceptedOffers = params.acceptedOffers;
 
     // 金額計算
-    let amount = acceptedOffers.reduce(
+    return acceptedOffers.reduce(
         (a, b) => {
             if (b.priceSpecification === undefined || b.priceSpecification === null) {
                 throw new factory.errors.ServiceUnavailable('price specification of result accepted offer undefined');
@@ -87,87 +87,33 @@ export function acceptedOffers2amount(params: {
         },
         0
     );
-
-    // オファーIDごとに座席の単価仕様を考慮して金額を調整
-    const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
-    offerIds.forEach((offerId) => {
-        const acceptedOffersByOfferId = acceptedOffers.filter((o) => o.id === offerId);
-
-        const compoundPriceSpecification
-            = <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>acceptedOffersByOfferId[0].priceSpecification;
-
-        const unitPriceSpec = <IUnitPriceSpecification>compoundPriceSpecification.priceComponent.find(
-            (spec) => {
-                const priceSpec = <IUnitPriceSpecification>spec;
-
-                return priceSpec.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
-                    && (!Array.isArray(priceSpec.appliesToAddOn));
-            }
-        );
-        let referenceQuantityValue = unitPriceSpec.referenceQuantity?.value;
-        if (typeof referenceQuantityValue !== 'number') {
-            referenceQuantityValue = 1;
-        }
-
-        amount -= unitPriceSpec.price * (referenceQuantityValue - 1) * (acceptedOffersByOfferId.length / referenceQuantityValue);
-    });
-
-    return amount;
 }
 
 export function responseBody2acceptedOffers4result(params: {
     responseBody: any;
     project: factory.project.IProject;
     seller: factory.transaction.placeOrder.ISeller;
+    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
 }): any[] {
-    const seller = params.seller;
-
     let acceptedOffers: any[] = [];
     if (Array.isArray(params.responseBody.object)) {
-        acceptedOffers = params.responseBody.object.map((responseBodyObject: any) => {
+        acceptedOffers = params.responseBody.object.map((responseBodyObject: any, key: any) => {
             const paymentCard = {
                 ...responseBodyObject.itemOffered?.serviceOutput,
                 accessCode: 'xxx' // masked
             };
 
-            const unitPriceSpec:
-                factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-                name: {
-                    ja: '発行手数料無料',
-                    en: 'Free'
-                },
-                priceCurrency: factory.chevre.priceCurrency.JPY,
-                price: 0,
-                referenceQuantity: {
-                    typeOf: 'QuantitativeValue',
-                    unitCode: factory.chevre.unitCode.Ann,
-                    value: 1
-                },
-                valueAddedTaxIncluded: true
-            };
-
-            const priceSpecification: factory.chevre.compoundPriceSpecification.IPriceSpecification<any> = {
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-                priceCurrency: factory.chevre.priceCurrency.JPY,
-                priceComponent: [unitPriceSpec],
-                valueAddedTaxIncluded: true
-            };
+            const offer = params.acceptedOffer[key];
 
             return {
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: responseBodyObject.typeOf,
-                id: responseBodyObject.id,
-                name: unitPriceSpec.name,
+                id: offer.id,
+                name: offer.name,
                 itemOffered: paymentCard,
-                priceSpecification: priceSpecification,
-                priceCurrency: factory.priceCurrency.JPY,
-                seller: {
-                    typeOf: seller.typeOf,
-                    name: seller.name.ja
-                }
+                priceSpecification: offer.priceSpecification,
+                priceCurrency: offer.priceCurrency,
+                seller: offer.seller
             };
         });
     }

@@ -13,6 +13,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { handleChevreError } from '../../errorHandler';
 
 import {
+    acceptedOffers2amount,
     createAuthorizeActionAttributes,
     createRegisterServiceStartParams,
     responseBody2acceptedOffers4result
@@ -151,7 +152,8 @@ export function authorize(params: {
             acceptedOffers4result = responseBody2acceptedOffers4result({
                 responseBody: responseBody,
                 project: { typeOf: project.typeOf, id: project.id },
-                seller: transaction.seller
+                seller: transaction.seller,
+                acceptedOffer: acceptedOffer
             });
         } catch (error) {
             try {
@@ -167,7 +169,7 @@ export function authorize(params: {
         }
 
         // 金額計算
-        const amount = 0;
+        const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffers4result });
 
         // アクションを完了
         const result: factory.action.authorize.offer.paymentCard.IResult = {
