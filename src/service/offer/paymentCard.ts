@@ -226,7 +226,7 @@ export function validateAcceptedOffers(params: {
 
         return {
             ...acceptedOfferWithoutDetail,
-            id: 'dummy',
+            id: acceptedOfferWithoutDetail.id,
             name: unitPriceSpec.name,
             // itemOffered: {
             //     serviceType: offer.itemOffered.serviceType,
