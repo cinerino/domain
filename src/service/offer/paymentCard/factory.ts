@@ -31,11 +31,9 @@ export function createRegisterServiceStartParams(params: {
                 ]
             }
         },
-        object: {
-            ...params.object
-        },
+        object: params.object,
         expires: moment(params.transaction.expires)
-            .add(1, 'month')
+            .add(1, 'day')
             .toDate() // 余裕を持って
     };
 }

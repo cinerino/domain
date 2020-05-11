@@ -93,26 +93,27 @@ export function authorize(params: {
         }
 
         let acceptedOffer = await validateAcceptedOffers({
-            project: { typeOf: project.typeOf, id: project.id },
+            project: project,
             object: params.object,
             product: product,
             seller: transaction.seller
         })(repos);
 
-        // カード口座を作成
-        // 口座番号を発行
-        const accountNumber = await repos.accountNumber.publish(new Date());
+        // カード番号を発行
+        acceptedOffer = await Promise.all(acceptedOffer.map(async (o) => {
+            const accountNumber = await repos.accountNumber.publish(new Date());
 
-        acceptedOffer = {
-            ...acceptedOffer,
-            itemOffered: {
-                ...acceptedOffer.itemOffered,
-                serviceOutput: {
-                    ...acceptedOffer.itemOffered?.serviceOutput,
-                    identifier: accountNumber
+            return {
+                ...o,
+                itemOffered: {
+                    ...o.itemOffered,
+                    serviceOutput: {
+                        ...o.itemOffered?.serviceOutput,
+                        identifier: accountNumber
+                    }
                 }
-            }
-        };
+            };
+        }));
 
         let requestBody: any;
         let responseBody: any;
@@ -131,7 +132,7 @@ export function authorize(params: {
         });
         const action = await repos.action.start(actionAttributes);
 
-        // 座席仮予約
+        // サービス登録開始
         try {
             const registerService = new chevre.service.transaction.RegisterService({
                 endpoint: project.settings.chevre.endpoint,
@@ -187,7 +188,7 @@ export function authorize(params: {
  * 受け入れらたオファーの内容を検証
  */
 export function validateAcceptedOffers(params: {
-    project: factory.chevre.project.IProject;
+    project: factory.project.IProject;
     object: any;
     product: any;
     seller: { typeOf: factory.organizationType; id: string };
@@ -196,58 +197,42 @@ export function validateAcceptedOffers(params: {
         project: ProjectRepo;
         seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.paymentCard.IObject> => {
-        const acceptedOfferWithoutDetail = params.object;
+        if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+        const productService = new chevre.service.Product({
+            endpoint: params.project.settings?.chevre?.endpoint,
+            auth: chevreAuthClient
+        });
 
-        const unitPriceSpec:
-            factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification> = {
-            project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-            name: {
-                ja: '発行手数料無料',
-                en: 'Free'
-            },
-            priceCurrency: factory.chevre.priceCurrency.JPY,
-            price: 0,
-            referenceQuantity: {
-                typeOf: 'QuantitativeValue',
-                unitCode: factory.chevre.unitCode.Ann,
-                value: 1
-            },
-            valueAddedTaxIncluded: true
-        };
+        // 利用可能なオファー
+        const availableOffers = await productService.searchOffers({ id: String(params.product.id) });
 
-        const priceSpecification: factory.chevre.compoundPriceSpecification.IPriceSpecification<any> = {
-            project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-            priceCurrency: factory.chevre.priceCurrency.JPY,
-            priceComponent: [unitPriceSpec],
-            valueAddedTaxIncluded: true
-        };
+        let acceptedOfferWithoutDetail: any[] = params.object;
+        if (!Array.isArray(acceptedOfferWithoutDetail)) {
+            acceptedOfferWithoutDetail = [acceptedOfferWithoutDetail];
+        }
 
-        return {
-            ...acceptedOfferWithoutDetail,
-            id: acceptedOfferWithoutDetail.id,
-            name: unitPriceSpec.name,
-            // itemOffered: {
-            //     serviceType: offer.itemOffered.serviceType,
-            //     serviceOutput: (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null)
-            //         ? offerWithoutDetail.itemOffered.serviceOutput
-            //         : undefined
-            // },
-            typeOf: factory.chevre.offerType.Offer,
-            priceCurrency: factory.chevre.priceCurrency.JPY,
-            itemOffered: {
-                ...params.product,
-                // serviceType: acceptedOfferWithoutDetail.itemOffered?.serviceType,
-                serviceOutput: {
-                    ...params.product?.serviceOutput,
-                    ...acceptedOfferWithoutDetail.itemOffered?.serviceOutput
-                }
-            },
-            // itemOffered, seller, typeOf, priceCurrency
-            project: { typeOf: params.project.typeOf, id: params.project.id },
-            priceSpecification: priceSpecification,
-            seller: { typeOf: params.seller.typeOf, id: params.seller.id }
-        };
+        // 利用可能なチケットオファーであれば受け入れる
+        return Promise.all(acceptedOfferWithoutDetail.map((offerWithoutDetail) => {
+            const offer = availableOffers.find((o) => o.id === offerWithoutDetail.id);
+            if (offer === undefined) {
+                throw new factory.errors.NotFound('Offer', `Offer ${offerWithoutDetail.id} not found`);
+            }
+
+            return {
+                ...offerWithoutDetail,
+                ...offer,
+                itemOffered: {
+                    ...params.product,
+                    // serviceType: acceptedOfferWithoutDetail.itemOffered?.serviceType,
+                    serviceOutput: {
+                        ...params.product?.serviceOutput,
+                        ...offerWithoutDetail.itemOffered?.serviceOutput
+                    }
+                },
+                seller: { typeOf: params.seller.typeOf, id: params.seller.id }
+            };
+        }));
     };
 }
