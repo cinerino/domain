@@ -9,8 +9,12 @@ export async function createRegisterServiceActions(params: {
 
     const authorizePaymentCardOfferActions = params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === 'Offer')
-        .filter((a) => a.object.itemOffered.typeOf === 'PaymentCard');
+        .filter((a) =>
+            Array.isArray(a.object)
+            && a.object.length > 0
+            && a.object[0].typeOf === factory.chevre.offerType.Offer
+            && a.object[0].itemOffered.typeOf === factory.paymentMethodType.PaymentCard
+        );
 
     authorizePaymentCardOfferActions.forEach((a) => {
         const actionResult = a.result;
