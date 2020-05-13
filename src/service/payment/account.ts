@@ -82,7 +82,7 @@ export function authorize<T extends string>(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction<T>;
+        let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
 
         try {
             pendingTransaction = await processAccountTransaction({
@@ -142,8 +142,8 @@ async function processAccountTransaction<T extends string>(params: {
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.account.IPendingTransaction<T>> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction<T>;
+}): Promise<factory.action.authorize.paymentMethod.account.IPendingTransaction> {
+    let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
 
     const transaction = params.transaction;
 
@@ -186,7 +186,7 @@ async function processAccountTransaction<T extends string>(params: {
             endpoint: params.project.settings.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
-        pendingTransaction = await withdrawService.start<T>({
+        pendingTransaction = await withdrawService.start({
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.pecorino.transactionType.Withdraw,
             agent: agent,
@@ -207,7 +207,7 @@ async function processAccountTransaction<T extends string>(params: {
             endpoint: params.project.settings.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
-        pendingTransaction = await transferService.start<T>({
+        pendingTransaction = await transferService.start({
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.pecorino.transactionType.Transfer,
             agent: agent,
@@ -233,7 +233,7 @@ async function processAccountTransaction<T extends string>(params: {
             endpoint: params.project.settings.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
-        pendingTransaction = await depositService.start<T>({
+        pendingTransaction = await depositService.start({
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.pecorino.transactionType.Deposit,
             agent: agent,

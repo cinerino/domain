@@ -489,7 +489,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 auth: pecorinoAuthClient
             });
 
-            const depositTransaction = await depositService.start<string>({
+            const depositTransaction = await depositService.start({
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {
@@ -559,7 +559,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<string>;
+        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction;
         const action = await repos.action.start(params);
 
         try {

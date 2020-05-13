@@ -252,22 +252,22 @@ export function search(params: {
 /**
  * 口座取引履歴検索
  */
-export function searchMoneyTransferActions<T extends string>(params: {
+export function searchMoneyTransferActions(params: {
     project: factory.project.IProject;
     ownedBy: {
         id: string;
     };
     ownedFrom?: Date;
     ownedThrough?: Date;
-    conditions: pecorinoapi.factory.action.transfer.moneyTransfer.ISearchConditions<T>;
-}): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction<T>[]> {
+    conditions: pecorinoapi.factory.action.transfer.moneyTransfer.ISearchConditions;
+}): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        let actions: factory.pecorino.action.transfer.moneyTransfer.IAction<T>[] = [];
+        let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
             const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
                 typeOfGood: {
@@ -329,7 +329,7 @@ export function openWithoutOwnershipInfo<T extends string>(params: {
         // 口座番号を発行
         const accountNumber = await repos.accountNumber.publish(new Date());
 
-        let account: factory.pecorino.account.IAccount<T>;
+        let account: factory.pecorino.account.IAccount;
         try {
             if (project.settings === undefined) {
                 throw new factory.errors.ServiceUnavailable('Project settings undefined');
@@ -362,7 +362,7 @@ export function openWithoutOwnershipInfo<T extends string>(params: {
 export function deposit(params: {
     project: factory.project.IProject;
     agent: pecorinoapi.factory.transaction.deposit.IAgent;
-    object: pecorinoapi.factory.transaction.deposit.IObject<string>;
+    object: pecorinoapi.factory.transaction.deposit.IObject;
     recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
 }) {
     return async (repos: {
