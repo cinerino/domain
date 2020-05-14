@@ -9,6 +9,7 @@ import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
 import { MongoRepository as MemberRepo } from './repo/member';
+import { RedisRepository as MoneyTransferTransactionNumberRepo } from './repo/moneyTransferTransactionNumber';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
@@ -56,6 +57,11 @@ export class Invoice extends InvoiceRepo { }
  * プロジェクトメンバーリポジトリ
  */
 export class Member extends MemberRepo { }
+
+/**
+ * 通貨転送取引番号リポジトリ
+ */
+export class MoneyTransferTransactionNumber extends MoneyTransferTransactionNumberRepo { }
 
 /**
  * 注文リポジトリ

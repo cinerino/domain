@@ -93,12 +93,17 @@ describe('ポイントを入金する', () => {
     it('Pecorinoサービスが正常であれば入金できるはず', async () => {
         const depositTransaction = {};
 
+        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves(project);
+        sandbox.mock(moneyTransferTransactionNumberRepo)
+            .expects('publishByTimestamp')
+            .once()
+            .resolves('transactionNumber');
         sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('start')
             .once()
@@ -118,6 +123,7 @@ describe('ポイントを入金する', () => {
             },
             recipient: <any>{}
         })({
+            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo
         });
         assert.equal(result, undefined);
@@ -127,12 +133,17 @@ describe('ポイントを入金する', () => {
     it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
         const pecorinoRequestError = { name: 'PecorinoRequestError' };
 
+        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves(project);
+        sandbox.mock(moneyTransferTransactionNumberRepo)
+            .expects('publishByTimestamp')
+            .once()
+            .resolves('transactionNumber');
         sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('start')
             .once()
@@ -151,6 +162,7 @@ describe('ポイントを入金する', () => {
             },
             recipient: <any>{}
         })({
+            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo
         })
             .catch((err) => err);

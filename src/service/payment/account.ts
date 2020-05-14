@@ -10,6 +10,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
+import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../../repo/moneyTransferTransactionNumber';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -26,6 +27,7 @@ const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -34,6 +36,7 @@ export type IAuthorizeOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
+// tslint:disable-next-line:max-func-body-length
 export function authorize<T extends string>(params: {
     project: factory.project.IProject;
     agent: { id: string };
@@ -45,6 +48,7 @@ export function authorize<T extends string>(params: {
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
     return async (repos: {
         action: ActionRepo;
+        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
@@ -65,6 +69,11 @@ export function authorize<T extends string>(params: {
             throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
         }
 
+        const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
+            project: { id: project.id },
+            startDate: new Date()
+        });
+
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
             project: transaction.project,
@@ -73,7 +82,12 @@ export function authorize<T extends string>(params: {
                 ...params.object,
                 ...(params.object.fromAccount !== undefined)
                     ? { accountId: params.object.fromAccount.accountNumber }
-                    : {}
+                    : {},
+                ...{
+                    pendingTransaction: {
+                        transactionNumber: transactionNumber
+                    }
+                }
             },
             agent: transaction.agent,
             recipient: recipient,
@@ -86,6 +100,7 @@ export function authorize<T extends string>(params: {
 
         try {
             pendingTransaction = await processAccountTransaction({
+                transactionNumber: transactionNumber,
                 project: project,
                 object: params.object,
                 recipient: recipient,
@@ -135,6 +150,7 @@ export function authorize<T extends string>(params: {
 
 // tslint:disable-next-line:max-func-body-length
 async function processAccountTransaction<T extends string>(params: {
+    transactionNumber: string;
     project: factory.project.IProject;
     object: factory.action.authorize.paymentMethod.account.IObject<T> & {
         fromAccount?: factory.action.authorize.paymentMethod.account.IAccount<T>;
@@ -187,6 +203,7 @@ async function processAccountTransaction<T extends string>(params: {
             auth: pecorinoAuthClient
         });
         pendingTransaction = await withdrawService.start({
+            transactionNumber: params.transactionNumber,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.pecorino.transactionType.Withdraw,
             agent: agent,
@@ -208,6 +225,7 @@ async function processAccountTransaction<T extends string>(params: {
             auth: pecorinoAuthClient
         });
         pendingTransaction = await transferService.start({
+            transactionNumber: params.transactionNumber,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.pecorino.transactionType.Transfer,
             agent: agent,
@@ -234,6 +252,7 @@ async function processAccountTransaction<T extends string>(params: {
             auth: pecorinoAuthClient
         });
         pendingTransaction = await depositService.start({
+            transactionNumber: params.transactionNumber,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.pecorino.transactionType.Deposit,
             agent: agent,
@@ -446,6 +465,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
@@ -461,6 +481,11 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
+            const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
+                project: { id: project.id },
+                startDate: new Date()
+            });
+
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
 
@@ -475,6 +500,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             auth: pecorinoAuthClient
                         });
                         const withdrawTransaction = await withdrawService.start({
+                            transactionNumber: transactionNumber,
                             project: { typeOf: project.typeOf, id: project.id },
                             typeOf: factory.pecorino.transactionType.Withdraw,
                             agent: pendingTransaction.recipient,
@@ -501,6 +527,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             auth: pecorinoAuthClient
                         });
                         const transferTransaction = await transferService.start({
+                            transactionNumber: transactionNumber,
                             project: { typeOf: project.typeOf, id: project.id },
                             typeOf: factory.pecorino.transactionType.Transfer,
                             agent: pendingTransaction.recipient,
@@ -527,6 +554,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                             auth: pecorinoAuthClient
                         });
                         const depositTransaction = await depositService.start({
+                            transactionNumber: transactionNumber,
                             project: { typeOf: project.typeOf, id: project.id },
                             typeOf: factory.pecorino.transactionType.Deposit,
                             agent: pendingTransaction.recipient,

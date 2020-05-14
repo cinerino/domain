@@ -4,6 +4,7 @@
  */
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
+import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
@@ -12,9 +13,11 @@ import * as domain from '../index';
 const project = { id: 'id', settings: { pecorino: { endpoint: '' } } };
 
 let sandbox: sinon.SinonSandbox;
+let redisClient: redis.RedisClient;
 
 before(() => {
     sandbox = sinon.createSandbox();
+    redisClient = redis.createClient();
 });
 
 describe('ポイントインセンティブを適用する', () => {
@@ -23,6 +26,7 @@ describe('ポイントインセンティブを適用する', () => {
     });
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
+        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
@@ -34,6 +38,10 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('findById')
             .once()
             .resolves(project);
+        sandbox.mock(moneyTransferTransactionNumberRepo)
+            .expects('publishByTimestamp')
+            .once()
+            .resolves('transactionNumber');
         sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('start')
             .once()
@@ -57,6 +65,7 @@ describe('ポイントインセンティブを適用する', () => {
             purpose: {}
         })({
             action: actionRepo,
+            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo
         });
         assert.equal(result, undefined);
@@ -65,6 +74,7 @@ describe('ポイントインセンティブを適用する', () => {
 
     it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
         const pecorinoError = new Error('pecorinoError');
+        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
@@ -76,6 +86,10 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('findById')
             .once()
             .resolves(project);
+        sandbox.mock(moneyTransferTransactionNumberRepo)
+            .expects('publishByTimestamp')
+            .once()
+            .resolves('transactionNumber');
         sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
             .expects('start')
             .once()
@@ -98,6 +112,7 @@ describe('ポイントインセンティブを適用する', () => {
             purpose: {}
         })({
             action: actionRepo,
+            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo
         })
             .catch((err) => err);
@@ -112,6 +127,7 @@ describe('ポイントインセンティブを返却する', () => {
     });
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
+        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
@@ -123,6 +139,10 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('findById')
             .once()
             .resolves(project);
+        sandbox.mock(moneyTransferTransactionNumberRepo)
+            .expects('publishByTimestamp')
+            .once()
+            .resolves('transactionNumber');
         sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('start')
             .once()
@@ -153,6 +173,7 @@ describe('ポイントインセンティブを返却する', () => {
             }
         })({
             action: actionRepo,
+            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo
         });
         assert.equal(result, undefined);
@@ -161,6 +182,7 @@ describe('ポイントインセンティブを返却する', () => {
 
     it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
         const pecorinoError = new Error('pecorinoError');
+        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
@@ -172,6 +194,10 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('findById')
             .once()
             .resolves(project);
+        sandbox.mock(moneyTransferTransactionNumberRepo)
+            .expects('publishByTimestamp')
+            .once()
+            .resolves('transactionNumber');
         sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('start')
             .once()
@@ -204,6 +230,7 @@ describe('ポイントインセンティブを返却する', () => {
             }
         })({
             action: actionRepo,
+            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo
         })
             .catch((err) => err);

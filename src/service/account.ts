@@ -12,6 +12,7 @@ import * as factory from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
 import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';
+import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../repo/moneyTransferTransactionNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
@@ -366,6 +367,7 @@ export function deposit(params: {
     recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
 }) {
     return async (repos: {
+        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
     }) => {
         try {
@@ -374,11 +376,17 @@ export function deposit(params: {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
+            const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
+                project: { id: project.id },
+                startDate: new Date()
+            });
+
             const depositService = new pecorinoapi.service.transaction.Deposit({
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
             });
             const transaction = await depositService.start({
+                transactionNumber: transactionNumber,
                 project: { typeOf: project.typeOf, id: project.id },
                 typeOf: factory.pecorino.transactionType.Deposit,
                 agent: {

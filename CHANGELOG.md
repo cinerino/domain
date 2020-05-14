@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 金額オファー承認をChevre通貨転送取引連携へ変更
+- Pecorino取引に対して取引番号を指定するように調整
 
 ### Deprecated
 
