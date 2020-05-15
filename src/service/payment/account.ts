@@ -196,7 +196,7 @@ async function processAccountTransaction<T extends string>(params: {
 
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore else *//* istanbul ignore next */
-    if (params.object.fromAccount !== undefined && params.object.toAccount === undefined) {
+    if (params.object.fromAccount !== undefined) {
         // 転送先口座が指定されていない場合は、出金取引
         const withdrawService = new pecorinoapi.service.transaction.Withdraw({
             endpoint: params.project.settings.pecorino.endpoint,
@@ -216,33 +216,6 @@ async function processAccountTransaction<T extends string>(params: {
                     typeOf: factory.pecorino.account.TypeOf.Account,
                     accountType: params.object.fromAccount.accountType,
                     accountNumber: params.object.fromAccount.accountNumber
-                }
-            }
-        });
-    } else if (params.object.fromAccount !== undefined && params.object.toAccount !== undefined) {
-        const transferService = new pecorinoapi.service.transaction.Transfer({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        pendingTransaction = await transferService.start({
-            transactionNumber: params.transactionNumber,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.pecorino.transactionType.Transfer,
-            agent: agent,
-            expires: expires,
-            recipient: recipient,
-            object: {
-                amount: params.object.amount,
-                description: description,
-                fromLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.fromAccount.accountType,
-                    accountNumber: params.object.fromAccount.accountNumber
-                },
-                toLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.toAccount.accountType,
-                    accountNumber: params.object.toAccount.accountNumber
                 }
             }
         });
@@ -357,15 +330,6 @@ export function voidTransaction<T extends string>(
 
                         break;
 
-                    case pecorinoapi.factory.transactionType.Transfer:
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await transferService.cancel({ id: pendingTransaction.id });
-
-                        break;
-
                     // tslint:disable-next-line:no-single-line-block-comment
                     /* istanbul ignore next */
                     default:
@@ -411,16 +375,6 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
                             auth: pecorinoAuthClient
                         });
                         await withdrawService.confirm(pendingTransaction);
-
-                        break;
-
-                    case pecorinoapi.factory.transactionType.Transfer:
-                        // 転送取引の場合確定
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await transferService.confirm(pendingTransaction);
 
                         break;
 
@@ -518,33 +472,6 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         });
 
                         await withdrawService.confirm(withdrawTransaction);
-
-                        break;
-
-                    case factory.pecorino.transactionType.Transfer:
-                        const transferService = new pecorinoapi.service.transaction.Transfer({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        const transferTransaction = await transferService.start({
-                            transactionNumber: transactionNumber,
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.pecorino.transactionType.Transfer,
-                            agent: pendingTransaction.recipient,
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate(),
-                            recipient: pendingTransaction.agent,
-                            object: {
-                                amount: pendingTransaction.object.amount,
-                                description: description,
-                                fromLocation: pendingTransaction.object.toLocation,
-                                toLocation: pendingTransaction.object.fromLocation
-                            }
-                        });
-
-                        await transferService.confirm(transferTransaction);
 
                         break;
 

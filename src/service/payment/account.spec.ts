@@ -81,7 +81,7 @@ describe('service.payment.account.authorize()', () => {
             .expects('complete')
             .once()
             .resolves(action);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Transfer.prototype)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('start')
             .once()
             .resolves(pendingTransaction);
@@ -175,7 +175,7 @@ describe('service.payment.account.authorize()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Transfer.prototype)
+        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
             .expects('start')
             .once()
             .rejects(startPayTransactionResult);
