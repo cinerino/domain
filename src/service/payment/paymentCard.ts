@@ -189,10 +189,11 @@ async function processMoneyTransferTransaction(params: {
     if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
         // 転送先口座が指定されていない場合は、出金取引
         pendingTransaction = await moneyTransferService.start({
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
-            recipient: recipient,
+            recipient: <any>recipient,
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
@@ -211,10 +212,11 @@ async function processMoneyTransferTransaction(params: {
         });
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
-            recipient: recipient,
+            recipient: <any>recipient,
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
@@ -234,10 +236,11 @@ async function processMoneyTransferTransaction(params: {
         });
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
-            recipient: recipient,
+            recipient: <any>recipient,
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
@@ -420,6 +423,7 @@ export function refundPaymentCard(params: factory.task.IData<factory.taskName.Re
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
                 const moneyTransferTransaction = await moneyTransferService.start({
+                    typeOf: chevre.factory.transactionType.MoneyTransfer,
                     project: { typeOf: project.typeOf, id: project.id },
                     agent: pendingTransaction.recipient,
                     expires: moment()

@@ -147,6 +147,7 @@ async function processStartDepositTransaction(params: {
 
         // 販売者が取引人に入金
         requestBody = {
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: {
                 typeOf: params.transaction.seller.typeOf,
@@ -169,7 +170,7 @@ async function processStartDepositTransaction(params: {
                 toLocation: params.object.toLocation,
                 description: description
             },
-            recipient: {
+            recipient: <any>{
                 typeOf: params.transaction.agent.typeOf,
                 id: params.transaction.agent.id,
                 name: (typeof params.transaction.agent.name === 'string')
