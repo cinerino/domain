@@ -11,6 +11,12 @@ import * as domain from '../../index';
 let sandbox: sinon.SinonSandbox;
 let redisClient: redis.RedisClient;
 
+const project = {
+    typeOf: domain.factory.organizationType.Project,
+    id: 'id',
+    settings: { chevre: { endpoint: '' } }
+};
+
 before(() => {
     sandbox = sinon.createSandbox();
     redisClient = redis.createClient();
@@ -22,11 +28,6 @@ describe('service.payment.account.authorize()', () => {
     });
 
     it('口座サービスを正常であればエラーにならないはず', async () => {
-        const project = {
-            typeOf: domain.factory.organizationType.Project,
-            id: 'id',
-            settings: { pecorino: {} }
-        };
         const agent = {
             id: 'agentId',
             memberOf: {}
@@ -81,7 +82,7 @@ describe('service.payment.account.authorize()', () => {
             .expects('complete')
             .once()
             .resolves(action);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .resolves(pendingTransaction);
@@ -116,11 +117,6 @@ describe('service.payment.account.authorize()', () => {
 
     // tslint:disable-next-line:max-func-body-length
     it('口座サービスでエラーが発生すればアクションにエラー結果が追加されるはず', async () => {
-        const project = {
-            typeOf: domain.factory.organizationType.Project,
-            id: 'id',
-            settings: { pecorino: {} }
-        };
         const agent = {
             id: 'agentId',
             memberOf: {}
@@ -175,7 +171,7 @@ describe('service.payment.account.authorize()', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .rejects(startPayTransactionResult);

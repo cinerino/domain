@@ -1,10 +1,11 @@
 /**
  * 口座決済サービス
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 
 import * as factory from '../../factory';
 
@@ -17,10 +18,10 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handlePecorinoError } from '../../errorHandler';
 
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
     scopes: [],
     state: ''
 });
@@ -81,7 +82,10 @@ export function authorize<T extends string>(params: {
             object: {
                 ...params.object,
                 ...(params.object.fromAccount !== undefined)
-                    ? { accountId: params.object.fromAccount.accountNumber }
+                    ? {
+                        accountId: params.object.fromAccount.accountNumber,
+                        paymentMethodId: transactionNumber
+                    }
                     : {},
                 ...{
                     pendingTransaction: {
@@ -127,7 +131,7 @@ export function authorize<T extends string>(params: {
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.Account,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: pendingTransaction.id,
+            paymentMethodId: transactionNumber,
             name: (typeof params.object.name === 'string')
                 ? params.object.name
                 : (params.object.fromAccount !== undefined)
@@ -163,7 +167,7 @@ async function processAccountTransaction<T extends string>(params: {
 
     const transaction = params.transaction;
 
-    if (params.project.settings === undefined || params.project.settings.pecorino === undefined) {
+    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
         throw new factory.errors.ServiceUnavailable('Project settings not found');
     }
 
@@ -197,26 +201,31 @@ async function processAccountTransaction<T extends string>(params: {
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore else *//* istanbul ignore next */
     if (params.object.fromAccount !== undefined) {
-        // 転送先口座が指定されていない場合は、出金取引
-        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
+        // 出金取引開始
+        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            endpoint: params.project.settings.chevre.endpoint,
+            auth: chevreAuthClient
         });
-        pendingTransaction = await withdrawService.start({
+
+        pendingTransaction = await moneyTransferService.start({
             transactionNumber: params.transactionNumber,
             project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.pecorino.transactionType.Withdraw,
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
             agent: agent,
             expires: expires,
-            recipient: recipient,
+            recipient: <any>recipient,
             object: {
-                amount: params.object.amount,
+                amount: { value: params.object.amount },
                 description: description,
                 fromLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.fromAccount.accountType,
-                    accountNumber: params.object.fromAccount.accountNumber
-                }
+                    typeOf: params.object.fromAccount.accountType,
+                    identifier: params.object.fromAccount.accountNumber
+                },
+                toLocation: recipient,
+                pendingTransaction: {
+                    typeOf: factory.pecorino.transactionType.Withdraw
+                },
+                ignorePaymentCard: true
             }
         });
     } else {
@@ -238,11 +247,10 @@ export function voidTransaction<T extends string>(
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined || project.settings.pecorino === undefined) {
+        const chevreEndpoint = project.settings?.chevre?.endpoint;
+        if (typeof chevreEndpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
-
-        const pecorinoSettings = project.settings.pecorino;
 
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
@@ -280,6 +288,11 @@ export function voidTransaction<T extends string>(
                     );
         }
 
+        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            endpoint: chevreEndpoint,
+            auth: chevreAuthClient
+        });
+
         await Promise.all(authorizeActions.map(async (action) => {
             await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
 
@@ -288,24 +301,7 @@ export function voidTransaction<T extends string>(
             if (action.result !== undefined) {
                 const pendingTransaction = action.result.pendingTransaction;
 
-                // アクションステータスに関係なく取消処理実行
-                switch (action.result.pendingTransaction.typeOf) {
-                    case pecorinoapi.factory.transactionType.Withdraw:
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await withdrawService.cancel({ id: pendingTransaction.id });
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
+                await moneyTransferService.cancel({ transactionNumber: pendingTransaction.transactionNumber });
             }
         }));
     };
@@ -325,35 +321,20 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            const pecorinoSettings = project.settings.pecorino;
-            if (pecorinoSettings === undefined) {
+            const chevreEndpoint = project.settings?.chevre?.endpoint;
+            if (typeof chevreEndpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
+
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: chevreEndpoint,
+                auth: chevreAuthClient
+            });
 
             await Promise.all(params.object.map(async (paymentMethod) => {
                 const pendingTransaction = paymentMethod.pendingTransaction;
 
-                switch (pendingTransaction.typeOf) {
-                    case pecorinoapi.factory.transactionType.Withdraw:
-                        // 支払取引の場合、確定
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await withdrawService.confirm(pendingTransaction);
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `Transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
+                await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
 
                 await repos.invoice.changePaymentStatus({
                     referencesOrder: { orderNumber: params.purpose.orderNumber },
@@ -396,61 +377,51 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            const pecorinoSettings = project.settings.pecorino;
-            if (pecorinoSettings === undefined) {
+            const chevreEndpoint = project.settings?.chevre?.endpoint;
+            if (typeof chevreEndpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
-
-            const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
-                project: { id: project.id },
-                startDate: new Date()
-            });
 
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
 
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: chevreEndpoint,
+                auth: chevreAuthClient
+            });
+
             await Promise.all(payActionAttributes.object.map(async (paymentMethod) => {
+                const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
+                    project: { id: project.id },
+                    startDate: new Date()
+                });
+
                 const pendingTransaction = paymentMethod.pendingTransaction;
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
-                switch (pendingTransaction.typeOf) {
-                    case factory.pecorino.transactionType.Withdraw:
-                        const depositService = new pecorinoapi.service.transaction.Deposit({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        const depositTransaction = await depositService.start({
-                            transactionNumber: transactionNumber,
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.pecorino.transactionType.Deposit,
-                            agent: pendingTransaction.recipient,
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate(),
-                            recipient: pendingTransaction.agent,
-                            object: {
-                                amount: pendingTransaction.object.amount,
-                                description: description,
-                                fromLocation: pendingTransaction.object.toLocation,
-                                toLocation: pendingTransaction.object.fromLocation
-                            }
-                        });
+                await moneyTransferService.start({
+                    transactionNumber: transactionNumber,
+                    project: { typeOf: project.typeOf, id: project.id },
+                    typeOf: chevre.factory.transactionType.MoneyTransfer,
+                    agent: pendingTransaction.recipient,
+                    expires: moment()
+                        // tslint:disable-next-line:no-magic-numbers
+                        .add(5, 'minutes')
+                        .toDate(),
+                    recipient: pendingTransaction.agent,
+                    object: {
+                        amount: pendingTransaction.object.amount,
+                        description: description,
+                        fromLocation: pendingTransaction.object.toLocation,
+                        toLocation: pendingTransaction.object.fromLocation,
+                        pendingTransaction: {
+                            typeOf: factory.pecorino.transactionType.Deposit
+                        },
+                        ignorePaymentCard: true
+                    }
+                });
 
-                        await depositService.confirm(depositTransaction);
-
-                        break;
-
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore next */
-                    default:
-                        throw new factory.errors.NotImplemented(
-                            `transaction type '${(<any>pendingTransaction).typeOf}' not implemented.`
-                        );
-                }
+                await moneyTransferService.confirm({ transactionNumber: transactionNumber });
             }));
         } catch (error) {
             // actionにエラー結果を追加
@@ -474,7 +445,6 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
 /**
  * 返金後のアクション
- * @param refundActionAttributes 返金アクション属性
  */
 function onRefund(refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>) {
     return async (repos: { task: TaskRepo }) => {
