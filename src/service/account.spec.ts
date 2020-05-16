@@ -11,7 +11,7 @@ import * as domain from '../index';
 let sandbox: sinon.SinonSandbox;
 let redisClient: redis.RedisClient;
 
-const project = { id: 'id', settings: { pecorino: { endpoint: '' } } };
+const project = { id: 'id', settings: { chevre: { endpoint: '' }, pecorino: { endpoint: '' } } };
 
 before(() => {
     sandbox = sinon.createSandbox();
@@ -104,11 +104,11 @@ describe('ポイントを入金する', () => {
             .expects('publishByTimestamp')
             .once()
             .resolves('transactionNumber');
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .resolves(depositTransaction);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('confirm')
             .once()
             .resolves();
@@ -144,11 +144,11 @@ describe('ポイントを入金する', () => {
             .expects('publishByTimestamp')
             .once()
             .resolves('transactionNumber');
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .rejects(pecorinoRequestError);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('confirm')
             .never();
 

@@ -219,30 +219,8 @@ async function processAccountTransaction<T extends string>(params: {
                 }
             }
         });
-    } else if (params.object.fromAccount === undefined && params.object.toAccount !== undefined) {
-        const depositService = new pecorinoapi.service.transaction.Deposit({
-            endpoint: params.project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-        pendingTransaction = await depositService.start({
-            transactionNumber: params.transactionNumber,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
-            typeOf: factory.pecorino.transactionType.Deposit,
-            agent: agent,
-            expires: expires,
-            recipient: recipient,
-            object: {
-                amount: params.object.amount,
-                description: description,
-                toLocation: {
-                    typeOf: factory.pecorino.account.TypeOf.Account,
-                    accountType: params.object.toAccount.accountType,
-                    accountNumber: params.object.toAccount.accountNumber
-                }
-            }
-        });
     } else {
-        throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
+        throw new factory.errors.ArgumentNull('object.fromAccount');
     }
 
     return pendingTransaction;
@@ -312,15 +290,6 @@ export function voidTransaction<T extends string>(
 
                 // アクションステータスに関係なく取消処理実行
                 switch (action.result.pendingTransaction.typeOf) {
-                    case pecorinoapi.factory.transactionType.Deposit:
-                        const depositService = new pecorinoapi.service.transaction.Deposit({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        await depositService.cancel({ id: pendingTransaction.id });
-
-                        break;
-
                     case pecorinoapi.factory.transactionType.Withdraw:
                         const withdrawService = new pecorinoapi.service.transaction.Withdraw({
                             endpoint: pecorinoSettings.endpoint,
@@ -448,33 +417,6 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
                 switch (pendingTransaction.typeOf) {
-                    case factory.pecorino.transactionType.Deposit:
-                        const withdrawService = new pecorinoapi.service.transaction.Withdraw({
-                            endpoint: pecorinoSettings.endpoint,
-                            auth: pecorinoAuthClient
-                        });
-                        const withdrawTransaction = await withdrawService.start({
-                            transactionNumber: transactionNumber,
-                            project: { typeOf: project.typeOf, id: project.id },
-                            typeOf: factory.pecorino.transactionType.Withdraw,
-                            agent: pendingTransaction.recipient,
-                            expires: moment()
-                                // tslint:disable-next-line:no-magic-numbers
-                                .add(5, 'minutes')
-                                .toDate(),
-                            recipient: pendingTransaction.agent,
-                            object: {
-                                amount: pendingTransaction.object.amount,
-                                description: description,
-                                fromLocation: pendingTransaction.object.toLocation,
-                                toLocation: pendingTransaction.object.fromLocation
-                            }
-                        });
-
-                        await withdrawService.confirm(withdrawTransaction);
-
-                        break;
-
                     case factory.pecorino.transactionType.Withdraw:
                         const depositService = new pecorinoapi.service.transaction.Deposit({
                             endpoint: pecorinoSettings.endpoint,

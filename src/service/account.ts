@@ -8,6 +8,8 @@ import * as util from 'util';
 
 import { credentials } from '../credentials';
 
+import * as chevre from '../chevre';
+
 import * as factory from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
@@ -23,6 +25,14 @@ type IAccountsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
 }) => Promise<T>;
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
     domain: credentials.pecorino.authorizeServerDomain,
@@ -372,7 +382,7 @@ export function deposit(params: {
     }) => {
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+            if (typeof project.settings?.chevre?.endpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
@@ -381,14 +391,16 @@ export function deposit(params: {
                 startDate: new Date()
             });
 
-            const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
+            // Chevreで入金
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
             });
-            const transaction = await depositService.start({
+
+            await moneyTransferService.start({
                 transactionNumber: transactionNumber,
                 project: { typeOf: project.typeOf, id: project.id },
-                typeOf: factory.pecorino.transactionType.Deposit,
+                typeOf: chevre.factory.transactionType.MoneyTransfer,
                 agent: {
                     ...params.agent
                 },
@@ -396,20 +408,28 @@ export function deposit(params: {
                     .add(1, 'minutes')
                     .toDate(),
                 object: {
-                    amount: params.object.amount,
-                    toLocation: {
-                        typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: params.object.toLocation.accountType,
-                        accountNumber: params.object.toLocation.accountNumber
+                    amount: {
+                        value: params.object.amount
                     },
-                    description: params.object.description
+                    fromLocation: params.agent,
+                    toLocation: {
+                        typeOf: params.object.toLocation.accountType,
+                        identifier: params.object.toLocation.accountNumber
+                    },
+                    description: params.object.description,
+                    pendingTransaction: {
+                        typeOf: factory.pecorino.transactionType.Deposit
+                    },
+                    ...{
+                        ignorePaymentCard: true
+                    }
                 },
-                recipient: {
+                recipient: <any>{
                     ...params.recipient
                 }
             });
 
-            await depositService.confirm(transaction);
+            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             error = handlePecorinoError(error);
             throw error;

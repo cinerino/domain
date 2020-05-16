@@ -10,7 +10,7 @@ import * as sinon from 'sinon';
 require('sinon-mongoose');
 import * as domain from '../index';
 
-const project = { id: 'id', settings: { pecorino: { endpoint: '' } } };
+const project = { id: 'id', settings: { chevre: { endpoint: '' } } };
 
 let sandbox: sinon.SinonSandbox;
 let redisClient: redis.RedisClient;
@@ -42,11 +42,11 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('publishByTimestamp')
             .once()
             .resolves('transactionNumber');
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .resolves({ id: 'id' });
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('confirm')
             .once()
             .resolves();
@@ -90,7 +90,7 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('publishByTimestamp')
             .once()
             .resolves('transactionNumber');
-        sandbox.mock(domain.pecorinoapi.service.transaction.Deposit.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .rejects(pecorinoError);
@@ -143,11 +143,11 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('publishByTimestamp')
             .once()
             .resolves('transactionNumber');
-        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('confirm')
             .once()
             .resolves();
@@ -198,11 +198,11 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('publishByTimestamp')
             .once()
             .resolves('transactionNumber');
-        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
             .rejects(pecorinoError);
-        sandbox.mock(domain.pecorinoapi.service.transaction.Withdraw.prototype)
+        sandbox.mock(domain.chevre.service.transaction.MoneyTransfer.prototype)
             .expects('confirm')
             .never();
         sandbox.mock(actionRepo)

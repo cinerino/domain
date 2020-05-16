@@ -6,12 +6,13 @@
  * ポイントインセンティブで言えば、口座に振り込まれること
  * などが配送処理として考えられます。
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as util from 'util';
 
 import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
 
 import * as factory from '../factory';
 
@@ -25,10 +26,10 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
 
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
     scopes: [],
     state: ''
 });
@@ -480,8 +481,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            const endpoint = project.settings?.pecorino?.endpoint;
-            if (typeof endpoint !== 'string') {
+            if (typeof project.settings?.chevre?.endpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
@@ -490,28 +490,30 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 startDate: new Date()
             });
 
-            // 入金取引確定
-            const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: endpoint,
-                auth: pecorinoAuthClient
+            // Chevreで入金
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
             });
 
-            const depositTransaction = await depositService.start({
+            const agent = {
+                typeOf: params.agent.typeOf,
+                id: params.agent.id,
+                name: (typeof params.agent.name === 'string')
+                    ? params.agent.name
+                    : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
+                url: params.agent.url
+            };
+
+            await moneyTransferService.start({
                 transactionNumber: transactionNumber,
                 project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: factory.pecorino.transactionType.Deposit,
-                agent: {
-                    typeOf: params.agent.typeOf,
-                    id: params.agent.id,
-                    name: (typeof params.agent.name === 'string')
-                        ? params.agent.name
-                        : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
-                    url: params.agent.url
-                },
+                typeOf: chevre.factory.transactionType.MoneyTransfer,
+                agent: agent,
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: {
+                recipient: <any>{
                     typeOf: params.recipient.typeOf,
                     id: params.recipient.id,
                     name: (typeof params.recipient.name === 'string')
@@ -521,19 +523,27 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                             : ''
                 },
                 object: {
-                    amount: params.object.amount,
+                    amount: {
+                        value: params.object.amount
+                    },
                     description: (typeof params.object.description === 'string')
                         ? params.object.description
                         : params.purpose.typeOf,
+                    fromLocation: agent,
                     toLocation: {
-                        typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: params.object.toLocation.accountType,
-                        accountNumber: params.object.toLocation.accountNumber
+                        typeOf: params.object.toLocation.accountType,
+                        identifier: params.object.toLocation.accountNumber
+                    },
+                    pendingTransaction: {
+                        typeOf: factory.pecorino.transactionType.Deposit
+                    },
+                    ...{
+                        ignorePaymentCard: true
                     }
                 }
             });
 
-            await depositService.confirm({ id: depositTransaction.id });
+            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -568,12 +578,12 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction;
+        let moneyTransferTransaction: chevre.factory.transaction.moneyTransfer.ITransaction;
         const action = await repos.action.start(params);
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            const endpoint = project.settings?.pecorino?.endpoint;
+            const endpoint = project.settings?.chevre?.endpoint;
             if (typeof endpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
@@ -583,15 +593,23 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 startDate: new Date()
             });
 
-            // 入金した分を引き出し取引実行
-            const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+            // Chevreで入金した分を出金
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
                 endpoint: endpoint,
-                auth: pecorinoAuthClient
+                auth: chevreAuthClient
             });
-            withdrawTransaction = await withdrawService.start({
+
+            const recipient = {
+                typeOf: params.recipient.typeOf,
+                id: params.recipient.id,
+                name: order.seller.name,
+                url: params.recipient.url
+            };
+
+            moneyTransferTransaction = await moneyTransferService.start({
                 transactionNumber: transactionNumber,
                 project: { typeOf: order.project.typeOf, id: order.project.id },
-                typeOf: factory.pecorino.transactionType.Withdraw,
+                typeOf: chevre.factory.transactionType.MoneyTransfer,
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,
@@ -601,24 +619,26 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: {
-                    typeOf: params.recipient.typeOf,
-                    id: params.recipient.id,
-                    name: order.seller.name,
-                    url: params.recipient.url
-                },
+                recipient: <any>recipient,
                 object: {
-                    amount: givePointAwardActionObject.amount,
+                    amount: { value: givePointAwardActionObject.amount },
                     fromLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
                         accountNumber: givePointAwardActionObject.toLocation.accountNumber,
                         accountType: givePointAwardActionObject.toLocation.accountType
                     },
-                    description: `${givePointAwardActionObject.description}取消`
+                    toLocation: recipient,
+                    description: `${givePointAwardActionObject.description}取消`,
+                    pendingTransaction: {
+                        typeOf: factory.pecorino.transactionType.Withdraw
+                    },
+                    ...{
+                        ignorePaymentCard: true
+                    }
                 }
             });
 
-            await withdrawService.confirm(withdrawTransaction);
+            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -634,7 +654,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         // アクション完了
         debug('ending action...');
         const actionResult: factory.action.transfer.returnAction.pointAward.IResult = {
-            pointTransaction: withdrawTransaction
+            pointTransaction: moneyTransferTransaction
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
