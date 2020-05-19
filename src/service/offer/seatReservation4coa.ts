@@ -140,7 +140,7 @@ async function offer2availableSalesTicket(params: {
             let availableTickets: COA.factory.master.ITicketResult[] | undefined;
 
             // Chevreでオファー検索トライ
-            const offerIdentifier = `COA=${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
+            const offerIdentifier = `COA-${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
             const offerService = new chevre.service.Offer({
                 endpoint: <string>params.project.settings?.chevre?.endpoint,
                 auth: chevreAuthClient
