@@ -2,7 +2,6 @@ import { IConnectionSettings, IOperation } from '../task';
 
 import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../../repo/moneyTransferTransactionNumber';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
@@ -25,7 +24,6 @@ export function call(data: factory.task.IData<factory.taskName.RefundAccount>): 
 
         await PaymentService.account.refundAccount(data)({
             action: actionRepo,
-            moneyTransferTransactionNumber: new MoneyTransferTransactionNumberRepo(settings.redisClient),
             project: projectRepo,
             task: taskRepo
         });

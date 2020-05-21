@@ -4,12 +4,10 @@
  */
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
-import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
 import * as domain from '../../index';
 
 let sandbox: sinon.SinonSandbox;
-let redisClient: redis.RedisClient;
 
 const project = {
     typeOf: domain.factory.organizationType.Project,
@@ -19,7 +17,6 @@ const project = {
 
 before(() => {
     sandbox = sinon.createSandbox();
-    redisClient = redis.createClient();
 });
 
 describe('service.payment.account.authorize()', () => {
@@ -58,7 +55,6 @@ describe('service.payment.account.authorize()', () => {
         };
         const pendingTransaction = { typeOf: domain.factory.pecorino.transactionType.Transfer, id: 'transactionId' };
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
@@ -66,10 +62,10 @@ describe('service.payment.account.authorize()', () => {
             .expects('findById')
             .once()
             .resolves(project);
-        sandbox.mock(moneyTransferTransactionNumberRepo)
-            .expects('publishByTimestamp')
+        sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
+            .expects('publish')
             .once()
-            .resolves('transactionNumber');
+            .resolves({ transactionNumber: 'transactionNumber' });
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -106,7 +102,6 @@ describe('service.payment.account.authorize()', () => {
             }
         })({
             action: actionRepo,
-            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo,
             transaction: transactionRepo
         });
@@ -151,7 +146,6 @@ describe('service.payment.account.authorize()', () => {
         const startPayTransactionResult = new Error('startPayTransactionError');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const moneyTransferTransactionNumberRepo = new domain.repository.MoneyTransferTransactionNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
@@ -159,10 +153,10 @@ describe('service.payment.account.authorize()', () => {
             .expects('findById')
             .once()
             .resolves(project);
-        sandbox.mock(moneyTransferTransactionNumberRepo)
-            .expects('publishByTimestamp')
+        sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
+            .expects('publish')
             .once()
-            .resolves('transactionNumber');
+            .resolves({ transactionNumber: 'transactionNumber' });
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
@@ -203,7 +197,6 @@ describe('service.payment.account.authorize()', () => {
             }
         })({
             action: actionRepo,
-            moneyTransferTransactionNumber: moneyTransferTransactionNumberRepo,
             project: projectRepo,
             transaction: transactionRepo
         })

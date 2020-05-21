@@ -18,7 +18,6 @@ import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
-import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../repo/moneyTransferTransactionNumber';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
@@ -473,7 +472,6 @@ export function onSend(
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
-        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
     }) => {
         // アクション開始
@@ -485,9 +483,12 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
-            const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
-                project: { id: project.id },
-                startDate: new Date()
+            const transactionNumberService = new chevre.service.TransactionNumber({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const { transactionNumber } = await transactionNumberService.publish({
+                project: { id: project.id }
             });
 
             // Chevreで入金
@@ -570,7 +571,6 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
-        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
     }) => {
         // アクション開始
@@ -588,9 +588,12 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
-            const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
-                project: { id: project.id },
-                startDate: new Date()
+            const transactionNumberService = new chevre.service.TransactionNumber({
+                endpoint: endpoint,
+                auth: chevreAuthClient
+            });
+            const { transactionNumber } = await transactionNumberService.publish({
+                project: { id: project.id }
             });
 
             // Chevreで入金した分を出金

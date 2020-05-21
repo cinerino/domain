@@ -3,7 +3,6 @@ import { IConnectionSettings, IOperation } from '../task';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../../repo/moneyTransferTransactionNumber';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 import * as DeliveryService from '../delivery';
@@ -21,7 +20,6 @@ export function call(data: factory.task.IData<factory.taskName.ReturnPointAward>
 
         await DeliveryService.returnPointAward(data)({
             action: new ActionRepo(settings.connection),
-            moneyTransferTransactionNumber: new MoneyTransferTransactionNumberRepo(settings.redisClient),
             project: new ProjectRepo(settings.connection)
         });
     };

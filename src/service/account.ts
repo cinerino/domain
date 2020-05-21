@@ -14,7 +14,6 @@ import * as factory from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
 import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';
-import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../repo/moneyTransferTransactionNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
@@ -377,7 +376,6 @@ export function deposit(params: {
     recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
 }) {
     return async (repos: {
-        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
     }) => {
         try {
@@ -386,9 +384,12 @@ export function deposit(params: {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
-            const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
-                project: { id: project.id },
-                startDate: new Date()
+            const transactionNumberService = new chevre.service.TransactionNumber({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const { transactionNumber } = await transactionNumberService.publish({
+                project: { id: project.id }
             });
 
             // Chevreで入金

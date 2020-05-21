@@ -11,7 +11,6 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
-import { RedisRepository as MoneyTransferTransactionNumberRepo } from '../../repo/moneyTransferTransactionNumber';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -28,7 +27,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
-    moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -47,9 +45,9 @@ export function authorize<T extends string>(params: {
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
@@ -70,9 +68,19 @@ export function authorize<T extends string>(params: {
             throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
         }
 
-        const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
-            project: { id: project.id },
-            startDate: new Date()
+        // 取引番号生成
+        const chevreEndpoint = project.settings?.chevre?.endpoint;
+        if (typeof chevreEndpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: chevreEndpoint,
+            auth: chevreAuthClient
+        });
+
+        const { transactionNumber } = await transactionNumberService.publish({
+            project: { id: project.id }
         });
 
         // 承認アクションを開始する
@@ -369,7 +377,6 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        moneyTransferTransactionNumber: MoneyTransferTransactionNumberRepo;
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
@@ -385,15 +392,18 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
             // 返金アクション属性から、Pecorino取引属性を取り出す
             const payActionAttributes = params.object;
 
+            const transactionNumberService = new chevre.service.TransactionNumber({
+                endpoint: chevreEndpoint,
+                auth: chevreAuthClient
+            });
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
                 endpoint: chevreEndpoint,
                 auth: chevreAuthClient
             });
 
             await Promise.all(payActionAttributes.object.map(async (paymentMethod) => {
-                const transactionNumber = await repos.moneyTransferTransactionNumber.publishByTimestamp({
-                    project: { id: project.id },
-                    startDate: new Date()
+                const { transactionNumber } = await transactionNumberService.publish({
+                    project: { id: project.id }
                 });
 
                 const pendingTransaction = paymentMethod.pendingTransaction;
