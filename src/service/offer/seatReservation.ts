@@ -1005,11 +1005,9 @@ export function cancel(params: {
                     auth: chevreAuthClient
                 });
 
-                const pendingTransaction = action.object.pendingTransaction;
-
-                if (pendingTransaction !== undefined) {
+                if (typeof action.object.pendingTransaction?.transactionNumber === 'string') {
                     // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
-                    await reserveService.cancel({ id: pendingTransaction.id });
+                    await reserveService.cancel({ transactionNumber: action.object.pendingTransaction?.transactionNumber });
                 }
         }
     };
