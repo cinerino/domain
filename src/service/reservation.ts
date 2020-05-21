@@ -210,10 +210,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                 default:
                     // 座席予約確定
-                    if (project.settings === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                    }
-                    if (project.settings.chevre === undefined) {
+                    if (typeof project.settings?.chevre?.endpoint !== 'string') {
                         throw new factory.errors.ServiceUnavailable('Project settings not found');
                     }
 
