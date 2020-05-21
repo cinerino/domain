@@ -102,7 +102,7 @@ export function create(params: {
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        if (project.settings === undefined || project.settings.chevre === undefined) {
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
@@ -115,12 +115,7 @@ export function create(params: {
             id: params.object.event.id
         });
 
-        const offers = event.offers;
-        if (offers === undefined) {
-            throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
-        }
-
-        let offeredThrough = offers.offeredThrough;
+        let offeredThrough = event.offers?.offeredThrough;
         if (offeredThrough === undefined) {
             offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
         }
@@ -147,41 +142,23 @@ export function create(params: {
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
         let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve | undefined;
-        let reserveTransaction: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
         let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] = [];
+        let transactionNumber: string | undefined;
 
         switch (bookingServiceIdentifier) {
             case factory.service.webAPI.Identifier.COA:
                 break;
 
             case factory.service.webAPI.Identifier.Chevre:
-                // Chevre予約の場合、まず予約取引開始
-                if (project.settings === undefined
-                    || project.settings.chevre === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                }
-
-                // 取引番号発行
+                // Chevre予約の場合、まず取引番号発行
                 const transactionNumberService = new chevre.service.TransactionNumber({
                     endpoint: project.settings.chevre.endpoint,
                     auth: chevreAuthClient
                 });
-                const { transactionNumber } = await transactionNumberService.publish({
+                const publishResult = await transactionNumberService.publish({
                     project: { id: project.id }
                 });
-
-                reserveService = new chevre.service.transaction.Reserve({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
-
-                const startParams = createReserveTransactionStartParams({
-                    project: project,
-                    object: params.object,
-                    transaction: transaction,
-                    transactionNumber: transactionNumber
-                });
-                reserveTransaction = await reserveService.start(startParams);
+                transactionNumber = publishResult.transactionNumber;
 
                 break;
 
@@ -192,7 +169,9 @@ export function create(params: {
         const actionAttributes = createAuthorizeSeatReservationActionAttributes({
             acceptedOffers: acceptedOffers,
             event: event,
-            pendingTransaction: reserveTransaction,
+            pendingTransaction: <any>{
+                transactionNumber: transactionNumber
+            },
             transaction: transaction
         });
         const action = await repos.action.start(actionAttributes);
@@ -237,21 +216,24 @@ export function create(params: {
                     break;
 
                 case factory.service.webAPI.Identifier.Chevre:
-                    if (reserveTransaction === undefined) {
+                    if (typeof transactionNumber !== 'string') {
                         // 論理的にありえないフロー
-                        throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transaction not found');
+                        throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transactionNumber not found');
                     }
 
-                    if (project.settings === undefined
-                        || project.settings.chevre === undefined) {
-                        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                    }
-
-                    // Chevreで仮予約
                     reserveService = new chevre.service.transaction.Reserve({
                         endpoint: project.settings.chevre.endpoint,
                         auth: chevreAuthClient
                     });
+
+                    // Chevreで仮予約
+                    const startParams = createReserveTransactionStartParams({
+                        project: project,
+                        object: params.object,
+                        transaction: transaction,
+                        transactionNumber: transactionNumber
+                    });
+                    const reserveTransaction = await reserveService.start(startParams);
 
                     requestBody = {
                         id: reserveTransaction.id,
