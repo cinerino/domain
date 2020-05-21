@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - ポイント決済を出金取引へ変更
 - ポイント付与処理と管理者入金処理をChevre通貨転送取引へ変更
 - 口座決済処理をChevre通貨転送取引へ変更
+- Chevre予約取引に対して取引番号を事前に発行するように調整
 
 ### Deprecated
 

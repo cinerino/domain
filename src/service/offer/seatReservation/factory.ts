@@ -13,10 +13,12 @@ export function createReserveTransactionStartParams(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     transaction: factory.transaction.ITransaction<any>;
+    transactionNumber: string;
 }): factory.chevre.transaction.reserve.IStartParamsWithoutDetail {
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: chevre.factory.transactionType.Reserve,
+        transactionNumber: params.transactionNumber,
         agent: {
             typeOf: params.transaction.agent.typeOf,
             name: params.transaction.agent.id,

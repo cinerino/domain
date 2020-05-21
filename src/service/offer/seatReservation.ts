@@ -161,6 +161,15 @@ export function create(params: {
                     throw new factory.errors.ServiceUnavailable('Project settings undefined');
                 }
 
+                // 取引番号発行
+                const transactionNumberService = new chevre.service.TransactionNumber({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+                const { transactionNumber } = await transactionNumberService.publish({
+                    project: { id: project.id }
+                });
+
                 reserveService = new chevre.service.transaction.Reserve({
                     endpoint: project.settings.chevre.endpoint,
                     auth: chevreAuthClient
@@ -169,7 +178,8 @@ export function create(params: {
                 const startParams = createReserveTransactionStartParams({
                     project: project,
                     object: params.object,
-                    transaction: transaction
+                    transaction: transaction,
+                    transactionNumber: transactionNumber
                 });
                 reserveTransaction = await reserveService.start(startParams);
 
