@@ -34,6 +34,7 @@ export function createReserveTransactionStartParams(params: {
             }
         },
         object: {
+            ...params.object,
             onReservationStatusChanged: {
                 informReservation: (params.object !== undefined
                     && params.object !== null

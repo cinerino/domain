@@ -233,14 +233,15 @@ export function create(params: {
                         transaction: transaction,
                         transactionNumber: transactionNumber
                     });
-                    const reserveTransaction = await reserveService.start(startParams);
+                    requestBody = startParams;
+                    responseBody = await reserveService.start(startParams);
 
-                    requestBody = {
-                        id: reserveTransaction.id,
-                        object: params.object
-                    };
+                    // requestBody = {
+                    //     id: reserveTransaction.id,
+                    //     object: params.object
+                    // };
 
-                    responseBody = await reserveService.addReservations(requestBody);
+                    // responseBody = await reserveService.addReservations(requestBody);
 
                     // 座席仮予約からオファー情報を生成する
                     acceptedOffers4result = responseBody2acceptedOffers4result({
