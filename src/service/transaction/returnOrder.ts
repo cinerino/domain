@@ -365,19 +365,23 @@ export function exportTasksById(params: {
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                if (transaction.potentialActions?.returnOrder !== undefined) {
+                const returnOrderPotentialActions = transaction.potentialActions?.returnOrder;
+                if (Array.isArray(returnOrderPotentialActions)) {
                     // 注文返品タスク
-                    const returnOrderTask: factory.task.IAttributes<factory.taskName.ReturnOrder> = {
-                        project: transaction.project,
-                        name: factory.taskName.ReturnOrder,
-                        status: factory.taskStatus.Ready,
-                        runsAt: taskRunsAt,
-                        remainingNumberOfTries: 10,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: transaction.potentialActions?.returnOrder
-                    };
-                    taskAttributes.push(returnOrderTask);
+                    const returnOrderTask: factory.task.IAttributes<factory.taskName.ReturnOrder>[]
+                        = returnOrderPotentialActions.map((r) => {
+                            return {
+                                project: transaction.project,
+                                name: factory.taskName.ReturnOrder,
+                                status: factory.taskStatus.Ready,
+                                runsAt: taskRunsAt,
+                                remainingNumberOfTries: 10,
+                                numberOfTried: 0,
+                                executionResults: [],
+                                data: r
+                            };
+                        });
+                    taskAttributes.push(...returnOrderTask);
                 }
 
                 break;
@@ -400,80 +404,80 @@ export function exportTasksById(params: {
  * 確定取引についてメールを送信する(ttts専用)
  * @deprecated
  */
-export function sendEmail(
-    transactionId: string,
-    emailMessageAttributes: factory.creativeWork.message.email.IAttributes
-) {
-    return async (repos: {
-        order: OrderRepo;
-        task: TaskRepo;
-        transaction: TransactionRepo;
-    }): Promise<factory.task.ITask<factory.taskName.SendEmailMessage>> => {
-        const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
-            await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
-        if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
-            throw new factory.errors.Forbidden('Transaction not confirmed.');
-        }
+// export function sendEmail(
+//     transactionId: string,
+//     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
+// ) {
+//     return async (repos: {
+//         order: OrderRepo;
+//         task: TaskRepo;
+//         transaction: TransactionRepo;
+//     }): Promise<factory.task.ITask<factory.taskName.SendEmailMessage>> => {
+//         const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
+//             await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
+//         if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
+//             throw new factory.errors.Forbidden('Transaction not confirmed.');
+//         }
 
-        // const placeOrderTransaction = returnOrderTransaction.object.transaction;
-        // if (placeOrderTransaction.result === undefined) {
-        //     throw new factory.errors.NotFound('PlaceOrder Transaction Result');
-        // }
-        const order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
+//         // const placeOrderTransaction = returnOrderTransaction.object.transaction;
+//         // if (placeOrderTransaction.result === undefined) {
+//         //     throw new factory.errors.NotFound('PlaceOrder Transaction Result');
+//         // }
+//         const order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
 
-        const emailMessage: factory.creativeWork.message.email.ICreativeWork = {
-            typeOf: factory.creativeWorkType.EmailMessage,
-            identifier: `returnOrderTransaction-${transactionId}`,
-            name: `returnOrderTransaction-${transactionId}`,
-            sender: {
-                typeOf: order.seller.typeOf,
-                name: emailMessageAttributes.sender.name,
-                email: emailMessageAttributes.sender.email
-            },
-            toRecipient: {
-                typeOf: order.customer.typeOf,
-                name: emailMessageAttributes.toRecipient.name,
-                email: emailMessageAttributes.toRecipient.email
-            },
-            about: emailMessageAttributes.about,
-            text: emailMessageAttributes.text
-        };
+//         const emailMessage: factory.creativeWork.message.email.ICreativeWork = {
+//             typeOf: factory.creativeWorkType.EmailMessage,
+//             identifier: `returnOrderTransaction-${transactionId}`,
+//             name: `returnOrderTransaction-${transactionId}`,
+//             sender: {
+//                 typeOf: order.seller.typeOf,
+//                 name: emailMessageAttributes.sender.name,
+//                 email: emailMessageAttributes.sender.email
+//             },
+//             toRecipient: {
+//                 typeOf: order.customer.typeOf,
+//                 name: emailMessageAttributes.toRecipient.name,
+//                 email: emailMessageAttributes.toRecipient.email
+//             },
+//             about: emailMessageAttributes.about,
+//             text: emailMessageAttributes.text
+//         };
 
-        // その場で送信ではなく、DBにタスクを登録
-        const taskAttributes: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
-            name: factory.taskName.SendEmailMessage,
-            project: returnOrderTransaction.project,
-            status: factory.taskStatus.Ready,
-            runsAt: new Date(), // なるはやで実行
-            remainingNumberOfTries: 10,
-            numberOfTried: 0,
-            executionResults: [],
-            data: {
-                actionAttributes: {
-                    agent: {
-                        id: order.seller.id,
-                        name: { ja: order.seller.name, en: '' },
-                        project: returnOrderTransaction.project,
-                        typeOf: order.seller.typeOf
-                    },
-                    object: emailMessage,
-                    project: returnOrderTransaction.project,
-                    purpose: {
-                        typeOf: order.typeOf,
-                        orderNumber: order.orderNumber
-                    },
-                    recipient: {
-                        id: order.customer.id,
-                        name: order.customer.name,
-                        typeOf: order.customer.typeOf
-                    },
-                    typeOf: factory.actionType.SendAction
-                }
-                // transactionId: transactionId,
-                // emailMessage: emailMessage
-            }
-        };
+//         // その場で送信ではなく、DBにタスクを登録
+//         const taskAttributes: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+//             name: factory.taskName.SendEmailMessage,
+//             project: returnOrderTransaction.project,
+//             status: factory.taskStatus.Ready,
+//             runsAt: new Date(), // なるはやで実行
+//             remainingNumberOfTries: 10,
+//             numberOfTried: 0,
+//             executionResults: [],
+//             data: {
+//                 actionAttributes: {
+//                     agent: {
+//                         id: order.seller.id,
+//                         name: { ja: order.seller.name, en: '' },
+//                         project: returnOrderTransaction.project,
+//                         typeOf: order.seller.typeOf
+//                     },
+//                     object: emailMessage,
+//                     project: returnOrderTransaction.project,
+//                     purpose: {
+//                         typeOf: order.typeOf,
+//                         orderNumber: order.orderNumber
+//                     },
+//                     recipient: {
+//                         id: order.customer.id,
+//                         name: order.customer.name,
+//                         typeOf: order.customer.typeOf
+//                     },
+//                     typeOf: factory.actionType.SendAction
+//                 }
+//                 // transactionId: transactionId,
+//                 // emailMessage: emailMessage
+//             }
+//         };
 
-        return <any>await repos.task.save(taskAttributes);
-    };
-}
+//         return <any>await repos.task.save(taskAttributes);
+//     };
+// }
