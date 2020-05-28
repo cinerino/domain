@@ -9,6 +9,7 @@ export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<fa
 export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 async function createRefundCreditCardPotentialActions(params: {
+    order: factory.order.IOrder;
     payAction: factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
@@ -16,7 +17,7 @@ async function createRefundCreditCardPotentialActions(params: {
 }): Promise<factory.action.trade.refund.IPotentialActions> {
     const payAction = params.payAction;
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     const informOrderActionsOnRefund: factory.action.interact.inform.IAttributes<any, any>[] = [];
@@ -108,6 +109,7 @@ async function createRefundCreditCardPotentialActions(params: {
 
 async function createRefundCreditCardActions(params: {
     actionsOnOrder: IAction[];
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
@@ -118,7 +120,7 @@ async function createRefundCreditCardActions(params: {
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     // クレジットカード返金アクション
@@ -127,6 +129,7 @@ async function createRefundCreditCardActions(params: {
         .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
             const potentialActionsOnRefund = await createRefundCreditCardPotentialActions({
                 payAction: a,
+                order: params.order,
                 potentialActions: params.potentialActions,
                 seller: seller,
                 transaction: transaction
@@ -162,6 +165,7 @@ async function createRefundCreditCardActions(params: {
 
 async function createRefundAccountActions(params: {
     actionsOnOrder: IAction[];
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
@@ -172,7 +176,7 @@ async function createRefundAccountActions(params: {
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     return Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
@@ -239,6 +243,7 @@ async function createRefundAccountActions(params: {
 
 async function createRefundMovieTicketActions(params: {
     actionsOnOrder: IAction[];
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
@@ -249,7 +254,7 @@ async function createRefundMovieTicketActions(params: {
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     // ムビチケ着券返金アクション
@@ -327,6 +332,7 @@ async function createRefundMovieTicketActions(params: {
 
 async function createReturnPointAwardActions(params: {
     actionsOnOrder: IAction[];
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
@@ -338,7 +344,7 @@ async function createReturnPointAwardActions(params: {
         .filter((a) => a.object.typeOf === factory.action.transfer.give.pointAward.ObjectType.PointAward);
 
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     // ポイントインセンティブの数だけ、返却アクションを作成
@@ -364,13 +370,14 @@ async function createReturnPointAwardActions(params: {
 
 // tslint:disable-next-line:max-func-body-length
 async function createCancelReservationActions(params: {
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
     placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.task.IData<factory.taskName.CancelReservation>[]> {
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const placeOrderTransaction = params.placeOrderTransaction;
 
     const cancelReservationActions: factory.task.IData<factory.taskName.CancelReservation>[] = [];
@@ -506,6 +513,7 @@ async function createCancelReservationActions(params: {
 }
 
 async function createInformOrderActionsOnReturn(params: {
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.interact.inform.IAttributes<any, any>[]> {
@@ -568,12 +576,13 @@ async function createInformOrderActionsOnReturn(params: {
 }
 
 async function createSendEmailMessaegActionsOnReturn(params: {
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.transfer.send.message.email.IAttributes[]> {
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     // 返品後のEメール送信アクション
@@ -627,13 +636,14 @@ async function createSendEmailMessaegActionsOnReturn(params: {
  */
 export async function createPotentialActions(params: {
     actionsOnOrder: IAction[];
+    order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
     placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.returnOrder.IPotentialActions> {
     const transaction = params.transaction;
-    const order = transaction.object.order;
+    const order = params.order;
     const seller = params.seller;
 
     // クレジットカード返金アクション

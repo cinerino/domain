@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 口座決済処理をChevre通貨転送取引へ変更
 - Chevre予約取引に対して取引番号を事前に発行するように調整
 - 予約取引を取引番号でステータス変更するように調整
+- 注文返品取引オブジェクトを最適化
 
 ### Deprecated
 

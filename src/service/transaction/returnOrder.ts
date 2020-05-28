@@ -264,8 +264,9 @@ async function startCancelReservation(params: {
 export function confirm(params: factory.transaction.returnOrder.IConfirmParams) {
     return async (repos: {
         action: ActionRepo;
-        transaction: TransactionRepo;
+        order: OrderRepo;
         seller: SellerRepo;
+        transaction: TransactionRepo;
     }) => {
         let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
         if (transaction.status === factory.transactionStatusType.Confirmed) {
@@ -283,7 +284,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             }
         }
 
-        const order = transaction.object.order;
+        const order = await repos.order.findByOrderNumber({ orderNumber: transaction.object.order.orderNumber });
         const seller = await repos.seller.findById(
             { id: order.seller.id },
             { paymentAccepted: 0 } // 決済情報は不要
@@ -306,6 +307,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
         const result: factory.transaction.returnOrder.IResult = {};
         const potentialActions = await createPotentialActions({
             actionsOnOrder: actionsOnOrder,
+            order: order,
             potentialActions: params.potentialActions,
             seller: seller,
             transaction: transaction,
@@ -363,21 +365,21 @@ export function exportTasksById(params: {
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                // 注文返品タスク
-                const returnOrderTask: factory.task.IAttributes<factory.taskName.ReturnOrder> = {
-                    project: transaction.project,
-                    name: factory.taskName.ReturnOrder,
-                    status: factory.taskStatus.Ready,
-                    runsAt: taskRunsAt,
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
+                if (transaction.potentialActions?.returnOrder !== undefined) {
+                    // 注文返品タスク
+                    const returnOrderTask: factory.task.IAttributes<factory.taskName.ReturnOrder> = {
                         project: transaction.project,
-                        orderNumber: transaction.object.order.orderNumber
-                    }
-                };
-                taskAttributes.push(returnOrderTask);
+                        name: factory.taskName.ReturnOrder,
+                        status: factory.taskStatus.Ready,
+                        runsAt: taskRunsAt,
+                        remainingNumberOfTries: 10,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: transaction.potentialActions?.returnOrder
+                    };
+                    taskAttributes.push(returnOrderTask);
+                }
+
                 break;
 
             case factory.transactionStatusType.Expired:
@@ -401,11 +403,12 @@ export function exportTasksById(params: {
 export function sendEmail(
     transactionId: string,
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
-): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName.SendEmailMessage>> {
+) {
     return async (repos: {
+        order: OrderRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
-    }) => {
+    }): Promise<factory.task.ITask<factory.taskName.SendEmailMessage>> => {
         const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
             await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
         if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
@@ -416,7 +419,7 @@ export function sendEmail(
         // if (placeOrderTransaction.result === undefined) {
         //     throw new factory.errors.NotFound('PlaceOrder Transaction Result');
         // }
-        const order = returnOrderTransaction.object.order;
+        const order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
 
         const emailMessage: factory.creativeWork.message.email.ICreativeWork = {
             typeOf: factory.creativeWorkType.EmailMessage,

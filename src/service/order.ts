@@ -2,7 +2,7 @@
  * 注文サービス
  */
 // import * as createDebug from 'debug';
-import * as moment from 'moment';
+// import * as moment from 'moment';
 
 // import { credentials } from '../credentials';
 
@@ -283,32 +283,36 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         task: TaskRepo;
     }) => {
         // 確定済の注文返品取引がひとつあるはず
-        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
-            limit: 1,
-            typeOf: factory.transactionType.ReturnOrder,
-            object: {
-                order: { orderNumbers: [params.orderNumber] }
-            },
-            statuses: [factory.transactionStatusType.Confirmed]
-        });
-        const returnOrderTransaction = returnOrderTransactions.shift();
-        if (returnOrderTransaction === undefined) {
-            throw new factory.errors.NotFound('Return order transaction');
-        }
+        // const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+        //     limit: 1,
+        //     typeOf: factory.transactionType.ReturnOrder,
+        //     object: {
+        //         order: { orderNumbers: [params.orderNumber] }
+        //     },
+        //     statuses: [factory.transactionStatusType.Confirmed]
+        // });
+        // const returnOrderTransaction = returnOrderTransactions.shift();
+        // if (returnOrderTransaction === undefined) {
+        //     throw new factory.errors.NotFound('Return order transaction');
+        // }
 
-        const dateReturned = moment(returnOrderTransaction.endDate)
-            .toDate();
+        // const dateReturned = moment(returnOrderTransaction.endDate)
+        //     .toDate();
+        const dateReturned = new Date();
 
-        const potentialActions = returnOrderTransaction.potentialActions;
-        if (potentialActions === undefined) {
-            throw new factory.errors.NotFound('PotentialActions of return order transaction');
-        }
+        // const potentialActions = returnOrderTransaction.potentialActions;
+        // if (potentialActions === undefined) {
+        //     throw new factory.errors.NotFound('PotentialActions of return order transaction');
+        // }
 
-        // アクション開始
-        let order = returnOrderTransaction.object.order;
-        const returnOrderActionAttributes = potentialActions.returnOrder;
+        // let order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
+        let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
+
+        // const returnOrderActionAttributes = potentialActions.returnOrder;
+        const returnOrderActionAttributes = params;
         const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
 
+        // アクション開始
         const action = await repos.action.start(returnOrderActionAttributes);
 
         try {
