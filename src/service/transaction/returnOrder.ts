@@ -285,10 +285,6 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
         }
 
         const order = await repos.order.findByOrderNumber({ orderNumber: transaction.object.order.orderNumber });
-        const seller = await repos.seller.findById(
-            { id: order.seller.id },
-            { paymentAccepted: 0 } // 決済情報は不要
-        );
 
         const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
             limit: 1,
@@ -309,7 +305,6 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             actionsOnOrder: actionsOnOrder,
             order: order,
             potentialActions: params.potentialActions,
-            seller: seller,
             transaction: transaction,
             placeOrderTransaction: placeOrderTransaction
         });

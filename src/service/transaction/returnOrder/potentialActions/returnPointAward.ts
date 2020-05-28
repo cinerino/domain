@@ -1,13 +1,11 @@
 import * as factory from '../../../../factory';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
-export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
 export async function createReturnPointAwardActions(params: {
     actionsOnOrder: IAction[];
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
-    seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.transfer.returnAction.pointAward.IAttributes[]> {
     const actionsOnOrder = params.actionsOnOrder;
@@ -18,7 +16,6 @@ export async function createReturnPointAwardActions(params: {
 
     const transaction = params.transaction;
     const order = params.order;
-    const seller = params.seller;
 
     // ポイントインセンティブの数だけ、返却アクションを作成
     return givePointActions.map(
@@ -30,10 +27,10 @@ export async function createReturnPointAwardActions(params: {
                 agent: order.customer,
                 recipient: {
                     project: transaction.project,
-                    typeOf: seller.typeOf,
-                    id: seller.id,
-                    name: seller.name,
-                    url: seller.url
+                    typeOf: order.seller.typeOf,
+                    id: order.seller.id,
+                    name: <any>order.seller.name,
+                    url: order.seller.url
                 },
                 potentialActions: {}
             };

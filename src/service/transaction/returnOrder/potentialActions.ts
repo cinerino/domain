@@ -9,7 +9,6 @@ import { createReturnPointAwardActions } from './potentialActions/returnPointAwa
 import { createSendEmailMessaegActionsOnReturn } from './potentialActions/sendEmailMessage';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
-export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
 /**
  * 取引のポストアクションを作成する
@@ -18,13 +17,11 @@ export async function createPotentialActions(params: {
     actionsOnOrder: IAction[];
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
-    seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
     placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.returnOrder.IPotentialActions> {
     const transaction = params.transaction;
     const order = params.order;
-    const seller = params.seller;
 
     // クレジットカード返金アクション
     const refundCreditCardActions = await createRefundCreditCardActions(params);
@@ -60,7 +57,10 @@ export async function createPotentialActions(params: {
             orderDate: order.orderDate
         },
         agent: transaction.agent,
-        recipient: seller,
+        recipient: {
+            project: order.project,
+            ...<any>order.seller
+        },
         potentialActions: {
             cancelReservation: cancelReservationActions,
             informOrder: informOrderActionsOnReturn,

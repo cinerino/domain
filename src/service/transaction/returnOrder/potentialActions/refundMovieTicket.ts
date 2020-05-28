@@ -3,13 +3,11 @@ import * as emailMessageBuilder from '../../../../emailMessageBuilder';
 import * as factory from '../../../../factory';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
-export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
 export async function createRefundMovieTicketActions(params: {
     actionsOnOrder: IAction[];
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
-    seller: ISeller;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[]> {
     const actionsOnOrder = params.actionsOnOrder;
@@ -19,7 +17,6 @@ export async function createRefundMovieTicketActions(params: {
 
     const transaction = params.transaction;
     const order = params.order;
-    const seller = params.seller;
 
     // ムビチケ着券返金アクション
     let refundMovieTicketActions: factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
@@ -39,10 +36,10 @@ export async function createRefundMovieTicketActions(params: {
                         object: emailMessage,
                         agent: {
                             project: transaction.project,
-                            typeOf: seller.typeOf,
-                            id: seller.id,
-                            name: seller.name,
-                            url: seller.url
+                            typeOf: order.seller.typeOf,
+                            id: order.seller.id,
+                            name: <any>order.seller.name,
+                            url: order.seller.url
                         },
                         recipient: order.customer,
                         potentialActions: {},
@@ -64,10 +61,10 @@ export async function createRefundMovieTicketActions(params: {
                         object: a,
                         agent: {
                             project: transaction.project,
-                            typeOf: seller.typeOf,
-                            id: seller.id,
-                            name: seller.name,
-                            url: seller.url
+                            typeOf: order.seller.typeOf,
+                            id: order.seller.id,
+                            name: <any>order.seller.name,
+                            url: order.seller.url
                         },
                         recipient: order.customer,
                         purpose: {
