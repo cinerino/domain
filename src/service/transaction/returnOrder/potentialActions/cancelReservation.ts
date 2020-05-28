@@ -20,11 +20,9 @@ export async function createCancelReservationActions(params: {
     const cancelReservationActions: factory.task.IData<factory.taskName.CancelReservation>[] = [];
 
     let cancelReservationParams: factory.transaction.returnOrder.ICancelReservationParams[] = [];
-    if (params.potentialActions !== undefined
-        && params.potentialActions.returnOrder !== undefined
-        && params.potentialActions.returnOrder.potentialActions !== undefined
-        && Array.isArray(params.potentialActions.returnOrder.potentialActions.cancelReservation)) {
-        cancelReservationParams = params.potentialActions.returnOrder.potentialActions.cancelReservation;
+    const cancelReservation = params.potentialActions?.returnOrder?.potentialActions?.cancelReservation;
+    if (Array.isArray(cancelReservation)) {
+        cancelReservationParams = cancelReservation;
     }
 
     const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
@@ -113,33 +111,24 @@ export async function createCancelReservationActions(params: {
                 };
 
                 const cancelReservationObjectParams = cancelReservationParams.find((p) => {
-                    // tslint:disable-next-line:max-line-length
                     const object = <factory.transaction.returnOrder.ICancelReservationObject<factory.service.webAPI.Identifier.Chevre>>
                         p.object;
 
                     return object === undefined
-                        || (object !== undefined
-                            && object.typeOf === factory.chevre.transactionType.Reserve
-                            && object.id === reserveTransaction.id);
+                        || (object?.typeOf === factory.chevre.transactionType.Reserve && object?.id === reserveTransaction.id);
                 });
 
-                if (cancelReservationObjectParams !== undefined) {
-                    // 予約取消確定後アクションの指定があれば上書き
-                    if (cancelReservationObjectParams.potentialActions !== undefined
-                        && cancelReservationObjectParams.potentialActions.cancelReservation !== undefined
-                        && cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions !== undefined
-                        && Array.isArray(
-                            cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions.informReservation
-                        )) {
-                        cancelReservationAction.potentialActions = {
-                            cancelReservation: {
-                                potentialActions: {
-                                    // tslint:disable-next-line:max-line-length
-                                    informReservation: cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions.informReservation
-                                }
+                // 予約取消確定後アクションの指定があれば上書き
+                const informReservation
+                    = cancelReservationObjectParams?.potentialActions?.cancelReservation?.potentialActions?.informReservation;
+                if (Array.isArray(informReservation)) {
+                    cancelReservationAction.potentialActions = {
+                        cancelReservation: {
+                            potentialActions: {
+                                informReservation: informReservation
                             }
-                        };
-                    }
+                        }
+                    };
                 }
 
                 cancelReservationActions.push(cancelReservationAction);

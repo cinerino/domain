@@ -23,10 +23,7 @@ export async function createRefundMovieTicketActions(params: {
 
     // ムビチケ着券返金アクション
     let refundMovieTicketActions: factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
-    const refundMovieTicket = params.potentialActions !== undefined
-        && params.potentialActions.returnOrder !== undefined
-        && params.potentialActions.returnOrder.potentialActions !== undefined
-        && params.potentialActions.returnOrder.potentialActions.refundMovieTicket === true;
+    const refundMovieTicket = params.potentialActions?.returnOrder?.potentialActions?.refundMovieTicket === true;
     if (refundMovieTicket) {
         refundMovieTicketActions =
             await Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.MovieTicket>[]>payActions)

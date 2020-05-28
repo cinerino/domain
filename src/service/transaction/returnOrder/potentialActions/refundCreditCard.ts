@@ -21,12 +21,7 @@ async function createRefundCreditCardPotentialActions(params: {
     // Eメールカスタマイズの指定を確認
     let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
 
-    const refundCreditCardActionParams = (params.potentialActions !== undefined
-        && params.potentialActions.returnOrder !== undefined
-        && params.potentialActions.returnOrder.potentialActions !== undefined
-        && params.potentialActions.returnOrder.potentialActions.refundCreditCard !== undefined)
-        ? params.potentialActions.returnOrder.potentialActions.refundCreditCard
-        : undefined;
+    const refundCreditCardActionParams = params.potentialActions?.returnOrder?.potentialActions?.refundCreditCard;
     if (refundCreditCardActionParams !== undefined) {
         const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
             const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
@@ -36,10 +31,7 @@ async function createRefundCreditCardPotentialActions(params: {
             return assignedPaymentMethod !== undefined;
         });
 
-        if (assignedRefundCreditCardAction !== undefined
-            && assignedRefundCreditCardAction.potentialActions !== undefined
-            && assignedRefundCreditCardAction.potentialActions.sendEmailMessage !== undefined
-            && assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object !== undefined) {
+        if (assignedRefundCreditCardAction?.potentialActions?.sendEmailMessage?.object !== undefined) {
             emailCustomization = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object;
         }
 

@@ -16,12 +16,10 @@ export async function createSendEmailMessaegActionsOnReturn(params: {
 
     // 返品後のEメール送信アクション
     const sendEmailMessaegActionsOnReturn: factory.action.transfer.send.message.email.IAttributes[] = [];
-    if (params.potentialActions !== undefined
-        && params.potentialActions.returnOrder !== undefined
-        && params.potentialActions.returnOrder.potentialActions !== undefined
-        && Array.isArray(params.potentialActions.returnOrder.potentialActions.sendEmailMessage)) {
+    const sendEmailMessage = params.potentialActions?.returnOrder?.potentialActions?.sendEmailMessage;
+    if (Array.isArray(sendEmailMessage)) {
         sendEmailMessaegActionsOnReturn.push(
-            ...await Promise.all(params.potentialActions.returnOrder.potentialActions.sendEmailMessage.map(
+            ...await Promise.all(sendEmailMessage.map(
                 async (sendEmailMessageParams): Promise<factory.action.transfer.send.message.email.IAttributes> => {
                     const emailMessage = await emailMessageBuilder.createReturnOrderMessage({
                         order,
