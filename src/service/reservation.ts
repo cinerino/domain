@@ -124,8 +124,8 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
     const cancelReservationObject = params.object;
     const project = params.project;
 
-    if (project.settings === undefined || project.settings.chevre === undefined) {
-        throw new factory.errors.ServiceUnavailable('Project settings not found');
+    if (typeof project.settings?.chevre?.endpoint !== 'string') {
+        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
     }
 
     const cancelReservationService = new chevre.service.transaction.CancelReservation({
@@ -133,7 +133,7 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
         auth: chevreAuthClient
     });
 
-    const cancelReservationTransaction = await cancelReservationService.start({
+    await cancelReservationService.startAndConfirm({
         project: { typeOf: project.typeOf, id: project.id },
         typeOf: factory.chevre.transactionType.CancelReservation,
         agent: {
@@ -142,22 +142,19 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
             name: String(params.agent.name)
         },
         object: {
-            transaction: {
-                typeOf: (<any>cancelReservationObject).typeOf,
-                id: (<any>cancelReservationObject).id
+            // transaction: {
+            //     typeOf: cancelReservationObject.typeOf,
+            //     id: cancelReservationObject.id
+            // },
+            reservation: {
+                reservationNumber: (<any>cancelReservationObject).transactionNumber
             }
         },
         expires: moment()
-            // tslint:disable-next-line:no-magic-numbers
-            .add(5, 'minutes')
-            .toDate()
-    });
-
-    await cancelReservationService.confirm({
-        id: cancelReservationTransaction.id,
+            .add(1, 'minutes')
+            .toDate(),
         potentialActions: params.potentialActions
     });
-
 }
 
 /**

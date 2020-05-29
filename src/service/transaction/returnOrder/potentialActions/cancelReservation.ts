@@ -23,6 +23,18 @@ export async function createCancelReservationActions(params: {
         cancelReservationParams = cancelReservation;
     }
 
+    const purpose: factory.order.ISimpleOrder = {
+        project: order.project,
+        typeOf: order.typeOf,
+        seller: order.seller,
+        customer: order.customer,
+        confirmationNumber: order.confirmationNumber,
+        orderNumber: order.orderNumber,
+        price: order.price,
+        priceCurrency: order.priceCurrency,
+        orderDate: order.orderDate
+    };
+
     const authorizeSeatReservationActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
         placeOrderTransaction.object.authorizeActions
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
@@ -47,41 +59,28 @@ export async function createCancelReservationActions(params: {
                 // tslint:disable-next-line:max-line-length
                 responseBody = <factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.COA>>responseBody;
 
-                if (authorizeSeatReservationAction.object.event === undefined
-                    || authorizeSeatReservationAction.object.event === null) {
-                    throw new factory.errors.ServiceUnavailable('Authorized event undefined');
+                const superEventLocationBranchCode = authorizeSeatReservationAction.object.event?.superEvent.location.branchCode;
+                if (typeof superEventLocationBranchCode === 'string') {
+                    const phoneUtil = PhoneNumberUtil.getInstance();
+                    const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
+                    let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
+                    // COAでは数字のみ受け付けるので数字以外を除去
+                    telNum = telNum.replace(/[^\d]/g, '');
+
+                    cancelReservationActions.push({
+                        project: transaction.project,
+                        typeOf: factory.actionType.CancelAction,
+                        object: {
+                            theaterCode: superEventLocationBranchCode,
+                            reserveNum: Number(responseBody.tmpReserveNum),
+                            telNum: telNum
+                        },
+                        agent: transaction.agent,
+                        potentialActions: {},
+                        purpose: purpose,
+                        instrument: authorizeSeatReservationAction.instrument
+                    });
                 }
-                const superEventLocationBranchCode = authorizeSeatReservationAction.object.event.superEvent.location.branchCode;
-
-                const phoneUtil = PhoneNumberUtil.getInstance();
-                const phoneNumber = phoneUtil.parse(order.customer.telephone, 'JP');
-                let telNum = phoneUtil.format(phoneNumber, PhoneNumberFormat.NATIONAL);
-                // COAでは数字のみ受け付けるので数字以外を除去
-                telNum = telNum.replace(/[^\d]/g, '');
-
-                cancelReservationActions.push({
-                    project: transaction.project,
-                    typeOf: factory.actionType.CancelAction,
-                    object: {
-                        theaterCode: superEventLocationBranchCode,
-                        reserveNum: Number(responseBody.tmpReserveNum),
-                        telNum: telNum
-                    },
-                    agent: transaction.agent,
-                    potentialActions: {
-                    },
-                    purpose: {
-                        typeOf: order.typeOf,
-                        seller: order.seller,
-                        customer: order.customer,
-                        confirmationNumber: order.confirmationNumber,
-                        orderNumber: order.orderNumber,
-                        price: order.price,
-                        priceCurrency: order.priceCurrency,
-                        orderDate: order.orderDate
-                    },
-                    instrument: authorizeSeatReservationAction.instrument
-                });
 
                 break;
 
@@ -92,19 +91,14 @@ export async function createCancelReservationActions(params: {
                 const cancelReservationAction: factory.task.IData<factory.taskName.CancelReservation> = {
                     project: transaction.project,
                     typeOf: factory.actionType.CancelAction,
-                    object: reserveTransaction,
+                    object: {
+                        typeOf: reserveTransaction.typeOf,
+                        id: reserveTransaction.id,
+                        transactionNumber: reserveTransaction.transactionNumber
+                    },
                     agent: transaction.agent,
                     potentialActions: {},
-                    purpose: {
-                        typeOf: order.typeOf,
-                        seller: order.seller,
-                        customer: order.customer,
-                        confirmationNumber: order.confirmationNumber,
-                        orderNumber: order.orderNumber,
-                        price: order.price,
-                        priceCurrency: order.priceCurrency,
-                        orderDate: order.orderDate
-                    },
+                    purpose: purpose,
                     instrument: authorizeSeatReservationAction.instrument
                 };
 
