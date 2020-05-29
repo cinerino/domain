@@ -18,7 +18,7 @@ export async function createPotentialActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     transaction: factory.transaction.returnOrder.ITransaction;
-    placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
+    // placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.returnOrder.IPotentialActions> {
     const transaction = params.transaction;
     const order = params.order;

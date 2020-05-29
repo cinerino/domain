@@ -286,17 +286,17 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
 
         const order = await repos.order.findByOrderNumber({ orderNumber: transaction.object.order.orderNumber });
 
-        const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
-            limit: 1,
-            typeOf: factory.transactionType.PlaceOrder,
-            result: {
-                order: { orderNumbers: [order.orderNumber] }
-            }
-        });
-        const placeOrderTransaction = placeOrderTransactions.shift();
-        if (placeOrderTransaction === undefined) {
-            throw new factory.errors.NotFound('Transaction');
-        }
+        // const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+        //     limit: 1,
+        //     typeOf: factory.transactionType.PlaceOrder,
+        //     result: {
+        //         order: { orderNumbers: [order.orderNumber] }
+        //     }
+        // });
+        // const placeOrderTransaction = placeOrderTransactions.shift();
+        // if (placeOrderTransaction === undefined) {
+        //     throw new factory.errors.NotFound('Transaction');
+        // }
 
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
 
@@ -305,8 +305,8 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             actionsOnOrder: actionsOnOrder,
             order: order,
             potentialActions: params.potentialActions,
-            transaction: transaction,
-            placeOrderTransaction: placeOrderTransaction
+            transaction: transaction
+            // placeOrderTransaction: placeOrderTransaction
         });
 
         // ステータス変更
