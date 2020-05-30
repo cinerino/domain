@@ -67,7 +67,9 @@ export function authorize(params: {
                 itemOffered: params.object.itemOffered,
                 seller: {
                     ...transaction.seller,
-                    name: transaction.seller.name.ja
+                    name: (typeof transaction.seller.name === 'string')
+                        ? transaction.seller.name
+                        : String(transaction.seller.name?.ja)
                 },
                 price: params.object.itemOffered.value,
                 priceCurrency: factory.priceCurrency.JPY,
@@ -152,7 +154,9 @@ async function processStartDepositTransaction(params: {
             agent: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,
-                name: params.transaction.seller.name.ja
+                name: (typeof params.transaction.seller.name === 'string')
+                    ? params.transaction.seller.name
+                    : String(params.transaction.seller.name?.ja)
             },
             object: {
                 amount: {

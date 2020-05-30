@@ -301,7 +301,9 @@ export function responseBody2acceptedOffers4result(params: {
                         : factory.priceCurrency.JPY,
                     seller: {
                         typeOf: seller.typeOf,
-                        name: seller.name.ja
+                        name: (typeof seller.name === 'string')
+                            ? seller.name
+                            : String(seller.name?.ja)
                     }
                 };
             });

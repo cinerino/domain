@@ -38,7 +38,7 @@ export async function createRefundMovieTicketActions(params: {
                             project: transaction.project,
                             typeOf: order.seller.typeOf,
                             id: order.seller.id,
-                            name: <any>order.seller.name,
+                            name: order.seller.name,
                             url: order.seller.url
                         },
                         recipient: order.customer,
@@ -63,7 +63,7 @@ export async function createRefundMovieTicketActions(params: {
                             project: transaction.project,
                             typeOf: order.seller.typeOf,
                             id: order.seller.id,
-                            name: <any>order.seller.name,
+                            name: order.seller.name,
                             url: order.seller.url
                         },
                         recipient: order.customer,

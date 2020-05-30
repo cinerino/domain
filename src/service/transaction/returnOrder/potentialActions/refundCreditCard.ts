@@ -70,7 +70,7 @@ async function createRefundCreditCardPotentialActions(params: {
             project: transaction.project,
             typeOf: order.seller.typeOf,
             id: order.seller.id,
-            name: <any>order.seller.name,
+            name: order.seller.name,
             url: order.seller.url
         },
         recipient: order.customer,
@@ -126,7 +126,7 @@ export async function createRefundCreditCardActions(params: {
                     project: transaction.project,
                     typeOf: order.seller.typeOf,
                     id: order.seller.id,
-                    name: <any>order.seller.name,
+                    name: order.seller.name,
                     url: order.seller.url
                 },
                 recipient: order.customer,

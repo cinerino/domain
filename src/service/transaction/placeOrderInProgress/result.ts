@@ -27,7 +27,9 @@ export function createOrder(params: {
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
-        name: params.transaction.seller.name.ja,
+        name: (typeof params.transaction.seller.name === 'string')
+            ? params.transaction.seller.name
+            : String(params.transaction.seller.name?.ja),
         legalName: params.transaction.seller.legalName,
         typeOf: params.transaction.seller.typeOf,
         telephone: params.transaction.seller.telephone,
