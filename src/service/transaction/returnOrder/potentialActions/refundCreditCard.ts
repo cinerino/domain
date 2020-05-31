@@ -6,11 +6,12 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
 
 async function createRefundCreditCardPotentialActions(params: {
     order: factory.order.IOrder;
-    payAction: factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>;
+    paymentMethod: factory.order.IPaymentMethod<factory.paymentMethodType.CreditCard>;
+    // payAction: factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IPotentialActions> {
-    const payAction = params.payAction;
+    // const payAction = params.payAction;
     const transaction = params.transaction;
     const order = params.order;
 
@@ -22,7 +23,8 @@ async function createRefundCreditCardPotentialActions(params: {
     if (refundCreditCardActionParams !== undefined) {
         const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
             const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
-                return paymentMethod.paymentMethod.paymentMethodId === payAction.object[0].paymentMethod.paymentMethodId;
+                // return paymentMethod.paymentMethod.paymentMethodId === payAction.object[0].paymentMethod.paymentMethodId;
+                return paymentMethod.paymentMethod.paymentMethodId === params.paymentMethod.paymentMethodId;
             });
 
             return assignedPaymentMethod !== undefined;
@@ -59,7 +61,7 @@ async function createRefundCreditCardPotentialActions(params: {
 
     const emailMessage = await emailMessageBuilder.createRefundMessage({
         order,
-        paymentMethods: payAction.object.map((o) => o.paymentMethod),
+        paymentMethods: [params.paymentMethod],
         email: emailCustomization
     });
     const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
@@ -94,25 +96,31 @@ async function createRefundCreditCardPotentialActions(params: {
 }
 
 export async function createRefundCreditCardActions(params: {
-    actionsOnOrder: IAction[];
+    // actionsOnOrder: IAction[];
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>[]> {
-    const actionsOnOrder = params.actionsOnOrder;
-    const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
-        .filter((a) => a.typeOf === factory.actionType.PayAction)
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+    // const actionsOnOrder = params.actionsOnOrder;
+    // const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
+    //     .filter((a) => a.typeOf === factory.actionType.PayAction)
+    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
     const transaction = params.transaction;
     const order = params.order;
 
     // クレジットカード返金アクション
-    return Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
-        .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
-        .map(async (a): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
+    // return Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
+    //     .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
+
+    const creditCardPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.CreditCard>[]>params.order.paymentMethods
+        .filter((p) => p.typeOf === factory.paymentMethodType.CreditCard);
+
+    return Promise.all(creditCardPaymentMethods
+        .map(async (p): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
             const potentialActionsOnRefund = await createRefundCreditCardPotentialActions({
-                payAction: a,
+                // payAction: a,
+                paymentMethod: p,
                 order: params.order,
                 potentialActions: params.potentialActions,
                 transaction: transaction
@@ -121,7 +129,7 @@ export async function createRefundCreditCardActions(params: {
             return {
                 project: transaction.project,
                 typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
-                object: a,
+                object: p,
                 agent: {
                     project: transaction.project,
                     typeOf: order.seller.typeOf,

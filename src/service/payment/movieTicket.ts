@@ -20,10 +20,20 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { findPayActionByOrderNumber, onRefund } from './any';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
     clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
+const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
+    domain: credentials.mvtkReserve.authorizeServerDomain,
+    clientId: credentials.mvtkReserve.clientId,
+    clientSecret: credentials.mvtkReserve.clientSecret,
     scopes: [],
     state: ''
 });
@@ -458,13 +468,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
             }
 
-            const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
-                domain: credentials.mvtkReserve.authorizeServerDomain,
-                clientId: credentials.mvtkReserve.clientId,
-                clientSecret: credentials.mvtkReserve.clientSecret,
-                scopes: [],
-                state: ''
-            });
             const movieTicketSeatService = new mvtkapi.service.Seat({
                 endpoint: project.settings.mvtkReserve.endpoint,
                 auth: mvtkReserveAuthClient
@@ -532,21 +535,21 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (project.settings.mvtkReserve === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        // 本アクションに対応するPayActionを取り出す
+        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.MovieTicket>({
+            object: { typeOf: factory.paymentMethodType.MovieTicket, paymentMethodId: params.object.paymentMethodId },
+            purpose: { orderNumber: params.purpose.orderNumber }
+        })(repos);
+
+        if (payAction === undefined) {
+            throw new factory.errors.NotFound('PayAction');
         }
 
-        const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
-            domain: credentials.mvtkReserve.authorizeServerDomain,
-            clientId: credentials.mvtkReserve.clientId,
-            clientSecret: credentials.mvtkReserve.clientSecret,
-            scopes: [],
-            state: ''
-        });
+        const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.mvtkReserve?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
         const movieTicketSeatService = new mvtkapi.service.Seat({
             endpoint: project.settings.mvtkReserve.endpoint,
             auth: mvtkReserveAuthClient
@@ -557,7 +560,7 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
         let seatInfoSyncResult: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncResult;
         try {
-            const payAction = params.object;
+            // const payAction = params.object;
             const payActionResult = payAction.result;
             if (payActionResult === undefined) {
                 throw new factory.errors.NotFound('Pay Action Result');
@@ -591,46 +594,5 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
 
         // 潜在アクション
         await onRefund(params)({ task: repos.task });
-    };
-}
-
-/**
- * 返金後のアクション
- * @param refundActionAttributes 返金アクション属性
- */
-function onRefund(refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>) {
-    return async (repos: { task: TaskRepo }) => {
-        const potentialActions = refundActionAttributes.potentialActions;
-        const now = new Date();
-        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (potentialActions !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.sendEmailMessage)) {
-                potentialActions.sendEmailMessage.forEach((s) => {
-                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
-                        project: s.project,
-                        name: factory.taskName.SendEmailMessage,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 3,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: {
-                            actionAttributes: s
-                        }
-                    };
-                    taskAttributes.push(sendEmailMessageTask);
-                });
-            }
-
-        }
-
-        // タスク保管
-        await Promise.all(taskAttributes.map(async (taskAttribute) => {
-            return repos.task.save(taskAttribute);
-        }));
     };
 }

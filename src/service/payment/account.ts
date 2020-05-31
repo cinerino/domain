@@ -17,6 +17,8 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handlePecorinoError } from '../../errorHandler';
 
+import { findPayActionByOrderNumber, onRefund } from './any';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -380,6 +382,16 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
+        // 本アクションに対応するPayActionを取り出す
+        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.Account>({
+            object: { typeOf: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
+            purpose: { orderNumber: params.purpose.orderNumber }
+        })(repos);
+
+        if (payAction === undefined) {
+            throw new factory.errors.NotFound('PayAction');
+        }
+
         const action = await repos.action.start(params);
 
         try {
@@ -390,7 +402,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
             }
 
             // 返金アクション属性から、Pecorino取引属性を取り出す
-            const payActionAttributes = params.object;
+            // const payActionAttributes = params.object;
 
             const transactionNumberService = new chevre.service.TransactionNumber({
                 endpoint: chevreEndpoint,
@@ -401,7 +413,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 auth: chevreAuthClient
             });
 
-            await Promise.all(payActionAttributes.object.map(async (paymentMethod) => {
+            await Promise.all(payAction.object.map(async (paymentMethod) => {
                 const { transactionNumber } = await transactionNumberService.publish({
                     project: { id: project.id }
                 });
@@ -450,44 +462,5 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
 
         // 潜在アクション
         await onRefund(params)({ task: repos.task });
-    };
-}
-
-/**
- * 返金後のアクション
- */
-function onRefund(refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>) {
-    return async (repos: { task: TaskRepo }) => {
-        const potentialActions = refundActionAttributes.potentialActions;
-        const now = new Date();
-        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (potentialActions !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.sendEmailMessage)) {
-                potentialActions.sendEmailMessage.forEach((s) => {
-                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
-                        project: s.project,
-                        name: factory.taskName.SendEmailMessage,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 3,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: {
-                            actionAttributes: s
-                        }
-                    };
-                    taskAttributes.push(sendEmailMessageTask);
-                });
-            }
-        }
-
-        // タスク保管
-        await Promise.all(taskAttributes.map(async (taskAttribute) => {
-            return repos.task.save(taskAttribute);
-        }));
     };
 }

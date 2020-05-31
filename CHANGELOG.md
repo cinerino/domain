@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文返品取引オブジェクトを最適化
 - 予約取消タスクを予約番号で処理するように変更
 - 予約取消タスクを注文データから作成するように調整
+- 返金アクションのオブジェクトを決済方法に変更
 
 ### Deprecated
 
