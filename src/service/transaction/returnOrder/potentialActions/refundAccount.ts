@@ -5,21 +5,12 @@ import * as factory from '../../../../factory';
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
 
 export async function createRefundAccountActions(params: {
-    // actionsOnOrder: IAction[];
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account>[]> {
-    // const actionsOnOrder = params.actionsOnOrder;
-    // const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
-    //     .filter((a) => a.typeOf === factory.actionType.PayAction)
-    //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-
     const transaction = params.transaction;
     const order = params.order;
-
-    // return Promise.all((<factory.action.trade.pay.IAction<factory.paymentMethodType.Account>[]>payActions)
-    // .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.Account)
 
     const accountPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.Account>[]>params.order.paymentMethods
         .filter((p) => p.typeOf === factory.paymentMethodType.Account);

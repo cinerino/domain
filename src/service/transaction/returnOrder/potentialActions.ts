@@ -5,7 +5,6 @@ import { createInformOrderActionsOnReturn } from './potentialActions/informOrder
 import { createRefundAccountActions } from './potentialActions/refundAccount';
 import { createRefundCreditCardActions } from './potentialActions/refundCreditCard';
 import { createRefundMovieTicketActions } from './potentialActions/refundMovieTicket';
-import { createReturnPointAwardActions } from './potentialActions/returnPointAward';
 import { createSendEmailMessaegActionsOnReturn } from './potentialActions/sendEmailMessage';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
@@ -14,66 +13,68 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
  * 取引のポストアクションを作成する
  */
 export async function createPotentialActions(params: {
-    actionsOnOrder: IAction[];
-    order: factory.order.IOrder;
+    orders: factory.order.IOrder[];
     potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
     transaction: factory.transaction.returnOrder.ITransaction;
-    // placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.returnOrder.IPotentialActions> {
     const transaction = params.transaction;
-    const order = params.order;
 
-    // クレジットカード返金アクション
-    const refundCreditCardActions = await createRefundCreditCardActions(params);
+    let returnOrderActions: factory.action.transfer.returnAction.order.IAttributes[] = [];
 
-    // 口座返金アクション
-    const refundAccountActions = await createRefundAccountActions(params);
+    returnOrderActions = await Promise.all(params.orders.map(async (order) => {
+        // クレジットカード返金アクション
+        const refundCreditCardActions = await createRefundCreditCardActions({ ...params, order });
 
-    // ムビチケ着券返金アクション
-    const refundMovieTicketActions = await createRefundMovieTicketActions(params);
+        // 口座返金アクション
+        const refundAccountActions = await createRefundAccountActions({ ...params, order });
 
-    // ポイントインセンティブの数だけ、返却アクションを作成
-    const returnPointAwardActions = await createReturnPointAwardActions(params);
+        // ムビチケ着券返金アクション
+        const refundMovieTicketActions = await createRefundMovieTicketActions({ ...params, order });
 
-    const cancelReservationActions = await createCancelReservationActions(params);
+        // ポイントインセンティブの数だけ、返却アクションを作成(いったん保留)
+        // const returnPointAwardActions = await createReturnPointAwardActions(params);
+        const returnPointAwardActions: factory.action.transfer.returnAction.pointAward.IAttributes[] = [];
 
-    const informOrderActionsOnReturn = await createInformOrderActionsOnReturn(params);
+        const cancelReservationActions = await createCancelReservationActions({ ...params, order });
 
-    // 返品後のEメール送信アクション
-    const sendEmailMessaegActionsOnReturn = await createSendEmailMessaegActionsOnReturn(params);
+        const informOrderActionsOnReturn = await createInformOrderActionsOnReturn({ ...params, order });
 
-    const returnOrderActionAttributes: factory.action.transfer.returnAction.order.IAttributes = {
-        project: order.project,
-        typeOf: factory.actionType.ReturnAction,
-        object: {
+        // 返品後のEメール送信アクション
+        const sendEmailMessaegActionsOnReturn = await createSendEmailMessaegActionsOnReturn({ ...params, order });
+
+        return {
             project: order.project,
-            typeOf: order.typeOf,
-            seller: order.seller,
-            customer: order.customer,
-            confirmationNumber: order.confirmationNumber,
-            orderNumber: order.orderNumber,
-            price: order.price,
-            priceCurrency: order.priceCurrency,
-            orderDate: order.orderDate
-        },
-        agent: transaction.agent,
-        recipient: {
-            project: order.project,
-            ...<any>order.seller
-        },
-        potentialActions: {
-            cancelReservation: cancelReservationActions,
-            informOrder: informOrderActionsOnReturn,
-            refundCreditCard: refundCreditCardActions,
-            refundAccount: refundAccountActions,
-            refundMGTicket: [],
-            refundMovieTicket: refundMovieTicketActions,
-            returnPointAward: returnPointAwardActions,
-            sendEmailMessage: sendEmailMessaegActionsOnReturn
-        }
-    };
+            typeOf: <factory.actionType.ReturnAction>factory.actionType.ReturnAction,
+            object: {
+                project: order.project,
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            },
+            agent: transaction.agent,
+            recipient: {
+                project: order.project,
+                ...<any>order.seller
+            },
+            potentialActions: {
+                cancelReservation: cancelReservationActions,
+                informOrder: informOrderActionsOnReturn,
+                refundCreditCard: refundCreditCardActions,
+                refundAccount: refundAccountActions,
+                refundMGTicket: [],
+                refundMovieTicket: refundMovieTicketActions,
+                returnPointAward: returnPointAwardActions,
+                sendEmailMessage: sendEmailMessaegActionsOnReturn
+            }
+        };
+    }));
 
     return {
-        returnOrder: [returnOrderActionAttributes]
+        returnOrder: returnOrderActions
     };
 }

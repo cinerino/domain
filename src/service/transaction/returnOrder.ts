@@ -278,35 +278,20 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
             throw new factory.errors.Argument('transaction', 'Transaction already canceled');
         }
 
-        if (params.agent !== undefined && params.agent.id !== undefined) {
-            if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('Transaction not yours');
-            }
+        if (typeof params.agent?.id === 'string' && transaction.agent.id !== params.agent.id) {
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const order = await repos.order.findByOrderNumber({ orderNumber: transaction.object.order.orderNumber });
-
-        // const placeOrderTransactions = await repos.transaction.search<factory.transactionType.PlaceOrder>({
-        //     limit: 1,
-        //     typeOf: factory.transactionType.PlaceOrder,
-        //     result: {
-        //         order: { orderNumbers: [order.orderNumber] }
-        //     }
-        // });
-        // const placeOrderTransaction = placeOrderTransactions.shift();
-        // if (placeOrderTransaction === undefined) {
-        //     throw new factory.errors.NotFound('Transaction');
-        // }
-
-        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
+        const orders = await repos.order.search({
+            project: { id: { $eq: transaction.project.id } },
+            orderNumbers: [transaction.object.order.orderNumber]
+        });
 
         const result: factory.transaction.returnOrder.IResult = {};
         const potentialActions = await createPotentialActions({
-            actionsOnOrder: actionsOnOrder,
-            order: order,
+            orders: orders,
             potentialActions: params.potentialActions,
             transaction: transaction
-            // placeOrderTransaction: placeOrderTransaction
         });
 
         // ステータス変更
@@ -394,85 +379,3 @@ export function exportTasksById(params: {
         }));
     };
 }
-
-/**
- * 確定取引についてメールを送信する(ttts専用)
- * @deprecated
- */
-// export function sendEmail(
-//     transactionId: string,
-//     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
-// ) {
-//     return async (repos: {
-//         order: OrderRepo;
-//         task: TaskRepo;
-//         transaction: TransactionRepo;
-//     }): Promise<factory.task.ITask<factory.taskName.SendEmailMessage>> => {
-//         const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
-//             await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
-//         if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
-//             throw new factory.errors.Forbidden('Transaction not confirmed.');
-//         }
-
-//         // const placeOrderTransaction = returnOrderTransaction.object.transaction;
-//         // if (placeOrderTransaction.result === undefined) {
-//         //     throw new factory.errors.NotFound('PlaceOrder Transaction Result');
-//         // }
-//         const order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
-
-//         const emailMessage: factory.creativeWork.message.email.ICreativeWork = {
-//             typeOf: factory.creativeWorkType.EmailMessage,
-//             identifier: `returnOrderTransaction-${transactionId}`,
-//             name: `returnOrderTransaction-${transactionId}`,
-//             sender: {
-//                 typeOf: order.seller.typeOf,
-//                 name: emailMessageAttributes.sender.name,
-//                 email: emailMessageAttributes.sender.email
-//             },
-//             toRecipient: {
-//                 typeOf: order.customer.typeOf,
-//                 name: emailMessageAttributes.toRecipient.name,
-//                 email: emailMessageAttributes.toRecipient.email
-//             },
-//             about: emailMessageAttributes.about,
-//             text: emailMessageAttributes.text
-//         };
-
-//         // その場で送信ではなく、DBにタスクを登録
-//         const taskAttributes: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
-//             name: factory.taskName.SendEmailMessage,
-//             project: returnOrderTransaction.project,
-//             status: factory.taskStatus.Ready,
-//             runsAt: new Date(), // なるはやで実行
-//             remainingNumberOfTries: 10,
-//             numberOfTried: 0,
-//             executionResults: [],
-//             data: {
-//                 actionAttributes: {
-//                     agent: {
-//                         id: order.seller.id,
-//                         name: { ja: order.seller.name, en: '' },
-//                         project: returnOrderTransaction.project,
-//                         typeOf: order.seller.typeOf
-//                     },
-//                     object: emailMessage,
-//                     project: returnOrderTransaction.project,
-//                     purpose: {
-//                         typeOf: order.typeOf,
-//                         orderNumber: order.orderNumber
-//                     },
-//                     recipient: {
-//                         id: order.customer.id,
-//                         name: order.customer.name,
-//                         typeOf: order.customer.typeOf
-//                     },
-//                     typeOf: factory.actionType.SendAction
-//                 }
-//                 // transactionId: transactionId,
-//                 // emailMessage: emailMessage
-//             }
-//         };
-
-//         return <any>await repos.task.save(taskAttributes);
-//     };
-// }
