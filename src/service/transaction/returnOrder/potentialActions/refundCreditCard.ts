@@ -7,7 +7,7 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
 async function createRefundCreditCardPotentialActions(params: {
     order: factory.order.IOrder;
     paymentMethod: factory.order.IPaymentMethod<factory.paymentMethodType.CreditCard>;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IPotentialActions> {
     const transaction = params.transaction;
@@ -17,7 +17,7 @@ async function createRefundCreditCardPotentialActions(params: {
     // Eメールカスタマイズの指定を確認
     let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
 
-    const refundCreditCardActionParams = params.potentialActions?.returnOrder?.potentialActions?.refundCreditCard;
+    const refundCreditCardActionParams = params.returnOrderActionParams?.potentialActions?.refundCreditCard;
     if (refundCreditCardActionParams !== undefined) {
         const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
             const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
@@ -94,7 +94,7 @@ async function createRefundCreditCardPotentialActions(params: {
 
 export async function createRefundCreditCardActions(params: {
     order: factory.order.IOrder;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>[]> {
     const transaction = params.transaction;
@@ -111,7 +111,7 @@ export async function createRefundCreditCardActions(params: {
             const potentialActionsOnRefund = await createRefundCreditCardPotentialActions({
                 paymentMethod: p,
                 order: params.order,
-                potentialActions: params.potentialActions,
+                returnOrderActionParams: params.returnOrderActionParams,
                 transaction: transaction
             });
 

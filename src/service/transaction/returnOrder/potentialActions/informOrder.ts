@@ -2,14 +2,14 @@ import * as factory from '../../../../factory';
 
 export async function createInformOrderActionsOnReturn(params: {
     order: factory.order.IOrder;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.interact.inform.IAttributes<any, any>[]> {
     const transaction = params.transaction;
     const order = transaction.object.order;
 
     const informOrderActionsOnReturn: factory.action.interact.inform.IAttributes<any, any>[] = [];
-    const informOrder = params.potentialActions?.returnOrder?.potentialActions?.informOrder;
+    const informOrder = params.returnOrderActionParams?.potentialActions?.informOrder;
     if (Array.isArray(informOrder)) {
         informOrder.forEach((a) => {
             if (typeof a.recipient?.url === 'string') {

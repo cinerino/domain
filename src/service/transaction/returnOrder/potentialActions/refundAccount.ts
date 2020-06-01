@@ -6,7 +6,7 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
 
 export async function createRefundAccountActions(params: {
     order: factory.order.IOrder;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account>[]> {
     const transaction = params.transaction;

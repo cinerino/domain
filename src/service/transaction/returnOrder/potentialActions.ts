@@ -22,25 +22,33 @@ export async function createPotentialActions(params: {
     let returnOrderActions: factory.action.transfer.returnAction.order.IAttributes[] = [];
 
     returnOrderActions = await Promise.all(params.orders.map(async (order) => {
+        let returnOrderParams = params.potentialActions?.returnOrder;
+        // 互換性維持対応
+        if (!Array.isArray(returnOrderParams)) {
+            returnOrderParams = [{ ...returnOrderParams, object: { orderNumber: params.orders[0]?.orderNumber } }];
+        }
+
+        const returnOrderActionParams = returnOrderParams?.find((p) => p.object?.orderNumber === order.orderNumber);
+
         // クレジットカード返金アクション
-        const refundCreditCardActions = await createRefundCreditCardActions({ ...params, order });
+        const refundCreditCardActions = await createRefundCreditCardActions({ ...params, order, returnOrderActionParams });
 
         // 口座返金アクション
-        const refundAccountActions = await createRefundAccountActions({ ...params, order });
+        const refundAccountActions = await createRefundAccountActions({ ...params, order, returnOrderActionParams });
 
         // ムビチケ着券返金アクション
-        const refundMovieTicketActions = await createRefundMovieTicketActions({ ...params, order });
+        const refundMovieTicketActions = await createRefundMovieTicketActions({ ...params, order, returnOrderActionParams });
 
         // ポイントインセンティブの数だけ、返却アクションを作成(いったん保留)
         // const returnPointAwardActions = await createReturnPointAwardActions(params);
         const returnPointAwardActions: factory.action.transfer.returnAction.pointAward.IAttributes[] = [];
 
-        const cancelReservationActions = await createCancelReservationActions({ ...params, order });
+        const cancelReservationActions = await createCancelReservationActions({ ...params, order, returnOrderActionParams });
 
-        const informOrderActionsOnReturn = await createInformOrderActionsOnReturn({ ...params, order });
+        const informOrderActionsOnReturn = await createInformOrderActionsOnReturn({ ...params, order, returnOrderActionParams });
 
         // 返品後のEメール送信アクション
-        const sendEmailMessaegActionsOnReturn = await createSendEmailMessaegActionsOnReturn({ ...params, order });
+        const sendEmailMessaegActionsOnReturn = await createSendEmailMessaegActionsOnReturn({ ...params, order, returnOrderActionParams });
 
         return {
             project: order.project,

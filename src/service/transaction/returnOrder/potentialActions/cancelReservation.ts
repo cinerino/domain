@@ -7,7 +7,7 @@ export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 // tslint:disable-next-line:max-func-body-length
 export async function createCancelReservationActions(params: {
     order: factory.order.IOrder;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
     // placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.task.IData<factory.taskName.CancelReservation>[]> {
@@ -18,7 +18,7 @@ export async function createCancelReservationActions(params: {
     const cancelReservationActions: factory.task.IData<factory.taskName.CancelReservation>[] = [];
 
     let cancelReservationParams: factory.transaction.returnOrder.ICancelReservationParams[] = [];
-    const cancelReservation = params.potentialActions?.returnOrder?.potentialActions?.cancelReservation;
+    const cancelReservation = params.returnOrderActionParams?.potentialActions?.cancelReservation;
     if (Array.isArray(cancelReservation)) {
         cancelReservationParams = cancelReservation;
     }

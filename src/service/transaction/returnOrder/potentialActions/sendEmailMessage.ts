@@ -4,7 +4,7 @@ import * as factory from '../../../../factory';
 
 export async function createSendEmailMessaegActionsOnReturn(params: {
     order: factory.order.IOrder;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.transfer.send.message.email.IAttributes[]> {
     const transaction = params.transaction;
@@ -12,7 +12,7 @@ export async function createSendEmailMessaegActionsOnReturn(params: {
 
     // 返品後のEメール送信アクション
     const sendEmailMessaegActionsOnReturn: factory.action.transfer.send.message.email.IAttributes[] = [];
-    const sendEmailMessage = params.potentialActions?.returnOrder?.potentialActions?.sendEmailMessage;
+    const sendEmailMessage = params.returnOrderActionParams?.potentialActions?.sendEmailMessage;
     if (Array.isArray(sendEmailMessage)) {
         sendEmailMessaegActionsOnReturn.push(
             ...await Promise.all(sendEmailMessage.map(

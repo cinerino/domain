@@ -6,7 +6,7 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
 
 export async function createRefundMovieTicketActions(params: {
     order: factory.order.IOrder;
-    potentialActions?: factory.transaction.returnOrder.IPotentialActionsParams;
+    returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[]> {
     const transaction = params.transaction;
@@ -14,7 +14,7 @@ export async function createRefundMovieTicketActions(params: {
 
     // ムビチケ着券返金アクション
     let refundMovieTicketActions: factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
-    const refundMovieTicket = params.potentialActions?.returnOrder?.potentialActions?.refundMovieTicket === true;
+    const refundMovieTicket = params.returnOrderActionParams?.potentialActions?.refundMovieTicket === true;
     if (refundMovieTicket) {
         const movieTicketPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.MovieTicket>[]>params.order.paymentMethods
             .filter((p) => p.typeOf === factory.paymentMethodType.MovieTicket);
