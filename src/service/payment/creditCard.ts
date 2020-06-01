@@ -557,7 +557,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
 
         // 潜在アクション
-        await onRefund(refundActionAttributes, order)({ task: repos.task });
+        await onRefund(refundActionAttributes, order)({ project: repos.project, task: repos.task });
     };
 }
 

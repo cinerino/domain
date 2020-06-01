@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 注文アイテムに決済カードを追加
 - 通貨転送取引番号リポジトリを追加
+- プロジェクトに返金通知設定を追加
 
 ### Changed
 

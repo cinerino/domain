@@ -6,6 +6,7 @@ import * as createDebug from 'debug';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -170,55 +171,90 @@ export function onRefund(
     refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType | string>,
     order?: factory.order.IOrder
 ) {
-    return async (repos: { task: TaskRepo }) => {
+    return async (repos: {
+        project: ProjectRepo;
+        task: TaskRepo;
+    }) => {
+        const project = await repos.project.findById({ id: refundActionAttributes.project.id });
+
         const potentialActions = refundActionAttributes.potentialActions;
         const now = new Date();
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (potentialActions !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.sendEmailMessage)) {
-                potentialActions.sendEmailMessage.forEach((s) => {
-                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
-                        project: s.project,
-                        name: factory.taskName.SendEmailMessage,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 3,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: {
-                            actionAttributes: s
-                        }
-                    };
-                    taskAttributes.push(sendEmailMessageTask);
-                });
-            }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.informOrder)) {
-                if (order !== undefined) {
-                    taskAttributes.push(...potentialActions.informOrder.map(
-                        (a: any): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
-                            return {
-                                project: a.project,
-                                name: factory.taskName.TriggerWebhook,
-                                status: factory.taskStatus.Ready,
-                                runsAt: now, // なるはやで実行
-                                remainingNumberOfTries: 10,
-                                numberOfTried: 0,
-                                executionResults: [],
-                                data: {
-                                    ...a,
-                                    object: order
-                                }
-                            };
-                        })
-                    );
-                }
+        // プロジェクトの通知設定を適用
+        const informOrderByProject = project.settings?.payment?.onRefunded?.informOrder;
+        if (Array.isArray(informOrderByProject)) {
+            if (order !== undefined) {
+                taskAttributes.push(...informOrderByProject.map(
+                    (informOrder): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: { typeOf: factory.organizationType.Project, id: project.id },
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now,
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                agent: {
+                                    typeOf: order.seller.typeOf,
+                                    name: order.seller.name,
+                                    id: order.seller.id,
+                                    project: { typeOf: factory.organizationType.Project, id: project.id }
+                                },
+                                object: order,
+                                project: { typeOf: factory.organizationType.Project, id: project.id },
+                                recipient: {
+                                    id: '',
+                                    ...informOrder.recipient
+                                },
+                                typeOf: factory.actionType.InformAction
+                            }
+                        };
+                    })
+                );
+            }
+        }
+
+        const sendEmailMessageByPotentialActions = potentialActions?.sendEmailMessage;
+        if (Array.isArray(sendEmailMessageByPotentialActions)) {
+            sendEmailMessageByPotentialActions.forEach((s) => {
+                const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                    project: s.project,
+                    name: factory.taskName.SendEmailMessage,
+                    status: factory.taskStatus.Ready,
+                    runsAt: now,
+                    remainingNumberOfTries: 3,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        actionAttributes: s
+                    }
+                };
+                taskAttributes.push(sendEmailMessageTask);
+            });
+        }
+
+        const informOrderByPotentialActions = potentialActions?.informOrder;
+        if (Array.isArray(informOrderByPotentialActions)) {
+            if (order !== undefined) {
+                taskAttributes.push(...informOrderByPotentialActions.map(
+                    (a): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now,
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
             }
         }
 

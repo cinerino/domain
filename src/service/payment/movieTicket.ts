@@ -593,6 +593,6 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
 
         // 潜在アクション
-        await onRefund(params)({ task: repos.task });
+        await onRefund(params)({ project: repos.project, task: repos.task });
     };
 }
