@@ -1,32 +1,33 @@
 import * as factory from '../../../factory';
 
-function createMoneyTransferActions<T extends string>(params: {
+function createMoneyTransferActions(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
-}): factory.action.transfer.moneyTransfer.IAttributes<T>[] {
+}): factory.action.transfer.moneyTransfer.IAttributes[] {
     // 通貨転送アクション属性作成
-    type IFromAccount = factory.action.authorize.paymentMethod.account.IAccount<string>;
-    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<string>[]>
+    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO Chevre決済カードサービスに対して動的にコントロール
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.PaymentCard);
 
-    return authorizeAccountActions.map((a) => {
-        const actionResult = <factory.action.authorize.paymentMethod.account.IResult<T>>a.result;
+    return authorizePaymentCardActions.map((a) => {
+        const actionResult = <factory.action.authorize.paymentMethod.paymentCard.IResult>a.result;
 
-        if (a.object.fromAccount !== undefined) {
-            if ((<IFromAccount>a.object.fromAccount).accountType !== 'Coin') {
-                throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
-            }
+        if (a.object.fromLocation !== undefined) {
+            // if ((<IFromLocation>a.object.fromLocation).accountType !== 'Coin') {
+            //     throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
+            // }
         }
 
-        if (a.object.toAccount !== undefined) {
-            if (a.object.toAccount.accountType !== 'Coin') {
-                throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
-            }
+        if (a.object.toLocation !== undefined) {
+            // if (a.object.toLocation.accountType !== 'Coin') {
+            //     throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
+            // }
         }
 
-        const fromLocation = <factory.action.transfer.moneyTransfer.IAccount<T>>params.transaction.object.fromLocation;
+        const fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>params.transaction.object.fromLocation;
 
         return {
             project: params.transaction.project,
@@ -40,7 +41,7 @@ function createMoneyTransferActions<T extends string>(params: {
             amount: {
                 typeOf: 'MonetaryAmount',
                 value: Number(a.object.amount),
-                currency: fromLocation.accountType
+                currency: factory.chevre.priceCurrency.JPY
             },
             fromLocation: fromLocation,
             toLocation: params.transaction.object.toLocation,
@@ -48,7 +49,7 @@ function createMoneyTransferActions<T extends string>(params: {
                 typeOf: params.transaction.typeOf,
                 id: params.transaction.id
             },
-            ...(typeof a.object.notes === 'string') ? { description: a.object.notes } : {}
+            ...(typeof a.object.description === 'string') ? { description: a.object.description } : {}
         };
     });
 }
@@ -56,11 +57,11 @@ function createMoneyTransferActions<T extends string>(params: {
 /**
  * 取引のポストアクションを作成する
  */
-export async function createPotentialActions<T extends string>(params: {
+export async function createPotentialActions(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }): Promise<factory.transaction.IPotentialActions<factory.transactionType.MoneyTransfer>> {
     // 通貨転送アクション属性作成
-    const moneyTransferActionAttributesList = createMoneyTransferActions<T>(params);
+    const moneyTransferActionAttributesList = createMoneyTransferActions(params);
 
     // まずは1転送アクションのみ対応
     if (moneyTransferActionAttributesList.length !== 1) {

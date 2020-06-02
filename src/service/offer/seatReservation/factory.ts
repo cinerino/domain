@@ -13,10 +13,12 @@ export function createReserveTransactionStartParams(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     transaction: factory.transaction.ITransaction<any>;
+    transactionNumber: string;
 }): factory.chevre.transaction.reserve.IStartParamsWithoutDetail {
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: chevre.factory.transactionType.Reserve,
+        transactionNumber: params.transactionNumber,
         agent: {
             typeOf: params.transaction.agent.typeOf,
             name: params.transaction.agent.id,
@@ -32,6 +34,7 @@ export function createReserveTransactionStartParams(params: {
             }
         },
         object: {
+            ...params.object,
             onReservationStatusChanged: {
                 informReservation: (params.object !== undefined
                     && params.object !== null
@@ -298,7 +301,9 @@ export function responseBody2acceptedOffers4result(params: {
                         : factory.priceCurrency.JPY,
                     seller: {
                         typeOf: seller.typeOf,
-                        name: seller.name.ja
+                        name: (typeof seller.name === 'string')
+                            ? seller.name
+                            : String(seller.name?.ja)
                     }
                 };
             });

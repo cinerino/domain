@@ -169,7 +169,9 @@ function createOrderProgramMembershipActionAttributes(params: {
         itemOffered: itemOffered,
         seller: {
             typeOf: seller.typeOf,
-            name: seller.name.ja
+            name: (typeof seller.name === 'string')
+                ? seller.name
+                : String(seller.name?.ja)
         }
     };
 

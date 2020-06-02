@@ -148,9 +148,9 @@ export function exportTasksById(params: {
                     }
                 };
 
-                const cancelPrepaidCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPrepaidCard> = {
+                const cancelPaymentCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPaymentCard> = {
                     project: { typeOf: project.typeOf, id: project.id },
-                    name: factory.taskName.CancelPrepaidCard,
+                    name: factory.taskName.CancelPaymentCard,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
@@ -180,7 +180,7 @@ export function exportTasksById(params: {
                     cancelSeatReservationTaskAttributes,
                     cancelCreditCardTaskAttributes,
                     cancelAccountTaskAttributes,
-                    cancelPrepaidCardTaskAttributes,
+                    cancelPaymentCardTaskAttributes,
                     voidMoneyTransferTaskAttributes
                 );
                 break;

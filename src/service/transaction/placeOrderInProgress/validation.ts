@@ -181,7 +181,7 @@ function validateMovieTicket(
             .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
 
     // ムビチケオファーを受け付けた座席予約を検索する
-    const requiredMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
+    const requiredMovieTickets: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     seatReservationAuthorizeActions.forEach((a) => {
         if (a.object.event === undefined
             || a.object.event === null) {
@@ -205,7 +205,7 @@ function validateMovieTicket(
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
                         requiredMovieTickets.push({
-                            project: transaction.project,
+                            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                             typeOf: paymentMethodType,
                             identifier: '',
                             accessCode: '',
@@ -222,7 +222,7 @@ function validateMovieTicket(
     });
     debug(requiredMovieTickets.length, 'movie tickets required');
 
-    const authorizedMovieTickets: factory.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
+    const authorizedMovieTickets: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     authorizeMovieTicketActions.forEach((a) => {
         authorizedMovieTickets.push(...a.object.movieTickets);
     });

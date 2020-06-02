@@ -302,7 +302,9 @@ export function transaction2report(params: {
             seller: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,
-                name: params.transaction.seller.name.ja,
+                name: (typeof params.transaction.seller.name === 'string')
+                    ? params.transaction.seller.name
+                    : String(params.transaction.seller.name?.ja),
                 url: (params.transaction.seller.url !== undefined) ? params.transaction.seller.url : ''
             },
             customer: {
@@ -339,7 +341,9 @@ export function transaction2report(params: {
             seller: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,
-                name: params.transaction.seller.name.ja,
+                name: (typeof params.transaction.seller.name === 'string')
+                    ? params.transaction.seller.name
+                    : String(params.transaction.seller.name?.ja),
                 url: (params.transaction.seller.url !== undefined) ? params.transaction.seller.url : ''
             },
             customer: {

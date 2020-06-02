@@ -6,7 +6,9 @@ import * as createDebug from 'debug';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
+import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
@@ -135,5 +137,130 @@ export function voidTransaction(params: {
         } catch (error) {
             // no op
         }
+    };
+}
+
+export function findPayActionByOrderNumber<T extends factory.paymentMethodType | string>(params: {
+    object: {
+        typeOf: T;
+        paymentMethodId: string;
+    };
+    purpose: { orderNumber: string };
+}) {
+    return async (repos: {
+        action: ActionRepo;
+    }): Promise<factory.action.trade.pay.IAction<T> | undefined> => {
+        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: params.purpose.orderNumber });
+        const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
+            .filter((a) => a.typeOf === factory.actionType.PayAction)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+        return (<factory.action.trade.pay.IAction<T>[]>payActions)
+            .filter((a) => a.object[0].paymentMethod.typeOf === params.object.typeOf)
+            .find((a) => {
+                return a.object.some((p) => p.paymentMethod.paymentMethodId === params.object.paymentMethodId);
+                // a.object[0].paymentMethod.paymentMethodId === params.object.paymentMethodId
+            });
+    };
+}
+
+/**
+ * 返金後のアクション
+ */
+export function onRefund(
+    refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType | string>,
+    order?: factory.order.IOrder
+) {
+    return async (repos: {
+        project: ProjectRepo;
+        task: TaskRepo;
+    }) => {
+        const project = await repos.project.findById({ id: refundActionAttributes.project.id });
+
+        const potentialActions = refundActionAttributes.potentialActions;
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // プロジェクトの通知設定を適用
+        const informOrderByProject = project.settings?.payment?.onRefunded?.informOrder;
+        if (Array.isArray(informOrderByProject)) {
+            if (order !== undefined) {
+                taskAttributes.push(...informOrderByProject.map(
+                    (informOrder): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: { typeOf: factory.organizationType.Project, id: project.id },
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now,
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                agent: {
+                                    typeOf: order.seller.typeOf,
+                                    name: order.seller.name,
+                                    id: order.seller.id,
+                                    project: { typeOf: factory.organizationType.Project, id: project.id }
+                                },
+                                object: order,
+                                project: { typeOf: factory.organizationType.Project, id: project.id },
+                                recipient: {
+                                    id: '',
+                                    ...informOrder.recipient
+                                },
+                                typeOf: factory.actionType.InformAction
+                            }
+                        };
+                    })
+                );
+            }
+        }
+
+        const sendEmailMessageByPotentialActions = potentialActions?.sendEmailMessage;
+        if (Array.isArray(sendEmailMessageByPotentialActions)) {
+            sendEmailMessageByPotentialActions.forEach((s) => {
+                const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
+                    project: s.project,
+                    name: factory.taskName.SendEmailMessage,
+                    status: factory.taskStatus.Ready,
+                    runsAt: now,
+                    remainingNumberOfTries: 3,
+                    numberOfTried: 0,
+                    executionResults: [],
+                    data: {
+                        actionAttributes: s
+                    }
+                };
+                taskAttributes.push(sendEmailMessageTask);
+            });
+        }
+
+        const informOrderByPotentialActions = potentialActions?.informOrder;
+        if (Array.isArray(informOrderByPotentialActions)) {
+            if (order !== undefined) {
+                taskAttributes.push(...informOrderByPotentialActions.map(
+                    (a): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now,
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
+            }
+        }
+
+        // タスク保管
+        await Promise.all(taskAttributes.map(async (taskAttribute) => {
+            return repos.task.save(taskAttribute);
+        }));
     };
 }

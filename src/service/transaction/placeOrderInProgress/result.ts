@@ -2,10 +2,12 @@ import * as moment from 'moment-timezone';
 
 import * as factory from '../../../factory';
 
+import { createPaymentCardItems } from './result/acceptedOffers';
+
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<string>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
@@ -25,7 +27,9 @@ export function createOrder(params: {
     const seller: factory.order.ISeller = {
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
-        name: params.transaction.seller.name.ja,
+        name: (typeof params.transaction.seller.name === 'string')
+            ? params.transaction.seller.name
+            : String(params.transaction.seller.name?.ja),
         legalName: params.transaction.seller.legalName,
         typeOf: params.transaction.seller.typeOf,
         telephone: params.transaction.seller.telephone,
@@ -55,6 +59,9 @@ export function createOrder(params: {
 
     // 通貨転送がある場合
     acceptedOffers.push(...createMoneyTransferAcceptedOffers({ ...params, seller: seller }));
+
+    // 決済カードがある場合
+    acceptedOffers.push(...createPaymentCardItems({ ...params }));
 
     // 決済方法をセット
     const { paymentMethods, price } = createPaymentMethods({ transaction: params.transaction });
@@ -102,7 +109,7 @@ function createPaymentMethods(params: {
             params.transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.result !== undefined)
-                .filter((a) => a.result.paymentMethod === paymentMethodType)
+                .filter((a) => a.object.typeOf === paymentMethodType)
                 .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
                     const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
                     paymentMethods.push({
@@ -111,7 +118,7 @@ function createPaymentMethods(params: {
                         name: result.name,
                         paymentMethodId: result.paymentMethodId,
                         totalPaymentDue: result.totalPaymentDue,
-                        typeOf: paymentMethodType
+                        typeOf: <any>result.paymentMethod
                     });
                 });
 
@@ -375,10 +382,8 @@ function createMoneyTransferAcceptedOffers(params: {
         // let responseBody = authorizeMoneyTansferAction.result.responseBody;
         const pendingTransaction = authorizeMoneyTansferAction.object.pendingTransaction;
         if (pendingTransaction !== undefined) {
-            const accountType = pendingTransaction.object.toLocation.accountType;
-            const price = (accountType === 'Coin')
-                ? pendingTransaction.object.amount
-                : undefined;
+            const accountType = factory.chevre.priceCurrency.JPY;
+            const price: number | undefined = pendingTransaction.object.amount.value;
 
             acceptedOffers.push({
                 project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },

@@ -8,8 +8,9 @@ import { createMoneyTransferActions } from './potentialActions/moneyTransfer';
 import { createPayAccountActions } from './potentialActions/payAccount';
 import { createPayCreditCardActions } from './potentialActions/payCreditCard';
 import { createPayMovieTicketActions } from './potentialActions/payMovieTicket';
-import { createPayPrepaidCardActions } from './potentialActions/payPrepaidCard';
+import { createPayPaymentCardActions } from './potentialActions/payPaymentCard';
 import { createRegisterProgramMembershipActions } from './potentialActions/registerProgramMembership';
+import { createRegisterServiceActions } from './potentialActions/registerService';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
 import * as factory from '../../../factory';
@@ -28,6 +29,8 @@ export async function createPotentialActions(params: {
     // 予約確定アクション
     const confirmReservationActions = await createConfirmReservationActions(params);
 
+    const registerServiceActions = await createRegisterServiceActions(params);
+
     // 通貨転送アクション
     const moneyTransferActions = await createMoneyTransferActions(params);
 
@@ -43,7 +46,7 @@ export async function createPotentialActions(params: {
     // ムビチケ決済アクション
     const payMovieTicketActions = await createPayMovieTicketActions(params);
 
-    const payPrepaidCardActions = await createPayPrepaidCardActions(params);
+    const payPaymentCardActions = await createPayPaymentCardActions(params);
 
     // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
     const givePointAwardActions = await createGivePointAwardActions(params);
@@ -66,6 +69,7 @@ export async function createPotentialActions(params: {
             informOrder: informOrderActionsOnSentOrder,
             moneyTransfer: moneyTransferActions,
             registerProgramMembership: registerProgramMembershipActions,
+            registerService: registerServiceActions,
             sendEmailMessage: sendEmailMessageActions
         }
     };
@@ -82,7 +86,7 @@ export async function createPotentialActions(params: {
                 payAccount: payAccountActions,
                 payCreditCard: payCreditCardActions,
                 payMovieTicket: payMovieTicketActions,
-                payPrepaidCard: payPrepaidCardActions,
+                payPaymentCard: payPaymentCardActions,
                 sendOrder: sendOrderActionAttributes
             },
             purpose: {

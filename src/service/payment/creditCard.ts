@@ -16,11 +16,13 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { findPayActionByOrderNumber, onRefund } from './any';
+
 const debug = createDebug('cinerino-domain:service');
 
-export import IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
-export import IUncheckedCardTokenized = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
-export import IUnauthorizedCardOfMember = factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember;
+export import IUncheckedCardRaw = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
+export import IUncheckedCardTokenized = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
+export import IUnauthorizedCardOfMember = factory.chevre.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember;
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
@@ -504,6 +506,16 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
+        // 本アクションに対応するPayActionを取り出す
+        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.CreditCard>({
+            object: { typeOf: factory.paymentMethodType.CreditCard, paymentMethodId: params.object.paymentMethodId },
+            purpose: { orderNumber: params.purpose.orderNumber }
+        })(repos);
+
+        if (payAction === undefined) {
+            throw new factory.errors.NotFound('PayAction');
+        }
+
         const project = await repos.project.findById({ id: params.project.id });
 
         const refundActionAttributes = params;
@@ -528,7 +540,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         try {
             alterTranResult = await processChangeTransaction({
                 project: project,
-                payAction: refundActionAttributes.object,
+                payAction: payAction,
                 cancellationFee: returnOrderTransaction.object.cancellationFee
             });
         } catch (error) {
@@ -545,7 +557,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
 
         // 潜在アクション
-        await onRefund(refundActionAttributes, order)({ task: repos.task });
+        await onRefund(refundActionAttributes, order)({ project: repos.project, task: repos.task });
     };
 }
 
@@ -673,69 +685,5 @@ function getGMOInfoFromSeller(params: {
         shopId: creditCardPaymentAccepted.gmoInfo.shopId,
         shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
         siteId: creditCardPaymentAccepted.gmoInfo.siteId
-    };
-}
-
-/**
- * 返金後のアクション
- */
-function onRefund(
-    refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType>,
-    order: factory.order.IOrder
-) {
-    return async (repos: { task: TaskRepo }) => {
-        const potentialActions = refundActionAttributes.potentialActions;
-        const now = new Date();
-        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (potentialActions !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.sendEmailMessage)) {
-                potentialActions.sendEmailMessage.forEach((s) => {
-                    const sendEmailMessageTask: factory.task.IAttributes<factory.taskName.SendEmailMessage> = {
-                        project: s.project,
-                        name: factory.taskName.SendEmailMessage,
-                        status: factory.taskStatus.Ready,
-                        runsAt: now, // なるはやで実行
-                        remainingNumberOfTries: 3,
-                        numberOfTried: 0,
-                        executionResults: [],
-                        data: {
-                            actionAttributes: s
-                        }
-                    };
-                    taskAttributes.push(sendEmailMessageTask);
-                });
-            }
-
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.informOrder)) {
-                taskAttributes.push(...potentialActions.informOrder.map(
-                    (a: any): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.TriggerWebhook,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: {
-                                ...a,
-                                object: order
-                            }
-                        };
-                    })
-                );
-            }
-        }
-
-        // タスク保管
-        await Promise.all(taskAttributes.map(async (taskAttribute) => {
-            return repos.task.save(taskAttribute);
-        }));
     };
 }

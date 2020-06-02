@@ -2,8 +2,8 @@ import * as GMO from '@motionpicture/gmo-service';
 
 import * as factory from '../../factory';
 
-export type IUncheckedCardRaw = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
-export type IUncheckedCardTokenized = factory.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
+export type IUncheckedCardRaw = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
+export type IUncheckedCardTokenized = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
 export type ISearchCardResult = GMO.factory.card.ISearchCardResult;
 
 export interface IOptions {

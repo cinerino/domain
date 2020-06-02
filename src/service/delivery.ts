@@ -6,12 +6,13 @@
  * ポイントインセンティブで言えば、口座に振り込まれること
  * などが配送処理として考えられます。
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as util from 'util';
 
 import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
 
 import * as factory from '../factory';
 
@@ -24,10 +25,10 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('cinerino-domain:service');
 
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
     scopes: [],
     state: ''
 });
@@ -132,11 +133,12 @@ export function createOwnershipInfosFromOrder(params: {
             offerIndex
         );
 
-        switch (itemOffered.typeOf) {
-            case factory.programMembership.ProgramMembershipType.ProgramMembership:
+        switch (true) {
+            case new RegExp(`^${factory.programMembership.ProgramMembershipType.ProgramMembership}$`).test(itemOffered.typeOf):
+                // case factory.programMembership.ProgramMembershipType.ProgramMembership:
                 ownershipInfo = createProgramMembershipOwnershipInfo({
                     order: params.order,
-                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
                     acquiredFrom: acquiredFrom
@@ -144,10 +146,10 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
-            case factory.chevre.reservationType.EventReservation:
+            case new RegExp(`^${factory.chevre.reservationType.EventReservation}$`).test(itemOffered.typeOf):
                 ownershipInfo = createReservationOwnershipInfo({
                     order: params.order,
-                    acceptedOffer: { ...acceptedOffer, itemOffered: itemOffered },
+                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
                     acquiredFrom: acquiredFrom
@@ -155,7 +157,20 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
-            case 'MonetaryAmount':
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO Chevre決済カードサービスに対して動的にコントロール
+            case new RegExp(`PaymentCard$`).test(itemOffered.typeOf):
+                ownershipInfo = createPaymentCardOwnershipInfo({
+                    order: params.order,
+                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
+                    ownedFrom: ownedFrom,
+                    identifier: identifier,
+                    acquiredFrom: acquiredFrom
+                });
+
+                break;
+
+            case new RegExp(`^MonetaryAmount$`).test(itemOffered.typeOf):
                 // no op
                 break;
 
@@ -227,6 +242,41 @@ function createReservationOwnershipInfo(params: {
             }
         };
     }
+
+    return ownershipInfo;
+}
+
+function createPaymentCardOwnershipInfo(params: {
+    order: factory.order.IOrder;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.IPaymentCard>;
+    ownedFrom: Date;
+    identifier: string;
+    acquiredFrom: factory.ownershipInfo.IOwner;
+}): IOwnershipInfo {
+    const itemOffered = params.acceptedOffer.itemOffered;
+
+    let ownershipInfo: IOwnershipInfo;
+
+    // tslint:disable-next-line:no-suspicious-comment
+    // TODO 要調整
+    const ownedThrough = moment(params.ownedFrom)
+        .add(1, 'year')
+        .toDate();
+
+    ownershipInfo = {
+        project: params.order.project,
+        typeOf: 'OwnershipInfo',
+        id: '',
+        identifier: params.identifier,
+        ownedBy: params.order.customer,
+        acquiredFrom: params.acquiredFrom,
+        ownedFrom: params.ownedFrom,
+        ownedThrough: ownedThrough,
+        typeOfGood: {
+            typeOf: itemOffered.typeOf,
+            identifier: itemOffered.identifier
+        }
+    };
 
     return ownershipInfo;
 }
@@ -305,6 +355,22 @@ export function onSend(
                         return {
                             project: a.project,
                             name: factory.taskName.ConfirmReservation,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
+            }
+
+            if (Array.isArray(potentialActions.registerService)) {
+                taskAttributes.push(...potentialActions.registerService.map(
+                    (a): factory.task.IAttributes<factory.taskName.RegisterService> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.RegisterService,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -413,32 +479,42 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            const endpoint = project.settings?.pecorino?.endpoint;
-            if (typeof endpoint !== 'string') {
+            if (typeof project.settings?.chevre?.endpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
-            // 入金取引確定
-            const depositService = new pecorinoapi.service.transaction.Deposit({
-                endpoint: endpoint,
-                auth: pecorinoAuthClient
+            const transactionNumberService = new chevre.service.TransactionNumber({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const { transactionNumber } = await transactionNumberService.publish({
+                project: { id: project.id }
             });
 
-            const depositTransaction = await depositService.start<string>({
+            // Chevreで入金
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            const agent = {
+                typeOf: params.agent.typeOf,
+                id: params.agent.id,
+                name: (typeof params.agent.name === 'string')
+                    ? params.agent.name
+                    : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
+                url: params.agent.url
+            };
+
+            await moneyTransferService.start({
+                transactionNumber: transactionNumber,
                 project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: factory.pecorino.transactionType.Deposit,
-                agent: {
-                    typeOf: params.agent.typeOf,
-                    id: params.agent.id,
-                    name: (typeof params.agent.name === 'string')
-                        ? params.agent.name
-                        : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
-                    url: params.agent.url
-                },
+                typeOf: chevre.factory.transactionType.MoneyTransfer,
+                agent: agent,
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: {
+                recipient: <any>{
                     typeOf: params.recipient.typeOf,
                     id: params.recipient.id,
                     name: (typeof params.recipient.name === 'string')
@@ -448,19 +524,27 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                             : ''
                 },
                 object: {
-                    amount: params.object.amount,
+                    amount: {
+                        value: params.object.amount
+                    },
                     description: (typeof params.object.description === 'string')
                         ? params.object.description
                         : params.purpose.typeOf,
+                    fromLocation: agent,
                     toLocation: {
-                        typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountType: params.object.toLocation.accountType,
-                        accountNumber: params.object.toLocation.accountNumber
+                        typeOf: params.object.toLocation.accountType,
+                        identifier: params.object.toLocation.accountNumber
+                    },
+                    pendingTransaction: {
+                        typeOf: factory.pecorino.transactionType.Deposit
+                    },
+                    ...{
+                        ignorePaymentCard: true
                     }
                 }
             });
 
-            await depositService.confirm({ id: depositTransaction.id });
+            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -494,24 +578,41 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let withdrawTransaction: pecorinoapi.factory.transaction.withdraw.ITransaction<string>;
+        let moneyTransferTransaction: chevre.factory.transaction.moneyTransfer.ITransaction;
         const action = await repos.action.start(params);
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            const endpoint = project.settings?.pecorino?.endpoint;
+            const endpoint = project.settings?.chevre?.endpoint;
             if (typeof endpoint !== 'string') {
                 throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
             }
 
-            // 入金した分を引き出し取引実行
-            const withdrawService = new pecorinoapi.service.transaction.Withdraw({
+            const transactionNumberService = new chevre.service.TransactionNumber({
                 endpoint: endpoint,
-                auth: pecorinoAuthClient
+                auth: chevreAuthClient
             });
-            withdrawTransaction = await withdrawService.start({
+            const { transactionNumber } = await transactionNumberService.publish({
+                project: { id: project.id }
+            });
+
+            // Chevreで入金した分を出金
+            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+                endpoint: endpoint,
+                auth: chevreAuthClient
+            });
+
+            const recipient = {
+                typeOf: params.recipient.typeOf,
+                id: params.recipient.id,
+                name: order.seller.name,
+                url: params.recipient.url
+            };
+
+            moneyTransferTransaction = await moneyTransferService.start({
+                transactionNumber: transactionNumber,
                 project: { typeOf: order.project.typeOf, id: order.project.id },
-                typeOf: factory.pecorino.transactionType.Withdraw,
+                typeOf: chevre.factory.transactionType.MoneyTransfer,
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,
@@ -521,24 +622,26 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: {
-                    typeOf: params.recipient.typeOf,
-                    id: params.recipient.id,
-                    name: order.seller.name,
-                    url: params.recipient.url
-                },
+                recipient: <any>recipient,
                 object: {
-                    amount: givePointAwardActionObject.amount,
+                    amount: { value: givePointAwardActionObject.amount },
                     fromLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
                         accountNumber: givePointAwardActionObject.toLocation.accountNumber,
                         accountType: givePointAwardActionObject.toLocation.accountType
                     },
-                    description: `${givePointAwardActionObject.description}取消`
+                    toLocation: recipient,
+                    description: `${givePointAwardActionObject.description}取消`,
+                    pendingTransaction: {
+                        typeOf: factory.pecorino.transactionType.Withdraw
+                    },
+                    ...{
+                        ignorePaymentCard: true
+                    }
                 }
             });
 
-            await withdrawService.confirm(withdrawTransaction);
+            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -554,7 +657,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         // アクション完了
         debug('ending action...');
         const actionResult: factory.action.transfer.returnAction.pointAward.IResult = {
-            pointTransaction: withdrawTransaction
+            pointTransaction: moneyTransferTransaction
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };

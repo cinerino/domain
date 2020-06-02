@@ -330,7 +330,7 @@ export async function createReturnOrderMessage(params: {
  */
 export async function createRefundMessage(params: {
     order: factory.order.IOrder;
-    paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[];
+    paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType | string>[];
     email?: factory.creativeWork.message.email.ICustomization;
 }): Promise<factory.creativeWork.message.email.ICreativeWork> {
     const emailMessageText = await createEmailMessageText({

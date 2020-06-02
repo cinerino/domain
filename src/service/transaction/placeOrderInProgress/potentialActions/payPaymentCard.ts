@@ -1,19 +1,21 @@
 import * as factory from '../../../../factory';
 
-export async function createPayPrepaidCardActions(params: {
+export async function createPayPaymentCardActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.PrepaidCard>[]> {
+}): Promise<factory.action.trade.pay.IAttributes<any>[]> {
     // 口座決済アクション
-    const authorizePrepaidCardActions = <factory.action.authorize.paymentMethod.prepaidCard.IAction[]>
+    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.PrepaidCard);
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO Chevre決済カードサービスに対して動的にコントロール
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.PaymentCard);
 
-    return authorizePrepaidCardActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.prepaidCard.IResult>a.result;
+    return authorizePaymentCardActions.map((a) => {
+        const result = <factory.action.authorize.paymentMethod.paymentCard.IResult>a.result;
 
         return {
             project: params.transaction.project,
@@ -26,10 +28,10 @@ export async function createPayPrepaidCardActions(params: {
                     name: result.name,
                     paymentMethodId: result.paymentMethodId,
                     totalPaymentDue: result.totalPaymentDue,
-                    typeOf: <factory.paymentMethodType.PrepaidCard>result.paymentMethod
+                    typeOf: result.paymentMethod
                 },
                 pendingTransaction:
-                    (<factory.action.authorize.paymentMethod.prepaidCard.IResult>a.result).pendingTransaction
+                    (<factory.action.authorize.paymentMethod.paymentCard.IResult>a.result).pendingTransaction
             }],
             agent: params.transaction.agent,
             purpose: {

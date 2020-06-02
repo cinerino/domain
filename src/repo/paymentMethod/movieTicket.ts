@@ -5,7 +5,7 @@ import * as moment from 'moment-timezone';
 import * as factory from '../../factory';
 
 const debug = createDebug('cinerino-domain:repository');
-export type IMovieTicket = factory.paymentMethod.paymentCard.movieTicket.IMovieTicket;
+export type IMovieTicket = factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket;
 export interface IOptions {
     endpoint: string;
     auth: mvtkapi.auth.ClientCredentials;

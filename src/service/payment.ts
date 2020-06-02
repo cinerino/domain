@@ -6,7 +6,7 @@ import * as AdvancedTicketPaymentService from './payment/advancedTicket';
 import * as AnyPaymentService from './payment/any';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as MovieTicketPaymentService from './payment/movieTicket';
-import * as PrepaidCardPaymentService from './payment/prepaidCard';
+import * as PaymentCardPaymentService from './payment/paymentCard';
 
 /**
  * 前売券決済
@@ -34,6 +34,6 @@ export import creditCard = CreditCardPaymentService;
 export import movieTicket = MovieTicketPaymentService;
 
 /**
- * プリペイドカード決済
+ * 決済カード決済
  */
-export import prepaidCard = PrepaidCardPaymentService;
+export import paymentCard = PaymentCardPaymentService;

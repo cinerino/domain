@@ -2,7 +2,7 @@
  * 注文サービス
  */
 // import * as createDebug from 'debug';
-import * as moment from 'moment';
+// import * as moment from 'moment';
 
 // import { credentials } from '../credentials';
 
@@ -60,13 +60,13 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
                     placeOrderTransaction.object.authorizeActions
                         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                         .filter((a) => a.result !== undefined)
-                        .filter((a) => a.result.paymentMethod === paymentMethodType)
+                        .filter((a) => a.object.typeOf === paymentMethodType)
                         .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
                             const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
 
                             // 決済方法と決済IDごとに金額をまとめて請求書を作成する
                             const existingInvoiceIndex = invoices.findIndex((i) => {
-                                return i.paymentMethod === paymentMethodType && i.paymentMethodId === result.paymentMethodId;
+                                return i.paymentMethod === result.paymentMethod && i.paymentMethodId === result.paymentMethodId;
                             });
 
                             if (existingInvoiceIndex < 0) {
@@ -76,7 +76,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
                                     accountId: result.accountId,
                                     confirmationNumber: order.confirmationNumber.toString(),
                                     customer: order.customer,
-                                    paymentMethod: paymentMethodType,
+                                    paymentMethod: <any>result.paymentMethod,
                                     paymentMethodId: result.paymentMethodId,
                                     paymentStatus: result.paymentStatus,
                                     referencesOrder: order,
@@ -211,12 +211,12 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             // プリペイドカード決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(potentialActions.payPrepaidCard)) {
-                taskAttributes.push(...potentialActions.payPrepaidCard.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayPrepaidCard> => {
+            if (Array.isArray(potentialActions.payPaymentCard)) {
+                taskAttributes.push(...potentialActions.payPaymentCard.map(
+                    (a): factory.task.IAttributes<factory.taskName.PayPaymentCard> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.PayPrepaidCard,
+                            name: factory.taskName.PayPaymentCard,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -283,32 +283,36 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         task: TaskRepo;
     }) => {
         // 確定済の注文返品取引がひとつあるはず
-        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
-            limit: 1,
-            typeOf: factory.transactionType.ReturnOrder,
-            object: {
-                order: { orderNumbers: [params.orderNumber] }
-            },
-            statuses: [factory.transactionStatusType.Confirmed]
-        });
-        const returnOrderTransaction = returnOrderTransactions.shift();
-        if (returnOrderTransaction === undefined) {
-            throw new factory.errors.NotFound('Return order transaction');
-        }
+        // const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+        //     limit: 1,
+        //     typeOf: factory.transactionType.ReturnOrder,
+        //     object: {
+        //         order: { orderNumbers: [params.orderNumber] }
+        //     },
+        //     statuses: [factory.transactionStatusType.Confirmed]
+        // });
+        // const returnOrderTransaction = returnOrderTransactions.shift();
+        // if (returnOrderTransaction === undefined) {
+        //     throw new factory.errors.NotFound('Return order transaction');
+        // }
 
-        const dateReturned = moment(returnOrderTransaction.endDate)
-            .toDate();
+        // const dateReturned = moment(returnOrderTransaction.endDate)
+        //     .toDate();
+        const dateReturned = new Date();
 
-        const potentialActions = returnOrderTransaction.potentialActions;
-        if (potentialActions === undefined) {
-            throw new factory.errors.NotFound('PotentialActions of return order transaction');
-        }
+        // const potentialActions = returnOrderTransaction.potentialActions;
+        // if (potentialActions === undefined) {
+        //     throw new factory.errors.NotFound('PotentialActions of return order transaction');
+        // }
 
-        // アクション開始
-        let order = returnOrderTransaction.object.order;
-        const returnOrderActionAttributes = potentialActions.returnOrder;
+        // let order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
+        let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
+
+        // const returnOrderActionAttributes = potentialActions.returnOrder;
+        const returnOrderActionAttributes = params;
         const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
 
+        // アクション開始
         const action = await repos.action.start(returnOrderActionAttributes);
 
         try {

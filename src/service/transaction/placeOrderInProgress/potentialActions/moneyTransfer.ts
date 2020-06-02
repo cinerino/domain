@@ -1,13 +1,13 @@
 import * as factory from '../../../../factory';
 
-export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction<string>;
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction;
 
 export async function createMoneyTransferActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.transfer.moneyTransfer.IAttributes<string>[]> {
-    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes<string>[] = [];
+}): Promise<factory.action.transfer.moneyTransfer.IAttributes[]> {
+    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes[] = [];
 
     const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -28,11 +28,7 @@ export async function createMoneyTransferActions(params: {
                 },
                 agent: params.transaction.agent,
                 recipient: a.recipient,
-                amount: {
-                    typeOf: 'MonetaryAmount',
-                    value: Number(a.object.itemOffered.value),
-                    currency: pendingTransaction.object.toLocation.accountType
-                },
+                amount: pendingTransaction.object.amount,
                 fromLocation: (paymentMethod !== undefined)
                     ? {
                         accountId: paymentMethod.accountId,

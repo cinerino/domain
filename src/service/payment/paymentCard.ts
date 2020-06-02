@@ -1,13 +1,13 @@
 /**
- * 口座決済サービス
+ * 決済カード決済サービス
  */
 import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
 
-import * as chevre from '../../chevre';
-
 import * as factory from '../../factory';
+
+import * as chevre from '../../chevre';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
@@ -15,7 +15,7 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { handlePecorinoError } from '../../errorHandler';
+import { handleChevreError } from '../../errorHandler';
 
 import { findPayActionByOrderNumber, onRefund } from './any';
 
@@ -37,17 +37,15 @@ export type IAuthorizeOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
-// tslint:disable-next-line:max-func-body-length
-export function authorize<T extends string>(params: {
+export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.account.IObject<T> & {
-        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount<T>;
+    object: factory.action.authorize.paymentMethod.paymentCard.IObject & {
+        fromLocation?: factory.action.authorize.paymentMethod.paymentCard.IPaymentCard;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction<T>> {
-    // tslint:disable-next-line:max-func-body-length
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.paymentCard.IAction> {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -70,38 +68,16 @@ export function authorize<T extends string>(params: {
             throw new factory.errors.Argument('Transaction', `${transaction.typeOf} not implemented`);
         }
 
-        // 取引番号生成
-        const chevreEndpoint = project.settings?.chevre?.endpoint;
-        if (typeof chevreEndpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-
-        const transactionNumberService = new chevre.service.TransactionNumber({
-            endpoint: chevreEndpoint,
-            auth: chevreAuthClient
-        });
-
-        const { transactionNumber } = await transactionNumberService.publish({
-            project: { id: project.id }
-        });
-
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes<T> = {
+        const actionAttributes: factory.action.authorize.paymentMethod.paymentCard.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
-                ...(params.object.fromAccount !== undefined)
-                    ? {
-                        accountId: params.object.fromAccount.accountNumber,
-                        paymentMethodId: transactionNumber
-                    }
+                ...(params.object.fromLocation !== undefined)
+                    ? { accountId: params.object.fromLocation.identifier }
                     : {},
-                ...{
-                    pendingTransaction: {
-                        transactionNumber: transactionNumber
-                    }
-                }
+                typeOf: factory.paymentMethodType.PaymentCard
             },
             agent: transaction.agent,
             recipient: recipient,
@@ -110,11 +86,10 @@ export function authorize<T extends string>(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
+        let pendingTransaction: factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction;
 
         try {
-            pendingTransaction = await processAccountTransaction({
-                transactionNumber: transactionNumber,
+            pendingTransaction = await processMoneyTransferTransaction({
                 project: project,
                 object: params.object,
                 recipient: recipient,
@@ -130,32 +105,32 @@ export function authorize<T extends string>(params: {
             }
 
             // PecorinoAPIのエラーをハンドリング
-            error = handlePecorinoError(error);
+            error = handleChevreError(error);
             throw error;
         }
 
-        const actionResult: factory.action.authorize.paymentMethod.account.IResult<T> = {
-            accountId: (params.object.fromAccount !== undefined)
-                ? params.object.fromAccount.accountNumber
+        const actionResult: factory.action.authorize.paymentMethod.paymentCard.IResult = {
+            accountId: (params.object.fromLocation !== undefined)
+                ? params.object.fromLocation.identifier
                 : '',
             amount: params.object.amount,
-            paymentMethod: factory.paymentMethodType.Account,
+            paymentMethod: params.object.fromLocation?.typeOf,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: transactionNumber,
+            paymentMethodId: pendingTransaction.id,
             name: (typeof params.object.name === 'string')
                 ? params.object.name
-                : (params.object.fromAccount !== undefined)
-                    ? String(params.object.fromAccount.accountType)
+                : (params.object.fromLocation !== undefined)
+                    ? String(params.object.fromLocation.typeOf)
                     : '',
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
-                currency: (params.object.currency !== undefined) ? params.object.currency : factory.priceCurrency.JPY,
+                currency: factory.priceCurrency.JPY,
                 value: params.object.amount
             },
-            ...(params.object.fromAccount !== undefined) ? { fromAccount: params.object.fromAccount } : {},
-            ...(params.object.toAccount !== undefined) ? { toAccount: params.object.toAccount } : {}
+            ...(params.object.fromLocation !== undefined) ? { fromLocation: params.object.fromLocation } : {},
+            ...(params.object.toLocation !== undefined) ? { toLocation: params.object.toLocation } : {}
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
@@ -163,17 +138,16 @@ export function authorize<T extends string>(params: {
 }
 
 // tslint:disable-next-line:max-func-body-length
-async function processAccountTransaction<T extends string>(params: {
-    transactionNumber: string;
+async function processMoneyTransferTransaction(params: {
     project: factory.project.IProject;
-    object: factory.action.authorize.paymentMethod.account.IObject<T> & {
-        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount<T>;
+    object: factory.action.authorize.paymentMethod.paymentCard.IObject & {
+        fromLocation?: factory.action.authorize.paymentMethod.paymentCard.IPaymentCard;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.account.IPendingTransaction> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
+}): Promise<factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction> {
+    let pendingTransaction: factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction;
 
     const transaction = params.transaction;
 
@@ -201,55 +175,102 @@ async function processAccountTransaction<T extends string>(params: {
         ...(typeof params.recipient.url === 'string') ? { url: params.recipient.url } : undefined
     };
 
-    const description = (typeof params.object.notes === 'string') ? params.object.notes : `for transaction ${transaction.id}`;
+    // const description = (typeof params.object.notes === 'string') ? params.object.notes : `for transaction ${transaction.id}`;
+    const description = `Transaction ${transaction.id}`;
 
     // 最大1ヵ月のオーソリ
     const expires = moment()
         .add(1, 'month')
         .toDate();
 
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore else *//* istanbul ignore next */
-    if (params.object.fromAccount !== undefined) {
-        // 出金取引開始
-        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-            endpoint: params.project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
+    const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+        endpoint: params.project.settings?.chevre?.endpoint,
+        auth: chevreAuthClient
+    });
 
+    if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
+        // 転送先口座が指定されていない場合は、出金取引
         pendingTransaction = await moneyTransferService.start({
-            transactionNumber: params.transactionNumber,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: chevre.factory.transactionType.MoneyTransfer,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: <any>recipient,
             object: {
-                amount: { value: params.object.amount },
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: params.object.amount,
+                    currency: chevre.factory.priceCurrency.JPY
+                },
                 description: description,
                 fromLocation: {
-                    typeOf: params.object.fromAccount.accountType,
-                    identifier: params.object.fromAccount.accountNumber
+                    typeOf: params.object.fromLocation.typeOf,
+                    identifier: params.object.fromLocation.identifier
                 },
-                toLocation: recipient,
-                pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Withdraw
+                toLocation: <any>{
+                    name: recipient.name
+                }
+            }
+        });
+    } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
+        pendingTransaction = await moneyTransferService.start({
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
+            agent: agent,
+            expires: expires,
+            recipient: <any>recipient,
+            object: {
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: params.object.amount,
+                    currency: chevre.factory.priceCurrency.JPY
                 },
-                ignorePaymentCard: true
+                description: description,
+                fromLocation: {
+                    typeOf: params.object.fromLocation.typeOf,
+                    identifier: params.object.fromLocation.identifier
+                },
+                toLocation: {
+                    typeOf: params.object.toLocation.typeOf,
+                    identifier: params.object.toLocation.identifier
+                }
+            }
+        });
+    } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
+        pendingTransaction = await moneyTransferService.start({
+            typeOf: chevre.factory.transactionType.MoneyTransfer,
+            project: { typeOf: params.project.typeOf, id: params.project.id },
+            agent: agent,
+            expires: expires,
+            recipient: <any>recipient,
+            object: {
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: params.object.amount,
+                    currency: chevre.factory.priceCurrency.JPY
+                },
+                description: description,
+                fromLocation: <any>{
+                    name: agent.name
+                },
+                toLocation: {
+                    typeOf: params.object.toLocation.typeOf,
+                    identifier: params.object.toLocation.identifier
+                }
             }
         });
     } else {
-        throw new factory.errors.ArgumentNull('object.fromAccount');
+        throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
     }
 
     return pendingTransaction;
 }
 
 /**
- * 口座承認取消
+ * プリペイドカード決済承認取消
  */
-export function voidTransaction<T extends string>(
-    params: factory.task.IData<factory.taskName.CancelAccount>
+export function voidTransaction(
+    params: factory.task.IData<factory.taskName.CancelPaymentCard>
 ) {
     return async (repos: {
         action: ActionRepo;
@@ -257,6 +278,7 @@ export function voidTransaction<T extends string>(
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+
         const chevreEndpoint = project.settings?.chevre?.endpoint;
         if (typeof chevreEndpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
@@ -270,10 +292,10 @@ export function voidTransaction<T extends string>(
             });
         }
 
-        let authorizeActions: factory.action.authorize.paymentMethod.account.IAction<T>[];
+        let authorizeActions: factory.action.authorize.paymentMethod.paymentCard.IAction[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.paymentMethod.account.IAction<T>>
+            const authorizeAction = <factory.action.authorize.paymentMethod.paymentCard.IAction>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -285,7 +307,7 @@ export function voidTransaction<T extends string>(
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.paymentMethod.account.IAction<T>[]>
+            authorizeActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
                 await repos.action.searchByPurpose({
                     typeOf: factory.actionType.AuthorizeAction,
                     purpose: {
@@ -294,7 +316,9 @@ export function voidTransaction<T extends string>(
                     }
                 })
                     .then((actions) => actions
-                        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+                        // tslint:disable-next-line:no-suspicious-comment
+                        // TODO Chevre決済カードサービスに対して動的にコントロール
+                        .filter((a) => a.object.typeOf === factory.paymentMethodType.PaymentCard)
                     );
         }
 
@@ -310,17 +334,16 @@ export function voidTransaction<T extends string>(
             /* istanbul ignore else */
             if (action.result !== undefined) {
                 const pendingTransaction = action.result.pendingTransaction;
-
-                await moneyTransferService.cancel({ transactionNumber: pendingTransaction.transactionNumber });
+                await moneyTransferService.cancel({ id: pendingTransaction.id });
             }
         }));
     };
 }
 
 /**
- * 口座支払実行
+ * プリペイドカード決済実行
  */
-export function payAccount(params: factory.task.IData<factory.taskName.PayAccount>) {
+export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPaymentCard>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
@@ -343,8 +366,7 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
 
             await Promise.all(params.object.map(async (paymentMethod) => {
                 const pendingTransaction = paymentMethod.pendingTransaction;
-
-                await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
+                await moneyTransferService.confirm(pendingTransaction);
 
                 await repos.invoice.changePaymentStatus({
                     referencesOrder: { orderNumber: params.purpose.orderNumber },
@@ -367,24 +389,23 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
+        const actionResult: factory.action.trade.pay.IResult<any> = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
 
 /**
- * 口座返金処理を実行する
+ * プリペイド返金処理を実行する
  */
-export function refundAccount(params: factory.task.IData<factory.taskName.RefundAccount>) {
-    // tslint:disable-next-line:max-func-body-length
+export function refundPaymentCard(params: factory.task.IData<factory.taskName.RefundPaymentCard>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.Account>({
-            object: { typeOf: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
+        const payAction = await findPayActionByOrderNumber<typeof params.object.typeOf>({
+            object: { typeOf: params.object.typeOf, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
 
@@ -404,27 +425,18 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
             // 返金アクション属性から、Pecorino取引属性を取り出す
             // const payActionAttributes = params.object;
 
-            const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: chevreEndpoint,
-                auth: chevreAuthClient
-            });
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
                 endpoint: chevreEndpoint,
                 auth: chevreAuthClient
             });
 
             await Promise.all(payAction.object.map(async (paymentMethod) => {
-                const { transactionNumber } = await transactionNumberService.publish({
-                    project: { id: project.id }
-                });
-
                 const pendingTransaction = paymentMethod.pendingTransaction;
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
-                await moneyTransferService.start({
-                    transactionNumber: transactionNumber,
-                    project: { typeOf: project.typeOf, id: project.id },
+                const moneyTransferTransaction = await moneyTransferService.start({
                     typeOf: chevre.factory.transactionType.MoneyTransfer,
+                    project: { typeOf: project.typeOf, id: project.id },
                     agent: pendingTransaction.recipient,
                     expires: moment()
                         // tslint:disable-next-line:no-magic-numbers
@@ -435,15 +447,11 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         amount: pendingTransaction.object.amount,
                         description: description,
                         fromLocation: pendingTransaction.object.toLocation,
-                        toLocation: pendingTransaction.object.fromLocation,
-                        pendingTransaction: {
-                            typeOf: factory.pecorino.transactionType.Deposit
-                        },
-                        ignorePaymentCard: true
+                        toLocation: pendingTransaction.object.fromLocation
                     }
                 });
 
-                await moneyTransferService.confirm({ transactionNumber: transactionNumber });
+                await moneyTransferService.confirm({ id: moneyTransferTransaction.id });
             }));
         } catch (error) {
             // actionにエラー結果を追加

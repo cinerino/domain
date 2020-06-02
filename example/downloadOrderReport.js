@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const domain = require('../');
 
 async function main() {
-    await mongoose.connect(process.env.MONGOLAB_URI);
+    await mongoose.connect(process.env.MONGOLAB_URI, {
+        autoIndex: false
+    });
 
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const orderRepo = new domain.repository.Order(mongoose.connection);
@@ -27,8 +29,8 @@ async function main() {
             mentions: {
                 typeOf: 'SearchAction',
                 query: {
-                    orderDateFrom: moment().add(-3, 'years').toDate(),
-                    orderDateThrough: moment().toDate(),
+                    orderDateFrom: '2019-12-01T00:00:00+09:00',
+                    orderDateThrough: '2020-02-01T00:00:00+09:00'
                 },
                 object: {
                     typeOf: 'Order'
