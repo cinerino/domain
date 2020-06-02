@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v5.1.0 - 2020-06-02
+
+### Added
+
 - 注文アイテムに決済カードを追加
 - 通貨転送取引番号リポジトリを追加
 - プロジェクトに返金通知設定を追加
@@ -26,14 +40,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 予約取消タスクを注文データから作成するように調整
 - 返金アクションのオブジェクトを決済方法に変更
 - 返品取引を複数注文に対応
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v5.0.0 - 2020-05-04
 
