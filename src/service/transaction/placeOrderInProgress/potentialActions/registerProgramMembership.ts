@@ -15,10 +15,10 @@ export function createRegisterProgramMembershipActions(params: {
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) =>
             a.object.typeOf === factory.chevre.offerType.Offer
-            && a.object.itemOffered?.typeOf === 'ProgramMembership'
+            && a.object.itemOffered?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
         );
 
-    // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
+    // メンバーシップが注文アイテムにあれば、登録アクションを追加
     const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
     // const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
     //     params.order.acceptedOffers.filter(
@@ -33,7 +33,7 @@ export function createRegisterProgramMembershipActions(params: {
             // const programMembership = o.itemOffered;
             const programMembership = authorizeAction.object.itemOffered;
 
-            // 会員プログラム更新時のメール送信アクション
+            // メンバーシップ更新時のメール送信アクション
             let sendEmailMessageOnUpdate: factory.transaction.placeOrder.ISendEmailMessageParams[] = [];
 
             if (Array.isArray(params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.registerProgramMembership)) {
@@ -61,7 +61,7 @@ export function createRegisterProgramMembershipActions(params: {
                 throw new Error('programMembership.membershipFor undefined');
             }
 
-            // 次回の会員プログラム注文確定後アクションを設定
+            // 次回のメンバーシップ注文確定後アクションを設定
             const updateProgramMembershipPotentialActions: factory.transaction.placeOrder.IPotentialActionsParams = {
                 order: {
                     potentialActions: {
@@ -94,7 +94,7 @@ export function createRegisterProgramMembershipActions(params: {
                 }
             };
 
-            // 次回の会員プログラム注文タスクを生成
+            // 次回のメンバーシップ注文タスクを生成
             const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
                 agent: params.transaction.agent,
                 object: authorizeAction.object,

@@ -11,7 +11,7 @@ export async function createGivePointAwardActions(params: {
     // const givePointAwardParams = params.potentialActions?.order?.potentialActions?.givePointAward;
     const givePointAwardParams = (<any>params.transaction.object).potentialActions?.givePointAward;
     if (Array.isArray(givePointAwardParams)) {
-        // メンバーシップごとに、会員プログラムの特典を確認してインセンティブ付与
+        // メンバーシップごとに、特典を確認してインセンティブ付与
         givePointAwardParams.forEach((givePointAwardParam) => {
             const amount = givePointAwardParam.object?.amount;
             const accountNumber = givePointAwardParam.object?.toLocation?.accountNumber;

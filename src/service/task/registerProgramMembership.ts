@@ -41,7 +41,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         });
 
         switch (data.object.typeOf) {
-            // 旧会員プログラム注文タスクへの互換性維持のため
+            // 旧メンバーシップ注文タスクへの互換性維持のため
             case <any>'Offer':
                 const creditCardRepo = new CreditCardRepo({
                     siteId: project.settings.gmo.siteId,
@@ -63,7 +63,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
 
                 break;
 
-            case factory.programMembership.ProgramMembershipType.ProgramMembership:
+            case factory.chevre.programMembership.ProgramMembershipType.ProgramMembership:
                 await ProgramMembershipService.register(data)({
                     action: new ActionRepo(settings.connection),
                     person: personRepo,

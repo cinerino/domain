@@ -12,7 +12,7 @@ export interface IProgressKey {
 }
 
 /**
- * 進行中の会員プログラム登録アクションリポジトリ
+ * 進行中のメンバーシップ登録アクションリポジトリ
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'cinerino:registerProgramMembershipActionInProgress';
@@ -54,7 +54,7 @@ export class RedisRepository {
     }
 
     /**
-     * 会員プログラム進行ロックを解除する
+     * メンバーシップ登録進行ロックを解除する
      */
     public async unlock(progressKey: IProgressKey) {
         return new Promise<void>((resolve, reject) => {

@@ -67,7 +67,7 @@ export function authorize(params: {
             throw new factory.errors.ArgumentNull('object.itemOffered.membershipFor.id');
         }
 
-        // 会員プログラム検索
+        // プロダクト検索
         const membershipService = await productService.findById({ id: membershipServiceId });
         const offers = await productService.searchOffers({ id: String(membershipService.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.object.identifier);
@@ -83,7 +83,7 @@ export function authorize(params: {
         const amount = priceSpecification.priceComponent.reduce((a2, b2) => a2 + Number(b2.price), 0);
 
         // 在庫確認は現時点で不要
-        // 何かしら会員プログラムへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
+        // 何かしらメンバーシップへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
         // まず取引番号発行
         const transactionNumberService = new chevre.service.TransactionNumber({
             endpoint: project.settings.chevre.endpoint,
@@ -93,6 +93,13 @@ export function authorize(params: {
             project: { id: project.id }
         });
         const transactionNumber = publishResult.transactionNumber;
+
+        const issuedBy: factory.chevre.organization.IOrganization = {
+            project: { typeOf: 'Project', id: project.id },
+            id: seller.id,
+            name: seller.name,
+            typeOf: seller.typeOf
+        };
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
@@ -108,16 +115,10 @@ export function authorize(params: {
                 priceSpecification: acceptedOffer.priceSpecification,
                 itemOffered: {
                     project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
-                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+                    typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
                     name: <any>membershipService.name,
                     programName: <any>membershipService.name,
-                    // 会員プログラムのホスト組織
-                    hostingOrganization: {
-                        project: seller.project,
-                        id: seller.id,
-                        name: seller.name,
-                        typeOf: seller.typeOf
-                    },
+                    hostingOrganization: issuedBy,
                     membershipFor: {
                         typeOf: 'MembershipService',
                         id: <string>membershipService.id
@@ -165,7 +166,8 @@ export function authorize(params: {
                             id: membershipService.id,
                             serviceOutput: {
                                 project: { typeOf: <'Project'>'Project', id: project.id },
-                                typeOf: 'ProgramMembership'
+                                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
+                                issuedBy: issuedBy
                                 // additionalProperty: [{ name: 'sampleName', value: 'sampleValue' }],
                                 // name: 'サンプルメンバーシップ'
                             }

@@ -54,7 +54,7 @@ export function createOrder(params: {
     // 座席予約がある場合
     acceptedOffers.push(...createReservationAcceptedOffers({ ...params, seller: seller }));
 
-    // 会員プログラムがある場合
+    // メンバーシップがある場合
     acceptedOffers.push(...createProgramMembershipAcceptedOffers(params));
 
     // 通貨転送がある場合
@@ -348,7 +348,7 @@ function createProgramMembershipAcceptedOffers(params: {
     const programMembershipAuthorizeActions = params.transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === 'Offer')
-        .filter((a) => a.object.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership);
+        .filter((a) => a.object.itemOffered.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership);
 
     if (programMembershipAuthorizeActions.length > 1) {
         throw new factory.errors.NotImplemented('Number of programMembership authorizeAction must be 1');

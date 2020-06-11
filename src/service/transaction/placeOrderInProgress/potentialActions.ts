@@ -34,7 +34,7 @@ export async function createPotentialActions(params: {
     // 通貨転送アクション
     const moneyTransferActions = await createMoneyTransferActions(params);
 
-    // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
+    // メンバーシップが注文アイテムにあれば、メンバーシップ登録アクションを追加
     const registerProgramMembershipActions = createRegisterProgramMembershipActions(params);
 
     // クレジットカード決済アクション
