@@ -6,6 +6,7 @@ import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
@@ -53,6 +54,7 @@ export type IOrderOperation<T> = (repos: {
 
 export type IRegisterOperation<T> = (repos: {
     action: ActionRepo;
+    order: OrderRepo;
     person: PersonRepo;
     project: ProjectRepo;
     task: TaskRepo;
@@ -285,6 +287,7 @@ export function register(
 ): IRegisterOperation<void> {
     return async (repos: {
         action: ActionRepo;
+        order: OrderRepo;
         person: PersonRepo;
         project: ProjectRepo;
         task: TaskRepo;
@@ -307,6 +310,8 @@ export function register(
             throw new factory.errors.ArgumentNull('MembershipService ID');
         }
 
+        const order = await repos.order.findByOrderNumber({ orderNumber: (<any>params).purpose?.orderNumber });
+
         // アクション開始
         const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = params;
         const action = <factory.action.interact.register.programMembership.IAction>await repos.action.start(registerActionAttibutes);
@@ -324,7 +329,10 @@ export function register(
                     auth: chevreAuthClient
                 });
 
-                await registerServiceTransaction.confirm(<any>{ transactionNumber });
+                await registerServiceTransaction.confirm({
+                    transactionNumber: transactionNumber,
+                    endDate: order.orderDate
+                });
             }
         } catch (error) {
             // actionにエラー結果を追加

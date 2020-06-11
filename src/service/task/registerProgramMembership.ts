@@ -6,6 +6,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { MongoRepository as OrderRepo } from '../../repo/order';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
@@ -66,6 +67,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
             case factory.chevre.programMembership.ProgramMembershipType.ProgramMembership:
                 await ProgramMembershipService.register(data)({
                     action: new ActionRepo(settings.connection),
+                    order: new OrderRepo(settings.connection),
                     person: personRepo,
                     project: new ProjectRepo(settings.connection),
                     task: new TaskRepo(settings.connection)
