@@ -150,10 +150,9 @@ export function createRegisterProgramMembershipActions(params: {
                 agent: params.transaction.agent,
                 object: {
                     typeOf: programMembership.typeOf,
-                    // id: programMembership.id,
-                    hostingOrganization: programMembership.hostingOrganization,
+                    identifier: programMembership.identifier,
                     name: programMembership.name,
-                    programName: programMembership.programName,
+                    // programName: programMembership.programName,
                     project: programMembership.project,
                     membershipFor: programMembership.membershipFor,
                     ...(typeof transactionNumber === 'string') ? { transactionNumber } : undefined

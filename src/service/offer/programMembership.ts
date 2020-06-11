@@ -106,8 +106,12 @@ export function authorize(params: {
             typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
             identifier: transactionNumber,
             name: <any>membershipService.name,
-            programName: <any>membershipService.name,
-            hostingOrganization: issuedBy,
+            // programName: <any>membershipService.name,
+            hostingOrganization: {
+                project: issuedBy.project,
+                id: issuedBy.id,
+                typeOf: issuedBy.typeOf
+            },
             membershipFor: {
                 typeOf: 'MembershipService',
                 id: <string>membershipService.id
@@ -170,9 +174,9 @@ export function authorize(params: {
                             serviceOutput: {
                                 project: { typeOf: <'Project'>'Project', id: project.id },
                                 typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-                                issuedBy: issuedBy
+                                issuedBy: issuedBy,
+                                name: programMembership.name
                                 // additionalProperty: [{ name: 'sampleName', value: 'sampleValue' }],
-                                // name: 'サンプルメンバーシップ'
                             }
                         }
                     }

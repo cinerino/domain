@@ -145,12 +145,11 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
         name: <any>programMembership.name,
-        programName: <any>programMembership.name,
+        // programName: <any>programMembership.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: { typeOf: 'Project', id: seller.project.id },
             id: seller.id,
-            name: seller.name,
             typeOf: seller.typeOf
         },
         membershipFor: {
@@ -306,13 +305,6 @@ export function register(
         /* istanbul ignore if */
         if (typeof programMembership.membershipFor?.id !== 'string') {
             throw new factory.errors.ArgumentNull('MembershipService ID');
-        }
-
-        const seller = programMembership.hostingOrganization;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (seller === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
         }
 
         // アクション開始
