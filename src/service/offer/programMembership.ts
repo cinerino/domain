@@ -101,6 +101,19 @@ export function authorize(params: {
             typeOf: seller.typeOf
         };
 
+        const programMembership: factory.programMembership.IProgramMembership = {
+            project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
+            typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
+            identifier: transactionNumber,
+            name: <any>membershipService.name,
+            programName: <any>membershipService.name,
+            hostingOrganization: issuedBy,
+            membershipFor: {
+                typeOf: 'MembershipService',
+                id: <string>membershipService.id
+            }
+        };
+
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
             project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
@@ -113,17 +126,7 @@ export function authorize(params: {
                 // price: amount,
                 priceCurrency: acceptedOffer.priceCurrency,
                 priceSpecification: acceptedOffer.priceSpecification,
-                itemOffered: {
-                    project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
-                    typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-                    name: <any>membershipService.name,
-                    programName: <any>membershipService.name,
-                    hostingOrganization: issuedBy,
-                    membershipFor: {
-                        typeOf: 'MembershipService',
-                        id: <string>membershipService.id
-                    }
-                },
+                itemOffered: programMembership,
                 seller: {
                     typeOf: seller.typeOf,
                     name: (typeof seller.name === 'string')
