@@ -1,6 +1,8 @@
 /**
- * 会員プログラムオファーサービス
+ * メンバーシップオファーサービス
  */
+import * as moment from 'moment';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -82,6 +84,15 @@ export function authorize(params: {
 
         // 在庫確認は現時点で不要
         // 何かしら会員プログラムへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
+        // まず取引番号発行
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const publishResult = await transactionNumberService.publish({
+            project: { id: project.id }
+        });
+        const transactionNumber = publishResult.transactionNumber;
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
@@ -117,6 +128,11 @@ export function authorize(params: {
                     name: (typeof seller.name === 'string')
                         ? seller.name
                         : String(seller.name?.ja)
+                },
+                ...{
+                    pendingTransaction: <any>{
+                        transactionNumber: transactionNumber
+                    }
                 }
             },
             agent: transaction.seller,
@@ -129,7 +145,51 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         try {
-            // 在庫確保？
+            // Chevreでサービス登録取引
+            const registerServiceTransaction = new chevre.service.transaction.RegisterService({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            await registerServiceTransaction.start({
+                project: { typeOf: 'Project', id: project.id },
+                typeOf: factory.chevre.transactionType.RegisterService,
+                transactionNumber: transactionNumber,
+                object: [
+                    {
+                        typeOf: factory.chevre.offerType.Offer,
+                        id: <string>acceptedOffer.id,
+                        itemOffered: {
+                            project: { typeOf: <'Project'>'Project', id: project.id },
+                            typeOf: membershipService.typeOf,
+                            id: membershipService.id,
+                            serviceOutput: {
+                                project: { typeOf: <'Project'>'Project', id: project.id },
+                                typeOf: 'ProgramMembership'
+                                // additionalProperty: [{ name: 'sampleName', value: 'sampleValue' }],
+                                // name: 'サンプルメンバーシップ'
+                            }
+                        }
+                    }
+                ],
+                agent: {
+                    typeOf: transaction.agent.typeOf,
+                    name: transaction.agent.id,
+                    ...{
+                        identifier: [
+                            { name: 'transaction', value: transaction.id },
+                            {
+                                name: 'transactionExpires',
+                                value: moment(transaction.expires)
+                                    .toISOString()
+                            }
+                        ]
+                    }
+                },
+                expires: moment(transaction.expires)
+                    .add(1, 'day') // 余裕を持って
+                    .toDate()
+            });
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };

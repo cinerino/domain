@@ -54,6 +54,7 @@ export type IOrderOperation<T> = (repos: {
 export type IRegisterOperation<T> = (repos: {
     action: ActionRepo;
     person: PersonRepo;
+    project: ProjectRepo;
     task: TaskRepo;
 }) => Promise<T>;
 
@@ -286,8 +287,11 @@ export function register(
     return async (repos: {
         action: ActionRepo;
         person: PersonRepo;
+        project: ProjectRepo;
         task: TaskRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         await repos.person.findById({
             userId: params.agent.id
@@ -316,7 +320,20 @@ export function register(
         const action = <factory.action.interact.register.programMembership.IAction>await repos.action.start(registerActionAttibutes);
 
         try {
-            // 特に何もしない
+            // Chevreサービス登録取引確定
+            const transactionNumber = (<any>registerActionAttibutes.object).transactionNumber;
+            if (typeof transactionNumber === 'string') {
+                if (typeof project.settings?.chevre?.endpoint !== 'string') {
+                    throw new factory.errors.ServiceUnavailable('Project settings not found');
+                }
+
+                const registerServiceTransaction = new chevre.service.transaction.RegisterService({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
+                await registerServiceTransaction.confirm(<any>{ transactionNumber });
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {

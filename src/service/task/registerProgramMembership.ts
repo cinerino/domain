@@ -67,6 +67,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                 await ProgramMembershipService.register(data)({
                     action: new ActionRepo(settings.connection),
                     person: personRepo,
+                    project: new ProjectRepo(settings.connection),
                     task: new TaskRepo(settings.connection)
                 });
 

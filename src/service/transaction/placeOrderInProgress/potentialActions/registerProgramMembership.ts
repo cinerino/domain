@@ -2,6 +2,8 @@ import * as moment from 'moment';
 
 import * as factory from '../../../../factory';
 
+export type IAuthorizeMembershipOffer = factory.action.authorize.offer.programMembership.IAction;
+
 export function createRegisterProgramMembershipActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
@@ -9,18 +11,27 @@ export function createRegisterProgramMembershipActions(params: {
 }): factory.action.interact.register.programMembership.IAttributes[] {
     const project: factory.project.IProject = params.transaction.project;
 
+    const authorizeMembershipOfferActions = <IAuthorizeMembershipOffer[]>params.transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) =>
+            a.object.typeOf === factory.chevre.offerType.Offer
+            && a.object.itemOffered?.typeOf === 'ProgramMembership'
+        );
+
     // 会員プログラムが注文アイテムにあれば、会員プログラム登録アクションを追加
     const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
-    const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
-        params.order.acceptedOffers.filter(
-            (o) => o.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership
-        );
+    // const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
+    //     params.order.acceptedOffers.filter(
+    //         (o) => o.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership
+    //     );
+
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore if */
-    if (programMembershipOffers.length > 0) {
+    if (authorizeMembershipOfferActions.length > 0) {
         // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-        registerProgramMembershipActions.push(...programMembershipOffers.map((o) => {
-            const programMembership = o.itemOffered;
+        registerProgramMembershipActions.push(...authorizeMembershipOfferActions.map((authorizeAction) => {
+            // const programMembership = o.itemOffered;
+            const programMembership = authorizeAction.object.itemOffered;
 
             // 会員プログラム更新時のメール送信アクション
             let sendEmailMessageOnUpdate: factory.transaction.placeOrder.ISendEmailMessageParams[] = [];
@@ -86,7 +97,7 @@ export function createRegisterProgramMembershipActions(params: {
             // 次回の会員プログラム注文タスクを生成
             const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
                 agent: params.transaction.agent,
-                object: o,
+                object: authorizeAction.object,
                 potentialActions: updateProgramMembershipPotentialActions,
                 project: project,
                 typeOf: factory.actionType.OrderAction
@@ -95,7 +106,7 @@ export function createRegisterProgramMembershipActions(params: {
             // どういう期間でいくらのオファーなのか
             const priceSpec =
                 <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>
-                o.priceSpecification;
+                authorizeAction.object.priceSpecification;
             if (priceSpec === undefined) {
                 throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
             }
@@ -133,6 +144,8 @@ export function createRegisterProgramMembershipActions(params: {
                 status: factory.taskStatus.Ready
             };
 
+            const transactionNumber = (<any>authorizeAction.object).pendingTransaction?.transactionNumber;
+
             return {
                 agent: params.transaction.agent,
                 object: {
@@ -142,7 +155,8 @@ export function createRegisterProgramMembershipActions(params: {
                     name: programMembership.name,
                     programName: programMembership.programName,
                     project: programMembership.project,
-                    membershipFor: programMembership.membershipFor
+                    membershipFor: programMembership.membershipFor,
+                    ...(typeof transactionNumber === 'string') ? { transactionNumber } : undefined
                 },
                 potentialActions: {
                     orderProgramMembership: [orderProgramMembershipTask]
