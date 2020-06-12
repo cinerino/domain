@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - メンバーシップの注文取引をChevreサービス登録取引に連携
+- update packages
 
 ### Deprecated
 
