@@ -87,33 +87,6 @@ describe('report2developers()', () => {
         assert(result instanceof Error);
         assert(scope.isDone());
     });
-
-    it('imageThumbnailがURLでなければ、エラーになるはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
-            .post(LINE_NOTIFY_URI)
-            .reply(OK);
-        const imageThumbnail = 'invalidUrl';
-
-        const result = await domain.service.notification.report2developers('', '', imageThumbnail)()
-            .catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.Argument);
-        assert(!scope.isDone());
-    });
-
-    it('imageFullsizeがURLでなければ、エラーになるはず', async () => {
-        const scope = nock(LINE_NOTIFY_URL_BASE_PATH)
-            .post(LINE_NOTIFY_URI)
-            .reply(OK);
-        const imageThumbnail = 'https://example.com';
-        const imageFullsize = 'invalidUrl';
-
-        const result = await domain.service.notification.report2developers('', '', imageThumbnail, imageFullsize)()
-            .catch((err) => err);
-
-        assert(result instanceof domain.factory.errors.Argument);
-        assert(!scope.isDone());
-    });
 });
 
 describe('sendEmailMessage()', () => {

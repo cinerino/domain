@@ -1,11 +1,12 @@
 /**
- * 会員プログラムサービス
+ * メンバーシップサービス
  */
 import * as GMO from '@motionpicture/gmo-service';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
@@ -53,22 +54,24 @@ export type IOrderOperation<T> = (repos: {
 
 export type IRegisterOperation<T> = (repos: {
     action: ActionRepo;
+    order: OrderRepo;
     person: PersonRepo;
+    project: ProjectRepo;
     task: TaskRepo;
 }) => Promise<T>;
 
 /**
- * 会員プログラム登録タスクを作成する
+ * メンバーシップ登録タスクを作成する
  */
 export function createRegisterTask(params: {
     project: { id: string };
     agent: factory.person.IPerson;
     /**
-     * 会員プログラムのオファー識別子
+     * メンバーシップのオファー識別子
      */
     offerIdentifier: string;
     /**
-     * 会員プログラムID
+     * プロダクトID
      */
     programMembershipId: string;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
@@ -113,7 +116,7 @@ export function createRegisterTask(params: {
             seller: seller
         });
 
-        // 会員プログラム注文タスクを作成する
+        // メンバーシップ注文タスクを作成する
         const taskAttributes: factory.task.IAttributes<factory.taskName.OrderProgramMembership> = {
             project: data.project,
             name: factory.taskName.OrderProgramMembership,
@@ -142,14 +145,13 @@ function createOrderProgramMembershipActionAttributes(params: {
 
     const itemOffered: factory.programMembership.IProgramMembership = {
         project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
-        typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
+        typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
         name: <any>programMembership.name,
-        programName: <any>programMembership.name,
-        // 会員プログラムのホスト組織確定(この組織が決済対象となる)
+        // programName: <any>programMembership.name,
+        // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
-            project: seller.project,
+            project: { typeOf: 'Project', id: seller.project.id },
             id: seller.id,
-            name: seller.name,
             typeOf: seller.typeOf
         },
         membershipFor: {
@@ -185,7 +187,7 @@ function createOrderProgramMembershipActionAttributes(params: {
 }
 
 /**
- * 会員プログラム注文
+ * メンバーシップ注文
  */
 export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.OrderProgramMembership>
@@ -221,15 +223,15 @@ export function orderProgramMembership(
             throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
         }
 
-        const programMemberships = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
+        const programMemberships = await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType>({
             typeOfGood: {
-                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
             },
             ownedBy: { id: customer.id },
             ownedFrom: now,
             ownedThrough: now
         });
-        // すでに会員プログラムに加入済であれば何もしない
+        // すでにメンバーシップに加入済であれば何もしない
         const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.membershipFor?.id === membershipService.id);
         if (selectedProgramMembership !== undefined) {
             // Already registered
@@ -277,24 +279,28 @@ export function orderProgramMembership(
 }
 
 /**
- * 会員プログラム登録
- * 登録アクションの後で、次回の会員プログラム注文タスクを作成する
+ * メンバーシップ登録
+ * 登録アクションの後で、次回のメンバーシップ注文タスクを作成する
  */
 export function register(
     params: factory.task.IData<factory.taskName.RegisterProgramMembership>
 ): IRegisterOperation<void> {
     return async (repos: {
         action: ActionRepo;
+        order: OrderRepo;
         person: PersonRepo;
+        project: ProjectRepo;
         task: TaskRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         await repos.person.findById({
             userId: params.agent.id
         });
 
         const programMembership = params.object;
-        if (programMembership.typeOf !== factory.programMembership.ProgramMembershipType.ProgramMembership) {
+        if (programMembership.typeOf !== factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
             throw new factory.errors.Argument('Object', 'Object type must be ProgramMembership');
         }
 
@@ -304,19 +310,30 @@ export function register(
             throw new factory.errors.ArgumentNull('MembershipService ID');
         }
 
-        const seller = programMembership.hostingOrganization;
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (seller === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
-        }
+        const order = await repos.order.findByOrderNumber({ orderNumber: (<any>params).purpose?.orderNumber });
 
         // アクション開始
         const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = params;
         const action = <factory.action.interact.register.programMembership.IAction>await repos.action.start(registerActionAttibutes);
 
         try {
-            // 特に何もしない
+            // Chevreサービス登録取引確定
+            const transactionNumber = (<any>registerActionAttibutes.object).transactionNumber;
+            if (typeof transactionNumber === 'string') {
+                if (typeof project.settings?.chevre?.endpoint !== 'string') {
+                    throw new factory.errors.ServiceUnavailable('Project settings not found');
+                }
+
+                const registerServiceTransaction = new chevre.service.transaction.RegisterService({
+                    endpoint: project.settings.chevre.endpoint,
+                    auth: chevreAuthClient
+                });
+
+                await registerServiceTransaction.confirm({
+                    transactionNumber: transactionNumber,
+                    endDate: order.orderDate
+                });
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -333,7 +350,7 @@ export function register(
         const actionResult: factory.action.interact.register.programMembership.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
 
-        // 次の会員プログラム注文タスクを作成
+        // 次のメンバーシップ注文タスクを作成
         if (action.potentialActions !== undefined) {
             if (Array.isArray(action.potentialActions.orderProgramMembership)) {
                 await Promise.all(action.potentialActions.orderProgramMembership.map(async (taskAttribute) => {
@@ -345,7 +362,7 @@ export function register(
 }
 
 /**
- * 会員プログラム登録解除
+ * メンバーシップ登録解除
  */
 export function unRegister(params: factory.action.interact.unRegister.programMembership.IAttributes) {
     return async (repos: {
@@ -365,10 +382,10 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                     const customers = params.object.member;
 
                     await Promise.all(customers.map(async (customer) => {
-                        // 会員プログラム更新タスク(継続課金タスク)をキャンセル
+                        // メンバーシップ更新タスク(継続課金タスク)をキャンセル
                         await repos.task.taskModel.findOneAndUpdate(
                             {
-                                // 旧会員プログラム注文タスクへの互換性維持
+                                // 旧メンバーシップ注文タスクへの互換性維持
                                 name: { $in: [factory.taskName.OrderProgramMembership, factory.taskName.RegisterProgramMembership] },
                                 'data.agent.id': {
                                     $exists: true,
@@ -384,12 +401,12 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                         )
                             .exec();
 
-                        // 現在所有している会員プログラムを全て検索
+                        // 現在所有しているメンバーシップを全て検索
                         const now = moment(action.startDate)
                             .toDate();
-                        const ownershipInfos = await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType>({
+                        const ownershipInfos = await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType>({
                             typeOfGood: {
-                                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
                             },
                             ownedBy: { id: customer.id },
                             ownedFrom: now,
@@ -431,11 +448,11 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
 }
 
 /**
- * 会員プログラムを注文する
+ * メンバーシップを注文する
  */
 function processPlaceOrder(params: {
     /**
-     * 会員プログラムオファー
+     * メンバーシップオファー
      */
     acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
     /**
@@ -487,7 +504,7 @@ function processPlaceOrder(params: {
             throw new factory.errors.NotFound('Customer MembershipNumber');
         }
 
-        // 会員プログラム注文取引進行
+        // メンバーシップ注文取引進行
         const transaction = await TransactionService.placeOrderInProgress.start({
             project: { typeOf: project.typeOf, id: project.id },
             expires: moment()
@@ -515,7 +532,7 @@ function processPlaceOrder(params: {
             now: now
         })(repos);
 
-        // 会員プログラムオファー承認
+        // メンバーシップオファー承認
         const authorizeProgramMembershipOfferResult = await OfferService.programMembership.authorize({
             project: { typeOf: project.typeOf, id: project.id },
             agent: { id: customer.id },
@@ -561,10 +578,10 @@ function processPlaceOrder(params: {
 
         // 新規登録かどうか、所有権で確認
         const programMembershipOwnershipInfos =
-            await repos.ownershipInfo.search<factory.programMembership.ProgramMembershipType.ProgramMembership>({
+            await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType.ProgramMembership>({
                 limit: 1,
                 typeOfGood: {
-                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                    typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
                 },
                 ownedBy: { id: customer.id }
             });

@@ -47,10 +47,11 @@ export async function createInformOrderOnPlacedActions(params: {
                             project: params.transaction.project,
                             // purpose: params.transaction,
                             recipient: {
-                                id: params.transaction.agent.id,
-                                name: params.transaction.agent.name,
-                                typeOf: params.transaction.agent.typeOf,
-                                ...a.recipient
+                                ...a.recipient,
+                                project: params.transaction.project,
+                                id: (typeof a.recipient.id === 'string') ? a.recipient.id : params.transaction.agent.id,
+                                name: (typeof a.recipient.name === 'string') ? a.recipient.name : params.transaction.agent.name,
+                                typeOf: (typeof a.recipient.typeOf === 'string') ? <any>a.recipient.typeOf : params.transaction.agent.typeOf
                             },
                             typeOf: factory.actionType.InformAction
                         };
@@ -115,10 +116,11 @@ export async function createInformOrderOnSentActions(params: {
                             project: params.transaction.project,
                             // purpose: params.transaction,
                             recipient: {
-                                id: params.transaction.agent.id,
-                                name: params.transaction.agent.name,
-                                typeOf: params.transaction.agent.typeOf,
-                                ...a.recipient
+                                ...a.recipient,
+                                project: params.transaction.project,
+                                id: (typeof a.recipient.id === 'string') ? a.recipient.id : params.transaction.agent.id,
+                                name: (typeof a.recipient.name === 'string') ? a.recipient.name : params.transaction.agent.name,
+                                typeOf: (typeof a.recipient.typeOf === 'string') ? <any>a.recipient.typeOf : params.transaction.agent.typeOf
                             },
                             typeOf: factory.actionType.InformAction
                         };

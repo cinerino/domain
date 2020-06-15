@@ -104,7 +104,7 @@ export class CognitoRepository {
                 membershipNumber: params.username,
                 programName: 'Amazon Cognito',
                 project: <any>{},
-                typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership
+                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
             }
         };
 

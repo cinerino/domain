@@ -570,7 +570,7 @@ export function order2report(params: {
                     };
                     break;
 
-                case factory.programMembership.ProgramMembershipType.ProgramMembership:
+                case factory.chevre.programMembership.ProgramMembershipType.ProgramMembership:
                     item = {
                         typeOf: String(itemOffered.typeOf),
                         name: (typeof itemOffered.name === 'string') ? itemOffered.name : '',

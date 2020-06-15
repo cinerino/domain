@@ -1,6 +1,8 @@
 /**
- * 会員プログラムオファーサービス
+ * メンバーシップオファーサービス
  */
+import * as moment from 'moment';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -65,7 +67,7 @@ export function authorize(params: {
             throw new factory.errors.ArgumentNull('object.itemOffered.membershipFor.id');
         }
 
-        // 会員プログラム検索
+        // プロダクト検索
         const membershipService = await productService.findById({ id: membershipServiceId });
         const offers = await productService.searchOffers({ id: String(membershipService.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.object.identifier);
@@ -81,7 +83,40 @@ export function authorize(params: {
         const amount = priceSpecification.priceComponent.reduce((a2, b2) => a2 + Number(b2.price), 0);
 
         // 在庫確認は現時点で不要
-        // 何かしら会員プログラムへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
+        // 何かしらメンバーシップへの登録に制約を設けたい場合は、ここに処理を追加するとよいかと思われます。
+        // まず取引番号発行
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const publishResult = await transactionNumberService.publish({
+            project: { id: project.id }
+        });
+        const transactionNumber = publishResult.transactionNumber;
+
+        const issuedBy: factory.chevre.organization.IOrganization = {
+            project: { typeOf: 'Project', id: project.id },
+            id: seller.id,
+            name: seller.name,
+            typeOf: seller.typeOf
+        };
+
+        const programMembership: factory.programMembership.IProgramMembership = {
+            project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
+            typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
+            identifier: transactionNumber,
+            name: <any>membershipService.name,
+            // programName: <any>membershipService.name,
+            hostingOrganization: {
+                project: issuedBy.project,
+                id: issuedBy.id,
+                typeOf: issuedBy.typeOf
+            },
+            membershipFor: {
+                typeOf: 'MembershipService',
+                id: <string>membershipService.id
+            }
+        };
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
@@ -95,28 +130,17 @@ export function authorize(params: {
                 // price: amount,
                 priceCurrency: acceptedOffer.priceCurrency,
                 priceSpecification: acceptedOffer.priceSpecification,
-                itemOffered: {
-                    project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
-                    typeOf: factory.programMembership.ProgramMembershipType.ProgramMembership,
-                    name: <any>membershipService.name,
-                    programName: <any>membershipService.name,
-                    // 会員プログラムのホスト組織
-                    hostingOrganization: {
-                        project: seller.project,
-                        id: seller.id,
-                        name: seller.name,
-                        typeOf: seller.typeOf
-                    },
-                    membershipFor: {
-                        typeOf: 'MembershipService',
-                        id: <string>membershipService.id
-                    }
-                },
+                itemOffered: programMembership,
                 seller: {
                     typeOf: seller.typeOf,
                     name: (typeof seller.name === 'string')
                         ? seller.name
                         : String(seller.name?.ja)
+                },
+                ...{
+                    pendingTransaction: <any>{
+                        transactionNumber: transactionNumber
+                    }
                 }
             },
             agent: transaction.seller,
@@ -129,7 +153,52 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         try {
-            // 在庫確保？
+            // Chevreでサービス登録取引
+            const registerServiceTransaction = new chevre.service.transaction.RegisterService({
+                endpoint: project.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            await registerServiceTransaction.start({
+                project: { typeOf: 'Project', id: project.id },
+                typeOf: factory.chevre.transactionType.RegisterService,
+                transactionNumber: transactionNumber,
+                object: [
+                    {
+                        typeOf: factory.chevre.offerType.Offer,
+                        id: <string>acceptedOffer.id,
+                        itemOffered: {
+                            project: { typeOf: <'Project'>'Project', id: project.id },
+                            typeOf: membershipService.typeOf,
+                            id: membershipService.id,
+                            serviceOutput: {
+                                project: { typeOf: <'Project'>'Project', id: project.id },
+                                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
+                                issuedBy: issuedBy,
+                                name: programMembership.name
+                                // additionalProperty: [{ name: 'sampleName', value: 'sampleValue' }],
+                            }
+                        }
+                    }
+                ],
+                agent: {
+                    typeOf: transaction.agent.typeOf,
+                    name: transaction.agent.id,
+                    ...{
+                        identifier: [
+                            { name: 'transaction', value: transaction.id },
+                            {
+                                name: 'transactionExpires',
+                                value: moment(transaction.expires)
+                                    .toISOString()
+                            }
+                        ]
+                    }
+                },
+                expires: moment(transaction.expires)
+                    .add(1, 'day') // 余裕を持って
+                    .toDate()
+            });
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };

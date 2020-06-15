@@ -41,10 +41,11 @@ export async function createInformOrderActionsOnReturn(params: {
                     project: transaction.project,
                     // purpose: params.transaction,
                     recipient: {
-                        id: transaction.agent.id,
-                        name: transaction.agent.name,
-                        typeOf: transaction.agent.typeOf,
-                        ...a.recipient
+                        ...a.recipient,
+                        project: transaction.project,
+                        id: (typeof a.recipient.id === 'string') ? a.recipient.id : transaction.agent.id,
+                        name: (typeof a.recipient.name === 'string') ? a.recipient.name : transaction.agent.name,
+                        typeOf: (typeof a.recipient.typeOf === 'string') ? <any>a.recipient.typeOf : transaction.agent.typeOf
                     },
                     typeOf: factory.actionType.InformAction
                 };

@@ -6,6 +6,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { MongoRepository as OrderRepo } from '../../repo/order';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
@@ -41,7 +42,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
         });
 
         switch (data.object.typeOf) {
-            // 旧会員プログラム注文タスクへの互換性維持のため
+            // 旧メンバーシップ注文タスクへの互換性維持のため
             case <any>'Offer':
                 const creditCardRepo = new CreditCardRepo({
                     siteId: project.settings.gmo.siteId,
@@ -63,10 +64,12 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
 
                 break;
 
-            case factory.programMembership.ProgramMembershipType.ProgramMembership:
+            case factory.chevre.programMembership.ProgramMembershipType.ProgramMembership:
                 await ProgramMembershipService.register(data)({
                     action: new ActionRepo(settings.connection),
+                    order: new OrderRepo(settings.connection),
                     person: personRepo,
+                    project: new ProjectRepo(settings.connection),
                     task: new TaskRepo(settings.connection)
                 });
 

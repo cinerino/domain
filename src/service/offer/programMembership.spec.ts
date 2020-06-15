@@ -55,10 +55,21 @@ describe('会員プログラムオファーを承認する', () => {
             .once()
             .resolves([acceptedOffer]);
 
+        sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
+            .expects('publish')
+            .once()
+            .resolves({ transactionNumber: 'transactionNumber' });
+
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
+
+        sandbox.mock(domain.chevre.service.transaction.RegisterService.prototype)
+            .expects('start')
+            .once()
+            .resolves({});
+
         sandbox.mock(actionRepo)
             .expects('complete')
             .once()

@@ -314,7 +314,6 @@ export function checkMovieTicket(
             // 一度認証されたムビチケをDBに記録する(後で検索しやすいように)
             await Promise.all(checkResult.movieTickets.map(async (movieTicketResult) => {
                 const movieTicket: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket = {
-                    project: params.project,
                     ...movieTicketResult,
                     serviceOutput: {
                         reservationFor: { typeOf: movieTicketResult.serviceOutput.reservationFor.typeOf, id: '' },

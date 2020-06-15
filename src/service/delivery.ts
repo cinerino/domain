@@ -67,12 +67,12 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 orderStatus: factory.orderStatus.OrderDelivered
             });
 
-            // 会員プログラムがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
+            // メンバーシップがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
             const programMembershipOwnershipInfos
                 // tslint:disable-next-line:max-line-length
-                = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.programMembership.ProgramMembershipType.ProgramMembership>>[]>
+                = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.chevre.programMembership.ProgramMembershipType.ProgramMembership>>[]>
                 ownershipInfos.filter(
-                    (o) => o.typeOfGood.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership
+                    (o) => o.typeOfGood.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
                 );
             await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
                 const customer = <factory.person.IPerson>o.ownedBy;
@@ -134,7 +134,7 @@ export function createOwnershipInfosFromOrder(params: {
         );
 
         switch (true) {
-            case new RegExp(`^${factory.programMembership.ProgramMembershipType.ProgramMembership}$`).test(itemOffered.typeOf):
+            case new RegExp(`^${factory.chevre.programMembership.ProgramMembershipType.ProgramMembership}$`).test(itemOffered.typeOf):
                 // case factory.programMembership.ProgramMembershipType.ProgramMembership:
                 ownershipInfo = createProgramMembershipOwnershipInfo({
                     order: params.order,
@@ -420,7 +420,7 @@ export function onSend(
                 });
             }
 
-            // 会員プログラム更新タスクがあれば追加
+            // メンバーシップ更新タスクがあれば追加
             if (Array.isArray(potentialActions.registerProgramMembership)) {
                 taskAttributes.push(...potentialActions.registerProgramMembership.map(
                     (a): factory.task.IAttributes<factory.taskName.RegisterProgramMembership> => {
