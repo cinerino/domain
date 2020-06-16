@@ -524,13 +524,43 @@ function processPlaceOrder(params: {
 
         const membershipService = await productService.findById({ id: membershipServiceId });
 
-        // ポイント特典承認
-        await processAuthorizePointAward({
-            customer: customer,
-            membershipService: membershipService,
-            transaction: transaction,
-            now: now
-        })(repos);
+        // オファーにポイント特典設定があるかどうか確認
+        const offers = await productService.searchOffers({ id: String(membershipService.id) });
+        const acceptedProductOffer = offers.find((o) => o.identifier === acceptedOffer.identifier);
+        if (acceptedProductOffer === undefined) {
+            throw new factory.errors.NotFound('Offer', `Accepted offer ${acceptedOffer.identifier} not found`);
+        }
+        const pointAwardByOffer = acceptedProductOffer.itemOffered?.pointAward;
+        if (typeof pointAwardByOffer?.amount?.value === 'number' && typeof pointAwardByOffer?.amount?.currency === 'string') {
+            const toAccount = await findAccount({
+                customer: params.customer,
+                transaction: transaction,
+                now: now,
+                accountType: pointAwardByOffer.amount?.currency
+            })(repos);
+
+            acceptedOffer.itemOffered = {
+                ...acceptedOffer.itemOffered,
+                ...{
+                    pointAward: {
+                        toLocation: { identifier: toAccount.accountNumber },
+                        recipient: {
+                            id: customer.id,
+                            name: `${customer.givenName} ${customer.familyName}`,
+                            typeOf: customer.typeOf
+                        }
+                    }
+                }
+            };
+        } else {
+            // ポイント特典承認
+            await processAuthorizePointAward({
+                customer: customer,
+                membershipService: membershipService,
+                transaction: transaction,
+                now: now
+            })(repos);
+        }
 
         // メンバーシップオファー承認
         const authorizeProgramMembershipOfferResult = await OfferService.programMembership.authorize({
@@ -633,10 +663,8 @@ function processAuthorizePointAward(params: {
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
-        const customer = params.customer;
         const membershipService = params.membershipService;
         const transaction = params.transaction;
-        const now = params.now;
 
         // 登録時の獲得ポイント
         let pointAward = (<any>membershipService).pointAward;
@@ -681,33 +709,12 @@ function processAuthorizePointAward(params: {
                     const membershipPointsEarnedUnitText = (<any>serviceOutput).membershipPointsEarned?.unitText;
 
                     if (typeof membershipPointsEarnedValue === 'number' && typeof membershipPointsEarnedUnitText === 'string') {
-                        // 所有口座を検索
-                        // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
-                        let accountOwnershipInfos = await AccountService.search({
-                            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                            conditions: {
-                                sort: { ownedFrom: factory.sortType.Ascending },
-                                limit: 1,
-                                typeOfGood: {
-                                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                                    accountType: <any>membershipPointsEarnedUnitText
-                                },
-                                ownedBy: { id: customer.id },
-                                ownedFrom: now,
-                                ownedThrough: now
-                            }
-                        })({
-                            ownershipInfo: repos.ownershipInfo,
-                            project: repos.project
-                        });
-
-                        // 開設口座に絞る
-                        accountOwnershipInfos =
-                            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
-                        if (accountOwnershipInfos.length === 0) {
-                            throw new factory.errors.NotFound('accountOwnershipInfos');
-                        }
-                        const toAccount = accountOwnershipInfos[0].typeOfGood;
+                        const toAccount = await findAccount({
+                            customer: params.customer,
+                            transaction: params.transaction,
+                            now: params.now,
+                            accountType: membershipPointsEarnedUnitText
+                        })(repos);
 
                         givePointAwardParams.push({
                             object: {
@@ -738,5 +745,48 @@ function processAuthorizePointAward(params: {
                 transaction: repos.transaction
             });
         }
+    };
+}
+
+function findAccount(params: {
+    customer: factory.person.IPerson;
+    transaction: factory.transaction.placeOrder.ITransaction;
+    now: Date;
+    accountType: string;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        project: ProjectRepo;
+        transaction: TransactionRepo;
+        ownershipInfo: OwnershipInfoRepo;
+    }): Promise<factory.pecorino.account.IAccount> => {
+        // 所有口座を検索
+        // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
+        let accountOwnershipInfos = await AccountService.search({
+            project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
+            conditions: {
+                sort: { ownedFrom: factory.sortType.Ascending },
+                limit: 1,
+                typeOfGood: {
+                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                    accountType: params.accountType
+                },
+                ownedBy: { id: params.customer.id },
+                ownedFrom: params.now,
+                ownedThrough: params.now
+            }
+        })({
+            ownershipInfo: repos.ownershipInfo,
+            project: repos.project
+        });
+
+        // 開設口座に絞る
+        accountOwnershipInfos =
+            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+        if (accountOwnershipInfos.length === 0) {
+            throw new factory.errors.NotFound('accountOwnershipInfos');
+        }
+
+        return accountOwnershipInfos[0].typeOfGood;
     };
 }

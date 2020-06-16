@@ -159,6 +159,11 @@ export function authorize(params: {
                 auth: chevreAuthClient
             });
 
+            let pointAward: factory.chevre.service.IPointAward | undefined;
+            if ((<any>params.object.itemOffered).pointAward !== undefined) {
+                pointAward = (<any>params.object.itemOffered).pointAward;
+            }
+
             await registerServiceTransaction.start({
                 project: { typeOf: 'Project', id: project.id },
                 typeOf: factory.chevre.transactionType.RegisterService,
@@ -177,7 +182,8 @@ export function authorize(params: {
                                 issuedBy: issuedBy,
                                 name: programMembership.name
                                 // additionalProperty: [{ name: 'sampleName', value: 'sampleValue' }],
-                            }
+                            },
+                            ...(pointAward !== undefined) ? { pointAward } : undefined
                         }
                     }
                 ],
