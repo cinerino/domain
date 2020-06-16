@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - update @cinerino/factory
 - update @chevre/api-nodejs-client
 - メンバーシップ登録時のポイント特典をChevreで処理するように調整
+- メンバーシップ注文処理をメンバーシップサービスから分離
 
 ### Deprecated
 

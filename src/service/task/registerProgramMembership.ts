@@ -17,6 +17,7 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as ProgramMembershipService from '../programMembership';
+import { orderProgramMembership } from '../transaction/orderProgramMembership';
 
 /**
  * タスク実行関数
@@ -50,7 +51,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                     cardService: new GMO.service.Card({ endpoint: project.settings.gmo.endpoint })
                 });
 
-                await ProgramMembershipService.orderProgramMembership(<any>data)({
+                await orderProgramMembership(<any>data)({
                     action: new ActionRepo(settings.connection),
                     creditCard: creditCardRepo,
                     orderNumber: new OrderNumberRepo(settings.redisClient),

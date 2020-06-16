@@ -437,3 +437,46 @@ export function deposit(params: {
         }
     };
 }
+
+/**
+ * 所有口座を検索
+ * 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件は以下の通り
+ */
+export function findAccount(params: {
+    customer: { id: string };
+    project: { id: string };
+    now: Date;
+    accountType: string;
+}) {
+    return async (repos: {
+        project: ProjectRepo;
+        ownershipInfo: OwnershipInfoRepo;
+    }): Promise<factory.pecorino.account.IAccount> => {
+        let accountOwnershipInfos = await search({
+            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            conditions: {
+                sort: { ownedFrom: factory.sortType.Ascending },
+                limit: 1,
+                typeOfGood: {
+                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                    accountType: params.accountType
+                },
+                ownedBy: { id: params.customer.id },
+                ownedFrom: params.now,
+                ownedThrough: params.now
+            }
+        })({
+            ownershipInfo: repos.ownershipInfo,
+            project: repos.project
+        });
+
+        // 開設口座に絞る
+        accountOwnershipInfos =
+            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+        if (accountOwnershipInfos.length === 0) {
+            throw new factory.errors.NotFound('accountOwnershipInfos');
+        }
+
+        return accountOwnershipInfos[0].typeOfGood;
+    };
+}
