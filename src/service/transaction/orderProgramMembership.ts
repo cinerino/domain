@@ -47,6 +47,7 @@ export type IOrderOperation<T> = (repos: {
 /**
  * メンバーシップ注文
  */
+// tslint:disable-next-line:max-func-body-length
 export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.OrderProgramMembership>
 ): IOrderOperation<void> {
@@ -76,7 +77,7 @@ export function orderProgramMembership(
             throw new factory.errors.ArgumentNull('MembershipService ID');
         }
 
-        const seller = programMembership.hostingOrganization;
+        const seller = <factory.seller.IOrganization<any>>programMembership.hostingOrganization;
         if (seller === undefined) {
             throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
         }
@@ -97,31 +98,50 @@ export function orderProgramMembership(
             return;
         }
 
-        let lockNumber: number | undefined;
+        let transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder> | undefined;
+
         try {
+            // 注文取引開始
+            transaction = await TransactionService.placeOrderInProgress.start({
+                project: { typeOf: project.typeOf, id: project.id },
+                expires: moment()
+                    // tslint:disable-next-line:no-magic-numbers
+                    .add(5, 'minutes')
+                    .toDate(),
+                agent: customer,
+                seller: { typeOf: seller.typeOf, id: seller.id },
+                object: {}
+            })(repos);
+
             // 登録処理を進行中に変更。進行中であれば競合エラー。
-            lockNumber = await repos.registerActionInProgressRepo.lock(
+            await repos.registerActionInProgressRepo.lock(
                 {
                     id: customer.id,
                     programMembershipId: membershipService.id
                 },
-                // action.id
-                '1' // いったん値はなんでもよい
+                transaction.id
             );
 
+            // 取引ID上で注文プロセス
             await processPlaceOrder({
                 acceptedOffer: acceptedOffer,
                 customer: customer,
                 potentialActions: params.potentialActions,
                 project: project,
-                seller: seller
+                transaction: transaction
             })(repos);
         } catch (error) {
             try {
+                // 登録ロックIDが取引IDであればロック解除
                 // 本プロセスがlockした場合は解除する。解除しなければタスクのリトライが無駄になってしまう。
+                const holder = await repos.registerActionInProgressRepo.getHolder({
+                    id: customer.id,
+                    programMembershipId: membershipService.id
+                });
+
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
-                if (lockNumber !== undefined) {
+                if (typeof transaction?.id === 'string' && holder === transaction.id) {
                     await repos.registerActionInProgressRepo.unlock({
                         id: customer.id,
                         programMembershipId: membershipService.id
@@ -153,10 +173,7 @@ function processPlaceOrder(params: {
      * プロジェクト
      */
     project: factory.project.IProject;
-    /**
-     * 販売者
-     */
-    seller: factory.seller.IOrganization<any>;
+    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
 }) {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
@@ -185,25 +202,13 @@ function processPlaceOrder(params: {
         const acceptedOffer = params.acceptedOffer;
         const programMembership = acceptedOffer.itemOffered;
         const customer = params.customer;
-        const seller = params.seller;
+        const transaction = params.transaction;
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
         if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
             throw new factory.errors.NotFound('Customer MembershipNumber');
         }
-
-        // メンバーシップ注文取引進行
-        const transaction = await TransactionService.placeOrderInProgress.start({
-            project: { typeOf: project.typeOf, id: project.id },
-            expires: moment()
-                // tslint:disable-next-line:no-magic-numbers
-                .add(5, 'minutes')
-                .toDate(),
-            agent: customer,
-            seller: { typeOf: seller.typeOf, id: seller.id },
-            object: {}
-        })(repos);
 
         // 最新のプログラム情報を取得
         const membershipServiceId = programMembership.membershipFor?.id;
