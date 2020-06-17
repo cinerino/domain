@@ -1,5 +1,5 @@
 /**
- * 顧客サービス
+ * カスタマーサービス
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
@@ -108,5 +108,34 @@ export function onMemberDeleted(params: factory.action.update.deleteAction.membe
         await Promise.all(taskAttributes.map(async (taskAttribute) => {
             return repos.task.save(taskAttribute);
         }));
+    };
+}
+
+export function findCreditCard(params: {
+    project: { id: string };
+    customer: { id: string };
+}) {
+    return async (repos: {
+        creditCard: CreditCardRepo;
+        person: PersonRepo;
+        project: ProjectRepo;
+    }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+        const customer = await repos.person.findById({ userId: params.customer.id });
+
+        // 会員クレジットカード検索
+        const useUsernameAsGMOMemberId = project.settings?.useUsernameAsGMOMemberId === true;
+        const gmoMemberId = (useUsernameAsGMOMemberId) ? String(customer.memberOf?.membershipNumber) : customer.id;
+        const creditCards = await repos.creditCard.search({ personId: gmoMemberId });
+        // creditCards = creditCards.filter((c) => c.defaultFlag === '1');
+        const creditCard = creditCards.shift();
+        if (creditCard === undefined) {
+            throw new factory.errors.NotFound('CreditCard');
+        }
+
+        return {
+            ...creditCard,
+            memberId: gmoMemberId
+        };
     };
 }

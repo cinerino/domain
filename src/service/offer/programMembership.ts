@@ -154,20 +154,11 @@ export function authorize(params: {
             }
 
             try {
-                // 登録ロックIDが取引IDであればロック解除
-                const holder = await repos.registerActionInProgressRepo.getHolder({
-                    id: params.agent.id,
-                    programMembershipId: String(membershipService.id)
-                });
-
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (holder === transaction.id) {
-                    await repos.registerActionInProgressRepo.unlock({
-                        id: params.agent.id,
-                        programMembershipId: String(membershipService.id)
-                    });
-                }
+                await processUnlock({
+                    agent: params.agent,
+                    product: { id: membershipServiceId },
+                    purpose: params.purpose
+                })(repos);
             } catch (error) {
                 // 失敗したら仕方ない
             }
@@ -217,31 +208,85 @@ function checkIfRegistered(params: {
  * 承認アクションをキャンセルする
  */
 export function voidTransaction(params: {
-    agentId: string;
-    transactionId: string;
-    actionId: string;
+    id?: string;
+    agent: { id: string };
+    purpose: factory.action.authorize.offer.programMembership.IPurpose;
 }) {
     return async (repos: {
         action: ActionRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
         });
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        // 取引内のアクションかどうか確認
-        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
-        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
-            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        let authorizeActions: factory.action.authorize.offer.programMembership.IAction[];
+
+        if (typeof params.id === 'string') {
+            const action = <factory.action.authorize.offer.programMembership.IAction>
+                await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+            if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+                throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+            }
+
+            authorizeActions = [action];
+        } else {
+            authorizeActions = <factory.action.authorize.offer.programMembership.IAction[]>
+                await repos.action.searchByPurpose({
+                    typeOf: factory.actionType.AuthorizeAction,
+                    purpose: {
+                        typeOf: params.purpose.typeOf,
+                        id: params.purpose.id
+                    }
+                })
+                    .then((actions) => actions
+                        .filter((a) =>
+                            a.object.typeOf === factory.chevre.offerType.Offer
+                            && a.object.itemOffered?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
+                        )
+                    );
         }
 
-        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        await Promise.all(authorizeActions.map(async (action) => {
+            const productId = action.object.itemOffered.membershipFor?.id;
+            await processUnlock({
+                agent: params.agent,
+                product: { id: String(productId) },
+                purpose: params.purpose
+            })(repos);
+
+            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+        }));
+    };
+}
+
+function processUnlock(params: {
+    agent: { id: string };
+    product: { id: string };
+    purpose: factory.action.authorize.offer.programMembership.IPurpose;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        transaction: TransactionRepo;
+    }) => {
+        // 登録ロックIDが取引IDであればロック解除
+        const holder = await repos.registerActionInProgressRepo.getHolder({
+            id: params.agent.id,
+            programMembershipId: params.product.id
+        });
+
+        if (holder === params.purpose.id) {
+            await repos.registerActionInProgressRepo.unlock({
+                id: params.agent.id,
+                programMembershipId: params.product.id
+            });
+        }
     };
 }
