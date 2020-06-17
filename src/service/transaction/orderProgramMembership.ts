@@ -113,15 +113,6 @@ export function orderProgramMembership(
                 object: {}
             })(repos);
 
-            // 登録処理を進行中に変更。進行中であれば競合エラー。
-            await repos.registerActionInProgressRepo.lock(
-                {
-                    id: customer.id,
-                    programMembershipId: membershipService.id
-                },
-                transaction.id
-            );
-
             // 取引ID上で注文プロセス
             await processPlaceOrder({
                 acceptedOffer: acceptedOffer,
@@ -182,6 +173,7 @@ function processPlaceOrder(params: {
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;

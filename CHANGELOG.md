@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - メンバーシップ登録時のポイント特典をChevreで処理するように調整
 - メンバーシップ注文処理をメンバーシップサービスから分離
 - メンバーシップ登録ロックホルダーを注文取引IDに変更
+- メンバーシップ登録ロックのタイミングをサービス登録取引開始前へ移行
 
 ### Deprecated
 
