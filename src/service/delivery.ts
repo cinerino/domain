@@ -23,6 +23,8 @@ import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
+import { availableProductTypes } from './offer/product/factory';
+
 const debug = createDebug('cinerino-domain:service');
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -157,25 +159,27 @@ export function createOwnershipInfosFromOrder(params: {
 
                 break;
 
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO Chevre決済カードサービスに対して動的にコントロール
-            case new RegExp(`PaymentCard$`).test(itemOffered.typeOf):
-                ownershipInfo = createPaymentCardOwnershipInfo({
-                    order: params.order,
-                    acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
-                    ownedFrom: ownedFrom,
-                    identifier: identifier,
-                    acquiredFrom: acquiredFrom
-                });
-
-                break;
-
             case new RegExp(`^MonetaryAmount$`).test(itemOffered.typeOf):
                 // no op
                 break;
 
             default:
-                throw new factory.errors.NotImplemented(`Offered item type ${(<any>itemOffered).typeOf} not implemented`);
+                // tslint:disable-next-line:no-suspicious-comment
+                // TODO Chevre決済カードサービスに対して動的にコントロール
+                const productType = (<factory.order.IServiceOutput>itemOffered).issuedThrough?.typeOf;
+                if (typeof productType === 'string' && availableProductTypes.indexOf(productType) >= 0) {
+                    ownershipInfo = createProductOwnershipInfo({
+                        order: params.order,
+                        acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
+                        ownedFrom: ownedFrom,
+                        identifier: identifier,
+                        acquiredFrom: acquiredFrom
+                    });
+                }
+
+                if (ownershipInfo === undefined) {
+                    throw new factory.errors.NotImplemented(`Offered item type ${(<any>itemOffered).typeOf} not implemented`);
+                }
         }
 
         if (ownershipInfo !== undefined) {
@@ -246,9 +250,9 @@ function createReservationOwnershipInfo(params: {
     return ownershipInfo;
 }
 
-function createPaymentCardOwnershipInfo(params: {
+function createProductOwnershipInfo(params: {
     order: factory.order.IOrder;
-    acceptedOffer: factory.order.IAcceptedOffer<factory.chevre.paymentMethod.paymentCard.IPaymentCard>;
+    acceptedOffer: factory.order.IAcceptedOffer<factory.order.IServiceOutput>;
     ownedFrom: Date;
     identifier: string;
     acquiredFrom: factory.ownershipInfo.IOwner;
@@ -273,8 +277,11 @@ function createPaymentCardOwnershipInfo(params: {
         ownedFrom: params.ownedFrom,
         ownedThrough: ownedThrough,
         typeOfGood: {
+            identifier: itemOffered.identifier,
+            issuedThrough: itemOffered.issuedThrough,
             typeOf: itemOffered.typeOf,
-            identifier: itemOffered.identifier
+            dateIssued: (<any>itemOffered).dateIssued,
+            validFor: itemOffered.validFor
         }
     };
 

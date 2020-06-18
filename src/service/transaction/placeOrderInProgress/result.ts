@@ -2,7 +2,7 @@ import * as moment from 'moment-timezone';
 
 import * as factory from '../../../factory';
 
-import { createPaymentCardItems } from './result/acceptedOffers';
+import { createProductItems } from './result/acceptedOffers';
 
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
 export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
@@ -60,8 +60,8 @@ export function createOrder(params: {
     // 通貨転送がある場合
     acceptedOffers.push(...createMoneyTransferAcceptedOffers({ ...params, seller: seller }));
 
-    // 決済カードがある場合
-    acceptedOffers.push(...createPaymentCardItems({ ...params }));
+    // Chevrep露ダクトがある場合
+    acceptedOffers.push(...createProductItems({ ...params }));
 
     // 決済方法をセット
     const { paymentMethods, price } = createPaymentMethods({ transaction: params.transaction });

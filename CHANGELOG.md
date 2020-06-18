@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - メンバーシップ登録ロックホルダーを注文取引IDに変更
 - メンバーシップ登録ロックのタイミングをサービス登録取引開始前へ移行
 - メンバーシップ注文失敗時に、メンバーシップオファー承認を明示的に取り消すように調整
+- 注文アイテムを複数のプロダクト対応に対応
 
 ### Deprecated
 

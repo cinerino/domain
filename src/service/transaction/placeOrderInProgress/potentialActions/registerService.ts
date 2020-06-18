@@ -1,5 +1,7 @@
 import * as factory from '../../../../factory';
 
+import { availableProductTypes } from '../../../offer/product/factory';
+
 export async function createRegisterServiceActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
@@ -7,30 +9,29 @@ export async function createRegisterServiceActions(params: {
 }): Promise<factory.action.IAttributes<factory.actionType.RegisterAction, any, any>[]> {
     const registerServiceActions: factory.action.IAttributes<factory.actionType.RegisterAction, any, any>[] = [];
 
-    const authorizePaymentCardOfferActions = params.transaction.object.authorizeActions
+    const authorizeProductOfferActions = (<factory.action.authorize.offer.paymentCard.IAction[]>
+        params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) =>
             Array.isArray(a.object)
             && a.object.length > 0
             && a.object[0].typeOf === factory.chevre.offerType.Offer
-            && a.object[0].itemOffered.typeOf === factory.paymentMethodType.PaymentCard
+            && availableProductTypes.indexOf(a.object[0].itemOffered.typeOf) >= 0
         );
 
-    authorizePaymentCardOfferActions.forEach((a) => {
+    authorizeProductOfferActions.forEach((a) => {
         const actionResult = a.result;
 
         if (actionResult !== undefined) {
             // const requestBody = actionResult.requestBody;
-            const responseBody = actionResult.responseBody;
-
-            // tslint:disable-next-line:max-line-length
-            const registerServiceTransaction = responseBody;
+            // const registerServiceTransaction = (<any>actionResult).responseBody;
 
             const registerServiceObject = createRegisterServiceActionObject({
                 order: params.order,
                 potentialActions: params.potentialActions,
                 transaction: params.transaction,
-                registerServiceTransaction: registerServiceTransaction
+                // registerServiceTransaction: registerServiceTransaction,
+                transactionNumber: a.instrument?.transactionNumber
             });
 
             registerServiceActions.push({
@@ -56,17 +57,19 @@ export async function createRegisterServiceActions(params: {
     return registerServiceActions;
 }
 
-// tslint:disable-next-line:max-func-body-length
 function createRegisterServiceActionObject(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-    registerServiceTransaction: any;
+    // registerServiceTransaction: any;
+    transactionNumber?: string;
 }): factory.chevre.transaction.registerService.IConfirmParams {
-    return <any>{
-        typeOf: factory.chevre.transactionType.RegisterService,
-        id: params.registerServiceTransaction.id,
+    return {
+        // id: params.registerServiceTransaction.id,
+        transactionNumber: params.transactionNumber,
+        // endDate?: Date;
         object: {
         }
+        // potentialActions?: IPotentialActionsParams;
     };
 }
