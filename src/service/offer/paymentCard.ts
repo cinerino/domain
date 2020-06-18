@@ -13,10 +13,9 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { handleChevreError } from '../../errorHandler';
 
 import {
-    acceptedOffers2amount,
-    createAuthorizeActionAttributes,
+    createActionAttributes,
     createRegisterServiceStartParams,
-    responseBody2acceptedOffers4result
+    createResult
 } from './paymentCard/factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -27,7 +26,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-export type ICreateOperation<T> = (repos: {
+export type IAuthorizeOperation<T> = (repos: {
     accountNumber: AccountNumberRepo;
     action: ActionRepo;
     project: ProjectRepo;
@@ -47,14 +46,14 @@ export type IMovieTicketTypeChargeSpecification =
 export type IAcceptedOfferWithoutDetail4chevre = factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail4chevre;
 
 /**
- * 決済カード承認
+ * ペイメントカード承認
  */
 export function authorize(params: {
     project: factory.project.IProject;
     object: any;
     agent: { id: string };
     transaction: { id: string };
-}): ICreateOperation<factory.action.authorize.offer.paymentCard.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.offer.paymentCard.IAction> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         accountNumber: AccountNumberRepo;
@@ -64,6 +63,9 @@ export function authorize(params: {
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -73,72 +75,36 @@ export function authorize(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        let product: factory.chevre.service.IService;
-
-        if (project.settings === undefined || project.settings.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const productService = new chevre.service.Product({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
-
-        if (params.object.length === 0) {
-            throw new factory.errors.ArgumentNull('object');
-        }
-
-        product = await productService.findById({
+        const product = await productService.findById({
             id: params.object[0]?.itemOffered?.id
         });
-
-        const accountType = (<any>product).serviceOutput?.typeOf;
-        if (typeof accountType !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Account type unknown');
-        }
+        const availableOffers = await productService.searchOffers({ id: String(product.id) });
 
         let acceptedOffer = await validateAcceptedOffers({
-            project: project,
             object: params.object,
             product: product,
+            availableOffers: availableOffers,
             seller: transaction.seller
         })(repos);
 
-        // カード番号を発行
-        acceptedOffer = await Promise.all(acceptedOffer.map(async (o) => {
-            const accountNumber = await repos.accountNumber.publish(new Date());
+        acceptedOffer = await createServiceOutputIdentifier({ acceptedOffer, product })(repos);
 
-            return {
-                ...o,
-                itemOffered: {
-                    ...o.itemOffered,
-                    serviceOutput: {
-                        ...o.itemOffered?.serviceOutput,
-                        identifier: accountNumber
-                    }
-                }
-            };
-        }));
+        let requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
+        let responseBody: factory.chevre.transaction.registerService.ITransaction;
 
-        let requestBody: any;
-        let responseBody: any;
-        let acceptedOffers4result: any[] = [];
-
-        // Chevre予約の場合、まず予約取引開始
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-
-        // 承認アクションを開始
-        const actionAttributes = createAuthorizeActionAttributes({
+        // 承認アクション開始
+        const actionAttributes = createActionAttributes({
             acceptedOffer: acceptedOffer,
-            // pendingTransaction: reserveTransaction,
             transaction: transaction
         });
         const action = await repos.action.start(actionAttributes);
 
-        // サービス登録開始
         try {
+            // サービス登録開始
             const registerService = new chevre.service.transaction.RegisterService({
                 endpoint: project.settings.chevre.endpoint,
                 auth: chevreAuthClient
@@ -152,13 +118,6 @@ export function authorize(params: {
             requestBody = startParams;
             responseBody = await registerService.start(startParams);
 
-            // 座席仮予約からオファー情報を生成する
-            acceptedOffers4result = responseBody2acceptedOffers4result({
-                responseBody: responseBody,
-                project: { typeOf: project.typeOf, id: project.id },
-                seller: transaction.seller,
-                acceptedOffer: acceptedOffer
-            });
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
@@ -172,19 +131,13 @@ export function authorize(params: {
             throw error;
         }
 
-        // 金額計算
-        const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffers4result });
-
         // アクションを完了
-        const result: factory.action.authorize.offer.paymentCard.IResult = {
-            price: amount,
-            priceCurrency: factory.chevre.priceCurrency.JPY,
-            ...{
-                requestBody: requestBody,
-                responseBody: responseBody,
-                acceptedOffers: acceptedOffers4result
-            }
-        };
+        const result = createResult({
+            project: { typeOf: project.typeOf, id: project.id },
+            requestBody: requestBody,
+            responseBody: responseBody,
+            acceptedOffer: acceptedOffer
+        });
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
@@ -194,34 +147,25 @@ export function authorize(params: {
  * 受け入れらたオファーの内容を検証
  */
 export function validateAcceptedOffers(params: {
-    project: factory.project.IProject;
     object: any;
-    product: any;
+    product: factory.chevre.service.IService;
+    availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
     seller: { typeOf: factory.organizationType; id: string };
 }) {
     return async (__: {
-        project: ProjectRepo;
-        seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.paymentCard.IObject> => {
-        if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-        const productService = new chevre.service.Product({
-            endpoint: params.project.settings?.chevre?.endpoint,
-            auth: chevreAuthClient
-        });
-
-        // 利用可能なオファー
-        const availableOffers = await productService.searchOffers({ id: String(params.product.id) });
-
         let acceptedOfferWithoutDetail: any[] = params.object;
         if (!Array.isArray(acceptedOfferWithoutDetail)) {
             acceptedOfferWithoutDetail = [acceptedOfferWithoutDetail];
         }
 
+        if (acceptedOfferWithoutDetail.length === 0) {
+            throw new factory.errors.ArgumentNull('object');
+        }
+
         // 利用可能なチケットオファーであれば受け入れる
         return Promise.all(acceptedOfferWithoutDetail.map((offerWithoutDetail) => {
-            const offer = availableOffers.find((o) => o.id === offerWithoutDetail.id);
+            const offer = params.availableOffers.find((o) => o.id === offerWithoutDetail.id);
             if (offer === undefined) {
                 throw new factory.errors.NotFound('Offer', `Offer ${offerWithoutDetail.id} not found`);
             }
@@ -230,14 +174,42 @@ export function validateAcceptedOffers(params: {
                 ...offerWithoutDetail,
                 ...offer,
                 itemOffered: {
-                    ...params.product,
-                    // serviceType: acceptedOfferWithoutDetail.itemOffered?.serviceType,
+                    typeOf: params.product.typeOf,
+                    id: params.product.id,
+                    name: params.product.name,
                     serviceOutput: {
                         ...params.product?.serviceOutput,
                         ...offerWithoutDetail.itemOffered?.serviceOutput
                     }
                 },
                 seller: { typeOf: params.seller.typeOf, id: params.seller.id }
+            };
+        }));
+    };
+}
+
+function createServiceOutputIdentifier(params: {
+    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
+    product: factory.chevre.service.IService;
+}) {
+    return async (repos: {
+        accountNumber: AccountNumberRepo;
+    }): Promise<factory.action.authorize.offer.paymentCard.IObject> => {
+        // カード番号を発行
+        return Promise.all(params.acceptedOffer.map(async (o) => {
+            const accountNumber = await repos.accountNumber.publish(new Date());
+
+            return {
+                ...o,
+                itemOffered: {
+                    ...o.itemOffered,
+                    serviceOutput: {
+                        ...o.itemOffered?.serviceOutput,
+                        project: params.product.project,
+                        typeOf: String(params.product.serviceOutput?.typeOf),
+                        identifier: accountNumber
+                    }
+                }
             };
         }));
     };

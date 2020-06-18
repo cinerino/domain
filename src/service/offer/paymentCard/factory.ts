@@ -11,7 +11,7 @@ export type IUnitPriceSpecification =
 
 export function createRegisterServiceStartParams(params: {
     project: factory.project.IProject;
-    object: any;
+    object: factory.action.authorize.offer.paymentCard.IObject;
     transaction: factory.transaction.ITransaction<any>;
 }): factory.chevre.transaction.registerService.IStartParamsWithoutDetail {
     return {
@@ -31,17 +31,21 @@ export function createRegisterServiceStartParams(params: {
                 ]
             }
         },
-        object: params.object,
+        object: params.object.map((o) => {
+            return {
+                typeOf: <factory.chevre.offerType.Offer>o.typeOf,
+                id: String(o.id),
+                itemOffered: o.itemOffered
+            };
+        }),
         expires: moment(params.transaction.expires)
             .add(1, 'day')
             .toDate() // 余裕を持って
     };
 }
 
-export function createAuthorizeActionAttributes(params: {
+export function createActionAttributes(params: {
     acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
-    // event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    // pendingTransaction?: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
 }): factory.action.authorize.offer.paymentCard.IAttributes {
     const transaction = params.transaction;
@@ -65,8 +69,8 @@ export function createAuthorizeActionAttributes(params: {
     };
 }
 
-export function acceptedOffers2amount(params: {
-    acceptedOffers: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[];
+function acceptedOffers2amount(params: {
+    acceptedOffers: factory.action.authorize.offer.paymentCard.IResultAcceptedOffer;
 }): number {
     const acceptedOffers = params.acceptedOffers;
 
@@ -89,28 +93,33 @@ export function acceptedOffers2amount(params: {
     );
 }
 
-export function responseBody2acceptedOffers4result(params: {
-    responseBody: any;
+function responseBody2resultAcceptedOffer(params: {
     project: factory.project.IProject;
-    seller: factory.transaction.placeOrder.ISeller;
+    responseBody: factory.chevre.transaction.registerService.ITransaction;
     acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
-}): any[] {
-    let acceptedOffers: any[] = [];
+}): factory.action.authorize.offer.paymentCard.IResultAcceptedOffer {
+    let acceptedOffers: factory.action.authorize.offer.paymentCard.IResultAcceptedOffer = [];
+
     if (Array.isArray(params.responseBody.object)) {
-        acceptedOffers = params.responseBody.object.map((responseBodyObject: any, key: any) => {
-            const paymentCard = {
+        acceptedOffers = params.responseBody.object.map((responseBodyObject) => {
+            const itemOffered: factory.order.IServiceOutput = {
                 ...responseBodyObject.itemOffered?.serviceOutput,
+                project: { typeOf: params.project.typeOf, id: params.project.id },
+                typeOf: String(responseBodyObject.itemOffered?.serviceOutput?.typeOf),
                 accessCode: 'xxx' // masked
             };
 
-            const offer = params.acceptedOffer[key];
+            const offer = params.acceptedOffer.find((o) => o.id === responseBodyObject.id);
+            if (offer === undefined) {
+                throw new factory.errors.ServiceUnavailable(`Offer ${responseBodyObject.id} from registerService not found`);
+            }
 
             return {
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: responseBodyObject.typeOf,
                 id: offer.id,
                 name: offer.name,
-                itemOffered: paymentCard,
+                itemOffered: itemOffered,
                 priceSpecification: offer.priceSpecification,
                 priceCurrency: offer.priceCurrency,
                 seller: offer.seller
@@ -119,4 +128,26 @@ export function responseBody2acceptedOffers4result(params: {
     }
 
     return acceptedOffers;
+}
+
+export function createResult(params: {
+    project: factory.project.IProject;
+    requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
+    responseBody: factory.chevre.transaction.registerService.ITransaction;
+    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
+}): factory.action.authorize.offer.paymentCard.IResult {
+    const acceptedOffers4result = responseBody2resultAcceptedOffer(params);
+
+    // 金額計算
+    const amount = acceptedOffers2amount({ acceptedOffers: acceptedOffers4result });
+
+    return {
+        price: amount,
+        priceCurrency: factory.chevre.priceCurrency.JPY,
+        acceptedOffers: acceptedOffers4result,
+        ...{
+            requestBody: params.requestBody,
+            responseBody: params.responseBody
+        }
+    };
 }
