@@ -37,6 +37,12 @@ export function createActionAttributes(params: {
         membershipFor: {
             typeOf: params.product.typeOf,
             id: <string>params.product.id
+        },
+        ...{
+            issuedThrough: {
+                typeOf: params.product.typeOf,
+                id: <string>params.product.id
+            }
         }
     };
 

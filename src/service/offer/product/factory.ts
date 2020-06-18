@@ -52,6 +52,14 @@ export function createActionAttributes(params: {
     transactionNumber: string;
 }): factory.action.authorize.offer.paymentCard.IAttributes {
     const transaction = params.transaction;
+    const seller = params.transaction.seller;
+
+    const issuedBy: factory.chevre.organization.IOrganization = {
+        project: { typeOf: 'Project', id: params.transaction.project.id },
+        id: seller.id,
+        name: seller.name,
+        typeOf: seller.typeOf
+    };
 
     return {
         project: transaction.project,
@@ -61,7 +69,21 @@ export function createActionAttributes(params: {
             typeOf: factory.chevre.transactionType.RegisterService,
             transactionNumber: params.transactionNumber
         },
-        object: params.acceptedOffer,
+        object: params.acceptedOffer.map((o) => {
+            return {
+                ...o,
+                itemOffered: {
+                    ...o.itemOffered,
+                    serviceOutput: {
+                        ...o.itemOffered?.serviceOutput,
+                        project: { typeOf: 'Project', id: params.transaction.project.id },
+                        typeOf: String(o.itemOffered?.serviceOutput?.typeOf),
+                        // 発行者は販売者でいったｎ固定
+                        issuedBy: issuedBy
+                    }
+                }
+            };
+        }),
         agent: {
             project: transaction.seller.project,
             id: transaction.seller.id,
