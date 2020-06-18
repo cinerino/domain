@@ -74,11 +74,13 @@ export function createProductOwnershipInfo(params: {
             identifier: itemOffered.identifier,
             issuedThrough: itemOffered.issuedThrough,
             typeOf: itemOffered.typeOf,
-            ...((<any>itemOffered).dateIssued !== undefined) ? { dateIssued: (<any>itemOffered).dateIssued } : undefined,
             ...(itemOffered.validFor !== undefined) ? { validFor: itemOffered.validFor } : undefined,
             ...(itemOffered.name !== undefined) ? { name: itemOffered.name } : undefined,
-            ...(itemOffered.issuedThrough?.typeOf === 'MembershipService') ? { membershipFor: itemOffered.issuedThrough } : undefined,
-            ...(itemOffered.issuedThrough?.typeOf === 'MembershipService') ? { hostingOrganization: itemOffered.issuedBy } : undefined
+            ...((<any>itemOffered).dateIssued !== undefined) ? { dateIssued: (<any>itemOffered).dateIssued } : undefined,
+            ...((<any>itemOffered).membershipFor !== undefined) ? { membershipFor: (<any>itemOffered).membershipFor } : undefined,
+            ...((<any>itemOffered).hostingOrganization !== undefined)
+                ? { hostingOrganization: (<any>itemOffered).hostingOrganization }
+                : undefined
         }
     };
 

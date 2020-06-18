@@ -36,8 +36,8 @@ async function main() {
 
     const searchProductsResult = await productService.search({
         project: { id: { $eq: project.id } },
-        // typeOf: { $eq: 'PaymentCard' }
-        typeOf: { $eq: 'MembershipService' }
+        typeOf: { $eq: 'PaymentCard' }
+        // typeOf: { $eq: 'MembershipService' }
     });
     console.log('products found', searchProductsResult);
 

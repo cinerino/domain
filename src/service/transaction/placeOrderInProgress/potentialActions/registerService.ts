@@ -67,8 +67,11 @@ function createRegisterServiceActionObject(params: {
     return {
         // id: params.registerServiceTransaction.id,
         transactionNumber: params.transactionNumber,
-        // endDate?: Date;
+        endDate: params.order.orderDate,
         object: {
+        },
+        ...{
+            typeOf: factory.chevre.transactionType.RegisterService
         }
         // potentialActions?: IPotentialActionsParams;
     };

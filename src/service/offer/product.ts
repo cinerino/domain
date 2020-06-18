@@ -149,7 +149,7 @@ export function validateAcceptedOffers(params: {
     object: any;
     product: factory.chevre.service.IService;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
-    seller: { typeOf: factory.organizationType; id: string };
+    seller: factory.seller.IOrganization<any>;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.paymentCard.IObject> => {
@@ -161,6 +161,13 @@ export function validateAcceptedOffers(params: {
         if (acceptedOfferWithoutDetail.length === 0) {
             throw new factory.errors.ArgumentNull('object');
         }
+
+        const issuedBy: factory.chevre.organization.IOrganization = {
+            project: { typeOf: 'Project', id: params.product.project.id },
+            id: params.seller.id,
+            name: params.seller.name,
+            typeOf: params.seller.typeOf
+        };
 
         // 利用可能なチケットオファーであれば受け入れる
         return Promise.all(acceptedOfferWithoutDetail.map((offerWithoutDetail) => {
@@ -178,7 +185,9 @@ export function validateAcceptedOffers(params: {
                     name: params.product.name,
                     serviceOutput: {
                         ...params.product?.serviceOutput,
-                        ...offerWithoutDetail.itemOffered?.serviceOutput
+                        ...offerWithoutDetail.itemOffered?.serviceOutput,
+                        // 発行者は販売者でいったん固定
+                        issuedBy: issuedBy
                     }
                 },
                 seller: { typeOf: params.seller.typeOf, id: params.seller.id }

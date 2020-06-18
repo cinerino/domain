@@ -52,14 +52,6 @@ export function createActionAttributes(params: {
     transactionNumber: string;
 }): factory.action.authorize.offer.paymentCard.IAttributes {
     const transaction = params.transaction;
-    const seller = params.transaction.seller;
-
-    const issuedBy: factory.chevre.organization.IOrganization = {
-        project: { typeOf: 'Project', id: params.transaction.project.id },
-        id: seller.id,
-        name: seller.name,
-        typeOf: seller.typeOf
-    };
 
     return {
         project: transaction.project,
@@ -69,21 +61,7 @@ export function createActionAttributes(params: {
             typeOf: factory.chevre.transactionType.RegisterService,
             transactionNumber: params.transactionNumber
         },
-        object: params.acceptedOffer.map((o) => {
-            return {
-                ...o,
-                itemOffered: {
-                    ...o.itemOffered,
-                    serviceOutput: {
-                        ...o.itemOffered?.serviceOutput,
-                        project: { typeOf: 'Project', id: params.transaction.project.id },
-                        typeOf: String(o.itemOffered?.serviceOutput?.typeOf),
-                        // 発行者は販売者でいったｎ固定
-                        issuedBy: issuedBy
-                    }
-                }
-            };
-        }),
+        object: params.acceptedOffer,
         agent: {
             project: transaction.seller.project,
             id: transaction.seller.id,
@@ -136,7 +114,14 @@ function responseBody2resultAcceptedOffer(params: {
                 ...responseBodyObject.itemOffered?.serviceOutput,
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: String(responseBodyObject.itemOffered?.serviceOutput?.typeOf),
-                accessCode: 'xxx' // masked
+                // masked accessCode
+                ...(typeof responseBodyObject.itemOffered?.serviceOutput?.accessCode === 'string') ? { accessCode: 'xxx' } : undefined,
+                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === 'MembershipService')
+                    ? {
+                        membershipFor: responseBodyObject.itemOffered?.serviceOutput?.issuedThrough,
+                        hostingOrganization: responseBodyObject.itemOffered?.serviceOutput.issuedBy
+                    }
+                    : undefined
             };
 
             const offer = params.acceptedOffer.find((o) => o.id === responseBodyObject.id);
