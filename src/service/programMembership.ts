@@ -20,6 +20,8 @@ import { credentials } from '../credentials';
 import * as chevre from '../chevre';
 import * as factory from '../factory';
 
+import { onRegistered } from './product';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -253,13 +255,14 @@ export function register(
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
 
         // 次のメンバーシップ注文タスクを作成
-        if (action.potentialActions !== undefined) {
-            if (Array.isArray(action.potentialActions.orderProgramMembership)) {
-                await Promise.all(action.potentialActions.orderProgramMembership.map(async (taskAttribute) => {
-                    return repos.task.save(taskAttribute);
-                }));
-            }
-        }
+        await onRegistered(action)(repos);
+        // if (action.potentialActions !== undefined) {
+        //     if (Array.isArray(action.potentialActions.orderProgramMembership)) {
+        //         await Promise.all(action.potentialActions.orderProgramMembership.map(async (taskAttribute) => {
+        //             return repos.task.save(taskAttribute);
+        //         }));
+        //     }
+        // }
     };
 }
 
