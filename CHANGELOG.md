@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v5.4.0 - 2020-06-19
+
+### Added
+
+- ProductTypeをenumとして定義
+
 ## v5.3.0 - 2020-06-19
 
 ### Changed
