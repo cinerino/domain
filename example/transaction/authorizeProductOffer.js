@@ -21,6 +21,7 @@ async function main() {
 
     const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
     const actionRepo = new domain.repository.Action(mongoose.connection);
+    const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
     const projectRepo = new domain.repository.Project(mongoose.connection);
     const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
@@ -100,6 +101,7 @@ async function main() {
     })({
         accountNumber: accountNumberRepo,
         action: actionRepo,
+        ownershipInfo: ownershipInfoRepo,
         project: projectRepo,
         seller: sellerRepo,
         transaction: transactionRepo

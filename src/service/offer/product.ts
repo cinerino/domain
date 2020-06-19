@@ -6,6 +6,7 @@ import * as factory from '../../factory';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -29,6 +30,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type IAuthorizeOperation<T> = (repos: {
     accountNumber: AccountNumberRepo;
     action: ActionRepo;
+    ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
@@ -43,14 +45,17 @@ export function authorize(params: {
     agent: { id: string };
     transaction: { id: string };
 }): IAuthorizeOperation<factory.action.authorize.offer.paymentCard.IAction> {
-    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         accountNumber: AccountNumberRepo;
         action: ActionRepo;
+        ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
+        const now = new Date();
+
         const project = await repos.project.findById({ id: params.project.id });
         if (typeof project.settings?.chevre?.endpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
@@ -72,6 +77,12 @@ export function authorize(params: {
             id: params.object[0]?.itemOffered?.id
         });
         const availableOffers = await productService.searchOffers({ id: String(product.id) });
+
+        await checkIfRegistered({
+            agent: { id: params.agent.id },
+            product: product,
+            now: now
+        })(repos);
 
         let acceptedOffer = await validateAcceptedOffers({
             object: params.object,
@@ -193,6 +204,38 @@ export function validateAcceptedOffers(params: {
                 seller: { typeOf: params.seller.typeOf, id: params.seller.id }
             };
         }));
+    };
+}
+
+function checkIfRegistered(params: {
+    agent: { id: string };
+    product: factory.chevre.service.IService;
+    now: Date;
+}) {
+    return async (repos: {
+        ownershipInfo: OwnershipInfoRepo;
+    }) => {
+        const serviceOutputType = params.product.serviceOutput?.typeOf;
+
+        // メンバーシップについては、登録済かどうか確認する
+        if (params.product.typeOf === 'MembershipService') {
+            if (typeof serviceOutputType === 'string') {
+                const ownershipInfos = await repos.ownershipInfo.search<string>({
+                    typeOfGood: {
+                        typeOf: serviceOutputType
+                    },
+                    ownedBy: { id: params.agent.id },
+                    ownedFrom: params.now,
+                    ownedThrough: params.now
+                });
+
+                const selectedProgramMembership = ownershipInfos.find((o) => o.typeOfGood.membershipFor?.id === params.product.id);
+                if (selectedProgramMembership !== undefined) {
+                    // Already registered
+                    throw new factory.errors.Argument('object', 'Already registered');
+                }
+            }
+        }
     };
 }
 
