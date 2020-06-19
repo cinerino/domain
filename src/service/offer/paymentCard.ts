@@ -53,7 +53,7 @@ export function authorize(params: {
     object: any;
     agent: { id: string };
     transaction: { id: string };
-}): IAuthorizeOperation<factory.action.authorize.offer.paymentCard.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.offer.product.IAction> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         accountNumber: AccountNumberRepo;
@@ -153,7 +153,7 @@ export function validateAcceptedOffers(params: {
     seller: { typeOf: factory.organizationType; id: string };
 }) {
     return async (__: {
-    }): Promise<factory.action.authorize.offer.paymentCard.IObject> => {
+    }): Promise<factory.action.authorize.offer.product.IObject> => {
         let acceptedOfferWithoutDetail: any[] = params.object;
         if (!Array.isArray(acceptedOfferWithoutDetail)) {
             acceptedOfferWithoutDetail = [acceptedOfferWithoutDetail];
@@ -189,12 +189,12 @@ export function validateAcceptedOffers(params: {
 }
 
 function createServiceOutputIdentifier(params: {
-    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
+    acceptedOffer: factory.action.authorize.offer.product.IObject;
     product: factory.chevre.service.IService;
 }) {
     return async (repos: {
         accountNumber: AccountNumberRepo;
-    }): Promise<factory.action.authorize.offer.paymentCard.IObject> => {
+    }): Promise<factory.action.authorize.offer.product.IObject> => {
         // カード番号を発行
         return Promise.all(params.acceptedOffer.map(async (o) => {
             const accountNumber = await repos.accountNumber.publish(new Date());

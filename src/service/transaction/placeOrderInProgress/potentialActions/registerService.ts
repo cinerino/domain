@@ -11,7 +11,7 @@ export async function createRegisterServiceActions(params: {
 }): Promise<factory.action.IAttributes<factory.actionType.RegisterAction, any, any>[]> {
     const registerServiceActions: factory.action.IAttributes<factory.actionType.RegisterAction, any, any>[] = [];
 
-    const authorizeProductOfferActions = (<factory.action.authorize.offer.paymentCard.IAction[]>
+    const authorizeProductOfferActions = (<factory.action.authorize.offer.product.IAction[]>
         params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) =>
@@ -98,7 +98,7 @@ function createOrderProgramMembershipTask(params: {
     order: factory.order.IOrder;
     // potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-    authorizeAction: factory.action.authorize.offer.paymentCard.IAction;
+    authorizeAction: factory.action.authorize.offer.product.IAction;
 }): factory.task.IAttributes<factory.taskName.OrderProgramMembership> | undefined {
     let orderMembershipTask: factory.task.IAttributes<factory.taskName.OrderProgramMembership> | undefined;
 

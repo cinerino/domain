@@ -7,7 +7,7 @@ export function createProductItems(params: {
 }): factory.order.IAcceptedOffer<factory.order.IServiceOutput>[] {
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IServiceOutput>[] = [];
 
-    const authorizePaymentCardOfferActions = (<factory.action.authorize.offer.paymentCard.IAction[]>
+    const authorizePaymentCardOfferActions = (<factory.action.authorize.offer.product.IAction[]>
         params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) =>

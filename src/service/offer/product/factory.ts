@@ -11,7 +11,7 @@ export const availableProductTypes = [
 
 export function createRegisterServiceStartParams(params: {
     project: factory.project.IProject;
-    object: factory.action.authorize.offer.paymentCard.IObject;
+    object: factory.action.authorize.offer.product.IObject;
     transaction: factory.transaction.ITransaction<any>;
     transactionNumber: string;
 }): factory.chevre.transaction.registerService.IStartParamsWithoutDetail {
@@ -47,10 +47,10 @@ export function createRegisterServiceStartParams(params: {
 }
 
 export function createActionAttributes(params: {
-    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
+    acceptedOffer: factory.action.authorize.offer.product.IObject;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     transactionNumber: string;
-}): factory.action.authorize.offer.paymentCard.IAttributes {
+}): factory.action.authorize.offer.product.IAttributes {
     const transaction = params.transaction;
 
     return {
@@ -78,7 +78,7 @@ export function createActionAttributes(params: {
 }
 
 function acceptedOffers2amount(params: {
-    acceptedOffers: factory.action.authorize.offer.paymentCard.IResultAcceptedOffer;
+    acceptedOffers: factory.action.authorize.offer.product.IResultAcceptedOffer;
 }): number {
     const acceptedOffers = params.acceptedOffers;
 
@@ -104,9 +104,9 @@ function acceptedOffers2amount(params: {
 function responseBody2resultAcceptedOffer(params: {
     project: factory.project.IProject;
     responseBody: factory.chevre.transaction.registerService.ITransaction;
-    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
-}): factory.action.authorize.offer.paymentCard.IResultAcceptedOffer {
-    let acceptedOffers: factory.action.authorize.offer.paymentCard.IResultAcceptedOffer = [];
+    acceptedOffer: factory.action.authorize.offer.product.IObject;
+}): factory.action.authorize.offer.product.IResultAcceptedOffer {
+    let acceptedOffers: factory.action.authorize.offer.product.IResultAcceptedOffer = [];
 
     if (Array.isArray(params.responseBody.object)) {
         acceptedOffers = params.responseBody.object.map((responseBodyObject) => {
@@ -149,8 +149,8 @@ export function createResult(params: {
     project: factory.project.IProject;
     requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
     responseBody: factory.chevre.transaction.registerService.ITransaction;
-    acceptedOffer: factory.action.authorize.offer.paymentCard.IObject;
-}): factory.action.authorize.offer.paymentCard.IResult {
+    acceptedOffer: factory.action.authorize.offer.product.IObject;
+}): factory.action.authorize.offer.product.IResult {
     const acceptedOffers4result = responseBody2resultAcceptedOffer(params);
 
     // 金額計算
