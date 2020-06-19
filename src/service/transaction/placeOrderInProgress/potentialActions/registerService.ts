@@ -1,3 +1,5 @@
+import * as moment from 'moment';
+
 import * as factory from '../../../../factory';
 
 import { availableProductTypes } from '../../../offer/product/factory';
@@ -34,6 +36,12 @@ export async function createRegisterServiceActions(params: {
                 transactionNumber: a.instrument?.transactionNumber
             });
 
+            const orderProgramMembershipTask = createOrderProgramMembershipTask({
+                order: params.order,
+                transaction: params.transaction,
+                authorizeAction: a
+            });
+
             registerServiceActions.push({
                 project: params.transaction.project,
                 typeOf: <factory.actionType.RegisterAction>factory.actionType.RegisterAction,
@@ -49,6 +57,11 @@ export async function createRegisterServiceActions(params: {
                     price: params.order.price,
                     priceCurrency: params.order.priceCurrency,
                     orderDate: params.order.orderDate
+                },
+                potentialActions: {
+                    ...(orderProgramMembershipTask !== undefined)
+                        ? { orderProgramMembership: [orderProgramMembershipTask] }
+                        : undefined
                 }
             });
         }
@@ -75,4 +88,91 @@ function createRegisterServiceActionObject(params: {
         }
         // potentialActions?: IPotentialActionsParams;
     };
+}
+
+/**
+ * ssktsへの互換性対応として
+ * 次回メンバーシップ注文タスクを作成する
+ */
+function createOrderProgramMembershipTask(params: {
+    order: factory.order.IOrder;
+    // potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+    transaction: factory.transaction.placeOrder.ITransaction;
+    authorizeAction: factory.action.authorize.offer.paymentCard.IAction;
+}): factory.task.IAttributes<factory.taskName.OrderProgramMembership> | undefined {
+    let orderMembershipTask: factory.task.IAttributes<factory.taskName.OrderProgramMembership> | undefined;
+
+    const acceptedOffer = params.authorizeAction.object[0];
+
+    // ssktsへの互換性対応なので、限定的に
+    if (acceptedOffer.itemOffered.typeOf === 'MembershipService'
+        && acceptedOffer.itemOffered.serviceOutput?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
+        const memebershipFor = {
+            typeOf: String(acceptedOffer.itemOffered.typeOf),
+            id: String(acceptedOffer.itemOffered.id)
+        };
+
+        // 次回のメンバーシップ注文タスクを生成
+        const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
+            agent: params.transaction.agent,
+            object: {
+                ...acceptedOffer,
+                itemOffered: {
+                    project: { typeOf: 'Project', id: params.order.project.id },
+                    typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
+                    name: acceptedOffer.itemOffered.serviceOutput.name,
+                    hostingOrganization: acceptedOffer.itemOffered.serviceOutput.issuedBy,
+                    membershipFor: memebershipFor,
+                    ...{
+                        issuedThrough: memebershipFor
+                    }
+                }
+            },
+            // potentialActions: updateProgramMembershipPotentialActions,
+            project: params.order.project,
+            typeOf: factory.actionType.OrderAction
+        };
+
+        // どういう期間でいくらのオファーなのか
+        const priceSpec = <factory.chevre.compoundPriceSpecification.IPriceSpecification<any>>
+            acceptedOffer.priceSpecification;
+        if (priceSpec === undefined) {
+            throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification');
+        }
+
+        const unitPriceSpec =
+            <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+            priceSpec.priceComponent.find(
+                (p) => p.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+            );
+        if (unitPriceSpec === undefined) {
+            throw new factory.errors.NotFound('Unit Price Specification in Order.acceptedOffers.priceSpecification');
+        }
+
+        // 期間単位としては秒のみ実装
+        if (unitPriceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+            throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
+        }
+        const referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
+        if (typeof referenceQuantityValue !== 'number') {
+            throw new factory.errors.NotFound('Order.acceptedOffers.priceSpecification.referenceQuantity.value');
+        }
+        // プログラム更新日時は、今回のプログラムの所有期限
+        const runsAt = moment(params.order.orderDate)
+            .add(referenceQuantityValue, 'seconds')
+            .toDate();
+
+        orderMembershipTask = {
+            data: orderProgramMembershipTaskData,
+            executionResults: [],
+            name: <factory.taskName.OrderProgramMembership>factory.taskName.OrderProgramMembership,
+            numberOfTried: 0,
+            project: params.order.project,
+            remainingNumberOfTries: 10,
+            runsAt: runsAt,
+            status: factory.taskStatus.Ready
+        };
+    }
+
+    return orderMembershipTask;
 }

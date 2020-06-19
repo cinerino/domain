@@ -73,6 +73,7 @@ async function main() {
     console.log('transaction started', transaction);
 
     const accessCode = '123';
+    const serviceOutputName = 'サンプルプロダクト名称';
 
     const authorizeAction = await domain.service.offer.product.authorize({
         project: { id: project.id },
@@ -82,7 +83,7 @@ async function main() {
                 id: product.id,
                 serviceOutput: {
                     accessCode: accessCode,
-                    name: 'サンプルアウトプット名称',
+                    name: serviceOutputName,
                     additionalProperty: [
                         { name: 'sampleName', value: 'sampleValue' }
                     ]
@@ -131,7 +132,7 @@ async function main() {
                         potentialActions: {
                             sendEmailMessage: [{
                                 object: {
-                                    about: 'プリペイドカードのご注文'
+                                    about: `${serviceOutputName}のご注文`
                                     // toRecipient: {
                                     // }
                                 }
