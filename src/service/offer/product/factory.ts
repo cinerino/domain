@@ -3,10 +3,16 @@ import * as moment from 'moment';
 import * as chevre from '../../../chevre';
 import * as factory from '../../../factory';
 
-export const availableProductTypes = [
-    'PaymentCard',
-    'PointCard',
-    'MembershipService'
+export enum ProductType {
+    PaymentCard = 'PaymentCard',
+    PointCard = 'PointCard',
+    MembershipService = 'MembershipService'
+}
+
+export const availableProductTypes: string[] = [
+    ProductType.PaymentCard,
+    ProductType.PointCard,
+    ProductType.MembershipService
 ];
 
 export function createRegisterServiceStartParams(params: {
@@ -116,7 +122,7 @@ function responseBody2resultAcceptedOffer(params: {
                 typeOf: String(responseBodyObject.itemOffered?.serviceOutput?.typeOf),
                 // masked accessCode
                 ...(typeof responseBodyObject.itemOffered?.serviceOutput?.accessCode === 'string') ? { accessCode: 'xxx' } : undefined,
-                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === 'MembershipService')
+                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === ProductType.MembershipService)
                     ? {
                         membershipFor: responseBodyObject.itemOffered?.serviceOutput?.issuedThrough,
                         hostingOrganization: responseBodyObject.itemOffered?.serviceOutput.issuedBy

@@ -16,7 +16,8 @@ import { handleChevreError } from '../../errorHandler';
 import {
     createActionAttributes,
     createRegisterServiceStartParams,
-    createResult
+    createResult,
+    ProductType
 } from './product/factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -26,6 +27,8 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     scopes: [],
     state: ''
 });
+
+export import ProductType = ProductType;
 
 export type IAuthorizeOperation<T> = (repos: {
     accountNumber: AccountNumberRepo;
@@ -218,7 +221,7 @@ function checkIfRegistered(params: {
         const serviceOutputType = params.product.serviceOutput?.typeOf;
 
         // メンバーシップについては、登録済かどうか確認する
-        if (params.product.typeOf === 'MembershipService') {
+        if (params.product.typeOf === ProductType.MembershipService) {
             if (typeof serviceOutputType === 'string') {
                 const ownershipInfos = await repos.ownershipInfo.search<string>({
                     typeOfGood: {

@@ -20,6 +20,7 @@ import { credentials } from '../credentials';
 import * as chevre from '../chevre';
 import * as factory from '../factory';
 
+import { ProductType } from './offer/product/factory';
 import { onRegistered } from './product';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -150,7 +151,7 @@ function createOrderProgramMembershipActionAttributes(params: {
             typeOf: seller.typeOf
         },
         membershipFor: {
-            typeOf: 'MembershipService',
+            typeOf: ProductType.MembershipService,
             id: <string>programMembership.id
         }
     };

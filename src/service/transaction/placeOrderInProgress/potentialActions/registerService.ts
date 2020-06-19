@@ -2,7 +2,7 @@ import * as moment from 'moment';
 
 import * as factory from '../../../../factory';
 
-import { availableProductTypes } from '../../../offer/product/factory';
+import { availableProductTypes, ProductType } from '../../../offer/product/factory';
 
 export async function createRegisterServiceActions(params: {
     order: factory.order.IOrder;
@@ -105,7 +105,7 @@ function createOrderProgramMembershipTask(params: {
     const acceptedOffer = params.authorizeAction.object[0];
 
     // ssktsへの互換性対応なので、限定的に
-    if (acceptedOffer.itemOffered.typeOf === 'MembershipService'
+    if (acceptedOffer.itemOffered.typeOf === ProductType.MembershipService
         && acceptedOffer.itemOffered.serviceOutput?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
         const memebershipFor = {
             typeOf: String(acceptedOffer.itemOffered.typeOf),
