@@ -3,20 +3,22 @@ import * as moment from 'moment';
 import * as chevre from '../../../chevre';
 import * as factory from '../../../factory';
 
-export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
-export type IReservationPriceSpecification =
-    factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
-export type IUnitPriceSpecification =
-    factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
+export const availableProductTypes = [
+    'PaymentCard',
+    'PointCard',
+    'MembershipService'
+];
 
 export function createRegisterServiceStartParams(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.product.IObject;
     transaction: factory.transaction.ITransaction<any>;
+    transactionNumber: string;
 }): factory.chevre.transaction.registerService.IStartParamsWithoutDetail {
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: chevre.factory.transactionType.RegisterService,
+        transactionNumber: params.transactionNumber,
         agent: {
             typeOf: params.transaction.agent.typeOf,
             name: params.transaction.agent.id,
@@ -47,12 +49,18 @@ export function createRegisterServiceStartParams(params: {
 export function createActionAttributes(params: {
     acceptedOffer: factory.action.authorize.offer.product.IObject;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+    transactionNumber: string;
 }): factory.action.authorize.offer.product.IAttributes {
     const transaction = params.transaction;
 
     return {
         project: transaction.project,
         typeOf: factory.actionType.AuthorizeAction,
+        // Chevreサービス登録取引を使用して
+        instrument: {
+            typeOf: factory.chevre.transactionType.RegisterService,
+            transactionNumber: params.transactionNumber
+        },
         object: params.acceptedOffer,
         agent: {
             project: transaction.seller.project,
@@ -106,7 +114,14 @@ function responseBody2resultAcceptedOffer(params: {
                 ...responseBodyObject.itemOffered?.serviceOutput,
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 typeOf: String(responseBodyObject.itemOffered?.serviceOutput?.typeOf),
-                accessCode: 'xxx' // masked
+                // masked accessCode
+                ...(typeof responseBodyObject.itemOffered?.serviceOutput?.accessCode === 'string') ? { accessCode: 'xxx' } : undefined,
+                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === 'MembershipService')
+                    ? {
+                        membershipFor: responseBodyObject.itemOffered?.serviceOutput?.issuedThrough,
+                        hostingOrganization: responseBodyObject.itemOffered?.serviceOutput.issuedBy
+                    }
+                    : undefined
             };
 
             const offer = params.acceptedOffer.find((o) => o.id === responseBodyObject.id);

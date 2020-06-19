@@ -40,7 +40,7 @@ export async function createCancelReservationActions(params: {
     // 注文アイテムから取消アクションを作成する
     for (const acceptedOffer of order.acceptedOffers) {
         if (acceptedOffer.itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-            const reservation = acceptedOffer.itemOffered;
+            const reservation = <factory.order.IReservation>acceptedOffer.itemOffered;
             const reservationNumber = reservation.reservationNumber;
 
             // 予約番号ごとに取消アクションを作成する

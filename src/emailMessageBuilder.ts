@@ -182,7 +182,7 @@ export function createOrderItems(params: {
 }): string[] {
     return params.order.acceptedOffers.map((o) => {
         if (o.itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-            const reservation = o.itemOffered;
+            const reservation = <factory.order.IReservation>o.itemOffered;
             const event = reservation.reservationFor;
             const eventStartDate = util.format(
                 '%s - %s',
@@ -261,7 +261,7 @@ export function createOrderItems(params: {
             return util.format(
                 '%s %s %s %s',
                 o.itemOffered.typeOf,
-                (typeof o.itemOffered.name === 'string') ? o.itemOffered.name : '',
+                (typeof (<any>o.itemOffered).name === 'string') ? (<any>o.itemOffered).name : '',
                 (typeof o.price === 'number') ? String(o.price) : '',
                 o.priceCurrency
             );

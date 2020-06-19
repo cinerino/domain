@@ -220,7 +220,6 @@ export function transaction2report(params: {
         let event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> | undefined;
         const items = order.acceptedOffers.map(
             (orderItem) => {
-                const offer = orderItem.itemOffered;
                 let item = {
                     typeOf: '',
                     name: '',
@@ -237,8 +236,10 @@ export function transaction2report(params: {
                     }
                 };
 
-                switch (offer.typeOf) {
+                switch (orderItem.itemOffered.typeOf) {
                     case factory.chevre.reservationType.EventReservation:
+                        const offer = <factory.order.IReservation>orderItem.itemOffered;
+
                         event = offer.reservationFor;
                         const ticket = offer.reservedTicket;
                         const ticketedSeat = ticket.ticketedSeat;

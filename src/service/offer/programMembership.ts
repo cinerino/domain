@@ -1,9 +1,9 @@
 /**
  * メンバーシップオファーサービス
  */
-import * as moment from 'moment';
-
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -11,6 +11,8 @@ import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
 import * as factory from '../../factory';
+
+import { createActionAttributes, createRegisterServiceStartParams } from './programMembership/factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -20,9 +22,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-export type ICreateOperation<T> = (repos: {
+export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
+    registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -31,23 +35,22 @@ export function authorize(params: {
     agent: { id: string };
     object: factory.action.authorize.offer.programMembership.IObject;
     purpose: factory.action.authorize.offer.programMembership.IPurpose;
-}): ICreateOperation<factory.action.authorize.offer.programMembership.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.offer.programMembership.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
     }) => {
+        const now = new Date();
+
         const project = await repos.project.findById({ id: params.project.id });
 
         if (typeof project.settings?.chevre?.endpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
-
-        const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
@@ -60,20 +63,29 @@ export function authorize(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const seller = transaction.seller;
-
         const membershipServiceId = params.object.itemOffered.membershipFor?.id;
         if (typeof membershipServiceId !== 'string') {
             throw new factory.errors.ArgumentNull('object.itemOffered.membershipFor.id');
         }
 
         // プロダクト検索
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         const membershipService = await productService.findById({ id: membershipServiceId });
         const offers = await productService.searchOffers({ id: String(membershipService.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.object.identifier);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
+
+        await checkIfRegistered({
+            agent: { id: params.agent.id },
+            product: membershipService,
+            now: now
+        })(repos);
 
         // 金額計算
         if (acceptedOffer.priceSpecification.typeOf !== factory.chevre.priceSpecificationType.CompoundPriceSpecification) {
@@ -89,116 +101,50 @@ export function authorize(params: {
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const publishResult = await transactionNumberService.publish({
-            project: { id: project.id }
-        });
+        const publishResult = await transactionNumberService.publish({ project: { id: project.id } });
         const transactionNumber = publishResult.transactionNumber;
 
-        const issuedBy: factory.chevre.organization.IOrganization = {
-            project: { typeOf: 'Project', id: project.id },
-            id: seller.id,
-            name: seller.name,
-            typeOf: seller.typeOf
-        };
-
-        const programMembership: factory.programMembership.IProgramMembership = {
-            project: { typeOf: factory.organizationType.Project, id: membershipService.project.id },
-            typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-            identifier: transactionNumber,
-            name: <any>membershipService.name,
-            // programName: <any>membershipService.name,
-            hostingOrganization: {
-                project: issuedBy.project,
-                id: issuedBy.id,
-                typeOf: issuedBy.typeOf
-            },
-            membershipFor: {
-                typeOf: 'MembershipService',
-                id: <string>membershipService.id
-            }
-        };
-
         // 承認アクションを開始
-        const actionAttributes: factory.action.authorize.offer.programMembership.IAttributes = {
-            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-            typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                typeOf: acceptedOffer.typeOf,
-                id: acceptedOffer.id,
-                identifier: acceptedOffer.identifier,
-                // price: amount,
-                priceCurrency: acceptedOffer.priceCurrency,
-                priceSpecification: acceptedOffer.priceSpecification,
-                itemOffered: programMembership,
-                seller: {
-                    typeOf: seller.typeOf,
-                    name: (typeof seller.name === 'string')
-                        ? seller.name
-                        : String(seller.name?.ja)
-                },
-                ...{
-                    pendingTransaction: <any>{
-                        transactionNumber: transactionNumber
-                    }
-                }
-            },
-            agent: transaction.seller,
-            recipient: transaction.agent,
-            purpose: {
-                typeOf: transaction.typeOf,
-                id: transaction.id
-            }
-        };
+        const actionAttributes = createActionAttributes({
+            project: { typeOf: project.typeOf, id: project.id },
+            transaction: transaction,
+            acceptedOffer: acceptedOffer,
+            product: membershipService,
+            transactionNumber: transactionNumber
+        });
         const action = await repos.action.start(actionAttributes);
 
         try {
+            // 登録処理ロック
+            // 進行中であれば競合エラー
+            await repos.registerActionInProgressRepo.lock(
+                {
+                    id: params.agent.id,
+                    programMembershipId: String(membershipService.id)
+                },
+                transaction.id
+            );
+
             // Chevreでサービス登録取引
             const registerServiceTransaction = new chevre.service.transaction.RegisterService({
                 endpoint: project.settings.chevre.endpoint,
                 auth: chevreAuthClient
             });
 
-            await registerServiceTransaction.start({
-                project: { typeOf: 'Project', id: project.id },
-                typeOf: factory.chevre.transactionType.RegisterService,
+            let pointAward: factory.chevre.service.IPointAward | undefined;
+            if ((<any>params.object.itemOffered).pointAward !== undefined) {
+                pointAward = (<any>params.object.itemOffered).pointAward;
+            }
+
+            const startParams = createRegisterServiceStartParams({
+                project: { typeOf: project.typeOf, id: project.id },
+                transaction: transaction,
+                acceptedOffer: acceptedOffer,
+                product: membershipService,
                 transactionNumber: transactionNumber,
-                object: [
-                    {
-                        typeOf: factory.chevre.offerType.Offer,
-                        id: <string>acceptedOffer.id,
-                        itemOffered: {
-                            project: { typeOf: <'Project'>'Project', id: project.id },
-                            typeOf: membershipService.typeOf,
-                            id: membershipService.id,
-                            serviceOutput: {
-                                project: { typeOf: <'Project'>'Project', id: project.id },
-                                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-                                issuedBy: issuedBy,
-                                name: programMembership.name
-                                // additionalProperty: [{ name: 'sampleName', value: 'sampleValue' }],
-                            }
-                        }
-                    }
-                ],
-                agent: {
-                    typeOf: transaction.agent.typeOf,
-                    name: transaction.agent.id,
-                    ...{
-                        identifier: [
-                            { name: 'transaction', value: transaction.id },
-                            {
-                                name: 'transactionExpires',
-                                value: moment(transaction.expires)
-                                    .toISOString()
-                            }
-                        ]
-                    }
-                },
-                expires: moment(transaction.expires)
-                    .add(1, 'day') // 余裕を持って
-                    .toDate()
+                pointAward: pointAward
             });
+            await registerServiceTransaction.start(startParams);
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
@@ -207,7 +153,17 @@ export function authorize(params: {
                 // no op
             }
 
-            throw new factory.errors.ServiceUnavailable('Unexepected error occurred.');
+            try {
+                await processUnlock({
+                    agent: params.agent,
+                    product: { id: membershipServiceId },
+                    purpose: params.purpose
+                })(repos);
+            } catch (error) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
         }
 
         const result: factory.action.authorize.offer.programMembership.IResult = {
@@ -219,35 +175,118 @@ export function authorize(params: {
     };
 }
 
+function checkIfRegistered(params: {
+    agent: { id: string };
+    product: factory.chevre.service.IService;
+    now: Date;
+}) {
+    return async (repos: {
+        ownershipInfo: OwnershipInfoRepo;
+    }) => {
+        const serviceOutputType = params.product.serviceOutput?.typeOf;
+
+        if (typeof serviceOutputType === 'string') {
+            const ownershipInfos = await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType>({
+                typeOfGood: {
+                    typeOf: <any>serviceOutputType
+                },
+                ownedBy: { id: params.agent.id },
+                ownedFrom: params.now,
+                ownedThrough: params.now
+            });
+
+            const selectedProgramMembership = ownershipInfos.find((o) => o.typeOfGood.membershipFor?.id === params.product.id);
+            if (selectedProgramMembership !== undefined) {
+                // Already registered
+                throw new factory.errors.Argument('object', 'Already registered');
+            }
+        }
+    };
+}
+
 /**
  * 承認アクションをキャンセルする
  */
 export function voidTransaction(params: {
-    agentId: string;
-    transactionId: string;
-    actionId: string;
+    id?: string;
+    agent: { id: string };
+    purpose: factory.action.authorize.offer.programMembership.IPurpose;
 }) {
     return async (repos: {
         action: ActionRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
-            typeOf: factory.transactionType.PlaceOrder,
-            id: params.transactionId
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
         });
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (transaction.agent.id !== params.agentId) {
+        if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        // 取引内のアクションかどうか確認
-        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
-        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
-            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+        let authorizeActions: factory.action.authorize.offer.programMembership.IAction[];
+
+        if (typeof params.id === 'string') {
+            const action = <factory.action.authorize.offer.programMembership.IAction>
+                await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+            if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+                throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+            }
+
+            authorizeActions = [action];
+        } else {
+            authorizeActions = <factory.action.authorize.offer.programMembership.IAction[]>
+                await repos.action.searchByPurpose({
+                    typeOf: factory.actionType.AuthorizeAction,
+                    purpose: {
+                        typeOf: params.purpose.typeOf,
+                        id: params.purpose.id
+                    }
+                })
+                    .then((actions) => actions
+                        .filter((a) =>
+                            a.object.typeOf === factory.chevre.offerType.Offer
+                            && a.object.itemOffered?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
+                        )
+                    );
         }
 
-        action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.actionId });
+        await Promise.all(authorizeActions.map(async (action) => {
+            const productId = action.object.itemOffered.membershipFor?.id;
+            await processUnlock({
+                agent: params.agent,
+                product: { id: String(productId) },
+                purpose: params.purpose
+            })(repos);
+
+            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+        }));
+    };
+}
+
+function processUnlock(params: {
+    agent: { id: string };
+    product: { id: string };
+    purpose: factory.action.authorize.offer.programMembership.IPurpose;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        transaction: TransactionRepo;
+    }) => {
+        // 登録ロックIDが取引IDであればロック解除
+        const holder = await repos.registerActionInProgressRepo.getHolder({
+            id: params.agent.id,
+            programMembershipId: params.product.id
+        });
+
+        if (holder === params.purpose.id) {
+            await repos.registerActionInProgressRepo.unlock({
+                id: params.agent.id,
+                programMembershipId: params.product.id
+            });
+        }
     };
 }

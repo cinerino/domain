@@ -14,7 +14,7 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as ProgramMembershipService from '../programMembership';
+import { orderProgramMembership } from '../transaction/orderProgramMembership';
 
 /**
  * タスク実行関数
@@ -45,7 +45,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             userPoolId: project.settings.cognito.customerUserPool.id
         });
 
-        await ProgramMembershipService.orderProgramMembership(data)({
+        await orderProgramMembership(data)({
             action: new ActionRepo(settings.connection),
             creditCard: creditCardRepo,
             orderNumber: new OrderNumberRepo(settings.redisClient),

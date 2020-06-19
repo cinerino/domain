@@ -4,6 +4,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
+import { MongoRepository as TaskRepo } from '../../repo/task';
 
 import * as ProductService from '../product';
 
@@ -12,12 +13,10 @@ import * as ProductService from '../product';
  */
 export function call(data: factory.task.IData<factory.taskName.RegisterService>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        const actionRepo = new ActionRepo(settings.connection);
-        const projectRepo = new ProjectRepo(settings.connection);
-
         await ProductService.registerService(data)({
-            action: actionRepo,
-            project: projectRepo
+            action: new ActionRepo(settings.connection),
+            project: new ProjectRepo(settings.connection),
+            task: new TaskRepo(settings.connection)
         });
     };
 }

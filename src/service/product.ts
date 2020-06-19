@@ -10,6 +10,7 @@ import { handleChevreError } from '../errorHandler';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as ProjectRepo } from '../repo/project';
+import { MongoRepository as TaskRepo } from '../repo/task';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -26,6 +27,7 @@ export function registerService(params: factory.action.interact.register.service
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
+        task: TaskRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
@@ -67,5 +69,26 @@ export function registerService(params: factory.action.interact.register.service
         // アクション完了
         const result: factory.action.interact.register.service.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+
+        await onRegistered(registerActionAttributes)(repos);
+    };
+}
+
+export function onRegistered(
+    actionAttributes: factory.action.interact.register.service.IAttributes
+) {
+    return async (repos: { task: TaskRepo }) => {
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+
+        // 次のメンバーシップ注文タスクを作成
+        const orderProgramMembershipTasks = actionAttributes.potentialActions?.orderProgramMembership;
+        if (Array.isArray(orderProgramMembershipTasks)) {
+            taskAttributes.push(...orderProgramMembershipTasks);
+        }
+
+        // タスク保管
+        await Promise.all(taskAttributes.map(async (taskAttribute) => {
+            return repos.task.save(taskAttribute);
+        }));
     };
 }

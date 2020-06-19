@@ -26,13 +26,13 @@ export class RedisRepository {
     /**
      * ロックする
      */
-    public async lock(progressKey: IProgressKey, actionId: string): Promise<number> {
+    public async lock(progressKey: IProgressKey, holder: string): Promise<number> {
         return new Promise<number>((resolve, reject) => {
             const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
             const ttl = 7200;
             debug('locking...', key, ttl);
             this.redisClient.multi()
-                .setnx(key, actionId, debug)
+                .setnx(key, holder, debug)
                 .expire(key, ttl, debug)
                 .exec((err, results) => {
                     debug('results:', results);
@@ -67,6 +67,21 @@ export class RedisRepository {
                     reject(err);
                 } else {
                     resolve();
+                }
+            });
+        });
+    }
+
+    public async getHolder(progressKey: IProgressKey) {
+        return new Promise<string>((resolve, reject) => {
+            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
+            this.redisClient.get(key, (err, res) => {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore if: please write tests */
+                if (err instanceof Error) {
+                    reject(err);
+                } else {
+                    resolve(res);
                 }
             });
         });

@@ -21,6 +21,7 @@ async function main() {
 
     const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
     const actionRepo = new domain.repository.Action(mongoose.connection);
+    const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
     const projectRepo = new domain.repository.Project(mongoose.connection);
     const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
@@ -33,6 +34,21 @@ async function main() {
         endpoint: project.settings.chevre.endpoint,
         auth: chevreAuthClient
     });
+
+    const searchProductsResult = await productService.search({
+        project: { id: { $eq: project.id } },
+        // typeOf: { $eq: 'PaymentCard' }
+        typeOf: { $eq: 'MembershipService' }
+    });
+    console.log('products found', searchProductsResult);
+
+    const product = searchProductsResult.data[0];
+
+    const offers = await productService.searchOffers({
+        id: product.id
+    });
+    console.log('offers found', offers);
+    const selectedOffer = offers[0];
 
     const transaction = await domain.service.transaction.placeOrderInProgress.start({
         project: { id: project.id },
@@ -58,22 +74,23 @@ async function main() {
     console.log('transaction started', transaction);
 
     const accessCode = '123';
+    const serviceOutputName = 'サンプルプロダクト名称';
 
-    const authorizeAction = await domain.service.offer.paymentCard.authorize({
+    const authorizeAction = await domain.service.offer.product.authorize({
         project: { id: project.id },
-        object: {
-            id: '',
+        object: [{
+            id: selectedOffer.id,
             itemOffered: {
-                id: '5eaf98ecbcba1736247577b0',
+                id: product.id,
                 serviceOutput: {
                     accessCode: accessCode,
-                    name: 'プリペイドカード',
+                    name: serviceOutputName,
                     additionalProperty: [
-                        { name: 'accountType', value: 'Prepaid' }
+                        { name: 'sampleName', value: 'sampleValue' }
                     ]
                 }
             }
-        },
+        }],
         agent: {
             id: transaction.agent.id
         },
@@ -84,6 +101,7 @@ async function main() {
     })({
         accountNumber: accountNumberRepo,
         action: actionRepo,
+        ownershipInfo: ownershipInfoRepo,
         project: projectRepo,
         seller: sellerRepo,
         transaction: transactionRepo
@@ -116,7 +134,7 @@ async function main() {
                         potentialActions: {
                             sendEmailMessage: [{
                                 object: {
-                                    about: 'プリペイドカードのご注文'
+                                    about: `${serviceOutputName}のご注文`
                                     // toRecipient: {
                                     // }
                                 }

@@ -6,6 +6,7 @@ import * as factory from '../../factory';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -16,7 +17,7 @@ import {
     createActionAttributes,
     createRegisterServiceStartParams,
     createResult
-} from './paymentCard/factory';
+} from './product/factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -29,24 +30,14 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type IAuthorizeOperation<T> = (repos: {
     accountNumber: AccountNumberRepo;
     action: ActionRepo;
+    ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export type ISelectSeatOperation<T> = () => Promise<T>;
-
-export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
-export type IReservationPriceSpecification =
-    factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
-export type IUnitPriceSpecification =
-    factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
-export type IMovieTicketTypeChargeSpecification =
-    factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification>;
-export type IAcceptedOfferWithoutDetail4chevre = factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail4chevre;
-
 /**
- * ペイメントカード承認
+ * サービス(Chevreプロダクト)オファー承認
  */
 export function authorize(params: {
     project: factory.project.IProject;
@@ -54,14 +45,17 @@ export function authorize(params: {
     agent: { id: string };
     transaction: { id: string };
 }): IAuthorizeOperation<factory.action.authorize.offer.product.IAction> {
-    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         accountNumber: AccountNumberRepo;
         action: ActionRepo;
+        ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
+        const now = new Date();
+
         const project = await repos.project.findById({ id: params.project.id });
         if (typeof project.settings?.chevre?.endpoint !== 'string') {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
@@ -84,6 +78,12 @@ export function authorize(params: {
         });
         const availableOffers = await productService.searchOffers({ id: String(product.id) });
 
+        await checkIfRegistered({
+            agent: { id: params.agent.id },
+            product: product,
+            now: now
+        })(repos);
+
         let acceptedOffer = await validateAcceptedOffers({
             object: params.object,
             product: product,
@@ -96,10 +96,19 @@ export function authorize(params: {
         let requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
         let responseBody: factory.chevre.transaction.registerService.ITransaction;
 
+        // まず取引番号発行
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const publishResult = await transactionNumberService.publish({ project: { id: project.id } });
+        const transactionNumber = publishResult.transactionNumber;
+
         // 承認アクション開始
         const actionAttributes = createActionAttributes({
             acceptedOffer: acceptedOffer,
-            transaction: transaction
+            transaction: transaction,
+            transactionNumber: transactionNumber
         });
         const action = await repos.action.start(actionAttributes);
 
@@ -113,7 +122,8 @@ export function authorize(params: {
             const startParams = createRegisterServiceStartParams({
                 project: { typeOf: project.typeOf, id: project.id },
                 object: acceptedOffer,
-                transaction: transaction
+                transaction: transaction,
+                transactionNumber
             });
             requestBody = startParams;
             responseBody = await registerService.start(startParams);
@@ -150,7 +160,7 @@ export function validateAcceptedOffers(params: {
     object: any;
     product: factory.chevre.service.IService;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
-    seller: { typeOf: factory.organizationType; id: string };
+    seller: factory.seller.IOrganization<any>;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.product.IObject> => {
@@ -162,6 +172,13 @@ export function validateAcceptedOffers(params: {
         if (acceptedOfferWithoutDetail.length === 0) {
             throw new factory.errors.ArgumentNull('object');
         }
+
+        const issuedBy: factory.chevre.organization.IOrganization = {
+            project: { typeOf: 'Project', id: params.product.project.id },
+            id: params.seller.id,
+            name: params.seller.name,
+            typeOf: params.seller.typeOf
+        };
 
         // 利用可能なチケットオファーであれば受け入れる
         return Promise.all(acceptedOfferWithoutDetail.map((offerWithoutDetail) => {
@@ -179,12 +196,46 @@ export function validateAcceptedOffers(params: {
                     name: params.product.name,
                     serviceOutput: {
                         ...params.product?.serviceOutput,
-                        ...offerWithoutDetail.itemOffered?.serviceOutput
+                        ...offerWithoutDetail.itemOffered?.serviceOutput,
+                        // 発行者は販売者でいったん固定
+                        issuedBy: issuedBy
                     }
                 },
                 seller: { typeOf: params.seller.typeOf, id: params.seller.id }
             };
         }));
+    };
+}
+
+function checkIfRegistered(params: {
+    agent: { id: string };
+    product: factory.chevre.service.IService;
+    now: Date;
+}) {
+    return async (repos: {
+        ownershipInfo: OwnershipInfoRepo;
+    }) => {
+        const serviceOutputType = params.product.serviceOutput?.typeOf;
+
+        // メンバーシップについては、登録済かどうか確認する
+        if (params.product.typeOf === 'MembershipService') {
+            if (typeof serviceOutputType === 'string') {
+                const ownershipInfos = await repos.ownershipInfo.search<string>({
+                    typeOfGood: {
+                        typeOf: serviceOutputType
+                    },
+                    ownedBy: { id: params.agent.id },
+                    ownedFrom: params.now,
+                    ownedThrough: params.now
+                });
+
+                const selectedProgramMembership = ownershipInfos.find((o) => o.typeOfGood.membershipFor?.id === params.product.id);
+                if (selectedProgramMembership !== undefined) {
+                    // Already registered
+                    throw new factory.errors.Argument('object', 'Already registered');
+                }
+            }
+        }
     };
 }
 

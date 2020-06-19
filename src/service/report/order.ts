@@ -525,8 +525,9 @@ export function order2report(params: {
 
             switch (itemOffered.typeOf) {
                 case factory.chevre.reservationType.EventReservation:
-                    event = itemOffered.reservationFor;
-                    const ticket = itemOffered.reservedTicket;
+                    const reservation = <factory.order.IReservation>itemOffered;
+                    event = reservation.reservationFor;
+                    const ticket = reservation.reservedTicket;
                     const ticketedSeat = ticket.ticketedSeat;
 
                     let name = '';
@@ -534,21 +535,21 @@ export function order2report(params: {
 
                     name = [
                         (ticketedSeat !== undefined) ? ticketedSeat.seatNumber : '',
-                        (typeof itemOffered.reservedTicket.ticketType.name === 'string')
-                            ? itemOffered.reservedTicket.ticketType.name
-                            : itemOffered.reservedTicket.ticketType.name?.ja
+                        (typeof reservation.reservedTicket.ticketType.name === 'string')
+                            ? reservation.reservedTicket.ticketType.name
+                            : reservation.reservedTicket.ticketType.name?.ja
                     ].join(' ');
 
-                    if (itemOffered.numSeats !== undefined) {
+                    if (reservation.numSeats !== undefined) {
                         // tslint:disable-next-line:max-line-length
-                        numItems = itemOffered.numSeats;
+                        numItems = reservation.numSeats;
                     }
 
                     item = {
                         typeOf: itemOffered.typeOf,
                         name: name,
                         numItems: numItems,
-                        id: itemOffered.id,
+                        id: reservation.id,
                         event: {
                             typeOf: (event !== undefined) ? event.typeOf : '',
                             id: (event !== undefined) ? event.id : '',

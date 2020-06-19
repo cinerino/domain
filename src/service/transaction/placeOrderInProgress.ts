@@ -387,7 +387,7 @@ export function createConfirmationNumber4identifier(params: {
         .format('YYYYMMDD');
     if (Array.isArray(params.order.acceptedOffers) && params.order.acceptedOffers.length > 0) {
         const firstAcceptedOffer = params.order.acceptedOffers[0];
-        const itemOffered = firstAcceptedOffer.itemOffered;
+        const itemOffered = <factory.order.IReservation>firstAcceptedOffer.itemOffered;
         if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
             const event = itemOffered.reservationFor;
             eventStartDateStr = moment(event.startDate)

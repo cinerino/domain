@@ -1,7 +1,6 @@
 /**
  * メンバーシップサービス
  */
-import * as GMO from '@motionpicture/gmo-service';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -16,15 +15,12 @@ import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-import * as AccountService from './account';
-import * as OfferService from './offer';
-import * as CreditCardPaymentService from './payment/creditCard';
-import * as TransactionService from './transaction';
-
-import { credentials } from '..//credentials';
+import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
 import * as factory from '../factory';
+
+import { onRegistered } from './product';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -147,7 +143,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
         name: <any>programMembership.name,
-        // programName: <any>programMembership.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: { typeOf: 'Project', id: seller.project.id },
@@ -165,7 +160,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
-        // price: offer.priceSpecification?.price,
         priceCurrency: offer.priceCurrency,
         priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,
@@ -183,98 +177,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         potentialActions: params.potentialActions,
         project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.actionType.OrderAction
-    };
-}
-
-/**
- * メンバーシップ注文
- */
-export function orderProgramMembership(
-    params: factory.task.IData<factory.taskName.OrderProgramMembership>
-): IOrderOperation<void> {
-    return async (repos: {
-        action: ActionRepo;
-        creditCard: CreditCardRepo;
-        orderNumber: OrderNumberRepo;
-        ownershipInfo: OwnershipInfoRepo;
-        person: PersonRepo;
-        project: ProjectRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
-        seller: SellerRepo;
-        transaction: TransactionRepo;
-    }) => {
-        const now = new Date();
-
-        const project = await repos.project.findById({ id: params.project.id });
-
-        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        const customer = await repos.person.findById({ userId: params.agent.id });
-
-        const acceptedOffer = params.object;
-
-        const programMembership = acceptedOffer.itemOffered;
-        const membershipService = acceptedOffer.itemOffered.membershipFor;
-        if (typeof membershipService?.id !== 'string') {
-            throw new factory.errors.ArgumentNull('MembershipService ID');
-        }
-
-        const seller = programMembership.hostingOrganization;
-        if (seller === undefined) {
-            throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
-        }
-
-        const programMemberships = await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType>({
-            typeOfGood: {
-                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
-            },
-            ownedBy: { id: customer.id },
-            ownedFrom: now,
-            ownedThrough: now
-        });
-        // すでにメンバーシップに加入済であれば何もしない
-        const selectedProgramMembership = programMemberships.find((p) => p.typeOfGood.membershipFor?.id === membershipService.id);
-        if (selectedProgramMembership !== undefined) {
-            // Already registered
-
-            return;
-        }
-
-        let lockNumber: number | undefined;
-        try {
-            // 登録処理を進行中に変更。進行中であれば競合エラー。
-            lockNumber = await repos.registerActionInProgressRepo.lock(
-                {
-                    id: customer.id,
-                    programMembershipId: membershipService.id
-                },
-                // action.id
-                '1' // いったん値はなんでもよい
-            );
-
-            await processPlaceOrder({
-                acceptedOffer: acceptedOffer,
-                customer: customer,
-                potentialActions: params.potentialActions,
-                project: project,
-                seller: seller
-            })(repos);
-        } catch (error) {
-            try {
-                // 本プロセスがlockした場合は解除する。解除しなければタスクのリトライが無駄になってしまう。
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (lockNumber !== undefined) {
-                    await repos.registerActionInProgressRepo.unlock({
-                        id: customer.id,
-                        programMembershipId: membershipService.id
-                    });
-                }
-            } catch (error) {
-                // 失敗したら仕方ない
-            }
-
-            throw error;
-        }
     };
 }
 
@@ -351,13 +253,7 @@ export function register(
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
 
         // 次のメンバーシップ注文タスクを作成
-        if (action.potentialActions !== undefined) {
-            if (Array.isArray(action.potentialActions.orderProgramMembership)) {
-                await Promise.all(action.potentialActions.orderProgramMembership.map(async (taskAttribute) => {
-                    return repos.task.save(taskAttribute);
-                }));
-            }
-        }
+        await onRegistered(action)(repos);
     };
 }
 
@@ -444,299 +340,5 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         // アクション完了
         const actionResult: factory.action.interact.unRegister.programMembership.IResult = returnedOwnershipInfos;
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-    };
-}
-
-/**
- * メンバーシップを注文する
- */
-function processPlaceOrder(params: {
-    /**
-     * メンバーシップオファー
-     */
-    acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
-    /**
-     * 購入者
-     */
-    customer: factory.person.IPerson;
-    potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
-    /**
-     * プロジェクト
-     */
-    project: factory.project.IProject;
-    /**
-     * 販売者
-     */
-    seller: factory.seller.IOrganization<any>;
-}) {
-    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-    return async (repos: {
-        action: ActionRepo;
-        creditCard: CreditCardRepo;
-        orderNumber: OrderNumberRepo;
-        person: PersonRepo;
-        project: ProjectRepo;
-        seller: SellerRepo;
-        transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
-    }) => {
-        const now = new Date();
-
-        const project = await repos.project.findById({ id: params.project.id });
-
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        const acceptedOffer = params.acceptedOffer;
-        const programMembership = acceptedOffer.itemOffered;
-        const customer = params.customer;
-        const seller = params.seller;
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (customer.memberOf === undefined || customer.memberOf.membershipNumber === undefined) {
-            throw new factory.errors.NotFound('Customer MembershipNumber');
-        }
-
-        // メンバーシップ注文取引進行
-        const transaction = await TransactionService.placeOrderInProgress.start({
-            project: { typeOf: project.typeOf, id: project.id },
-            expires: moment()
-                // tslint:disable-next-line:no-magic-numbers
-                .add(5, 'minutes')
-                .toDate(),
-            agent: customer,
-            seller: { typeOf: seller.typeOf, id: seller.id },
-            object: {}
-        })(repos);
-
-        // 最新のプログラム情報を取得
-        const membershipServiceId = programMembership.membershipFor?.id;
-        if (typeof membershipServiceId !== 'string') {
-            throw new Error('membershipServiceId undefined');
-        }
-
-        const membershipService = await productService.findById({ id: membershipServiceId });
-
-        // ポイント特典承認
-        await processAuthorizePointAward({
-            customer: customer,
-            membershipService: membershipService,
-            transaction: transaction,
-            now: now
-        })(repos);
-
-        // メンバーシップオファー承認
-        const authorizeProgramMembershipOfferResult = await OfferService.programMembership.authorize({
-            project: { typeOf: project.typeOf, id: project.id },
-            agent: { id: customer.id },
-            object: acceptedOffer,
-            purpose: { typeOf: transaction.typeOf, id: transaction.id }
-        })(repos);
-
-        // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)
-        const useUsernameAsGMOMemberId = project.settings !== undefined && project.settings.useUsernameAsGMOMemberId === true;
-        const gmoMemberId = (useUsernameAsGMOMemberId) ? customer.memberOf.membershipNumber : customer.id;
-        const creditCards = await repos.creditCard.search({ personId: gmoMemberId });
-        // creditCards = creditCards.filter((c) => c.defaultFlag === '1');
-        const creditCard = creditCards.shift();
-        if (creditCard === undefined) {
-            throw new factory.errors.NotFound('CreditCard');
-        }
-
-        await CreditCardPaymentService.authorize({
-            project: { id: project.id },
-            agent: customer,
-            object: {
-                typeOf: factory.paymentMethodType.CreditCard,
-                amount: <number>authorizeProgramMembershipOfferResult.result?.price,
-                method: GMO.utils.util.Method.Lump,
-                creditCard: {
-                    memberId: gmoMemberId,
-                    cardSeq: Number(creditCard.cardSeq)
-                }
-            },
-            purpose: transaction
-        })(repos);
-
-        await TransactionService.updateAgent({
-            typeOf: transaction.typeOf,
-            id: transaction.id,
-            agent: customer
-        })(repos);
-
-        // プログラム更新の場合、管理者宛のメール送信を自動設定
-        const emailInformUpdateProgrammembership = (typeof project.settings?.emailInformUpdateProgrammembership === 'string')
-            ? project.settings?.emailInformUpdateProgrammembership
-            : undefined;
-
-        // 新規登録かどうか、所有権で確認
-        const programMembershipOwnershipInfos =
-            await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType.ProgramMembership>({
-                limit: 1,
-                typeOfGood: {
-                    typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
-                },
-                ownedBy: { id: customer.id }
-            });
-
-        const isNewRegister = programMembershipOwnershipInfos.length === 0;
-
-        let sendEmailMessageParams = params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.sendEmailMessage;
-        if (!Array.isArray(sendEmailMessageParams)) {
-            sendEmailMessageParams = [];
-        }
-
-        if (!isNewRegister
-            && typeof emailInformUpdateProgrammembership === 'string'
-            && sendEmailMessageParams.length === 0) {
-            const email: factory.creativeWork.message.email.ICustomization = {
-                about: `ProgramMembership Renewed [${project.id}]`,
-                toRecipient: { name: 'administrator', email: emailInformUpdateProgrammembership }
-                // template: template
-            };
-
-            sendEmailMessageParams.push({
-                object: email
-            });
-        }
-
-        // 取引確定
-        return TransactionService.placeOrderInProgress.confirm({
-            project: { id: project.id },
-            id: transaction.id,
-            agent: { id: customer.id },
-            result: {
-                order: { orderDate: new Date() }
-            },
-            potentialActions: params.potentialActions
-        })(repos);
-    };
-}
-
-function processAuthorizePointAward(params: {
-    customer: factory.person.IPerson;
-    membershipService: factory.chevre.service.IService;
-    transaction: factory.transaction.placeOrder.ITransaction;
-    now: Date;
-}) {
-    // tslint:disable-next-line:max-func-body-length
-    return async (repos: {
-        action: ActionRepo;
-        project: ProjectRepo;
-        transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
-    }) => {
-        const customer = params.customer;
-        const membershipService = params.membershipService;
-        const transaction = params.transaction;
-        const now = params.now;
-
-        // 登録時の獲得ポイント
-        let pointAward = (<any>membershipService).pointAward;
-        if (pointAward !== undefined && !Array.isArray(pointAward)) {
-            pointAward = [pointAward];
-        }
-        // if (Array.isArray(pointAward)) {
-        //     const givePointAwardParams: factory.transaction.placeOrder.IGivePointAwardParams[] = [];
-
-        //     await Promise.all((pointAward)
-        //         .map(async () => {
-        //             // no op
-        //         }));
-
-        //     await TransactionService.placeOrderInProgress.authorizeAward({
-        //         agent: { id: transaction.agent.id },
-        //         transaction: { id: transaction.id },
-        //         object: {
-        //             potentialActions: {
-        //                 givePointAwardParams: givePointAwardParams
-        //             }
-        //         }
-        //     })({
-        //         action: repos.action,
-        //         transaction: repos.transaction
-        //     });
-        // }
-
-        let membershipServiceOutput = membershipService.serviceOutput;
-        // 元々配列型だったので、互換性維持対応として
-        if (!Array.isArray(membershipServiceOutput)) {
-            membershipServiceOutput = <any>[membershipServiceOutput];
-        }
-
-        if (Array.isArray(membershipServiceOutput)) {
-            const givePointAwardParams: factory.transaction.placeOrder.IGivePointAwardParams[] = [];
-
-            await Promise.all((<factory.chevre.programMembership.IProgramMembership[]>membershipServiceOutput)
-                .map(async (serviceOutput) => {
-                    const membershipPointsEarnedName = (<any>serviceOutput).membershipPointsEarned?.name;
-                    const membershipPointsEarnedValue = serviceOutput.membershipPointsEarned?.value;
-                    const membershipPointsEarnedUnitText = (<any>serviceOutput).membershipPointsEarned?.unitText;
-
-                    if (typeof membershipPointsEarnedValue === 'number' && typeof membershipPointsEarnedUnitText === 'string') {
-                        // 所有口座を検索
-                        // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
-                        let accountOwnershipInfos = await AccountService.search({
-                            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                            conditions: {
-                                sort: { ownedFrom: factory.sortType.Ascending },
-                                limit: 1,
-                                typeOfGood: {
-                                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                                    accountType: <any>membershipPointsEarnedUnitText
-                                },
-                                ownedBy: { id: customer.id },
-                                ownedFrom: now,
-                                ownedThrough: now
-                            }
-                        })({
-                            ownershipInfo: repos.ownershipInfo,
-                            project: repos.project
-                        });
-
-                        // 開設口座に絞る
-                        accountOwnershipInfos =
-                            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
-                        if (accountOwnershipInfos.length === 0) {
-                            throw new factory.errors.NotFound('accountOwnershipInfos');
-                        }
-                        const toAccount = accountOwnershipInfos[0].typeOfGood;
-
-                        givePointAwardParams.push({
-                            object: {
-                                typeOf: factory.action.authorize.award.point.ObjectType.PointAward,
-                                amount: membershipPointsEarnedValue,
-                                toLocation: {
-                                    accountType: membershipPointsEarnedUnitText,
-                                    accountNumber: toAccount.accountNumber
-                                },
-                                description: (typeof membershipPointsEarnedName === 'string')
-                                    ? membershipPointsEarnedName
-                                    : membershipService.typeOf
-                            }
-                        });
-                    }
-                }));
-
-            await TransactionService.placeOrderInProgress.authorizeAward({
-                agent: { id: transaction.agent.id },
-                transaction: { id: transaction.id },
-                object: {
-                    potentialActions: {
-                        givePointAwardParams: givePointAwardParams
-                    }
-                }
-            })({
-                action: repos.action,
-                transaction: repos.transaction
-            });
-        }
     };
 }
