@@ -18,12 +18,7 @@ export function createRegisterProgramMembershipActions(params: {
             && a.object.itemOffered?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
         );
 
-    // メンバーシップが注文アイテムにあれば、登録アクションを追加
     const registerProgramMembershipActions: factory.action.interact.register.programMembership.IAttributes[] = [];
-    // const programMembershipOffers = <factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[]>
-    //     params.order.acceptedOffers.filter(
-    //         (o) => o.itemOffered.typeOf === factory.programMembership.ProgramMembershipType.ProgramMembership
-    //     );
 
     // tslint:disable-next-line:no-single-line-block-comment
     /* istanbul ignore if */
@@ -31,32 +26,6 @@ export function createRegisterProgramMembershipActions(params: {
         // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
         registerProgramMembershipActions.push(...authorizeMembershipOfferActions.map((authorizeAction) => {
             const programMembership = authorizeAction.object.itemOffered;
-
-            // メンバーシップ更新時のメール送信アクション
-            // let sendEmailMessageOnUpdate: factory.transaction.placeOrder.ISendEmailMessageParams[] = [];
-
-            // tslint:disable-next-line:max-line-length
-            // if (Array.isArray(params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.registerProgramMembership)) {
-            //     const registerParams =
-            // tslint:disable-next-line:max-line-length
-            //         params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.registerProgramMembership.find((r) => {
-            //             return r.object !== undefined
-            //                 && r.object.membershipFor?.id === programMembership.membershipFor?.id
-            //                 && r.object.typeOf === programMembership.typeOf;
-            //         });
-            //     if (registerParams !== undefined) {
-            //         const registerPotentialActions = registerParams.potentialActions;
-            //         if (registerPotentialActions?.orderProgramMembership?.potentialActions?.order !== undefined) {
-            //             const orderProgramMembershipPotentialActions =
-            //                 registerPotentialActions.orderProgramMembership.potentialActions.order.potentialActions;
-            //             const sendEmailMessageOnSentParams =
-            //                 orderProgramMembershipPotentialActions?.sendOrder?.potentialActions?.sendEmailMessage;
-            //             if (Array.isArray(sendEmailMessageOnSentParams)) {
-            //                 sendEmailMessageOnUpdate = sendEmailMessageOnSentParams;
-            //             }
-            //         }
-            //     }
-            // }
 
             if (programMembership.membershipFor === undefined) {
                 throw new Error('programMembership.membershipFor undefined');
@@ -78,7 +47,6 @@ export function createRegisterProgramMembershipActions(params: {
                                                         potentialActions: {
                                                             sendOrder: {
                                                                 potentialActions: {
-                                                                    // sendEmailMessage: sendEmailMessageOnUpdate
                                                                 }
                                                             }
                                                         }
@@ -88,7 +56,6 @@ export function createRegisterProgramMembershipActions(params: {
                                         }
                                     }
                                 ]
-                                // sendEmailMessage: sendEmailMessageOnUpdate
                             }
                         }
                     }
@@ -153,7 +120,6 @@ export function createRegisterProgramMembershipActions(params: {
                     typeOf: programMembership.typeOf,
                     identifier: programMembership.identifier,
                     name: programMembership.name,
-                    // programName: programMembership.programName,
                     project: programMembership.project,
                     membershipFor: programMembership.membershipFor,
                     ...(typeof transactionNumber === 'string') ? { transactionNumber } : undefined

@@ -195,41 +195,6 @@ function processPlaceOrder(params: {
     };
 }
 
-// プログラム更新の場合、管理者宛のメール送信を自動設定
-// const emailInformUpdateProgrammembership = (typeof project.settings?.emailInformUpdateProgrammembership === 'string')
-//     ? project.settings?.emailInformUpdateProgrammembership
-//     : undefined;
-
-// 新規登録かどうか、所有権で確認
-// const programMembershipOwnershipInfos =
-//     await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType.ProgramMembership>({
-//         limit: 1,
-//         typeOfGood: {
-//             typeOf: <any>membershipService.serviceOutput?.typeOf
-//         },
-//         ownedBy: { id: customer.id }
-//     });
-// const isNewRegister = programMembershipOwnershipInfos.length === 0;
-
-// let sendEmailMessageParams = params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.sendEmailMessage;
-// if (!Array.isArray(sendEmailMessageParams)) {
-//     sendEmailMessageParams = [];
-// }
-
-// if (!isNewRegister
-//     && typeof emailInformUpdateProgrammembership === 'string'
-//     && sendEmailMessageParams.length === 0) {
-//     const email: factory.creativeWork.message.email.ICustomization = {
-//         about: `ProgramMembership Renewed [${project.id}]`,
-//         toRecipient: { name: 'administrator', email: emailInformUpdateProgrammembership }
-//         // template: template
-//     };
-
-//     sendEmailMessageParams.push({
-//         object: email
-//     });
-// }
-
 function processAuthorizeMembershipOffer(params: {
     project: { id: string };
     customer: factory.person.IPerson;

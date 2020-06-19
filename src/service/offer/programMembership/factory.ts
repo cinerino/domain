@@ -28,7 +28,6 @@ export function createActionAttributes(params: {
         typeOf: <any>params.product.serviceOutput?.typeOf,
         identifier: params.transactionNumber,
         name: <any>params.product.name,
-        // programName: <any>membershipService.name,
         hostingOrganization: {
             project: issuedBy.project,
             id: issuedBy.id,
@@ -55,7 +54,6 @@ export function createActionAttributes(params: {
             typeOf: acceptedOffer.typeOf,
             id: acceptedOffer.id,
             identifier: acceptedOffer.identifier,
-            // price: amount,
             priceCurrency: acceptedOffer.priceCurrency,
             priceSpecification: acceptedOffer.priceSpecification,
             itemOffered: programMembership,

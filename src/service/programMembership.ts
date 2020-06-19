@@ -143,7 +143,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
         name: <any>programMembership.name,
-        // programName: <any>programMembership.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: { typeOf: 'Project', id: seller.project.id },
@@ -161,7 +160,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
-        // price: offer.priceSpecification?.price,
         priceCurrency: offer.priceCurrency,
         priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,
@@ -256,13 +254,6 @@ export function register(
 
         // 次のメンバーシップ注文タスクを作成
         await onRegistered(action)(repos);
-        // if (action.potentialActions !== undefined) {
-        //     if (Array.isArray(action.potentialActions.orderProgramMembership)) {
-        //         await Promise.all(action.potentialActions.orderProgramMembership.map(async (taskAttribute) => {
-        //             return repos.task.save(taskAttribute);
-        //         }));
-        //     }
-        // }
     };
 }
 
