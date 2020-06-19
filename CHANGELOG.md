@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v5.3.0 - 2020-06-19
+
+### Changed
+
 - update @cinerino/factory
 - update @chevre/api-nodejs-client
 - メンバーシップ登録時のポイント特典をChevreで処理するように調整
@@ -18,14 +30,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - メンバーシップ登録ロックのタイミングをサービス登録取引開始前へ移行
 - メンバーシップ注文失敗時に、メンバーシップオファー承認を明示的に取り消すように調整
 - 注文アイテムを複数のプロダクト対応に対応
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v5.2.0 - 2020-06-15
 
