@@ -5,7 +5,6 @@ import * as factory from '../../factory';
 import { availableProductTypes } from '../offer/product/factory';
 
 import { createProductOwnershipInfo } from './product/factory';
-// import { createProgramMembershipOwnershipInfo } from './programMembership/factory';
 import { createReservationOwnershipInfo } from './reservation/factory';
 
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
@@ -44,17 +43,6 @@ export function createOwnershipInfosFromOrder(params: {
         );
 
         switch (true) {
-            // case new RegExp(`^${factory.chevre.programMembership.ProgramMembershipType.ProgramMembership}$`).test(itemOffered.typeOf):
-            //     ownershipInfo = createProgramMembershipOwnershipInfo({
-            //         order: params.order,
-            //         acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
-            //         ownedFrom: ownedFrom,
-            //         identifier: identifier,
-            //         acquiredFrom: acquiredFrom
-            //     });
-
-            //     break;
-
             case new RegExp(`^${factory.chevre.reservationType.EventReservation}$`).test(itemOffered.typeOf):
                 ownershipInfo = createReservationOwnershipInfo({
                     order: params.order,
