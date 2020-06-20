@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v5.5.0 - 2020-06-20
+
+### Changed
+
+- メンバーシップ注文配送処理をプロダクト注文配送処理に統合
+- update @cinerino/factory
+
 ## v5.4.0 - 2020-06-19
 
 ### Added
