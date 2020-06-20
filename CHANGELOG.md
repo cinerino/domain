@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- メンバーシップ注文配送処理をプロダクト注文配送処理に統合
+
 ### Deprecated
 
 ### Removed
