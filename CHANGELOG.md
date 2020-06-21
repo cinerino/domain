@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v5.8.0 - 2020-06-21
+
+### Added
+
+- プロダクトオファー承認取消処理を追加
+
 ## v5.7.0 - 2020-06-21
 
 ### Changed

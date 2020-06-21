@@ -104,10 +104,17 @@ export function orderProgramMembership(
         } catch (error) {
             try {
                 if (typeof transaction?.id === 'string') {
-                    await OfferService.programMembership.voidTransaction({
-                        agent: { id: customer.id },
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                    })(repos);
+                    if (USE_AUTHORIZE_PRODUCT_OFFER) {
+                        await OfferService.product.voidTransaction({
+                            agent: { id: customer.id },
+                            purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                        })(repos);
+                    } else {
+                        await OfferService.programMembership.voidTransaction({
+                            agent: { id: customer.id },
+                            purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                        })(repos);
+                    }
                 }
             } catch (error) {
                 // 失敗したら仕方ない
