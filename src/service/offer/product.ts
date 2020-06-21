@@ -44,7 +44,7 @@ export type IAuthorizeOperation<T> = (repos: {
  */
 export function authorize(params: {
     project: factory.project.IProject;
-    object: any;
+    object: factory.action.authorize.offer.product.IObject;
     agent: { id: string };
     transaction: { id: string };
 }): IAuthorizeOperation<factory.action.authorize.offer.product.IAction> {
@@ -77,7 +77,7 @@ export function authorize(params: {
             auth: chevreAuthClient
         });
         const product = await productService.findById({
-            id: params.object[0]?.itemOffered?.id
+            id: String(params.object[0]?.itemOffered?.id)
         });
         const availableOffers = await productService.searchOffers({ id: String(product.id) });
 
@@ -160,14 +160,14 @@ export function authorize(params: {
  * 受け入れらたオファーの内容を検証
  */
 export function validateAcceptedOffers(params: {
-    object: any;
+    object: factory.action.authorize.offer.product.IObject;
     product: factory.chevre.service.IService;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
     seller: factory.seller.IOrganization<any>;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.product.IObject> => {
-        let acceptedOfferWithoutDetail: any[] = params.object;
+        let acceptedOfferWithoutDetail = params.object;
         if (!Array.isArray(acceptedOfferWithoutDetail)) {
             acceptedOfferWithoutDetail = [acceptedOfferWithoutDetail];
         }
@@ -176,8 +176,9 @@ export function validateAcceptedOffers(params: {
             throw new factory.errors.ArgumentNull('object');
         }
 
+        const project: factory.chevre.project.IProject = { typeOf: 'Project', id: params.product.project.id };
         const issuedBy: factory.chevre.organization.IOrganization = {
-            project: { typeOf: 'Project', id: params.product.project.id },
+            project: project,
             id: params.seller.id,
             name: params.seller.name,
             typeOf: params.seller.typeOf
@@ -194,17 +195,20 @@ export function validateAcceptedOffers(params: {
                 ...offerWithoutDetail,
                 ...offer,
                 itemOffered: {
+                    project: project,
                     typeOf: params.product.typeOf,
                     id: params.product.id,
                     name: params.product.name,
                     serviceOutput: {
                         ...params.product?.serviceOutput,
                         ...offerWithoutDetail.itemOffered?.serviceOutput,
+                        project: project,
+                        typeOf: String(params.product?.serviceOutput?.typeOf),
                         // 発行者は販売者でいったん固定
                         issuedBy: issuedBy
                     }
                 },
-                seller: { typeOf: params.seller.typeOf, id: params.seller.id }
+                seller: { typeOf: params.seller.typeOf, id: params.seller.id, name: params.seller.name }
             };
         }));
     };

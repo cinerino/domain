@@ -4,6 +4,7 @@ import { IConnectionSettings, IOperation } from '../task';
 
 import * as factory from '../../factory';
 
+import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../../repo/order';
@@ -52,6 +53,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                 });
 
                 await orderProgramMembership(<any>data)({
+                    accountNumber: new AccountNumberRepo(settings.redisClient),
                     action: new ActionRepo(settings.connection),
                     creditCard: creditCardRepo,
                     orderNumber: new OrderNumberRepo(settings.redisClient),
