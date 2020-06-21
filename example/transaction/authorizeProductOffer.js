@@ -23,6 +23,7 @@ async function main() {
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
     const projectRepo = new domain.repository.Project(mongoose.connection);
+    const registerActionInProgressRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
     const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
@@ -103,11 +104,24 @@ async function main() {
         action: actionRepo,
         ownershipInfo: ownershipInfoRepo,
         project: projectRepo,
+        registerActionInProgress: registerActionInProgressRepo,
         seller: sellerRepo,
         transaction: transactionRepo
     });
     console.log('authorized.', authorizeAction);
     // await mongoose.disconnect();
+
+    // await domain.service.offer.product.voidTransaction({
+    //     id: authorizeAction.id,
+    //     agent: { id: transaction.agent.id },
+    //     purpose: { typeOf: transaction.typeOf, id: transaction.id }
+    // })({
+    //     action: actionRepo,
+    //     registerActionInProgress: registerActionInProgressRepo,
+    //     transaction: transactionRepo
+    // });
+    // console.log('canceled.', authorizeAction.id);
+    // return;
 
     await domain.service.transaction.updateAgent({
         typeOf: transaction.typeOf,

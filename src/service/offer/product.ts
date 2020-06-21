@@ -15,6 +15,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { handleChevreError } from '../../errorHandler';
 
 import {
+    availableProductTypes,
     createActionAttributes,
     createRegisterServiceStartParams,
     createResult,
@@ -172,6 +173,69 @@ export function authorize(params: {
         });
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+    };
+}
+
+export function voidTransaction(params: {
+    id?: string;
+    agent: { id: string };
+    purpose: factory.action.authorize.offer.product.IPurpose;
+}) {
+    return async (repos: {
+        action: ActionRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        transaction: TransactionRepo;
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: params.purpose.typeOf,
+            id: params.purpose.id
+        });
+
+        if (transaction.agent.id !== params.agent.id) {
+            throw new factory.errors.Forbidden('Transaction not yours');
+        }
+
+        let authorizeActions: factory.action.authorize.offer.product.IAction[];
+
+        if (typeof params.id === 'string') {
+            const action = <factory.action.authorize.offer.product.IAction>
+                await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+            if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
+                throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
+            }
+
+            authorizeActions = [action];
+        } else {
+            authorizeActions = <factory.action.authorize.offer.product.IAction[]>
+                await repos.action.searchByPurpose({
+                    typeOf: factory.actionType.AuthorizeAction,
+                    purpose: {
+                        typeOf: params.purpose.typeOf,
+                        id: params.purpose.id
+                    }
+                })
+                    .then((actions) => actions
+                        .filter((a) =>
+                            Array.isArray(a.object)
+                            && a.object.length > 0
+                            && a.object[0].typeOf === factory.chevre.offerType.Offer
+                            && availableProductTypes.indexOf(a.object[0].itemOffered.typeOf) >= 0
+                        )
+                    );
+        }
+
+        await Promise.all(authorizeActions.map(async (action) => {
+            const productId = action.object[0]?.itemOffered?.id;
+            if (typeof productId === 'string') {
+                await processUnlock({
+                    agent: params.agent,
+                    product: { id: productId },
+                    purpose: params.purpose
+                })(repos);
+            }
+
+            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+        }));
     };
 }
 
