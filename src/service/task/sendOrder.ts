@@ -6,6 +6,7 @@ import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../.
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../../repo/task';
+import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as DeliveryService from '../delivery';
 
@@ -25,13 +26,15 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
         const orderRepo = new OrderRepo(settings.connection);
         const ownershipInfoRepo = new OwnershipInfoRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
+        const transactionRepo = new TransactionRepo(settings.connection);
 
         await DeliveryService.sendOrder(data)({
             action: actionRepo,
             order: orderRepo,
             ownershipInfo: ownershipInfoRepo,
             registerActionInProgress: registerActionInProgressRepo,
-            task: taskRepo
+            task: taskRepo,
+            transaction: transactionRepo
         });
     };
 }

@@ -96,7 +96,7 @@ describe('メンバーシップオファー承認', () => {
             action: actionRepo,
             ownershipInfo: ownershipInfoRepo,
             project: projectRepo,
-            registerActionInProgressRepo: registerActionInProgressRepo,
+            registerActionInProgress: registerActionInProgressRepo,
             transaction: transactionRepo
         });
         assert.equal(typeof result, 'object');

@@ -55,7 +55,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             ownershipInfo: new OwnershipInfoRepo(settings.connection),
             person: personRepo,
             project: new ProjectRepo(settings.connection),
-            registerActionInProgressRepo: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
+            registerActionInProgress: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
             transaction: new TransactionRepo(settings.connection)
         });
     };

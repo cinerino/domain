@@ -26,7 +26,7 @@ export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
-    registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+    registerActionInProgress: RegisterProgramMembershipInProgressRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -41,7 +41,7 @@ export function authorize(params: {
         action: ActionRepo;
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         const now = new Date();
@@ -117,7 +117,7 @@ export function authorize(params: {
         try {
             // 登録処理ロック
             // 進行中であれば競合エラー
-            await repos.registerActionInProgressRepo.lock(
+            await repos.registerActionInProgress.lock(
                 {
                     id: params.agent.id,
                     programMembershipId: String(membershipService.id)
@@ -214,7 +214,7 @@ export function voidTransaction(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -273,17 +273,17 @@ function processUnlock(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         // 登録ロックIDが取引IDであればロック解除
-        const holder = await repos.registerActionInProgressRepo.getHolder({
+        const holder = await repos.registerActionInProgress.getHolder({
             id: params.agent.id,
             programMembershipId: params.product.id
         });
 
         if (holder === params.purpose.id) {
-            await repos.registerActionInProgressRepo.unlock({
+            await repos.registerActionInProgress.unlock({
                 id: params.agent.id,
                 programMembershipId: params.product.id
             });

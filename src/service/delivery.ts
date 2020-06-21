@@ -21,8 +21,10 @@ import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
+import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import { createOwnershipInfosFromOrder } from './delivery/factory';
+import { processUnlock } from './offer/product';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -46,6 +48,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         ownershipInfo: OwnershipInfoRepo;
         registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         task: TaskRepo;
+        transaction: TransactionRepo;
     }) => {
         let order = params.object;
 
@@ -67,20 +70,26 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 orderStatus: factory.orderStatus.OrderDelivered
             });
 
-            // メンバーシップがアイテムにある場合は、所有権が作成されたこのタイミングで登録プロセスロック解除
-            const programMembershipOwnershipInfos
-                // tslint:disable-next-line:max-line-length
-                = <factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.chevre.programMembership.ProgramMembershipType.ProgramMembership>>[]>
-                ownershipInfos.filter(
-                    (o) => o.typeOfGood.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
-                );
-            await Promise.all(programMembershipOwnershipInfos.map(async (o) => {
-                const customer = <factory.person.IPerson>o.ownedBy;
-                // const memberOf = <factory.programMembership.IProgramMembership>(<factory.person.IPerson>o.ownedBy).memberOf;
-                await repos.registerActionInProgress.unlock({
-                    id: customer.id,
-                    programMembershipId: <string>o.typeOfGood.membershipFor?.id
-                });
+            // 注文取引検索
+            const searchTransactionsResult = await repos.transaction.search<factory.transactionType.PlaceOrder>({
+                typeOf: factory.transactionType.PlaceOrder,
+                result: { order: { orderNumbers: [order.orderNumber] } }
+            });
+            const transaction = searchTransactionsResult.shift();
+            if (transaction === undefined) {
+                throw new factory.errors.NotFound('PlaceOrder transaction for order');
+            }
+
+            // プロダクト登録プロセスロック解除
+            await Promise.all(ownershipInfos.map(async (o) => {
+                const productId = o.typeOfGood.issuedThrough?.id;
+                if (typeof productId === 'string') {
+                    await processUnlock({
+                        agent: { id: o.ownedBy.id },
+                        product: { id: productId },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    })(repos);
+                }
             }));
         } catch (error) {
             try {

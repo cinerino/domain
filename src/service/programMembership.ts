@@ -4,16 +4,12 @@
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
-import { RedisRepository as OrderNumberRepo } from '../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
-import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
-import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import { credentials } from '../credentials';
 
@@ -35,18 +31,6 @@ export type ICreateRegisterTaskOperation<T> = (repos: {
     project: ProjectRepo;
     seller: SellerRepo;
     task: TaskRepo;
-}) => Promise<T>;
-
-export type IOrderOperation<T> = (repos: {
-    action: ActionRepo;
-    creditCard: CreditCardRepo;
-    orderNumber: OrderNumberRepo;
-    ownershipInfo: OwnershipInfoRepo;
-    person: PersonRepo;
-    project: ProjectRepo;
-    registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
-    seller: SellerRepo;
-    transaction: TransactionRepo;
 }) => Promise<T>;
 
 export type IRegisterOperation<T> = (repos: {

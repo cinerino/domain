@@ -6,6 +6,7 @@ import * as factory from '../../factory';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
@@ -35,6 +36,7 @@ export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
+    registerActionInProgress: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -54,6 +56,7 @@ export function authorize(params: {
         action: ActionRepo;
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
@@ -116,6 +119,12 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         try {
+            await processLock({
+                agent: params.agent,
+                product: product,
+                purpose: { typeOf: transaction.typeOf, id: transaction.id }
+            })(repos);
+
             // サービス登録開始
             const registerService = new chevre.service.transaction.RegisterService({
                 endpoint: project.settings.chevre.endpoint,
@@ -137,6 +146,16 @@ export function authorize(params: {
                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
             } catch (__) {
                 // no op
+            }
+
+            try {
+                await processUnlock({
+                    agent: params.agent,
+                    product: { id: String(product.id) },
+                    purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                })(repos);
+            } catch (error) {
+                // 失敗したら仕方ない
             }
 
             error = handleChevreError(error);
@@ -270,5 +289,48 @@ function createServiceOutputIdentifier(params: {
                 }
             };
         }));
+    };
+}
+
+function processLock(params: {
+    agent: { id: string };
+    product: factory.chevre.service.IService;
+    purpose: factory.action.authorize.offer.product.IPurpose;
+}) {
+    return async (repos: {
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+    }) => {
+        if (params.product.typeOf === ProductType.MembershipService) {
+            await repos.registerActionInProgress.lock(
+                {
+                    id: params.agent.id,
+                    programMembershipId: String(params.product.id)
+                },
+                params.purpose.id
+            );
+        }
+    };
+}
+
+export function processUnlock(params: {
+    agent: { id: string };
+    product: { id: string };
+    purpose: factory.action.authorize.offer.product.IPurpose;
+}) {
+    return async (repos: {
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+    }) => {
+        // 登録ロックIDが取引IDであればロック解除
+        const holder = await repos.registerActionInProgress.getHolder({
+            id: params.agent.id,
+            programMembershipId: params.product.id
+        });
+
+        if (holder === params.purpose.id) {
+            await repos.registerActionInProgress.unlock({
+                id: params.agent.id,
+                programMembershipId: params.product.id
+            });
+        }
     };
 }
