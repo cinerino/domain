@@ -44,7 +44,7 @@ export type IOrderOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
     project: ProjectRepo;
-    registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+    registerActionInProgress: RegisterProgramMembershipInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -63,7 +63,7 @@ export function orderProgramMembership(
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
@@ -138,7 +138,7 @@ function processPlaceOrder(params: {
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -229,7 +229,7 @@ function processAuthorizeMembershipOffer(params: {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
         productService: chevre.service.Product;
@@ -289,7 +289,7 @@ function processAuthorizeProductOffer(params: {
         accountNumber: AccountNumberRepo;
         action: ActionRepo;
         project: ProjectRepo;
-        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;

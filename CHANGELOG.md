@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- プロダクトオファー承認に対してサービス登録排他ロック処理を追加
+
 ### Deprecated
 
 ### Removed
