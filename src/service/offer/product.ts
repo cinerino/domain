@@ -289,7 +289,10 @@ export function validateAcceptedOffers(params: {
                         typeOf: String(params.product?.serviceOutput?.typeOf),
                         // 発行者は販売者でいったん固定
                         issuedBy: issuedBy
-                    }
+                    },
+                    ...(offerWithoutDetail.itemOffered?.pointAward !== undefined)
+                        ? { pointAward: offerWithoutDetail.itemOffered?.pointAward }
+                        : undefined
                 },
                 seller: { typeOf: params.seller.typeOf, id: params.seller.id, name: params.seller.name }
             };

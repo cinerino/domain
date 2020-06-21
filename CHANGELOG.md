@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- プロダクトオファー承認にポイント特典を指定できるように調整
+
 ### Deprecated
 
 ### Removed
