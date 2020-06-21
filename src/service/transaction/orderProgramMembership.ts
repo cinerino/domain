@@ -4,6 +4,7 @@
 import * as GMO from '@motionpicture/gmo-service';
 import * as moment from 'moment-timezone';
 
+import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
@@ -33,7 +34,10 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+const USE_AUTHORIZE_PRODUCT_OFFER = process.env.USE_AUTHORIZE_PRODUCT_OFFER === '1';
+
 export type IOrderOperation<T> = (repos: {
+    accountNumber: AccountNumberRepo;
     action: ActionRepo;
     creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
@@ -52,6 +56,7 @@ export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.OrderProgramMembership>
 ): IOrderOperation<void> {
     return async (repos: {
+        accountNumber: AccountNumberRepo;
         action: ActionRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
@@ -127,6 +132,7 @@ function processPlaceOrder(params: {
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }) {
     return async (repos: {
+        accountNumber: AccountNumberRepo;
         action: ActionRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
@@ -154,27 +160,45 @@ function processPlaceOrder(params: {
         // プロダクト情報取得
         const productId = acceptedOffer.itemOffered.membershipFor?.id;
         if (typeof productId !== 'string') {
-            throw new Error('membershipServiceId undefined');
+            throw new Error('acceptedOffer.itemOffered.membershipFor.id undefined');
         }
 
         // メンバーシップオファー承認
-        const authorizeMembershipOfferAction = await processAuthorizeMembershipOffer({
-            project: { id: project.id },
-            customer: customer,
-            transaction: transaction,
-            acceptedOffer: acceptedOffer,
-            product: { id: productId }
-        })({
-            ...repos,
-            productService: productService
-        });
+        let authorizeProductOfferAction:
+            factory.action.authorize.offer.product.IAction | factory.action.authorize.offer.programMembership.IAction;
+        if (USE_AUTHORIZE_PRODUCT_OFFER) {
+            authorizeProductOfferAction = await processAuthorizeProductOffer({
+                project: { id: project.id },
+                customer: customer,
+                transaction: transaction,
+                acceptedOffer: acceptedOffer,
+                product: { id: productId }
+            })({
+                ...repos,
+                productService: productService
+            });
+        } else {
+            authorizeProductOfferAction = await processAuthorizeMembershipOffer({
+                project: { id: project.id },
+                customer: customer,
+                transaction: transaction,
+                acceptedOffer: acceptedOffer,
+                product: { id: productId }
+            })({
+                ...repos,
+                productService: productService
+            });
+        }
 
-        await processAuthorizeCreditCard({
-            project: { id: project.id },
-            customer: customer,
-            object: { amount: <number>authorizeMembershipOfferAction.result?.price },
-            purpose: transaction
-        })(repos);
+        const amount = Number(authorizeProductOfferAction.result?.price);
+        if (amount > 0) {
+            await processAuthorizeCreditCard({
+                project: { id: project.id },
+                customer: customer,
+                object: { amount },
+                purpose: transaction
+            })(repos);
+        }
 
         await TransactionService.updateAgent({
             typeOf: transaction.typeOf,
@@ -250,6 +274,92 @@ function processAuthorizeMembershipOffer(params: {
             agent: { id: customer.id },
             object: acceptedOffer,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
+        })(repos);
+    };
+}
+
+function processAuthorizeProductOffer(params: {
+    project: { id: string };
+    customer: factory.person.IPerson;
+    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+    acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
+    product: { id: string };
+}) {
+    return async (repos: {
+        accountNumber: AccountNumberRepo;
+        action: ActionRepo;
+        project: ProjectRepo;
+        registerActionInProgressRepo: RegisterProgramMembershipInProgressRepo;
+        seller: SellerRepo;
+        transaction: TransactionRepo;
+        ownershipInfo: OwnershipInfoRepo;
+        productService: chevre.service.Product;
+    }) => {
+        const acceptedOffer = params.acceptedOffer;
+        const customer = params.customer;
+        const transaction = params.transaction;
+
+        // オファーにポイント特典設定があるかどうか確認
+        let pointAward: factory.chevre.service.IPointAward | undefined;
+        const offers = await repos.productService.searchOffers({ id: params.product.id });
+        const acceptedProductOffer = offers.find((o) => o.identifier === acceptedOffer.identifier);
+        if (acceptedProductOffer === undefined) {
+            throw new factory.errors.NotFound('Offer', `Accepted offer ${acceptedOffer.identifier} not found`);
+        }
+        const pointAwardByOffer = acceptedProductOffer.itemOffered?.pointAward;
+        if (typeof pointAwardByOffer?.amount?.value === 'number' && typeof pointAwardByOffer?.amount?.currency === 'string') {
+            const toAccount = await findAccount({
+                customer: { id: params.customer.id },
+                project: transaction.project,
+                now: new Date(),
+                accountType: pointAwardByOffer.amount?.currency
+            })(repos);
+
+            pointAward = {
+                typeOf: 'MoneyTransfer',
+                toLocation: { identifier: toAccount.accountNumber },
+                ...{
+                    recipient: {
+                        id: customer.id,
+                        name: `${customer.givenName} ${customer.familyName}`,
+                        typeOf: customer.typeOf
+                    }
+                }
+            };
+        }
+
+        const project: factory.chevre.project.IProject = { typeOf: 'Project', id: params.project.id };
+        const seller: factory.order.ISeller
+            = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
+
+        const object: factory.action.authorize.offer.product.IObject = [{
+            project: project,
+            typeOf: acceptedOffer.typeOf,
+            id: acceptedOffer.id,
+            priceCurrency: acceptedOffer.priceCurrency,
+            itemOffered: {
+                project: project,
+                typeOf: acceptedOffer.itemOffered.typeOf,
+                id: params.product.id,
+                serviceOutput: {
+                    project: project,
+                    typeOf: '',
+                    name: acceptedOffer.itemOffered.name
+                    // additionalProperty: [
+                    //     { name: 'sampleName', value: 'sampleValue' }
+                    // ]
+                },
+                ...(pointAward !== undefined) ? { pointAward } : undefined
+            },
+            seller: seller
+        }];
+
+        // メンバーシップオファー承認
+        return OfferService.product.authorize({
+            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            agent: { id: customer.id },
+            object: object,
+            transaction: { id: transaction.id }
         })(repos);
     };
 }

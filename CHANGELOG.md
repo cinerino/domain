@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v5.6.0 - 2020-06-21
+
+### Added
+
+- USE_AUTHORIZE_PRODUCT_OFFER設定を追加
+
 ## v5.5.0 - 2020-06-20
 
 ### Changed
