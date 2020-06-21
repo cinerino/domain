@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- プロダクトオファー承認に対してサービス登録排他ロック処理を追加
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v5.7.0 - 2020-06-21
+
+### Changed
+
+- プロダクトオファー承認に対してサービス登録排他ロック処理を追加
 
 ## v5.6.0 - 2020-06-21
 
