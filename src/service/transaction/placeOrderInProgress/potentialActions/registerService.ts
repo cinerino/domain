@@ -32,7 +32,6 @@ export async function createRegisterServiceActions(params: {
                 order: params.order,
                 potentialActions: params.potentialActions,
                 transaction: params.transaction,
-                // registerServiceTransaction: registerServiceTransaction,
                 transactionNumber: a.instrument?.transactionNumber
             });
 
@@ -96,7 +95,6 @@ function createRegisterServiceActionObject(params: {
  */
 function createOrderProgramMembershipTask(params: {
     order: factory.order.IOrder;
-    // potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
     authorizeAction: factory.action.authorize.offer.product.IAction;
 }): factory.task.IAttributes<factory.taskName.OrderProgramMembership> | undefined {
@@ -105,8 +103,9 @@ function createOrderProgramMembershipTask(params: {
     const acceptedOffer = params.authorizeAction.object[0];
 
     // ssktsへの互換性対応なので、限定的に
+    const serviceOutput = acceptedOffer.itemOffered.serviceOutput;
     if (acceptedOffer.itemOffered.typeOf === ProductType.MembershipService
-        && acceptedOffer.itemOffered.serviceOutput?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
+        && serviceOutput?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
         const memebershipFor = {
             typeOf: String(acceptedOffer.itemOffered.typeOf),
             id: String(acceptedOffer.itemOffered.id)
@@ -119,9 +118,9 @@ function createOrderProgramMembershipTask(params: {
                 ...acceptedOffer,
                 itemOffered: {
                     project: { typeOf: 'Project', id: params.order.project.id },
-                    typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-                    name: acceptedOffer.itemOffered.serviceOutput.name,
-                    hostingOrganization: acceptedOffer.itemOffered.serviceOutput.issuedBy,
+                    typeOf: serviceOutput?.typeOf,
+                    name: serviceOutput.name,
+                    hostingOrganization: serviceOutput.issuedBy,
                     membershipFor: memebershipFor,
                     ...{
                         issuedThrough: memebershipFor

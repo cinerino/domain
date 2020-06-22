@@ -78,8 +78,8 @@ export function createRegisterTask(params: {
             auth: chevreAuthClient
         });
 
-        const membershipService = await productService.findById({ id: params.programMembershipId });
-        const offers = await productService.searchOffers({ id: String(membershipService.id) });
+        const product = await productService.findById({ id: params.programMembershipId });
+        const offers = await productService.searchOffers({ id: String(product.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.offerIdentifier);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
@@ -91,7 +91,7 @@ export function createRegisterTask(params: {
         const data = createOrderProgramMembershipActionAttributes({
             agent: params.agent,
             offer: acceptedOffer,
-            programMembership: membershipService,
+            product: product,
             potentialActions: params.potentialActions,
             seller: seller
         });
@@ -115,18 +115,22 @@ export function createRegisterTask(params: {
 function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
-    programMembership: factory.chevre.service.IService;
+    product: factory.chevre.service.IService;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
     const offer = params.offer;
-    const programMembership = params.programMembership;
     const seller = params.seller;
 
+    const serviceOutputType = params.product.serviceOutput?.typeOf;
+    if (typeof serviceOutputType !== 'string') {
+        throw new factory.errors.NotFound(`ServiceOutput for product ${params.product.id}`);
+    }
+
     const itemOffered: factory.programMembership.IProgramMembership = {
-        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
-        typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-        name: <any>programMembership.name,
+        project: { typeOf: factory.organizationType.Project, id: params.product.project.id },
+        typeOf: <any>serviceOutputType,
+        name: <any>params.product.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: { typeOf: 'Project', id: seller.project.id },
@@ -135,7 +139,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         },
         membershipFor: {
             typeOf: ProductType.MembershipService,
-            id: <string>programMembership.id
+            id: <string>params.product.id
         }
     };
 
@@ -159,7 +163,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         agent: params.agent,
         object: acceptedOffer,
         potentialActions: params.potentialActions,
-        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
+        project: { typeOf: factory.organizationType.Project, id: params.product.project.id },
         typeOf: factory.actionType.OrderAction
     };
 }
@@ -207,10 +211,8 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                         // 現在所有しているメンバーシップを全て検索
                         const now = moment(action.startDate)
                             .toDate();
-                        const ownershipInfos = await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType>({
-                            typeOfGood: {
-                                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
-                            },
+                        const ownershipInfos = await repos.ownershipInfo.search({
+                            typeOfGood: { typeOf: params.object.typeOf },
                             ownedBy: { id: customer.id },
                             ownedFrom: now,
                             ownedThrough: now
