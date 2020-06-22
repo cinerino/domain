@@ -1,12 +1,7 @@
 /**
  * メンバーシップサービス
  */
-import * as moment from 'moment-timezone';
-
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as OrderRepo } from '../repo/order';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
-import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -29,14 +24,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type ICreateRegisterTaskOperation<T> = (repos: {
     project: ProjectRepo;
     seller: SellerRepo;
-    task: TaskRepo;
-}) => Promise<T>;
-
-export type IRegisterOperation<T> = (repos: {
-    action: ActionRepo;
-    order: OrderRepo;
-    person: PersonRepo;
-    project: ProjectRepo;
     task: TaskRepo;
 }) => Promise<T>;
 
@@ -174,7 +161,6 @@ function createOrderProgramMembershipActionAttributes(params: {
 export function unRegister(params: factory.action.interact.unRegister.programMembership.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        ownershipInfo: OwnershipInfoRepo;
         task: TaskRepo;
     }) => {
         const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
@@ -207,30 +193,6 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                             { status: factory.taskStatus.Aborted }
                         )
                             .exec();
-
-                        // 現在所有しているメンバーシップを全て検索
-                        const now = moment(action.startDate)
-                            .toDate();
-                        const ownershipInfos = await repos.ownershipInfo.search({
-                            typeOfGood: { typeOf: params.object.typeOf },
-                            ownedBy: { id: customer.id },
-                            ownedFrom: now,
-                            ownedThrough: now
-                        });
-
-                        // 所有権の期限変更
-                        await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
-                            const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
-                                { _id: ownershipInfo.id },
-                                { ownedThrough: now },
-                                { new: true }
-                            )
-                                .select({ __v: 0, createdAt: 0, updatedAt: 0 })
-                                .exec();
-                            if (doc !== null) {
-                                returnedOwnershipInfos.push(doc.toObject());
-                            }
-                        }));
                     }));
                 }
             }
