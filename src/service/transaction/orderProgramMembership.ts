@@ -341,9 +341,9 @@ function processAuthorizeProductOffer(params: {
 
         const object: factory.action.authorize.offer.product.IObject = [{
             project: project,
-            typeOf: acceptedOffer.typeOf,
-            id: acceptedOffer.id,
-            priceCurrency: acceptedOffer.priceCurrency,
+            typeOf: acceptedProductOffer.typeOf,
+            id: acceptedProductOffer.id,
+            priceCurrency: acceptedProductOffer.priceCurrency,
             itemOffered: {
                 project: project,
                 typeOf: acceptedOffer.itemOffered.typeOf,
