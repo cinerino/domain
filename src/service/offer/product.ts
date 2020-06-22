@@ -6,7 +6,7 @@ import * as factory from '../../factory';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
@@ -37,7 +37,7 @@ export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
-    registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+    registerActionInProgress: RegisterServiceInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -57,7 +57,7 @@ export function authorize(params: {
         action: ActionRepo;
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
@@ -183,7 +183,7 @@ export function voidTransaction(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -365,13 +365,13 @@ function processLock(params: {
     purpose: factory.action.authorize.offer.product.IPurpose;
 }) {
     return async (repos: {
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
     }) => {
         if (params.product.typeOf === ProductType.MembershipService) {
             await repos.registerActionInProgress.lock(
                 {
-                    id: params.agent.id,
-                    programMembershipId: String(params.product.id)
+                    agent: { id: params.agent.id },
+                    product: { id: String(params.product.id) }
                 },
                 params.purpose.id
             );
@@ -385,18 +385,18 @@ export function processUnlock(params: {
     purpose: factory.action.authorize.offer.product.IPurpose;
 }) {
     return async (repos: {
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
     }) => {
         // 登録ロックIDが取引IDであればロック解除
         const holder = await repos.registerActionInProgress.getHolder({
-            id: params.agent.id,
-            programMembershipId: params.product.id
+            agent: { id: params.agent.id },
+            product: { id: params.product.id }
         });
 
         if (holder === params.purpose.id) {
             await repos.registerActionInProgress.unlock({
-                id: params.agent.id,
-                programMembershipId: params.product.id
+                agent: { id: params.agent.id },
+                product: { id: params.product.id }
             });
         }
     };

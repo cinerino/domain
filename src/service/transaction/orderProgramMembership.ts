@@ -6,7 +6,7 @@ import * as moment from 'moment-timezone';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
@@ -42,7 +42,7 @@ export type IOrderOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
     project: ProjectRepo;
-    registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+    registerActionInProgress: RegisterServiceInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -61,7 +61,7 @@ export function orderProgramMembership(
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
@@ -133,7 +133,7 @@ function processPlaceOrder(params: {
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -211,7 +211,7 @@ function processAuthorizeProductOffer(params: {
         accountNumber: AccountNumberRepo;
         action: ActionRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;

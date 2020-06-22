@@ -288,11 +288,38 @@ schema.index(
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.typeOf': 1, orderDate: -1 },
+    {
+        name: 'searchByItemOfferedTypeOf',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'acceptedOffers.itemOffered.identifier': 1, orderDate: -1 },
+    {
+        name: 'searchByItemOfferedIdentifier',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'acceptedOffers.itemOffered.id': 1, orderDate: -1 },
     {
         name: 'searchByItemOfferedIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'acceptedOffers.itemOffered.issuedThrough.id': 1, orderDate: -1 },
+    {
+        name: 'searchByItemOfferedIssuedThroughId',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.issuedThrough.id': { $exists: true }
         }
     }
 );

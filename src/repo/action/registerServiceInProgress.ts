@@ -7,12 +7,12 @@ const debug = createDebug('cinerino:repository');
  * 進行アクションキーインターフェース
  */
 export interface IProgressKey {
-    id: string;
-    programMembershipId: string;
+    agent: { id: string };
+    product: { id: string };
 }
 
 /**
- * 進行中のメンバーシップ登録アクションリポジトリ
+ * 進行中のサービス登録アクションリポジトリ
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'cinerino:registerProgramMembershipActionInProgress';
@@ -28,7 +28,7 @@ export class RedisRepository {
      */
     public async lock(progressKey: IProgressKey, holder: string): Promise<number> {
         return new Promise<number>((resolve, reject) => {
-            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
+            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.agent.id}:${progressKey.product.id}`;
             const ttl = 7200;
             debug('locking...', key, ttl);
             this.redisClient.multi()
@@ -58,7 +58,7 @@ export class RedisRepository {
      */
     public async unlock(progressKey: IProgressKey) {
         return new Promise<void>((resolve, reject) => {
-            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
+            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.agent.id}:${progressKey.product.id}`;
             this.redisClient.del([key], (err, res) => {
                 debug(err, res);
                 // tslint:disable-next-line:no-single-line-block-comment
@@ -74,7 +74,7 @@ export class RedisRepository {
 
     public async getHolder(progressKey: IProgressKey) {
         return new Promise<string>((resolve, reject) => {
-            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.id}:${progressKey.programMembershipId}`;
+            const key = `${RedisRepository.KEY_PREFIX}:${progressKey.agent.id}:${progressKey.product.id}`;
             this.redisClient.get(key, (err, res) => {
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore if: please write tests */

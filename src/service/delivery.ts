@@ -16,7 +16,7 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../repo/action/registerServiceInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
@@ -46,7 +46,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
