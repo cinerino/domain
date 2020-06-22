@@ -508,9 +508,9 @@ export function order2report(params: {
             const itemOffered = acceptedOffer.itemOffered;
             let item: IItem = {
                 typeOf: String(itemOffered.typeOf),
-                name: '',
+                name: (typeof (<any>itemOffered).name === 'string') ? (<any>itemOffered).name : '',
                 numItems: 1,
-                id: '',
+                id: (typeof (<any>itemOffered).id === 'string') ? (<any>itemOffered).id : '',
                 event: {
                     typeOf: '',
                     id: '',
@@ -567,25 +567,6 @@ export function order2report(params: {
                             superEventLocation: (typeof event.superEvent.location.name?.ja === 'string')
                                 ? event.superEvent.location.name.ja
                                 : ''
-                        }
-                    };
-                    break;
-
-                case factory.chevre.programMembership.ProgramMembershipType.ProgramMembership:
-                    item = {
-                        typeOf: String(itemOffered.typeOf),
-                        name: (typeof itemOffered.name === 'string') ? itemOffered.name : '',
-                        numItems: 1,
-                        id: (typeof (<any>itemOffered).id === 'string') ? (<any>itemOffered).id : '',
-                        event: {
-                            typeOf: '',
-                            id: '',
-                            name: '',
-                            startDate: '',
-                            endDate: '',
-                            location: '',
-                            superEventLocationBranchCode: '',
-                            superEventLocation: ''
                         }
                     };
                     break;

@@ -199,24 +199,6 @@ export function onSend(
                 });
             }
 
-            // メンバーシップ更新タスクがあれば追加
-            if (Array.isArray(potentialActions.registerProgramMembership)) {
-                taskAttributes.push(...potentialActions.registerProgramMembership.map(
-                    (a): factory.task.IAttributes<factory.taskName.RegisterProgramMembership> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.RegisterProgramMembership,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    })
-                );
-            }
-
             if (Array.isArray(potentialActions.informOrder)) {
                 taskAttributes.push(...potentialActions.informOrder.map(
                     (a): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {

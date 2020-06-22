@@ -17,7 +17,6 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { ProductType } from './offer/product/factory';
-import { onRegistered } from './product';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -162,83 +161,6 @@ function createOrderProgramMembershipActionAttributes(params: {
         potentialActions: params.potentialActions,
         project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
         typeOf: factory.actionType.OrderAction
-    };
-}
-
-/**
- * メンバーシップ登録
- * 登録アクションの後で、次回のメンバーシップ注文タスクを作成する
- */
-export function register(
-    params: factory.task.IData<factory.taskName.RegisterProgramMembership>
-): IRegisterOperation<void> {
-    return async (repos: {
-        action: ActionRepo;
-        order: OrderRepo;
-        person: PersonRepo;
-        project: ProjectRepo;
-        task: TaskRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        await repos.person.findById({
-            userId: params.agent.id
-        });
-
-        const programMembership = params.object;
-        if (programMembership.typeOf !== factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
-            throw new factory.errors.Argument('Object', 'Object type must be ProgramMembership');
-        }
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (typeof programMembership.membershipFor?.id !== 'string') {
-            throw new factory.errors.ArgumentNull('MembershipService ID');
-        }
-
-        const order = await repos.order.findByOrderNumber({ orderNumber: (<any>params).purpose?.orderNumber });
-
-        // アクション開始
-        const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = params;
-        const action = <factory.action.interact.register.programMembership.IAction>await repos.action.start(registerActionAttibutes);
-
-        try {
-            // Chevreサービス登録取引確定
-            const transactionNumber = (<any>registerActionAttibutes.object).transactionNumber;
-            if (typeof transactionNumber === 'string') {
-                if (typeof project.settings?.chevre?.endpoint !== 'string') {
-                    throw new factory.errors.ServiceUnavailable('Project settings not found');
-                }
-
-                const registerServiceTransaction = new chevre.service.transaction.RegisterService({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
-
-                await registerServiceTransaction.confirm({
-                    transactionNumber: transactionNumber,
-                    endDate: order.orderDate
-                });
-            }
-        } catch (error) {
-            // actionにエラー結果を追加
-            try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
-            }
-
-            throw error;
-        }
-
-        const actionResult: factory.action.interact.register.programMembership.IResult = {};
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-
-        // 次のメンバーシップ注文タスクを作成
-        await onRegistered(action)(repos);
     };
 }
 

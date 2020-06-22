@@ -54,13 +54,10 @@ export function createOrder(params: {
     // 座席予約がある場合
     acceptedOffers.push(...createReservationAcceptedOffers({ ...params, seller: seller }));
 
-    // メンバーシップがある場合
-    acceptedOffers.push(...createProgramMembershipAcceptedOffers(params));
-
     // 通貨転送がある場合
     acceptedOffers.push(...createMoneyTransferAcceptedOffers({ ...params, seller: seller }));
 
-    // Chevrep露ダクトがある場合
+    // Chevreプロダクトがある場合
     acceptedOffers.push(...createProductItems({ ...params }));
 
     // 決済方法をセット
@@ -336,28 +333,6 @@ function createReservationAcceptedOffers(params: {
             }
         }
     });
-
-    return acceptedOffers;
-}
-
-function createProgramMembershipAcceptedOffers(params: {
-    transaction: factory.transaction.placeOrder.ITransaction;
-}): factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[] {
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership>[] = [];
-
-    const programMembershipAuthorizeActions = params.transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === 'Offer')
-        .filter((a) => a.object.itemOffered.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership);
-
-    if (programMembershipAuthorizeActions.length > 1) {
-        throw new factory.errors.NotImplemented('Number of programMembership authorizeAction must be 1');
-    }
-    const programMembershipAuthorizeAction = programMembershipAuthorizeActions.shift();
-
-    if (programMembershipAuthorizeAction !== undefined) {
-        acceptedOffers.push(programMembershipAuthorizeAction.object);
-    }
 
     return acceptedOffers;
 }
