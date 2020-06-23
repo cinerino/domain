@@ -10,11 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- プロダクトオファー承認にポイント特典を指定できるように調整
-- メンバーシップ登録を汎用的なサービス登録へ移行
-- 会員削除後のメンバーシップ所有権期限変更処理を削除
-- 注文検索条件拡張
-
 ### Deprecated
 
 ### Removed
@@ -22,6 +17,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v6.0.0 - 2020-06-23
+
+### Changed
+
+- プロダクトオファー承認にポイント特典を指定できるように調整
+- メンバーシップ登録を汎用的なサービス登録へ移行
+- 会員削除後のメンバーシップ所有権期限変更処理を削除
+- 注文検索条件拡張
 
 ## v5.8.0 - 2020-06-21
 
