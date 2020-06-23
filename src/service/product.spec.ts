@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * メンバーシップサービステスト
+ * プロダクトサービステスト
  */
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
@@ -17,13 +17,13 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('メンバーシップ注文タスクを作成する', () => {
+describe('プロダクト注文タスクを作成する', () => {
     beforeEach(() => {
         sandbox.restore();
     });
 
     it('リポジトリが正常であればタスクを作成できるはず', async () => {
-        const offers = [{ identifier: 'identifier' }];
+        const offers = [{ id: 'offerId', identifier: 'identifier' }];
         const membershipService = { project: project, serviceOutput: { typeOf: 'ProgramMembership' } };
         const seller = {
             project: { id: '' },
@@ -56,11 +56,15 @@ describe('メンバーシップ注文タスクを作成する', () => {
             .once()
             .resolves(offers);
 
-        const result = await domain.service.programMembership.createRegisterTask(<any>{
+        const result = await domain.service.product.createOrderTask({
             project: project,
-            agent: {},
-            seller: {},
-            offerIdentifier: offers[0].identifier
+            agent: <any>{},
+            object: {
+                typeOf: domain.factory.chevre.offerType.Offer,
+                id: offers[0].id,
+                itemOffered: { id: 'productId' },
+                seller: { typeOf: domain.factory.organizationType.MovieTheater, id: 'sellerId' }
+            }
         })({
             seller: sellerRepo,
             project: projectRepo,
