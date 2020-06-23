@@ -254,6 +254,10 @@ function processAuthorizeProductOffer(params: {
         const seller: factory.order.ISeller
             = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 
+        const serviceOutputName: string | undefined = (typeof acceptedOffer.itemOffered.name === 'string')
+            ? acceptedOffer.itemOffered.name
+            : acceptedOffer.itemOffered.name?.ja;
+
         const object: factory.action.authorize.offer.product.IObject = [{
             project: project,
             typeOf: acceptedProductOffer.typeOf,
@@ -261,12 +265,12 @@ function processAuthorizeProductOffer(params: {
             priceCurrency: acceptedProductOffer.priceCurrency,
             itemOffered: {
                 project: project,
-                typeOf: acceptedOffer.itemOffered.typeOf,
+                typeOf: OfferService.product.ProductType.MembershipService,
                 id: params.product.id,
                 serviceOutput: {
                     project: project,
-                    typeOf: '',
-                    name: acceptedOffer.itemOffered.name
+                    typeOf: acceptedOffer.itemOffered.typeOf,
+                    ...(typeof serviceOutputName === 'string') ? { name: serviceOutputName } : undefined
                     // additionalProperty: [
                     //     { name: 'sampleName', value: 'sampleValue' }
                     // ]
