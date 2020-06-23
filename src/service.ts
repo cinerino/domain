@@ -11,7 +11,7 @@ import * as NotificationService from './service/notification';
 import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PaymentService from './service/payment';
-import * as ProgramMembershipService from './service/programMembership';
+import * as ProductService from './service/product';
 import * as ReportService from './service/report';
 import * as ReservationService from './service/reservation';
 import * as TaskService from './service/task';
@@ -28,7 +28,7 @@ export import offer = OfferService;
 export import order = OrderService;
 export namespace person {
 }
-export import programMembership = ProgramMembershipService;
+export import product = ProductService;
 export import report = ReportService;
 export import reservation = ReservationService;
 export import payment = PaymentService;
