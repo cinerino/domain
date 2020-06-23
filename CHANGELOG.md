@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- メンバーシップサービスをプロダクトサービスに統合
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v6.1.0 - 2020-06-23
+
+### Changed
+
+- メンバーシップサービスをプロダクトサービスに統合
 
 ## v6.0.0 - 2020-06-23
 
