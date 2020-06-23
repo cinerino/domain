@@ -209,6 +209,9 @@ async function processMoneyTransferTransaction(params: {
                 },
                 toLocation: <any>{
                     name: recipient.name
+                },
+                pendingTransaction: {
+                    typeOf: factory.pecorino.transactionType.Withdraw
                 }
             }
         });
@@ -233,6 +236,9 @@ async function processMoneyTransferTransaction(params: {
                 toLocation: {
                     typeOf: params.object.toLocation.typeOf,
                     identifier: params.object.toLocation.identifier
+                },
+                pendingTransaction: {
+                    typeOf: factory.pecorino.transactionType.Transfer
                 }
             }
         });
@@ -256,6 +262,9 @@ async function processMoneyTransferTransaction(params: {
                 toLocation: {
                     typeOf: params.object.toLocation.typeOf,
                     identifier: params.object.toLocation.identifier
+                },
+                pendingTransaction: {
+                    typeOf: factory.pecorino.transactionType.Deposit
                 }
             }
         });

@@ -172,7 +172,10 @@ async function processStartDepositTransaction(params: {
                         : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
                 },
                 toLocation: params.object.toLocation,
-                description: description
+                description: description,
+                pendingTransaction: {
+                    typeOf: factory.pecorino.transactionType.Deposit
+                }
             },
             recipient: <any>{
                 typeOf: params.transaction.agent.typeOf,
