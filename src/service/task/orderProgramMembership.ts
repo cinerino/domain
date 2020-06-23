@@ -6,7 +6,7 @@ import * as factory from '../../factory';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
@@ -55,7 +55,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             ownershipInfo: new OwnershipInfoRepo(settings.connection),
             person: personRepo,
             project: new ProjectRepo(settings.connection),
-            registerActionInProgress: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
+            registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
             transaction: new TransactionRepo(settings.connection)
         });
     };

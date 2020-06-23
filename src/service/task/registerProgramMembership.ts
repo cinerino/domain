@@ -6,18 +6,15 @@ import * as factory from '../../factory';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
-import { MongoRepository as OrderRepo } from '../../repo/order';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
-import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as ProgramMembershipService from '../programMembership';
 import { orderProgramMembership } from '../transaction/orderProgramMembership';
 
 /**
@@ -43,16 +40,16 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
             userPoolId: project.settings.cognito.customerUserPool.id
         });
 
-        switch (data.object.typeOf) {
+        switch (data.object?.typeOf) {
             // 旧メンバーシップ注文タスクへの互換性維持のため
-            case <any>'Offer':
+            case 'Offer':
                 const creditCardRepo = new CreditCardRepo({
                     siteId: project.settings.gmo.siteId,
                     sitePass: project.settings.gmo.sitePass,
                     cardService: new GMO.service.Card({ endpoint: project.settings.gmo.endpoint })
                 });
 
-                await orderProgramMembership(<any>data)({
+                await orderProgramMembership(data)({
                     accountNumber: new AccountNumberRepo(settings.redisClient),
                     action: new ActionRepo(settings.connection),
                     creditCard: creditCardRepo,
@@ -61,25 +58,14 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                     ownershipInfo: new OwnershipInfoRepo(settings.connection),
                     person: personRepo,
                     project: new ProjectRepo(settings.connection),
-                    registerActionInProgress: new RegisterProgramMembershipInProgressRepo(settings.redisClient),
+                    registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
                     transaction: new TransactionRepo(settings.connection)
                 });
 
                 break;
 
-            case factory.chevre.programMembership.ProgramMembershipType.ProgramMembership:
-                await ProgramMembershipService.register(data)({
-                    action: new ActionRepo(settings.connection),
-                    order: new OrderRepo(settings.connection),
-                    person: personRepo,
-                    project: new ProjectRepo(settings.connection),
-                    task: new TaskRepo(settings.connection)
-                });
-
-                break;
-
             default:
-                throw new factory.errors.Argument('Object', `Invalid object type: ${(<any>data.object).typeOf}`);
+                throw new factory.errors.Argument('Object', `Invalid object type: ${data.object?.typeOf}`);
         }
     };
 }

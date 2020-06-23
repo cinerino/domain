@@ -1,12 +1,7 @@
 /**
  * メンバーシップサービス
  */
-import * as moment from 'moment-timezone';
-
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as OrderRepo } from '../repo/order';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
-import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -17,7 +12,6 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { ProductType } from './offer/product/factory';
-import { onRegistered } from './product';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -30,14 +24,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type ICreateRegisterTaskOperation<T> = (repos: {
     project: ProjectRepo;
     seller: SellerRepo;
-    task: TaskRepo;
-}) => Promise<T>;
-
-export type IRegisterOperation<T> = (repos: {
-    action: ActionRepo;
-    order: OrderRepo;
-    person: PersonRepo;
-    project: ProjectRepo;
     task: TaskRepo;
 }) => Promise<T>;
 
@@ -79,8 +65,8 @@ export function createRegisterTask(params: {
             auth: chevreAuthClient
         });
 
-        const membershipService = await productService.findById({ id: params.programMembershipId });
-        const offers = await productService.searchOffers({ id: String(membershipService.id) });
+        const product = await productService.findById({ id: params.programMembershipId });
+        const offers = await productService.searchOffers({ id: String(product.id) });
         const acceptedOffer = offers.find((o) => o.identifier === params.offerIdentifier);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
@@ -92,7 +78,7 @@ export function createRegisterTask(params: {
         const data = createOrderProgramMembershipActionAttributes({
             agent: params.agent,
             offer: acceptedOffer,
-            programMembership: membershipService,
+            product: product,
             potentialActions: params.potentialActions,
             seller: seller
         });
@@ -116,18 +102,22 @@ export function createRegisterTask(params: {
 function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
-    programMembership: factory.chevre.service.IService;
+    product: factory.chevre.service.IService;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
     const offer = params.offer;
-    const programMembership = params.programMembership;
     const seller = params.seller;
 
+    const serviceOutputType = params.product.serviceOutput?.typeOf;
+    if (typeof serviceOutputType !== 'string') {
+        throw new factory.errors.NotFound(`ServiceOutput for product ${params.product.id}`);
+    }
+
     const itemOffered: factory.programMembership.IProgramMembership = {
-        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
-        typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership,
-        name: <any>programMembership.name,
+        project: { typeOf: factory.organizationType.Project, id: params.product.project.id },
+        typeOf: <any>serviceOutputType,
+        name: <any>params.product.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
             project: { typeOf: 'Project', id: seller.project.id },
@@ -136,7 +126,7 @@ function createOrderProgramMembershipActionAttributes(params: {
         },
         membershipFor: {
             typeOf: ProductType.MembershipService,
-            id: <string>programMembership.id
+            id: <string>params.product.id
         }
     };
 
@@ -160,85 +150,8 @@ function createOrderProgramMembershipActionAttributes(params: {
         agent: params.agent,
         object: acceptedOffer,
         potentialActions: params.potentialActions,
-        project: { typeOf: factory.organizationType.Project, id: programMembership.project.id },
+        project: { typeOf: factory.organizationType.Project, id: params.product.project.id },
         typeOf: factory.actionType.OrderAction
-    };
-}
-
-/**
- * メンバーシップ登録
- * 登録アクションの後で、次回のメンバーシップ注文タスクを作成する
- */
-export function register(
-    params: factory.task.IData<factory.taskName.RegisterProgramMembership>
-): IRegisterOperation<void> {
-    return async (repos: {
-        action: ActionRepo;
-        order: OrderRepo;
-        person: PersonRepo;
-        project: ProjectRepo;
-        task: TaskRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        await repos.person.findById({
-            userId: params.agent.id
-        });
-
-        const programMembership = params.object;
-        if (programMembership.typeOf !== factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
-            throw new factory.errors.Argument('Object', 'Object type must be ProgramMembership');
-        }
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (typeof programMembership.membershipFor?.id !== 'string') {
-            throw new factory.errors.ArgumentNull('MembershipService ID');
-        }
-
-        const order = await repos.order.findByOrderNumber({ orderNumber: (<any>params).purpose?.orderNumber });
-
-        // アクション開始
-        const registerActionAttibutes: factory.action.interact.register.programMembership.IAttributes = params;
-        const action = <factory.action.interact.register.programMembership.IAction>await repos.action.start(registerActionAttibutes);
-
-        try {
-            // Chevreサービス登録取引確定
-            const transactionNumber = (<any>registerActionAttibutes.object).transactionNumber;
-            if (typeof transactionNumber === 'string') {
-                if (typeof project.settings?.chevre?.endpoint !== 'string') {
-                    throw new factory.errors.ServiceUnavailable('Project settings not found');
-                }
-
-                const registerServiceTransaction = new chevre.service.transaction.RegisterService({
-                    endpoint: project.settings.chevre.endpoint,
-                    auth: chevreAuthClient
-                });
-
-                await registerServiceTransaction.confirm({
-                    transactionNumber: transactionNumber,
-                    endDate: order.orderDate
-                });
-            }
-        } catch (error) {
-            // actionにエラー結果を追加
-            try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
-                const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
-            }
-
-            throw error;
-        }
-
-        const actionResult: factory.action.interact.register.programMembership.IResult = {};
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
-
-        // 次のメンバーシップ注文タスクを作成
-        await onRegistered(action)(repos);
     };
 }
 
@@ -248,7 +161,6 @@ export function register(
 export function unRegister(params: factory.action.interact.unRegister.programMembership.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        ownershipInfo: OwnershipInfoRepo;
         task: TaskRepo;
     }) => {
         const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
@@ -281,32 +193,6 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                             { status: factory.taskStatus.Aborted }
                         )
                             .exec();
-
-                        // 現在所有しているメンバーシップを全て検索
-                        const now = moment(action.startDate)
-                            .toDate();
-                        const ownershipInfos = await repos.ownershipInfo.search<factory.chevre.programMembership.ProgramMembershipType>({
-                            typeOfGood: {
-                                typeOf: factory.chevre.programMembership.ProgramMembershipType.ProgramMembership
-                            },
-                            ownedBy: { id: customer.id },
-                            ownedFrom: now,
-                            ownedThrough: now
-                        });
-
-                        // 所有権の期限変更
-                        await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
-                            const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
-                                { _id: ownershipInfo.id },
-                                { ownedThrough: now },
-                                { new: true }
-                            )
-                                .select({ __v: 0, createdAt: 0, updatedAt: 0 })
-                                .exec();
-                            if (doc !== null) {
-                                returnedOwnershipInfos.push(doc.toObject());
-                            }
-                        }));
                     }));
                 }
             }

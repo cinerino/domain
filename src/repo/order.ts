@@ -326,6 +326,37 @@ export class MongoRepository {
                 }
             });
         }
+
+        const itemOfferedIdentifierIn = params.acceptedOffers?.itemOffered?.identifier?.$in;
+        if (Array.isArray(itemOfferedIdentifierIn)) {
+            andConditions.push({
+                'acceptedOffers.itemOffered.identifier': {
+                    $exists: true,
+                    $in: itemOfferedIdentifierIn
+                }
+            });
+        }
+
+        const itemOfferedTypeOfIn = params.acceptedOffers?.itemOffered?.typeOf?.$in;
+        if (Array.isArray(itemOfferedTypeOfIn)) {
+            andConditions.push({
+                'acceptedOffers.itemOffered.typeOf': {
+                    $exists: true,
+                    $in: itemOfferedTypeOfIn
+                }
+            });
+        }
+
+        const itemOfferedIssuedThroughIdIn = params.acceptedOffers?.itemOffered?.issuedThrough?.id?.$in;
+        if (Array.isArray(itemOfferedIssuedThroughIdIn)) {
+            andConditions.push({
+                'acceptedOffers.itemOffered.issuedThrough.id': {
+                    $exists: true,
+                    $in: itemOfferedIssuedThroughIdIn
+                }
+            });
+        }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.acceptedOffers !== undefined) {

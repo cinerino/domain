@@ -16,7 +16,7 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../repo/action/registerServiceInProgress';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
@@ -46,7 +46,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         action: ActionRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
@@ -197,24 +197,6 @@ export function onSend(
                     };
                     taskAttributes.push(sendEmailMessageTask);
                 });
-            }
-
-            // メンバーシップ更新タスクがあれば追加
-            if (Array.isArray(potentialActions.registerProgramMembership)) {
-                taskAttributes.push(...potentialActions.registerProgramMembership.map(
-                    (a): factory.task.IAttributes<factory.taskName.RegisterProgramMembership> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.RegisterProgramMembership,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    })
-                );
             }
 
             if (Array.isArray(potentialActions.informOrder)) {

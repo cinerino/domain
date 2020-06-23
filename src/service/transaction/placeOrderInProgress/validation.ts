@@ -22,7 +22,7 @@ export type IAuthorizeSeatReservationOfferResult =
 export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<string>;
 
 export type IAuthorizeActionResultBySeller =
-    // factory.action.authorize.offer.programMembership.IResult |
+    factory.action.authorize.offer.product.IResult |
     IAuthorizeSeatReservationOfferResult |
     factory.action.authorize.award.point.IResult;
 

@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 進行中の会員プログラム登録アクションリポジトリテスト
+ * 進行中のサービス登録アクションリポジトリテスト
  */
 import { } from 'mocha';
 import * as assert from 'power-assert';
@@ -16,18 +16,18 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('会員プログラム登録アクションをロックする', () => {
+describe('サービス登録アクションをロックする', () => {
     afterEach(() => {
         sandbox.restore();
     });
 
     it('Redisが正常であればロックできるはず', async () => {
-        const actionRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redis.createClient());
+        const actionRepo = new domain.repository.action.RegisterServiceInProgress(redis.createClient());
 
         const result = await actionRepo.lock(
             {
-                id: 'id',
-                programMembershipId: 'programMembershipId'
+                agent: { id: 'id' },
+                product: { id: 'productId' }
             },
             'actionId'
         );
@@ -36,18 +36,18 @@ describe('会員プログラム登録アクションをロックする', () => {
     });
 });
 
-describe('会員プログラム登録アクションロックを解除する', () => {
+describe('サービス登録アクションロックを解除する', () => {
     afterEach(() => {
         sandbox.restore();
     });
 
     it('Redisが正常であればロックできるはず', async () => {
-        const actionRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redis.createClient());
+        const actionRepo = new domain.repository.action.RegisterServiceInProgress(redis.createClient());
 
         const result = await actionRepo.unlock(
             {
-                id: 'id',
-                programMembershipId: 'programMembershipId'
+                agent: { id: 'id' },
+                product: { id: 'productId' }
             }
         );
         assert.equal(result, undefined);

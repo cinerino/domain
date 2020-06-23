@@ -4,7 +4,7 @@
  */
 import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
-import { RedisRepository as RegisterProgramMembershipActionInProgress } from './repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceActionInProgress } from './repo/action/registerServiceInProgress';
 import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as InvoiceRepo } from './repo/invoice';
@@ -34,7 +34,7 @@ export class AccountNumber extends AccountNumberRepo { }
 export class Action extends ActionRepo { }
 
 export namespace action {
-    export class RegisterProgramMembershipInProgress extends RegisterProgramMembershipActionInProgress { }
+    export class RegisterServiceInProgress extends RegisterServiceActionInProgress { }
 }
 
 /**

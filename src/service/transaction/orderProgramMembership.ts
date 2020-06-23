@@ -6,7 +6,7 @@ import * as moment from 'moment-timezone';
 
 import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { RedisRepository as RegisterProgramMembershipInProgressRepo } from '../../repo/action/registerProgramMembershipInProgress';
+import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
@@ -34,8 +34,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-const USE_AUTHORIZE_PRODUCT_OFFER = process.env.USE_AUTHORIZE_PRODUCT_OFFER === '1';
-
 export type IOrderOperation<T> = (repos: {
     accountNumber: AccountNumberRepo;
     action: ActionRepo;
@@ -44,7 +42,7 @@ export type IOrderOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
     project: ProjectRepo;
-    registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+    registerActionInProgress: RegisterServiceInProgressRepo;
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -63,7 +61,7 @@ export function orderProgramMembership(
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
@@ -104,17 +102,10 @@ export function orderProgramMembership(
         } catch (error) {
             try {
                 if (typeof transaction?.id === 'string') {
-                    if (USE_AUTHORIZE_PRODUCT_OFFER) {
-                        await OfferService.product.voidTransaction({
-                            agent: { id: customer.id },
-                            purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                        })(repos);
-                    } else {
-                        await OfferService.programMembership.voidTransaction({
-                            agent: { id: customer.id },
-                            purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                        })(repos);
-                    }
+                    await OfferService.product.voidTransaction({
+                        agent: { id: customer.id },
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                    })(repos);
                 }
             } catch (error) {
                 // 失敗したら仕方ない
@@ -132,10 +123,7 @@ function processPlaceOrder(params: {
     project: { id: string };
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
-    /**
-     * メンバーシップオファー
-     */
-    acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
+    acceptedOffer: factory.task.orderProgramMembership.IAcceptedOffer;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }) {
     return async (repos: {
@@ -145,7 +133,7 @@ function processPlaceOrder(params: {
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -171,31 +159,17 @@ function processPlaceOrder(params: {
         }
 
         // メンバーシップオファー承認
-        let authorizeProductOfferAction:
-            factory.action.authorize.offer.product.IAction | factory.action.authorize.offer.programMembership.IAction;
-        if (USE_AUTHORIZE_PRODUCT_OFFER) {
-            authorizeProductOfferAction = await processAuthorizeProductOffer({
-                project: { id: project.id },
-                customer: customer,
-                transaction: transaction,
-                acceptedOffer: acceptedOffer,
-                product: { id: productId }
-            })({
-                ...repos,
-                productService: productService
-            });
-        } else {
-            authorizeProductOfferAction = await processAuthorizeMembershipOffer({
-                project: { id: project.id },
-                customer: customer,
-                transaction: transaction,
-                acceptedOffer: acceptedOffer,
-                product: { id: productId }
-            })({
-                ...repos,
-                productService: productService
-            });
-        }
+        let authorizeProductOfferAction: factory.action.authorize.offer.product.IAction;
+        authorizeProductOfferAction = await processAuthorizeProductOffer({
+            project: { id: project.id },
+            customer: customer,
+            transaction: transaction,
+            acceptedOffer: acceptedOffer,
+            product: { id: productId }
+        })({
+            ...repos,
+            productService: productService
+        });
 
         const amount = Number(authorizeProductOfferAction.result?.price);
         if (amount > 0) {
@@ -226,77 +200,18 @@ function processPlaceOrder(params: {
     };
 }
 
-function processAuthorizeMembershipOffer(params: {
-    project: { id: string };
-    customer: factory.person.IPerson;
-    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
-    acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
-    product: { id: string };
-}) {
-    return async (repos: {
-        action: ActionRepo;
-        project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
-        transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
-        productService: chevre.service.Product;
-    }) => {
-        const acceptedOffer = params.acceptedOffer;
-        const customer = params.customer;
-        const transaction = params.transaction;
-
-        // オファーにポイント特典設定があるかどうか確認
-        const offers = await repos.productService.searchOffers({ id: params.product.id });
-        const acceptedProductOffer = offers.find((o) => o.identifier === acceptedOffer.identifier);
-        if (acceptedProductOffer === undefined) {
-            throw new factory.errors.NotFound('Offer', `Accepted offer ${acceptedOffer.identifier} not found`);
-        }
-        const pointAwardByOffer = acceptedProductOffer.itemOffered?.pointAward;
-        if (typeof pointAwardByOffer?.amount?.value === 'number' && typeof pointAwardByOffer?.amount?.currency === 'string') {
-            const toAccount = await findAccount({
-                customer: { id: params.customer.id },
-                project: transaction.project,
-                now: new Date(),
-                accountType: pointAwardByOffer.amount?.currency
-            })(repos);
-
-            acceptedOffer.itemOffered = {
-                ...acceptedOffer.itemOffered,
-                ...{
-                    pointAward: {
-                        toLocation: { identifier: toAccount.accountNumber },
-                        recipient: {
-                            id: customer.id,
-                            name: `${customer.givenName} ${customer.familyName}`,
-                            typeOf: customer.typeOf
-                        }
-                    }
-                }
-            };
-        }
-
-        // メンバーシップオファー承認
-        return OfferService.programMembership.authorize({
-            project: { typeOf: factory.organizationType.Project, id: params.project.id },
-            agent: { id: customer.id },
-            object: acceptedOffer,
-            purpose: { typeOf: transaction.typeOf, id: transaction.id }
-        })(repos);
-    };
-}
-
 function processAuthorizeProductOffer(params: {
     project: { id: string };
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
-    acceptedOffer: factory.action.interact.register.programMembership.IAcceptedOffer;
+    acceptedOffer: factory.task.orderProgramMembership.IAcceptedOffer;
     product: { id: string };
 }) {
     return async (repos: {
         accountNumber: AccountNumberRepo;
         action: ActionRepo;
         project: ProjectRepo;
-        registerActionInProgress: RegisterProgramMembershipInProgressRepo;
+        registerActionInProgress: RegisterServiceInProgressRepo;
         seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -339,19 +254,23 @@ function processAuthorizeProductOffer(params: {
         const seller: factory.order.ISeller
             = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 
+        const serviceOutputName: string | undefined = (typeof acceptedOffer.itemOffered.name === 'string')
+            ? acceptedOffer.itemOffered.name
+            : acceptedOffer.itemOffered.name?.ja;
+
         const object: factory.action.authorize.offer.product.IObject = [{
             project: project,
-            typeOf: acceptedOffer.typeOf,
-            id: acceptedOffer.id,
-            priceCurrency: acceptedOffer.priceCurrency,
+            typeOf: acceptedProductOffer.typeOf,
+            id: acceptedProductOffer.id,
+            priceCurrency: acceptedProductOffer.priceCurrency,
             itemOffered: {
                 project: project,
-                typeOf: acceptedOffer.itemOffered.typeOf,
+                typeOf: OfferService.product.ProductType.MembershipService,
                 id: params.product.id,
                 serviceOutput: {
                     project: project,
-                    typeOf: '',
-                    name: acceptedOffer.itemOffered.name
+                    typeOf: acceptedOffer.itemOffered.typeOf,
+                    ...(typeof serviceOutputName === 'string') ? { name: serviceOutputName } : undefined
                     // additionalProperty: [
                     //     { name: 'sampleName', value: 'sampleValue' }
                     // ]

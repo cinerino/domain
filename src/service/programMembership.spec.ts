@@ -1,6 +1,6 @@
 // tslint:disable:no-implicit-dependencies
 /**
- * 会員プログラムサービステスト
+ * メンバーシップサービステスト
  */
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
@@ -17,14 +17,14 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('会員プログラム注文タスクを作成する', () => {
+describe('メンバーシップ注文タスクを作成する', () => {
     beforeEach(() => {
         sandbox.restore();
     });
 
     it('リポジトリが正常であればタスクを作成できるはず', async () => {
         const offers = [{ identifier: 'identifier' }];
-        const membershipService = { project: project };
+        const membershipService = { project: project, serviceOutput: { typeOf: 'ProgramMembership' } };
         const seller = {
             project: { id: '' },
             name: {}

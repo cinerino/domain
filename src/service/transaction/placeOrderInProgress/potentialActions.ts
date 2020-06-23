@@ -9,7 +9,6 @@ import { createPayAccountActions } from './potentialActions/payAccount';
 import { createPayCreditCardActions } from './potentialActions/payCreditCard';
 import { createPayMovieTicketActions } from './potentialActions/payMovieTicket';
 import { createPayPaymentCardActions } from './potentialActions/payPaymentCard';
-import { createRegisterProgramMembershipActions } from './potentialActions/registerProgramMembership';
 import { createRegisterServiceActions } from './potentialActions/registerService';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
@@ -33,9 +32,6 @@ export async function createPotentialActions(params: {
 
     // 通貨転送アクション
     const moneyTransferActions = await createMoneyTransferActions(params);
-
-    // メンバーシップが注文アイテムにあれば、メンバーシップ登録アクションを追加
-    const registerProgramMembershipActions = createRegisterProgramMembershipActions(params);
 
     // クレジットカード決済アクション
     const payCreditCardActions = await createPayCreditCardActions(params);
@@ -68,7 +64,6 @@ export async function createPotentialActions(params: {
             confirmReservation: confirmReservationActions,
             informOrder: informOrderActionsOnSentOrder,
             moneyTransfer: moneyTransferActions,
-            registerProgramMembership: registerProgramMembershipActions,
             registerService: registerServiceActions,
             sendEmailMessage: sendEmailMessageActions
         }
