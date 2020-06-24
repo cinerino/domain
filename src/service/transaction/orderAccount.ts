@@ -98,42 +98,27 @@ export function orderAccount(params: {
 
         let transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder> | undefined;
 
-        try {
-            // 注文取引開始
-            transaction = await TransactionService.placeOrderInProgress.start({
-                project: { typeOf: project.typeOf, id: project.id },
-                expires: moment()
-                    // tslint:disable-next-line:no-magic-numbers
-                    .add(5, 'minutes')
-                    .toDate(),
-                agent: customer,
-                seller: { typeOf: seller.typeOf, id: seller.id },
-                object: {}
-            })(repos);
+        // 注文取引開始
+        transaction = await TransactionService.placeOrderInProgress.start({
+            project: { typeOf: project.typeOf, id: project.id },
+            expires: moment()
+                // tslint:disable-next-line:no-magic-numbers
+                .add(5, 'minutes')
+                .toDate(),
+            agent: customer,
+            seller: { typeOf: seller.typeOf, id: seller.id },
+            object: {}
+        })(repos);
 
-            // 取引ID上で注文プロセス
-            await processPlaceOrder({
-                acceptedOffer: acceptedOffer,
-                customer: customer,
-                potentialActions: params.potentialActions,
-                product: accountProduct,
-                project: project,
-                transaction: transaction
-            })(repos);
-        } catch (error) {
-            try {
-                if (typeof transaction?.id === 'string') {
-                    await OfferService.product.voidTransaction({
-                        agent: { id: customer.id },
-                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                    })(repos);
-                }
-            } catch (error) {
-                // 失敗したら仕方ない
-            }
-
-            throw error;
-        }
+        // 取引ID上で注文プロセス
+        await processPlaceOrder({
+            acceptedOffer: acceptedOffer,
+            customer: customer,
+            potentialActions: params.potentialActions,
+            product: accountProduct,
+            project: project,
+            transaction: transaction
+        })(repos);
     };
 }
 
@@ -227,9 +212,8 @@ function processAuthorizeProductOffer(params: {
         const seller: factory.order.ISeller
             = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 
-        const serviceOutputName: string | undefined = (typeof acceptedOffer.itemOffered.name === 'string')
-            ? acceptedOffer.itemOffered.name
-            : acceptedOffer.itemOffered.name?.ja;
+        // 口座名称はユーザーネーム
+        const serviceOutputName: string | undefined = customer.memberOf?.membershipNumber;
 
         const object: factory.action.authorize.offer.product.IObject = [{
             project: project,
