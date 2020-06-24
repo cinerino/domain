@@ -50,7 +50,7 @@ async function main() {
         // expires: moment().add(5, 'minutes').toDate(),
         agent: {
             typeOf: domain.factory.personType.Person,
-            id: 'personId',
+            id: '3c081226-6172-49ac-86b0-0b0a4075c3df',
             // memberOf?: ProgramMembershipFactory.IProgramMembership;
             // url?: string;
         },

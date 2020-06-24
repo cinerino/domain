@@ -10,11 +10,13 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as MoneyTransferTransactionService from './transaction/moneyTransfer';
+import * as OrderAccountService from './transaction/orderAccount';
 import * as PlaceOrderTransactionService from './transaction/placeOrder';
 import * as PlaceOrderInProgressTransactionService from './transaction/placeOrderInProgress';
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 export import moneyTransfer = MoneyTransferTransactionService;
+export import orderAccount = OrderAccountService;
 export import placeOrder = PlaceOrderTransactionService;
 export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
 export import returnOrder = ReturnOrderTransactionService;
