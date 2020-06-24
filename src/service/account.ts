@@ -12,8 +12,8 @@ import * as chevre from '../chevre';
 
 import * as factory from '../factory';
 
-import { handlePecorinoError } from '../errorHandler';
-import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';
+import { handleChevreError, handlePecorinoError } from '../errorHandler';
+// import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
@@ -51,37 +51,43 @@ export function open<T extends string>(params: {
     accountType: T;
 }) {
     return async (repos: {
-        /**
-         * 口座番号リポジトリ
-         */
-        accountNumber: AccountNumberRepo;
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
     }) => {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const accountService = new pecorinoapi.service.Account({
+            endpoint: project.settings.pecorino.endpoint,
+            auth: pecorinoAuthClient
+        });
 
         let ownershipInfoWithDetail: IOwnershipInfoWithDetail;
         try {
             // 口座番号を発行
-            const accountNumber = await repos.accountNumber.publish(new Date());
+            // const accountNumber = await repos.accountNumber.publish(new Date());
+
+            const publishIdentifierResult = await serviceOutputIdentifierService.publish({
+                project: { id: project.id }
+            });
 
             // 口座開設
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-            const accountService = new pecorinoapi.service.Account({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
-            });
             const account = await accountService.open({
                 project: { typeOf: project.typeOf, id: project.id },
                 accountType: params.accountType,
-                accountNumber: accountNumber,
+                accountNumber: publishIdentifierResult.identifier,
                 name: params.name
             });
 
@@ -115,6 +121,7 @@ export function open<T extends string>(params: {
 
             ownershipInfoWithDetail = { ...ownershipInfo, typeOfGood: account };
         } catch (error) {
+            error = handleChevreError(error);
             error = handlePecorinoError(error);
             throw error;
         }
@@ -147,6 +154,9 @@ export function close<T extends string>(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
 
         try {
             let closingAccount: IClosingAccount = {
@@ -175,13 +185,6 @@ export function close<T extends string>(params: {
                 };
             }
 
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-
             const accountService = new pecorinoapi.service.Account({
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
@@ -206,6 +209,9 @@ export function search(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
 
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
@@ -222,13 +228,6 @@ export function search(params: {
             }
 
             if (accountNumbers.length > 0) {
-                if (project.settings === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                }
-                if (project.settings.pecorino === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings not found');
-                }
-
                 const accountService = new pecorinoapi.service.Account({
                     endpoint: project.settings.pecorino.endpoint,
                     auth: pecorinoAuthClient
@@ -276,6 +275,9 @@ export function searchMoneyTransferActions(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
 
         let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
@@ -295,12 +297,6 @@ export function searchMoneyTransferActions(params: {
                 throw new factory.errors.NotFound('Account');
             }
 
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
             const accountService = new pecorinoapi.service.Account({
                 endpoint: project.settings.pecorino.endpoint,
                 auth: pecorinoAuthClient
@@ -328,36 +324,42 @@ export function openWithoutOwnershipInfo<T extends string>(params: {
     accountType: T;
 }) {
     return async (repos: {
-        /**
-         * 口座番号リポジトリ
-         */
-        accountNumber: AccountNumberRepo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
+        if (typeof project.settings?.chevre?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
 
-        // 口座番号を発行
-        const accountNumber = await repos.accountNumber.publish(new Date());
+        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const accountService = new pecorinoapi.service.Account({
+            endpoint: project.settings.pecorino.endpoint,
+            auth: pecorinoAuthClient
+        });
 
         let account: factory.pecorino.account.IAccount;
         try {
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.pecorino === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-            const accountService = new pecorinoapi.service.Account({
-                endpoint: project.settings.pecorino.endpoint,
-                auth: pecorinoAuthClient
+            // 口座番号を発行
+            // const accountNumber = await repos.accountNumber.publish(new Date());
+            const publishIdentifierResult = await serviceOutputIdentifierService.publish({
+                project: { id: project.id }
             });
+
             account = await accountService.open({
                 project: { typeOf: project.typeOf, id: project.id },
                 accountType: params.accountType,
-                accountNumber: accountNumber,
+                accountNumber: publishIdentifierResult.identifier,
                 name: params.name
             });
         } catch (error) {
+            error = handleChevreError(error);
             error = handlePecorinoError(error);
             throw error;
         }
@@ -432,6 +434,7 @@ export function deposit(params: {
 
             await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
+            error = handleChevreError(error);
             error = handlePecorinoError(error);
             throw error;
         }
