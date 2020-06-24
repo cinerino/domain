@@ -4,6 +4,7 @@ import * as chevre from '../../../chevre';
 import * as factory from '../../../factory';
 
 export enum ProductType {
+    Account = 'Account',
     PaymentCard = 'PaymentCard',
     PointCard = 'PointCard',
     MembershipService = 'MembershipService'
