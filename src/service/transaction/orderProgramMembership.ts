@@ -4,7 +4,6 @@
 import * as GMO from '@motionpicture/gmo-service';
 import * as moment from 'moment-timezone';
 
-import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
@@ -35,7 +34,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type IOrderOperation<T> = (repos: {
-    accountNumber: AccountNumberRepo;
     action: ActionRepo;
     creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
@@ -54,7 +52,6 @@ export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.OrderProgramMembership>
 ): IOrderOperation<void> {
     return async (repos: {
-        accountNumber: AccountNumberRepo;
         action: ActionRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
@@ -127,7 +124,6 @@ function processPlaceOrder(params: {
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }) {
     return async (repos: {
-        accountNumber: AccountNumberRepo;
         action: ActionRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
@@ -208,7 +204,6 @@ function processAuthorizeProductOffer(params: {
     product: { id: string };
 }) {
     return async (repos: {
-        accountNumber: AccountNumberRepo;
         action: ActionRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;

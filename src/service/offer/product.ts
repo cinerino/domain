@@ -4,7 +4,6 @@ import * as chevre from '../../chevre';
 
 import * as factory from '../../factory';
 
-import { RedisRepository as AccountNumberRepo } from '../../repo/accountNumber';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
@@ -33,7 +32,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export import ProductType = ProductType;
 
 export type IAuthorizeOperation<T> = (repos: {
-    accountNumber: AccountNumberRepo;
     action: ActionRepo;
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
@@ -53,7 +51,6 @@ export function authorize(params: {
 }): IAuthorizeOperation<factory.action.authorize.offer.product.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        accountNumber: AccountNumberRepo;
         action: ActionRepo;
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
@@ -80,6 +77,11 @@ export function authorize(params: {
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
+        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         const product = await productService.findById({
             id: String(params.object[0]?.itemOffered?.id)
         });
@@ -98,7 +100,9 @@ export function authorize(params: {
             seller: transaction.seller
         })(repos);
 
-        acceptedOffer = await createServiceOutputIdentifier({ acceptedOffer, product })(repos);
+        acceptedOffer = await createServiceOutputIdentifier({ acceptedOffer, product })({
+            serviceOutputIdentifierService
+        });
 
         let requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
         let responseBody: factory.chevre.transaction.registerService.ITransaction;
@@ -337,11 +341,13 @@ function createServiceOutputIdentifier(params: {
     product: factory.chevre.service.IService;
 }) {
     return async (repos: {
-        accountNumber: AccountNumberRepo;
+        serviceOutputIdentifierService: chevre.service.ServiceOutputIdentifier;
     }): Promise<factory.action.authorize.offer.product.IObject> => {
-        // カード番号を発行
+        // 識別子を発行
         return Promise.all(params.acceptedOffer.map(async (o) => {
-            const accountNumber = await repos.accountNumber.publish(new Date());
+            const { identifier } = await repos.serviceOutputIdentifierService.publish({
+                project: { id: params.product.project.id }
+            });
 
             return {
                 ...o,
@@ -351,7 +357,7 @@ function createServiceOutputIdentifier(params: {
                         ...o.itemOffered?.serviceOutput,
                         project: params.product.project,
                         typeOf: String(params.product.serviceOutput?.typeOf),
-                        identifier: accountNumber
+                        identifier: identifier
                     }
                 }
             };
