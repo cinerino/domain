@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- プロダクト識別子をChevreで発行するように調整
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v6.2.0 - 2020-06-24
+
+### Changed
+
+- プロダクト識別子をChevreで発行するように調整
 
 ## v6.1.0 - 2020-06-23
 
