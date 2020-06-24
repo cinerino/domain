@@ -46,6 +46,26 @@ export class MongoRepository {
             }
         }
 
+        const agentTypeOfIn = params.agent?.typeOf?.$in;
+        if (Array.isArray(agentTypeOfIn)) {
+            andConditions.push({
+                'agent.typeOf': {
+                    $exists: true,
+                    $in: agentTypeOfIn
+                }
+            });
+        }
+
+        const agentIdIn = params.agent?.id?.$in;
+        if (Array.isArray(agentIdIn)) {
+            andConditions.push({
+                'agent.id': {
+                    $exists: true,
+                    $in: agentIdIn
+                }
+            });
+        }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.object !== undefined) {

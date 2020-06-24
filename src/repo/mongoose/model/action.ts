@@ -140,6 +140,26 @@ schema.index(
 );
 
 schema.index(
+    { 'agent.typeOf': 1, startDate: -1 },
+    {
+        name: 'searchByAgentTypeOf',
+        partialFilterExpression: {
+            'agent.typeOf': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'agent.id': 1, startDate: -1 },
+    {
+        name: 'searchByAgentId',
+        partialFilterExpression: {
+            'agent.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'purpose.typeOf': 1, startDate: -1 },
     {
         name: 'searchByPurposeTypeOf-v2',
