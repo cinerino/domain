@@ -2,7 +2,6 @@
 /**
  * repository
  */
-import { RedisRepository as AccountNumberRepo } from './repo/accountNumber';
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterServiceActionInProgress } from './repo/action/registerServiceInProgress';
 import { MongoRepository as CodeRepo } from './repo/code';
@@ -22,11 +21,6 @@ import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
-
-/**
- * 口座番号リポジトリ
- */
-export class AccountNumber extends AccountNumberRepo { }
 
 /**
  * アクションリポジトリ

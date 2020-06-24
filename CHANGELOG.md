@@ -8,9 +8,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-### Changed
+- アクション検索条件拡張
 
-- 口座番号をChevreで発行するように調整
+### Changed
 
 ### Deprecated
 
@@ -19,6 +19,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v7.0.0 - 2020-06-24
+
+### Changed
+
+- 口座番号をChevreで発行するように調整
 
 ## v6.2.0 - 2020-06-24
 
