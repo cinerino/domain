@@ -25,17 +25,12 @@ describe('ポイント口座を開設する', () => {
 
     it('口座リポジトリが正常であれば開設できるはず', async () => {
         const account = {};
-        // const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves(project);
-        // sandbox.mock(accountNumberRepo)
-        //     .expects('publish')
-        //     .once()
-        //     .resolves('accountNumber');
         sandbox.mock(domain.chevre.service.ServiceOutputIdentifier.prototype)
             .expects('publish')
             .once()
@@ -48,9 +43,8 @@ describe('ポイント口座を開設する', () => {
         const result = await domain.service.account.openWithoutOwnershipInfo({
             project: <any>project,
             name: '',
-            accountType: <any>''
+            accountType: ''
         })({
-            // accountNumber: accountNumberRepo,
             project: projectRepo
         });
         assert.equal(typeof result, 'object');
@@ -59,17 +53,12 @@ describe('ポイント口座を開設する', () => {
 
     it('Pecorinoサービスがエラーを返せばCinerinoエラーに変換されるはず', async () => {
         const pecorinoRequestError = { name: 'PecorinoRequestError' };
-        // const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
         const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves(project);
-        // sandbox.mock(accountNumberRepo)
-        //     .expects('publish')
-        //     .once()
-        //     .resolves('accountNumber');
         sandbox.mock(domain.chevre.service.ServiceOutputIdentifier.prototype)
             .expects('publish')
             .once()
@@ -82,9 +71,8 @@ describe('ポイント口座を開設する', () => {
         const result = await domain.service.account.openWithoutOwnershipInfo({
             project: <any>project,
             name: '',
-            accountType: <any>''
+            accountType: ''
         })({
-            // accountNumber: accountNumberRepo,
             project: projectRepo
         })
             .catch((err) => err);

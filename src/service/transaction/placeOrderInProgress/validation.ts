@@ -19,7 +19,7 @@ export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seat
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
 
-export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount<string>;
+export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount;
 
 export type IAuthorizeActionResultBySeller =
     factory.action.authorize.offer.product.IResult |
@@ -111,7 +111,7 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
 
 function validateAccount(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
-    const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.account.IAction<string>[]>authorizeActions)
+    const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.account.IAction[]>authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
 
