@@ -49,7 +49,7 @@ export function orderAccount(params: {
     accountType: string;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: { typeOf: factory.organizationType; id: string };
-}): IOrderOperation<void> {
+}): IOrderOperation<factory.transaction.placeOrder.IResult> {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
@@ -111,13 +111,14 @@ export function orderAccount(params: {
         })(repos);
 
         // 取引ID上で注文プロセス
-        await processPlaceOrder({
+        return processPlaceOrder({
             acceptedOffer: acceptedOffer,
             customer: customer,
             potentialActions: params.potentialActions,
             product: accountProduct,
             project: project,
-            transaction: transaction
+            transaction: transaction,
+            serviceOutputName: params.name
         })(repos);
     };
 }
@@ -132,6 +133,7 @@ function processPlaceOrder(params: {
     product: factory.chevre.service.IService;
     acceptedOffer: factory.chevre.event.screeningEvent.ITicketOffer;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+    serviceOutputName?: string;
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -163,7 +165,8 @@ function processPlaceOrder(params: {
             customer: customer,
             transaction: transaction,
             acceptedOffer: acceptedOffer,
-            product: { id: String(params.product.id) }
+            product: { id: String(params.product.id) },
+            serviceOutputName: params.serviceOutputName
         })({
             ...repos,
             productService: productService
@@ -194,6 +197,7 @@ function processAuthorizeProductOffer(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     acceptedOffer: factory.chevre.event.screeningEvent.ITicketOffer;
     product: { id: string };
+    serviceOutputName?: string;
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -213,7 +217,9 @@ function processAuthorizeProductOffer(params: {
             = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 
         // 口座名称はユーザーネーム
-        const serviceOutputName: string | undefined = customer.memberOf?.membershipNumber;
+        const serviceOutputName: string | undefined = (typeof params.serviceOutputName === 'string')
+            ? params.serviceOutputName
+            : customer.memberOf?.membershipNumber;
 
         const object: factory.action.authorize.offer.product.IObject = [{
             project: project,
