@@ -6,14 +6,14 @@ export async function createPayAccountActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[]> {
     // 口座決済アクション
-    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction<string>[]>
+    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
 
     return authorizeAccountActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.account.IResult<string>>a.result;
+        const result = <factory.action.authorize.paymentMethod.account.IResult>a.result;
 
         return {
             project: params.transaction.project,
@@ -29,7 +29,7 @@ export async function createPayAccountActions(params: {
                     typeOf: <factory.paymentMethodType.Account>result.paymentMethod
                 },
                 pendingTransaction:
-                    (<factory.action.authorize.paymentMethod.account.IResult<string>>a.result).pendingTransaction
+                    (<factory.action.authorize.paymentMethod.account.IResult>a.result).pendingTransaction
             }],
             agent: params.transaction.agent,
             purpose: {

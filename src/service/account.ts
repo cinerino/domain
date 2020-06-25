@@ -13,7 +13,6 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { handleChevreError, handlePecorinoError } from '../errorHandler';
-// import { RedisRepository as AccountNumberRepo } from '../repo/accountNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
@@ -44,11 +43,11 @@ const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
 /**
  * 口座開設
  */
-export function open<T extends string>(params: {
+export function open(params: {
     project: factory.project.IProject;
     agent: factory.ownershipInfo.IOwner;
     name: string;
-    accountType: T;
+    accountType: string;
 }) {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
@@ -77,8 +76,6 @@ export function open<T extends string>(params: {
         let ownershipInfoWithDetail: IOwnershipInfoWithDetail;
         try {
             // 口座番号を発行
-            // const accountNumber = await repos.accountNumber.publish(new Date());
-
             const publishIdentifierResult = await serviceOutputIdentifierService.publish({
                 project: { id: project.id }
             });
@@ -138,7 +135,7 @@ export interface IClosingAccount {
 /**
  * 口座解約
  */
-export function close<T extends string>(params: {
+export function close(params: {
     project: factory.project.IProject;
     /**
      * 所有者を指定しなければ、問答無用に口座番号から口座を解約します
@@ -146,7 +143,7 @@ export function close<T extends string>(params: {
     ownedBy?: {
         id: string;
     };
-    accountType: T;
+    accountType: string;
     accountNumber: string;
 }): IAccountsOperation<void> {
     return async (repos: {
@@ -318,10 +315,10 @@ export function searchMoneyTransferActions(params: {
 /**
  * 所有権なしにポイント口座を開設する
  */
-export function openWithoutOwnershipInfo<T extends string>(params: {
+export function openWithoutOwnershipInfo(params: {
     project: factory.project.IProject;
     name: string;
-    accountType: T;
+    accountType: string;
 }) {
     return async (repos: {
         project: ProjectRepo;
@@ -347,7 +344,6 @@ export function openWithoutOwnershipInfo<T extends string>(params: {
         let account: factory.pecorino.account.IAccount;
         try {
             // 口座番号を発行
-            // const accountNumber = await repos.accountNumber.publish(new Date());
             const publishIdentifierResult = await serviceOutputIdentifierService.publish({
                 project: { id: project.id }
             });
