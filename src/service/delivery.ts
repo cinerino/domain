@@ -106,6 +106,8 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
         await repos.action.complete({ typeOf: sendOrderActionAttributes.typeOf, id: action.id, result: result });
 
         await onSend(sendOrderActionAttributes, order)({ task: repos.task });
+
+        return result;
     };
 }
 

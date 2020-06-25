@@ -27,6 +27,9 @@ async function main() {
     const registerActionInProgressRepo = new domain.repository.action.RegisterServiceInProgress(redisClient);
     const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+    const orderRepo = new domain.repository.Order(mongoose.connection);
+    const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
+    const taskRepo = new domain.repository.Task(mongoose.connection);
     const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
     const personRepo = new domain.repository.Person({
         userPoolId: userPoolId
@@ -45,7 +48,7 @@ async function main() {
     });
     console.log('products found', searchProductsResult);
 
-    await domain.service.transaction.orderAccount.orderAccount({
+    const result = await domain.service.transaction.orderAccount.orderAccount({
         project: { id: project.id },
         // expires: moment().add(5, 'minutes').toDate(),
         agent: {
@@ -54,6 +57,7 @@ async function main() {
             // memberOf?: ProgramMembershipFactory.IProgramMembership;
             // url?: string;
         },
+        name: 'サンプル口座名義',
         accountType: 'Point',
         seller: {
             typeOf: domain.factory.organizationType.MovieTheater,
@@ -69,7 +73,53 @@ async function main() {
         seller: sellerRepo,
         transaction: transactionRepo
     });
-    console.log('ordered');
+    console.log('ordered', result.order.orderNumber);
+
+
+    const order = result.order;
+
+    const orderActionAttributes = {
+        agent: order.customer,
+        object: order,
+        potentialActions: {},
+        project: order.project,
+        typeOf: domain.factory.actionType.OrderAction
+    };
+
+    await domain.service.order.placeOrder(orderActionAttributes)({
+        action: actionRepo,
+        invoice: invoiceRepo,
+        order: orderRepo,
+        task: taskRepo,
+        transaction: transactionRepo
+    });
+    console.log('order placed');
+
+
+    // APIユーザーとして注文配送を実行する
+    console.log('sending order...');
+    const sendOrderActionAttributes = {
+        agent: order.seller,
+        object: order,
+        potentialActions: {
+            sendEmailMessage: undefined
+        },
+        project: order.project,
+        recipient: order.customer,
+        typeOf: domain.factory.actionType.SendAction
+    };
+
+    const ownershipInfos = await domain.service.delivery.sendOrder(sendOrderActionAttributes)({
+        action: actionRepo,
+        order: orderRepo,
+        ownershipInfo: ownershipInfoRepo,
+        registerActionInProgress: registerActionInProgressRepo,
+        task: taskRepo,
+        transaction: transactionRepo
+    });
+    console.log('order sent');
+    console.log('ownershipInfos created', ownershipInfos);
+
 }
 
 main().then(() => {
