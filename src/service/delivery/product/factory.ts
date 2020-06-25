@@ -80,7 +80,9 @@ export function createProductOwnershipInfo(params: {
             ...((<any>itemOffered).membershipFor !== undefined) ? { membershipFor: (<any>itemOffered).membershipFor } : undefined,
             ...((<any>itemOffered).hostingOrganization !== undefined)
                 ? { hostingOrganization: (<any>itemOffered).hostingOrganization }
-                : undefined
+                : undefined,
+            ...(typeof (<any>itemOffered).accountNumber === 'string') ? { accountNumber: (<any>itemOffered).accountNumber } : undefined,
+            ...(typeof (<any>itemOffered).accountType === 'string') ? { accountType: (<any>itemOffered).accountType } : undefined
         }
     };
 
