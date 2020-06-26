@@ -115,5 +115,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build && npm test && npm run doc"
   },
-  "version": "7.2.3"
+  "version": "7.3.0"
 }
