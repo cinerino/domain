@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v7.3.0 - 2020-06-26
+
+### Added
+
+- 所有権検索条件拡張
+- COA予約にbookingTime属性を追加
+
 ## v7.2.3 - 2020-06-25
 
 ### Changed

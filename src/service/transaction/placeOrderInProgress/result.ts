@@ -237,6 +237,8 @@ function createReservationAcceptedOffers(params: {
                             project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                             typeOf: factory.chevre.reservationType.EventReservation,
                             id: `${updTmpReserveSeatResult.tmpReserveNum}-${index.toString()}`,
+                            bookingTime: moment(authorizeSeatReservationAction.startDate)
+                                .toDate(),
                             additionalTicketText: '',
                             numSeats: 1,
                             reservationFor: {
