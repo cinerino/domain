@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 所有権検索条件拡張
+- COA予約にbookingTime属性を追加
+
 ### Changed
 
 ### Deprecated

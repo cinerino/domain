@@ -18,7 +18,7 @@ export class MongoRepository {
         this.ownershipInfoModel = connection.model(modelName);
     }
 
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS<T extends factory.ownershipInfo.IGoodType>(
         params: factory.ownershipInfo.ISearchConditions<T>
     ) {
@@ -51,6 +51,27 @@ export class MongoRepository {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         const typeOfGood = params.typeOfGood;
+
+        const typeOfGoodIdentifierEq = params.typeOfGood?.identifier?.$eq;
+        if (typeof typeOfGoodIdentifierEq === 'string') {
+            andConditions.push({
+                'typeOfGood.identifier': {
+                    $exists: true,
+                    $eq: typeOfGoodIdentifierEq
+                }
+            });
+        }
+
+        const typeOfGoodIssuedThroughIdEq = params.typeOfGood?.issuedThrough?.id?.$eq;
+        if (typeof typeOfGoodIssuedThroughIdEq === 'string') {
+            andConditions.push({
+                'typeOfGood.issuedThrough.id': {
+                    $exists: true,
+                    $eq: typeOfGoodIssuedThroughIdEq
+                }
+            });
+        }
+
         if (typeOfGood !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */

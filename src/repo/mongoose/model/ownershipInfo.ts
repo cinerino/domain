@@ -186,11 +186,31 @@ schema.index(
 );
 
 schema.index(
+    { 'typeOfGood.identifier': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodIdentifier',
+        partialFilterExpression: {
+            'typeOfGood.identifier': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'typeOfGood.membershipFor.id': 1, ownedFrom: -1 },
     {
         name: 'searchByTypeOfGoodMembershipForId',
         partialFilterExpression: {
             'typeOfGood.membershipFor.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'typeOfGood.issuedThrough.id': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodIssuedThroughId',
+        partialFilterExpression: {
+            'typeOfGood.issuedThrough.id': { $exists: true }
         }
     }
 );
