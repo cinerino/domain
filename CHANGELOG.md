@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- サービス登録中止タスクを追加
-
 ### Changed
 
 ### Deprecated
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v7.5.0 - 2020-06-27
+
+### Added
+
+- サービス登録中止タスクを追加
 
 ## v7.4.0 - 2020-06-27
 
