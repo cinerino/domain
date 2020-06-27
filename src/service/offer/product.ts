@@ -189,10 +189,15 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        const transaction = await repos.transaction.findInProgressById({
+        const transaction = await repos.transaction.findById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
         });
+        if (transaction.status !== factory.transactionStatusType.Canceled
+            && transaction.status !== factory.transactionStatusType.Expired
+            && transaction.status !== factory.transactionStatusType.InProgress) {
+            throw new factory.errors.Argument('purpose', `invalid transaction status: ${transaction.status}`);
+        }
 
         if (typeof params.agent?.id === 'string') {
             if (transaction.agent.id !== params.agent.id) {
