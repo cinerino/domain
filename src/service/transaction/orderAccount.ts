@@ -5,6 +5,7 @@ import * as moment from 'moment-timezone';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
+import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
@@ -30,6 +31,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
+    confirmationNumber: ConfirmationNumberRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: OwnershipInfoRepo;
     person: PersonRepo;
@@ -52,6 +54,7 @@ export function orderAccount(params: {
 }): IOrderOperation<factory.transaction.placeOrder.IResult> {
     return async (repos: {
         action: ActionRepo;
+        confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
         ownershipInfo: OwnershipInfoRepo;
         person: PersonRepo;
@@ -137,6 +140,7 @@ function processPlaceOrder(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;

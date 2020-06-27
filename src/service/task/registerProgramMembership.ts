@@ -6,6 +6,7 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
+import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
@@ -50,6 +51,7 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
 
                 await orderProgramMembership(data)({
                     action: new ActionRepo(settings.connection),
+                    confirmationNumber: new ConfirmationNumberRepo(settings.redisClient),
                     creditCard: creditCardRepo,
                     orderNumber: new OrderNumberRepo(settings.redisClient),
                     seller: new SellerRepo(settings.connection),
