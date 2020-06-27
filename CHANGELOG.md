@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- サービス登録中止タスクを追加
+
 ### Changed
 
 ### Deprecated

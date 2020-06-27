@@ -180,23 +180,24 @@ export function authorize(params: {
     };
 }
 
-export function voidTransaction(params: {
-    id?: string;
-    agent: { id: string };
-    purpose: factory.action.authorize.offer.product.IPurpose;
-}) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidRegisterService>) {
     return async (repos: {
         action: ActionRepo;
+        project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
         });
 
-        if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('Transaction not yours');
+        if (typeof params.agent?.id === 'string') {
+            if (transaction.agent.id !== params.agent.id) {
+                throw new factory.errors.Forbidden('Transaction not yours');
+            }
         }
 
         let authorizeActions: factory.action.authorize.offer.product.IAction[];
@@ -232,15 +233,41 @@ export function voidTransaction(params: {
             const productId = action.object[0]?.itemOffered?.id;
             if (typeof productId === 'string') {
                 await processUnlock({
-                    agent: params.agent,
+                    agent: { id: transaction.agent.id },
                     product: { id: productId },
                     purpose: params.purpose
                 })(repos);
             }
 
             await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+
+            await processVoidRegisterServiceTransaction({
+                action,
+                project
+            });
         }));
     };
+}
+
+/**
+ * Chevre進行中取引を中止する
+ */
+async function processVoidRegisterServiceTransaction(params: {
+    action: factory.action.authorize.offer.product.IAction;
+    project: factory.project.IProject;
+}) {
+    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
+        throw new factory.errors.ServiceUnavailable('Project settings undefined');
+    }
+
+    const registerService = new chevre.service.transaction.RegisterService({
+        endpoint: params.project.settings.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+
+    if (typeof params.action.instrument?.transactionNumber === 'string') {
+        await registerService.cancel({ transactionNumber: params.action.instrument.transactionNumber });
+    }
 }
 
 /**

@@ -104,6 +104,7 @@ export function orderProgramMembership(
                 if (typeof transaction?.id === 'string') {
                     await OfferService.product.voidTransaction({
                         agent: { id: customer.id },
+                        project: { typeOf: project.typeOf, id: project.id },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     })(repos);
                 }
