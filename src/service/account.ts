@@ -109,7 +109,7 @@ export function close(params: {
  */
 export function search(params: {
     project: factory.project.IProject;
-    conditions: factory.ownershipInfo.ISearchConditions<factory.ownershipInfo.AccountGoodType.Account>;
+    conditions: factory.ownershipInfo.ISearchConditions;
 }): IAccountsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;

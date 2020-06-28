@@ -19,9 +19,7 @@ export class MongoRepository {
     }
 
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-    public static CREATE_MONGO_CONDITIONS<T extends factory.ownershipInfo.IGoodType>(
-        params: factory.ownershipInfo.ISearchConditions<T>
-    ) {
+    public static CREATE_MONGO_CONDITIONS(params: factory.ownershipInfo.ISearchConditions) {
         const andConditions: any[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -234,9 +232,7 @@ export class MongoRepository {
         return doc.toObject();
     }
 
-    public async count<T extends factory.ownershipInfo.IGoodType>(
-        params: factory.ownershipInfo.ISearchConditions<T>
-    ): Promise<number> {
+    public async count(params: factory.ownershipInfo.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.ownershipInfoModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
@@ -248,7 +244,7 @@ export class MongoRepository {
      * 所有権を検索する
      */
     public async search<T extends factory.ownershipInfo.IGoodType>(
-        params: factory.ownershipInfo.ISearchConditions<T>
+        params: factory.ownershipInfo.ISearchConditions
     ): Promise<IOwnershipInfo<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.ownershipInfoModel.find(
@@ -276,9 +272,7 @@ export class MongoRepository {
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
 
-    public stream<T extends factory.ownershipInfo.IGoodType>(
-        params: factory.ownershipInfo.ISearchConditions<T>
-    ): QueryCursor<Document> {
+    public stream(params: factory.ownershipInfo.ISearchConditions): QueryCursor<Document> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.ownershipInfoModel.find((conditions.length > 0) ? { $and: conditions } : {})
             .select({ __v: 0, createdAt: 0, updatedAt: 0 });
