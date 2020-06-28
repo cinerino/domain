@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 口座開設を口座注文処理へ完全移行
+
 ### Deprecated
 
 ### Removed
