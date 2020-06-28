@@ -1,10 +1,8 @@
 /**
  * 口座サービス
- * 口座の保管先はPecorinoサービスです。
  */
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as moment from 'moment';
-import * as util from 'util';
 
 import { credentials } from '../credentials';
 
@@ -16,7 +14,6 @@ import { handleChevreError, handlePecorinoError } from '../errorHandler';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
-type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.AccountGoodType.Account>>;
 type IOwnershipInfoWithDetail =
     factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.ownershipInfo.AccountGoodType.Account>>;
 type IAccountsOperation<T> = (repos: {
@@ -39,93 +36,6 @@ const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
     scopes: [],
     state: ''
 });
-
-/**
- * 口座開設
- */
-export function open(params: {
-    project: factory.project.IProject;
-    agent: factory.ownershipInfo.IOwner;
-    name: string;
-    accountType: string;
-}) {
-    return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
-        project: ProjectRepo;
-    }) => {
-        const now = new Date();
-
-        const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
-        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
-            endpoint: project.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        const accountService = new pecorinoapi.service.Account({
-            endpoint: project.settings.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-
-        let ownershipInfoWithDetail: IOwnershipInfoWithDetail;
-        try {
-            // 口座番号を発行
-            const publishIdentifierResult = await serviceOutputIdentifierService.publish({
-                project: { id: project.id }
-            });
-
-            // 口座開設
-            const account = await accountService.open({
-                project: { typeOf: project.typeOf, id: project.id },
-                accountType: params.accountType,
-                accountNumber: publishIdentifierResult.identifier,
-                name: params.name
-            });
-
-            // 所有権発行
-            const identifier = util.format(
-                '%s-%s-%s-%s',
-                params.agent.id,
-                factory.pecorino.account.TypeOf.Account,
-                account.accountType,
-                account.accountNumber
-            );
-            const ownershipInfo: IOwnershipInfo = {
-                project: { typeOf: project.typeOf, id: project.id },
-                typeOf: 'OwnershipInfo',
-                id: '',
-                identifier: identifier,
-                typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
-                    accountType: account.accountType,
-                    accountNumber: account.accountNumber
-                },
-                ownedBy: params.agent,
-                ownedFrom: now,
-                ownedThrough: moment(now)
-                    // tslint:disable-next-line:no-magic-numbers
-                    .add(100, 'years')
-                    .toDate() // 十分に無期限
-            };
-
-            await repos.ownershipInfo.save(ownershipInfo);
-
-            ownershipInfoWithDetail = { ...ownershipInfo, typeOfGood: account };
-        } catch (error) {
-            error = handleChevreError(error);
-            error = handlePecorinoError(error);
-            throw error;
-        }
-
-        return ownershipInfoWithDetail;
-    };
-}
 
 export interface IClosingAccount {
     accountType: string;
@@ -199,7 +109,7 @@ export function close(params: {
  */
 export function search(params: {
     project: factory.project.IProject;
-    conditions: factory.ownershipInfo.ISearchConditions<factory.ownershipInfo.AccountGoodType.Account>;
+    conditions: factory.ownershipInfo.ISearchConditions;
 }): IAccountsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;

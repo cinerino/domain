@@ -32,8 +32,8 @@ export interface IOwnershipInfoReport {
 /**
  * フォーマット指定でストリーミングダウンロード
  */
-export function stream<T extends factory.ownershipInfo.IGoodType>(params: {
-    conditions: factory.ownershipInfo.ISearchConditions<T>;
+export function stream(params: {
+    conditions: factory.ownershipInfo.ISearchConditions;
     format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
 }) {
     // tslint:disable-next-line:max-func-body-length

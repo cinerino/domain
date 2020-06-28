@@ -242,7 +242,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
  * イベント予約検索
  */
 export function searchScreeningEventReservations(
-    params: factory.ownershipInfo.ISearchConditions<factory.chevre.reservationType.EventReservation> & {
+    params: factory.ownershipInfo.ISearchConditions & {
         project: factory.project.IProject;
     }
 ): ISearchEventReservationsOperation<IOwnershipInfoWithDetail[]> {
