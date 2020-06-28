@@ -10,9 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 口座開設を口座注文処理へ完全移行
-- 所有権インターフェース汎用性拡張
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v7.7.0 - 2020-06-28
+
+### Changed
+
+- 口座開設を口座注文処理へ完全移行
+- 所有権インターフェース汎用性拡張
 
 ## v7.6.0 - 2020-06-27
 
