@@ -1,6 +1,3 @@
-/**
- * アクション検索サンプル
- */
 const moment = require('moment');
 const mongoose = require('mongoose');
 const domain = require('../');
@@ -8,18 +5,18 @@ const domain = require('../');
 async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
-    const offers = await domain.service.offer.searchEventOffers({
-        project: { id: 'sskts-development' },
-        event: {
-            id: '12116221020200121901710'
-        }
+    const offers = await domain.service.offer.product.search({
+        project: { id: 'cinerino' },
+        itemOffered: {
+            id: '5e563a661b58b50007f96f66'
+        },
+        seller: { id: 'xxx' },
+        // availableAt: { id: 'xxx' }
     })({
         project: new domain.repository.Project(mongoose.connection),
     });
 
     console.log(offers);
-    console.log(offers[0].containsPlace);
-    console.log(offers[0].containsPlace.map((seat => `${seat.branchCode} ${seat.offers[0].availability} ${seat.additionalProperty.map((p) => `${p.name}:${p.value}`).join(',')}`)));
     console.log(offers.length, 'offers found.');
 
     // await mongoose.disconnect();
