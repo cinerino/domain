@@ -1,3 +1,5 @@
+import * as moment from 'moment';
+
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -39,6 +41,62 @@ export type IAuthorizeOperation<T> = (repos: {
     seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
+
+/**
+ * プロダクトオファーを検索する
+ */
+export function search(params: {
+    project: { id: string };
+    itemOffered: { id: string };
+    seller?: { id: string };
+    availableAt?: { id: string };
+}) {
+    return async (repos: {
+        project: ProjectRepo;
+    }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> => {
+        const now = moment();
+
+        const project = await repos.project.findById({ id: params.project.id });
+        if (project.settings?.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        }
+
+        const productService = new chevre.service.Product({
+            endpoint: project.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const product = await productService.findById({ id: params.itemOffered.id });
+        let offers = await productService.searchOffers({ id: String(product.id) });
+
+        // 店舗条件によって対象を絞る
+        const storeId = params.availableAt?.id;
+        if (typeof storeId === 'string') {
+            // アプリケーションが利用可能なオファーに絞る
+            offers = offers.filter((o) => {
+                return Array.isArray(o.availableAtOrFrom)
+                    && o.availableAtOrFrom.some((availableApplication) => availableApplication.id === storeId);
+            });
+        }
+
+        // 有効期間を適用
+        offers = offers.filter((o) => {
+            let isValid = true;
+
+            if (o.validFrom !== undefined && moment(o.validFrom)
+                .isAfter(now)) {
+                isValid = false;
+            }
+            if (o.validThrough !== undefined && moment(o.validThrough)
+                .isBefore(now)) {
+                isValid = false;
+            }
+
+            return isValid;
+        });
+
+        return offers;
+    };
+}
 
 /**
  * サービス(Chevreプロダクト)オファー承認
@@ -85,7 +143,10 @@ export function authorize(params: {
         const product = await productService.findById({
             id: String(params.object[0]?.itemOffered?.id)
         });
-        const availableOffers = await productService.searchOffers({ id: String(product.id) });
+        const availableOffers = await search({
+            project: { id: project.id },
+            itemOffered: { id: String(product.id) }
+        })(repos);
 
         await checkIfRegistered({
             agent: { id: params.agent.id },

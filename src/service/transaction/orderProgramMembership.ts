@@ -228,11 +228,16 @@ function processAuthorizeProductOffer(params: {
 
         // オファーにポイント特典設定があるかどうか確認
         let pointAward: factory.chevre.service.IPointAward | undefined;
-        const offers = await repos.productService.searchOffers({ id: params.product.id });
+
+        const offers = await OfferService.product.search({
+            project: { id: params.project.id },
+            itemOffered: { id: params.product.id }
+        })(repos);
         const acceptedProductOffer = offers.find((o) => o.identifier === acceptedOffer.identifier);
         if (acceptedProductOffer === undefined) {
             throw new factory.errors.NotFound('Offer', `Accepted offer ${acceptedOffer.identifier} not found`);
         }
+
         const pointAwardByOffer = acceptedProductOffer.itemOffered?.pointAward;
         if (typeof pointAwardByOffer?.amount?.value === 'number' && typeof pointAwardByOffer?.amount?.currency === 'string') {
             const toAccount = await findAccount({
