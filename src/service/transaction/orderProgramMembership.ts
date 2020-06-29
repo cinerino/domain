@@ -112,6 +112,11 @@ export function orderProgramMembership(
                 // 失敗したら仕方ない
             }
 
+            // 決済に関してクライアントエラーであれば、リトライしても無駄なので、正常終了
+            if (error instanceof factory.errors.Argument && error.argumentName === 'payment') {
+                return;
+            }
+
             throw error;
         }
     };

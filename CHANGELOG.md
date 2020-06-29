@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v7.8.0 - 2020-06-29
+
+### Changed
+
+- メンバーシップ注文処理中のクレジットカード決済に関して、クライアントエラーであればリトライしないように調整
+
 ## v7.7.0 - 2020-06-28
 
 ### Changed
