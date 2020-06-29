@@ -419,13 +419,6 @@ export function searchEventTicketOffers(params: {
                 // Chevreで券種オファーを検索
                 offers = await eventService.searchTicketOffers({ id: params.event.id });
 
-                // 店舗条件によって対象を絞る
-                // if (params.seller.typeOf !== factory.organizationType.Corporation
-                //     && params.seller.typeOf !== factory.organizationType.MovieTheater) {
-                //     throw new factory.errors.Argument('seller', `Seller type ${params.seller.typeOf} not acceptable`);
-                // }
-                // const seller = await repos.seller.findById({ id: params.seller.id });
-
                 const specifiedStore = params.store;
                 if (specifiedStore !== undefined) {
                     // アプリケーションが利用可能なオファーに絞る

@@ -51,10 +51,10 @@ describe('プロダクト注文タスクを作成する', () => {
             .expects('findById')
             .once()
             .resolves(membershipService);
-        sandbox.mock(domain.chevre.service.Product.prototype)
-            .expects('searchOffers')
+        sandbox.mock(domain.service.offer.product)
+            .expects('search')
             .once()
-            .resolves(offers);
+            .returns(async () => offers);
 
         const result = await domain.service.product.createOrderTask({
             project: project,

@@ -87,7 +87,10 @@ export function orderAccount(params: {
         }
 
         // プロダクトオファー検索
-        const availableOffers = await productService.searchOffers({ id: String(accountProduct.id) });
+        const availableOffers = await OfferService.product.search({
+            project: { id: project.id },
+            itemOffered: { id: String(accountProduct.id) }
+        })(repos);
         if (availableOffers.length > 1) {
             throw new factory.errors.NotImplemented('Available offers length greater than 1');
         }

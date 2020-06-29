@@ -15,6 +15,8 @@ import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
+import * as OfferService from './offer';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -69,7 +71,10 @@ export function createOrderTask(params: {
         });
 
         const product = await productService.findById({ id: params.object.itemOffered.id });
-        const offers = await productService.searchOffers({ id: String(product.id) });
+        const offers = await OfferService.product.search({
+            project: { id: project.id },
+            itemOffered: { id: String(product.id) }
+        })(repos);
         const acceptedOffer = offers.find((o) => o.id === params.object.id);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
