@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- メンバーシップ注文処理中のクレジットカード決済に関して、クライアントエラーであればリトライしないように調整
+
 ### Deprecated
 
 ### Removed
