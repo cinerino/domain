@@ -8,7 +8,7 @@ import { ProductType } from '../offer/product/factory';
 export function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
-    product: factory.chevre.service.IService;
+    product: factory.chevre.product.IProduct;
     seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
     const offer = params.offer;

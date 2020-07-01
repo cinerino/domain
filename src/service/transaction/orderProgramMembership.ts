@@ -227,7 +227,7 @@ function processAuthorizeProductOffer(params: {
         const transaction = params.transaction;
 
         // オファーにポイント特典設定があるかどうか確認
-        let pointAward: factory.chevre.service.IPointAward | undefined;
+        let pointAward: factory.chevre.product.IPointAward | undefined;
 
         const offers = await OfferService.product.search({
             project: { id: params.project.id },

@@ -341,7 +341,7 @@ async function processVoidRegisterServiceTransaction(params: {
  */
 export function validateAcceptedOffers(params: {
     object: factory.action.authorize.offer.product.IObject;
-    product: factory.chevre.service.IService;
+    product: factory.chevre.product.IProduct;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
     seller: factory.seller.IOrganization<any>;
 }) {
@@ -399,7 +399,7 @@ export function validateAcceptedOffers(params: {
 
 function checkIfRegistered(params: {
     agent: { id: string };
-    product: factory.chevre.service.IService;
+    product: factory.chevre.product.IProduct;
     now: Date;
 }) {
     return async (repos: {
@@ -431,7 +431,7 @@ function checkIfRegistered(params: {
 
 function createServiceOutputIdentifier(params: {
     acceptedOffer: factory.action.authorize.offer.product.IObject;
-    product: factory.chevre.service.IService;
+    product: factory.chevre.product.IProduct;
 }) {
     return async (repos: {
         serviceOutputIdentifierService: chevre.service.ServiceOutputIdentifier;
@@ -460,7 +460,7 @@ function createServiceOutputIdentifier(params: {
 
 function processLock(params: {
     agent: { id: string };
-    product: factory.chevre.service.IService;
+    product: factory.chevre.product.IProduct;
     purpose: factory.action.authorize.offer.product.IPurpose;
 }) {
     return async (repos: {
