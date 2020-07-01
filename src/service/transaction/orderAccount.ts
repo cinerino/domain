@@ -136,7 +136,7 @@ function processPlaceOrder(params: {
     project: { id: string };
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
-    product: factory.chevre.service.IService;
+    product: factory.chevre.product.IProduct;
     acceptedOffer: factory.chevre.event.screeningEvent.ITicketOffer;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     serviceOutputName?: string;
