@@ -50,6 +50,10 @@ export function orderAccount(params: {
     name: string;
     accountType: string;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
+    /**
+     * 利用アプリケーション
+     */
+    location: { id: string };
 }): IOrderOperation<factory.transaction.placeOrder.IResult> {
     return async (repos: {
         action: ActionRepo;
@@ -133,7 +137,8 @@ export function orderAccount(params: {
             product: accountProduct,
             project: project,
             transaction: transaction,
-            serviceOutputName: params.name
+            serviceOutputName: params.name,
+            location: params.location
         })(repos);
     };
 }
@@ -149,6 +154,10 @@ function processPlaceOrder(params: {
     acceptedOffer: factory.chevre.event.screeningEvent.ITicketOffer;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     serviceOutputName?: string;
+    /**
+     * 利用アプリケーション
+     */
+    location: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -182,7 +191,8 @@ function processPlaceOrder(params: {
             transaction: transaction,
             acceptedOffer: acceptedOffer,
             product: { id: String(params.product.id) },
-            serviceOutputName: params.serviceOutputName
+            serviceOutputName: params.serviceOutputName,
+            location: params.location
         })({
             ...repos,
             productService: productService
@@ -214,6 +224,10 @@ function processAuthorizeProductOffer(params: {
     acceptedOffer: factory.chevre.event.screeningEvent.ITicketOffer;
     product: { id: string };
     serviceOutputName?: string;
+    /**
+     * 利用アプリケーション
+     */
+    location: { id: string };
 }) {
     return async (repos: {
         action: ActionRepo;
@@ -263,6 +277,7 @@ function processAuthorizeProductOffer(params: {
             project: { typeOf: factory.organizationType.Project, id: params.project.id },
             agent: { id: customer.id },
             object: object,
+            location: params.location,
             transaction: { id: transaction.id }
         })(repos);
     };

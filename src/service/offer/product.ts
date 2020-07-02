@@ -105,6 +105,10 @@ export function authorize(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.product.IObject;
     agent: { id: string };
+    /**
+     * 利用アプリケーション
+     */
+    location?: { id?: string };
     transaction: { id: string };
 }): IAuthorizeOperation<factory.action.authorize.offer.product.IAction> {
     // tslint:disable-next-line:max-func-body-length
@@ -145,7 +149,9 @@ export function authorize(params: {
         });
         const availableOffers = await search({
             project: { id: project.id },
-            itemOffered: { id: String(product.id) }
+            itemOffered: { id: String(product.id) },
+            // 利用アプリケーションを指定
+            ...(typeof params.location?.id === 'string') ? { availableAt: { id: params.location.id } } : undefined
         })(repos);
 
         await checkIfRegistered({

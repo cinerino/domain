@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- プロダクトオファー承認時に利用アプリケーションの検証を追加
+
 ### Changed
 
 - 口座注文進行時に、プロダクトオファーから販売者を自動選択するように調整
