@@ -50,7 +50,6 @@ export function orderAccount(params: {
     name: string;
     accountType: string;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
-    seller: { typeOf: factory.organizationType; id: string };
 }): IOrderOperation<factory.transaction.placeOrder.IResult> {
     return async (repos: {
         action: ActionRepo;
@@ -100,7 +99,17 @@ export function orderAccount(params: {
         }
 
         // 販売者を決定
-        const seller = params.seller;
+        // プロダクトのひとつめの販売者を自動選択
+        const productOffers = accountProduct.offers;
+        if (!Array.isArray(productOffers) || productOffers.length === 0) {
+            throw new factory.errors.NotFound('Product offers');
+        }
+        const productOfferSellerId = productOffers.shift()?.seller?.id;
+        if (typeof productOfferSellerId !== 'string') {
+            throw new factory.errors.NotFound('seller of product offer');
+        }
+
+        const seller = await repos.seller.findById({ id: productOfferSellerId });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder> | undefined;
 
