@@ -349,7 +349,7 @@ export function validateAcceptedOffers(params: {
     object: factory.action.authorize.offer.product.IObject;
     product: factory.chevre.product.IProduct;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
-    seller: factory.seller.IOrganization<any>;
+    seller: factory.seller.IOrganization<factory.seller.IAttributes<any>>;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.product.IObject> => {
@@ -369,6 +369,18 @@ export function validateAcceptedOffers(params: {
             name: params.seller.name,
             typeOf: params.seller.typeOf
         };
+
+        // 販売者を検証
+        const productOffers = params.product.offers;
+        if (!Array.isArray(productOffers)) {
+            throw new factory.errors.Argument('Product', 'Product offers undefined');
+        }
+        const hasValidOffer = productOffers.some((o) => {
+            return o.seller?.id === params.seller.id;
+        });
+        if (!hasValidOffer) {
+            throw new factory.errors.Argument('Product', 'Product has no valid offer');
+        }
 
         // 利用可能なチケットオファーであれば受け入れる
         return Promise.all(acceptedOfferWithoutDetail.map((offerWithoutDetail) => {
