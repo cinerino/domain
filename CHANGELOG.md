@@ -8,13 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- プロダクトオファー承認時に利用アプリケーションの検証を追加
-- プロダクトオファー承認時に販売者の検証を追加
-- プロダクトオファー検索に販売者の検証を追加
-
 ### Changed
-
-- 口座注文進行時に、プロダクトオファーから販売者を自動選択するように調整
 
 ### Deprecated
 
@@ -23,6 +17,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v7.11.0 - 2020-07-03
+
+### Added
+
+- プロダクトオファー承認時に利用アプリケーションの検証を追加
+- プロダクトオファー承認時に販売者の検証を追加
+- プロダクトオファー検索に販売者の検証を追加
+
+### Changed
+
+- 口座注文進行時に、プロダクトオファーから販売者を自動選択するように調整
 
 ## v7.10.0 - 2020-07-01
 
