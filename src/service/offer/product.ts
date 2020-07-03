@@ -61,12 +61,29 @@ export function search(params: {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
+        let offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
+
         const productService = new chevre.service.Product({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
         const product = await productService.findById({ id: params.itemOffered.id });
-        let offers = await productService.searchOffers({ id: String(product.id) });
+
+        // 販売者指定の場合、検証
+        if (typeof params.seller?.id === 'string') {
+            const productOffers = product.offers;
+            if (!Array.isArray(productOffers)) {
+                return offers;
+            }
+            const hasValidOffer = productOffers.some((o) => {
+                return o.seller?.id === params.seller?.id;
+            });
+            if (!hasValidOffer) {
+                return offers;
+            }
+        }
+
+        offers = await productService.searchOffers({ id: String(product.id) });
 
         // 店舗条件によって対象を絞る
         const storeId = params.availableAt?.id;
