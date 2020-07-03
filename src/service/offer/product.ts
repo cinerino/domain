@@ -61,12 +61,29 @@ export function search(params: {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
+        let offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
+
         const productService = new chevre.service.Product({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
         const product = await productService.findById({ id: params.itemOffered.id });
-        let offers = await productService.searchOffers({ id: String(product.id) });
+
+        // 販売者指定の場合、検証
+        if (typeof params.seller?.id === 'string') {
+            const productOffers = product.offers;
+            if (!Array.isArray(productOffers)) {
+                return offers;
+            }
+            const hasValidOffer = productOffers.some((o) => {
+                return o.seller?.id === params.seller?.id;
+            });
+            if (!hasValidOffer) {
+                return offers;
+            }
+        }
+
+        offers = await productService.searchOffers({ id: String(product.id) });
 
         // 店舗条件によって対象を絞る
         const storeId = params.availableAt?.id;
@@ -105,6 +122,10 @@ export function authorize(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.product.IObject;
     agent: { id: string };
+    /**
+     * 利用アプリケーション
+     */
+    location?: { id?: string };
     transaction: { id: string };
 }): IAuthorizeOperation<factory.action.authorize.offer.product.IAction> {
     // tslint:disable-next-line:max-func-body-length
@@ -145,7 +166,9 @@ export function authorize(params: {
         });
         const availableOffers = await search({
             project: { id: project.id },
-            itemOffered: { id: String(product.id) }
+            itemOffered: { id: String(product.id) },
+            // 利用アプリケーションを指定
+            ...(typeof params.location?.id === 'string') ? { availableAt: { id: params.location.id } } : undefined
         })(repos);
 
         await checkIfRegistered({
@@ -343,7 +366,7 @@ export function validateAcceptedOffers(params: {
     object: factory.action.authorize.offer.product.IObject;
     product: factory.chevre.product.IProduct;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
-    seller: factory.seller.IOrganization<any>;
+    seller: factory.seller.IOrganization<factory.seller.IAttributes<any>>;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.product.IObject> => {
@@ -363,6 +386,18 @@ export function validateAcceptedOffers(params: {
             name: params.seller.name,
             typeOf: params.seller.typeOf
         };
+
+        // 販売者を検証
+        const productOffers = params.product.offers;
+        if (!Array.isArray(productOffers)) {
+            throw new factory.errors.Argument('Product', 'Product offers undefined');
+        }
+        const hasValidOffer = productOffers.some((o) => {
+            return o.seller?.id === params.seller.id;
+        });
+        if (!hasValidOffer) {
+            throw new factory.errors.Argument('Product', 'Product has no valid offer');
+        }
 
         // 利用可能なチケットオファーであれば受け入れる
         return Promise.all(acceptedOfferWithoutDetail.map((offerWithoutDetail) => {
