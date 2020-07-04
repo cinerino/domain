@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- プロダクトオファー検索に販売期間の検証を追加
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v7.11.2 - 2020-07-04
+
+### Changed
+
+- プロダクトオファー検索に販売期間の検証を追加
 
 ## v7.11.1 - 2020-07-04
 
