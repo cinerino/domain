@@ -226,12 +226,17 @@ function processAuthorizeProductOffer(params: {
         const customer = params.customer;
         const transaction = params.transaction;
 
+        const project: factory.chevre.project.IProject = { typeOf: 'Project', id: params.project.id };
+        const seller: factory.order.ISeller
+            = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
+
         // オファーにポイント特典設定があるかどうか確認
         let pointAward: factory.chevre.product.IPointAward | undefined;
 
         const offers = await OfferService.product.search({
             project: { id: params.project.id },
-            itemOffered: { id: params.product.id }
+            itemOffered: { id: params.product.id },
+            seller: { id: seller.id }
         })(repos);
         const acceptedProductOffer = offers.find((o) => o.identifier === acceptedOffer.identifier);
         if (acceptedProductOffer === undefined) {
@@ -259,10 +264,6 @@ function processAuthorizeProductOffer(params: {
                 }
             };
         }
-
-        const project: factory.chevre.project.IProject = { typeOf: 'Project', id: params.project.id };
-        const seller: factory.order.ISeller
-            = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 
         const serviceOutputName: string | undefined = (typeof acceptedOffer.itemOffered.name === 'string')
             ? acceptedOffer.itemOffered.name

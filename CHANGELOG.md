@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- メンバーシップと口座オファー検索時に販売者とアプリケーションを検証するように調整
+
 ### Deprecated
 
 ### Removed
