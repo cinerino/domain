@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v7.11.1 - 2020-07-04
+
+### Changed
+
+- メンバーシップと口座オファー検索時に販売者とアプリケーションを検証するように調整
+
 ## v7.11.0 - 2020-07-03
 
 ### Added

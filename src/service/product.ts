@@ -51,6 +51,10 @@ export function createOrderTask(params: {
             id: string;
         };
     };
+    /**
+     * 利用アプリケーション
+     */
+    location: { id: string };
 }): ICreateOrderTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
         project: ProjectRepo;
@@ -65,6 +69,8 @@ export function createOrderTask(params: {
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
+        const seller = await repos.seller.findById({ id: params.object.seller.id });
+
         const productService = new chevre.service.Product({
             endpoint: project.settings.chevre.endpoint,
             auth: chevreAuthClient
@@ -73,14 +79,14 @@ export function createOrderTask(params: {
         const product = await productService.findById({ id: params.object.itemOffered.id });
         const offers = await OfferService.product.search({
             project: { id: project.id },
-            itemOffered: { id: String(product.id) }
+            itemOffered: { id: String(product.id) },
+            seller: { id: seller.id },
+            availableAt: { id: params.location.id }
         })(repos);
         const acceptedOffer = offers.find((o) => o.id === params.object.id);
         if (acceptedOffer === undefined) {
             throw new factory.errors.NotFound('Offer');
         }
-
-        const seller = await repos.seller.findById({ id: params.object.seller.id });
 
         // 注文アクション属性を作成
         const data = createOrderProgramMembershipActionAttributes({

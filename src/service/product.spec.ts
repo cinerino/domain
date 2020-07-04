@@ -64,7 +64,8 @@ describe('プロダクト注文タスクを作成する', () => {
                 id: offers[0].id,
                 itemOffered: { id: 'productId' },
                 seller: { typeOf: domain.factory.organizationType.MovieTheater, id: 'sellerId' }
-            }
+            },
+            location: { id: 'locationId' }
         })({
             seller: sellerRepo,
             project: projectRepo,
