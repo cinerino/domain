@@ -75,8 +75,15 @@ export function search(params: {
             if (!Array.isArray(productOffers)) {
                 return offers;
             }
+
             const hasValidOffer = productOffers.some((o) => {
-                return o.seller?.id === params.seller?.id;
+                return o.seller?.id === params.seller?.id
+                    && o.validFrom !== undefined
+                    && moment(o.validFrom)
+                        .isSameOrBefore(now)
+                    && o.validThrough !== undefined
+                    && moment(o.validThrough)
+                        .isSameOrAfter(now);
             });
             if (!hasValidOffer) {
                 return offers;
