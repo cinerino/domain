@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v7.12.0 - 2020-07-06
+
+### Changed
+
+- Chevreエンドポイントを環境変数として設定するように変更
+- Pecorinoエンドポイントを環境変数として設定するように変更
+
 ## v7.11.2 - 2020-07-04
 
 ### Changed

@@ -11,8 +11,7 @@ let sandbox: sinon.SinonSandbox;
 
 const project = {
     typeOf: domain.factory.organizationType.Project,
-    id: 'id',
-    settings: { chevre: { endpoint: '' } }
+    id: 'id'
 };
 
 before(() => {

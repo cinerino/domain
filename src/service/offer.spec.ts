@@ -11,10 +11,7 @@ import * as OfferService from './offer';
 
 const project = {
     typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project,
-    id: 'id',
-    settings: {
-        chevre: { endpoint: '' }
-    }
+    id: 'id'
 };
 
 let sandbox: sinon.SinonSandbox;

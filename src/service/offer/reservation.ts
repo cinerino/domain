@@ -139,12 +139,8 @@ async function processVoidTransaction4chevre(params: {
     project: factory.project.IProject;
 }) {
     // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
-    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
-        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-    }
-
     const reserveService = new chevre.service.transaction.Reserve({
-        endpoint: params.project.settings.chevre.endpoint,
+        endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 

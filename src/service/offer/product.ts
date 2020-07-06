@@ -51,20 +51,15 @@ export function search(params: {
     seller?: { id: string };
     availableAt?: { id: string };
 }) {
-    return async (repos: {
+    return async (__: {
         project: ProjectRepo;
     }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> => {
         const now = moment();
 
-        const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
 
         const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
         const product = await productService.findById({ id: params.itemOffered.id });
@@ -147,9 +142,6 @@ export function authorize(params: {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -160,11 +152,11 @@ export function authorize(params: {
         }
 
         const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
         const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -200,7 +192,7 @@ export function authorize(params: {
 
         // まず取引番号発行
         const transactionNumberService = new chevre.service.TransactionNumber({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
         const publishResult = await transactionNumberService.publish({ project: { id: project.id } });
@@ -223,7 +215,7 @@ export function authorize(params: {
 
             // サービス登録開始
             const registerService = new chevre.service.transaction.RegisterService({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 
@@ -352,12 +344,8 @@ async function processVoidRegisterServiceTransaction(params: {
     action: factory.action.authorize.offer.product.IAction;
     project: factory.project.IProject;
 }) {
-    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
-        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-    }
-
     const registerService = new chevre.service.transaction.RegisterService({
-        endpoint: params.project.settings.chevre.endpoint,
+        endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 

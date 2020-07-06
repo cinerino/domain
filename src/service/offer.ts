@@ -71,12 +71,8 @@ export function searchEvents(params: {
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -94,19 +90,15 @@ export function searchEventOffers(params: {
     project: factory.project.IProject;
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.place.screeningRoomSection.IPlaceWithOffer[]> {
-    return async (repos: {
+    return async (__: {
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
+        // const project = await repos.project.findById({ id: params.project.id });
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -128,10 +120,6 @@ export function searchEventOffers(params: {
                 return searchEventOffers4COA({ event });
 
             default:
-                if (project.settings?.chevre === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-                }
-
                 // 基本的にはCHEVREへ空席確認
                 return eventService.searchOffers({ id: params.event.id });
         }
@@ -383,12 +371,9 @@ export function searchEventTicketOffers(params: {
         const now = moment();
 
         const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -526,10 +511,6 @@ async function searchCOAAvailableTickets(params: {
     };
 }): Promise<IAvailableSalesTickets[]> {
     const event = params.event;
-    const project = params.project;
-    if (project.settings?.chevre === undefined) {
-        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-    }
 
     const reserveService = new COA.service.Reserve(
         {
@@ -683,13 +664,9 @@ async function searchEventTicketOffers4COA(params: {
     project: factory.project.IProject;
 }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     const event = params.event;
-    const project = params.project;
-    if (project.settings?.chevre === undefined) {
-        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-    }
 
     const offerService = new chevre.service.Offer({
-        endpoint: project.settings.chevre.endpoint,
+        endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 

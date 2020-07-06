@@ -124,12 +124,8 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
     const cancelReservationObject = params.object;
     const project = params.project;
 
-    if (typeof project.settings?.chevre?.endpoint !== 'string') {
-        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-    }
-
     const cancelReservationService = new chevre.service.transaction.CancelReservation({
-        endpoint: project.settings.chevre.endpoint,
+        endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 
@@ -165,7 +161,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
+        // const project = await repos.project.findById({ id: params.project.id });
 
         let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
 
@@ -207,12 +203,8 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                 default:
                     // 座席予約確定
-                    if (typeof project.settings?.chevre?.endpoint !== 'string') {
-                        throw new factory.errors.ServiceUnavailable('Project settings not found');
-                    }
-
                     reserveService = new chevre.service.transaction.Reserve({
-                        endpoint: project.settings.chevre.endpoint,
+                        endpoint: credentials.chevre.endpoint,
                         auth: chevreAuthClient
                     });
 
@@ -270,12 +262,8 @@ export function searchScreeningEventReservations(
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
-                if (project.settings.chevre === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings not found');
-                }
-
                 const reservationService = new chevre.service.Reservation({
-                    endpoint: project.settings.chevre.endpoint,
+                    endpoint: credentials.chevre.endpoint,
                     auth: chevreAuthClient
                 });
 

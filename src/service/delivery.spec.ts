@@ -9,7 +9,7 @@ import * as sinon from 'sinon';
 require('sinon-mongoose');
 import * as domain from '../index';
 
-const project = { id: 'id', settings: { chevre: { endpoint: '' } } };
+const project = { id: 'id' };
 
 let sandbox: sinon.SinonSandbox;
 

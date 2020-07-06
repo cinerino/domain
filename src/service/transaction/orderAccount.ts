@@ -67,12 +67,9 @@ export function orderAccount(params: {
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -172,12 +169,9 @@ function processPlaceOrder(params: {
         ownershipInfo: OwnershipInfoRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 

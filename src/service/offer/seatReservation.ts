@@ -102,12 +102,8 @@ export function create(params: {
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -152,7 +148,7 @@ export function create(params: {
             case factory.service.webAPI.Identifier.Chevre:
                 // Chevre予約の場合、まず取引番号発行
                 const transactionNumberService = new chevre.service.TransactionNumber({
-                    endpoint: project.settings.chevre.endpoint,
+                    endpoint: credentials.chevre.endpoint,
                     auth: chevreAuthClient
                 });
                 const publishResult = await transactionNumberService.publish({
@@ -222,7 +218,7 @@ export function create(params: {
                     }
 
                     reserveService = new chevre.service.transaction.Reserve({
-                        endpoint: project.settings.chevre.endpoint,
+                        endpoint: credentials.chevre.endpoint,
                         auth: chevreAuthClient
                     });
 
@@ -305,20 +301,16 @@ export function create(params: {
  */
 // tslint:disable-next-line:max-func-body-length
 export function selectSeats(
-    project: factory.project.IProject,
+    __: factory.project.IProject,
     performance: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>,
     acceptedOffer: IAcceptedOfferWithoutDetail4chevre[],
     transactionId: string
 ): ISelectSeatOperation<IAcceptedOfferWithoutDetail4chevre[]> {
     return async () => {
-        if (project.settings === undefined || project.settings.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-
         const acceptedOffersWithoutDetail: IAcceptedOfferWithoutDetail4chevre[] = [];
 
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -947,7 +939,7 @@ export function cancel(params: {
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
+        // const project = await repos.project.findById({ id: params.project.id });
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -996,13 +988,8 @@ export function cancel(params: {
                 break;
 
             default:
-                if (project.settings === undefined
-                    || project.settings.chevre === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Project settings undefined');
-                }
-
                 const reserveService = new chevre.service.transaction.Reserve({
-                    endpoint: project.settings.chevre.endpoint,
+                    endpoint: credentials.chevre.endpoint,
                     auth: chevreAuthClient
                 });
 

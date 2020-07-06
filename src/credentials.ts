@@ -9,7 +9,8 @@ export const credentials = {
     chevre: {
         authorizeServerDomain: <string>process.env.CHEVRE_AUTHORIZE_SERVER_DOMAIN,
         clientId: <string>process.env.CHEVRE_CLIENT_ID,
-        clientSecret: <string>process.env.CHEVRE_CLIENT_SECRET
+        clientSecret: <string>process.env.CHEVRE_CLIENT_SECRET,
+        endpoint: <string>process.env.CHEVRE_ENDPOINT
     },
     coa: {
         endpoint: <string>process.env.COA_ENDPOINT,
@@ -31,7 +32,8 @@ export const credentials = {
     pecorino: {
         authorizeServerDomain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN,
         clientId: <string>process.env.PECORINO_CLIENT_ID,
-        clientSecret: <string>process.env.PECORINO_CLIENT_SECRET
+        clientSecret: <string>process.env.PECORINO_CLIENT_SECRET,
+        endpoint: <string>process.env.PECORINO_ENDPOINT
     }
     // sendGrid: {
     //     apiKey: <string>process.env.SENDGRID_API_KEY
