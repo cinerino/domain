@@ -130,13 +130,9 @@ async function processStartDepositTransaction(params: {
     let requestBody: factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail;
     let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
-    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
-        throw new factory.errors.ServiceUnavailable('Project settings undefined');
-    }
-
     try {
         const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-            endpoint: params.project.settings?.chevre?.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -202,13 +198,10 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
+        // const project = await repos.project.findById({ id: params.project.id });
 
         const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-            endpoint: project.settings?.chevre?.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -266,13 +259,8 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Mo
         const action = await repos.action.start(params);
 
         try {
-            const project = await repos.project.findById({ id: params.project.id });
-            if (typeof project.settings?.chevre?.endpoint !== 'string') {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: project.settings?.chevre?.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 

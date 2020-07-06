@@ -64,15 +64,10 @@ export function createOrderTask(params: {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
-
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const seller = await repos.seller.findById({ id: params.object.seller.id });
 
         const productService = new chevre.service.Product({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -180,7 +175,7 @@ export function registerService(params: factory.action.interact.register.service
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
+        // const project = await repos.project.findById({ id: params.project.id });
 
         // アクション開始
         const registerActionAttributes = params;
@@ -189,16 +184,8 @@ export function registerService(params: factory.action.interact.register.service
         try {
             const object = registerActionAttributes.object;
 
-            // 座席予約確定
-            if (project.settings === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings undefined');
-            }
-            if (project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
-
             const registerServiceTransaction = new chevre.service.transaction.RegisterService({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 

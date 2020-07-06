@@ -242,12 +242,9 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (typeof project.settings?.chevre?.endpoint !== 'string') {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
             const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
             const { transactionNumber } = await transactionNumberService.publish({
@@ -256,7 +253,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 
             // Chevreで入金
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 
@@ -346,13 +343,9 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            const endpoint = project.settings?.chevre?.endpoint;
-            if (typeof endpoint !== 'string') {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
             const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
             const { transactionNumber } = await transactionNumberService.publish({
@@ -361,7 +354,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
 
             // Chevreで入金した分を出金
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 

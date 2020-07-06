@@ -151,10 +151,6 @@ async function processMoneyTransferTransaction(params: {
 
     const transaction = params.transaction;
 
-    if (typeof params.project.settings?.chevre?.endpoint !== 'string') {
-        throw new factory.errors.ServiceUnavailable('Project settings not found');
-    }
-
     const agent = {
         typeOf: transaction.agent.typeOf,
         id: transaction.agent.id,
@@ -184,7 +180,7 @@ async function processMoneyTransferTransaction(params: {
         .toDate();
 
     const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-        endpoint: params.project.settings?.chevre?.endpoint,
+        endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 
@@ -286,12 +282,7 @@ export function voidTransaction(
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        const chevreEndpoint = project.settings?.chevre?.endpoint;
-        if (typeof chevreEndpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
+        // const project = await repos.project.findById({ id: params.project.id });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
@@ -332,7 +323,7 @@ export function voidTransaction(
         }
 
         const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-            endpoint: chevreEndpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -362,14 +353,10 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPa
         const action = await repos.action.start(params);
 
         try {
-            const project = await repos.project.findById({ id: params.project.id });
-            const chevreEndpoint = project.settings?.chevre?.endpoint;
-            if (typeof chevreEndpoint !== 'string') {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
+            // const project = await repos.project.findById({ id: params.project.id });
 
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: chevreEndpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 
@@ -426,16 +413,12 @@ export function refundPaymentCard(params: factory.task.IData<factory.taskName.Re
 
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            const chevreEndpoint = project.settings?.chevre?.endpoint;
-            if (typeof chevreEndpoint !== 'string') {
-                throw new factory.errors.ServiceUnavailable('Project settings not found');
-            }
 
             // 返金アクション属性から、Pecorino取引属性を取り出す
             // const payActionAttributes = params.object;
 
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: chevreEndpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 

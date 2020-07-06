@@ -82,7 +82,7 @@ export function authorize(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
-        const project = await repos.project.findById({ id: transaction.project.id });
+        // const project = await repos.project.findById({ id: transaction.project.id });
 
         // イベント1つのみ許可
         const eventIds = [...new Set(params.object.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
@@ -100,12 +100,8 @@ export function authorize(params: {
         // イベント情報取得
         let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        if (project.settings === undefined || project.settings.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -260,7 +256,7 @@ export function checkMovieTicket(
         movieTicket: MovieTicketRepo;
         paymentMethod: PaymentMethodRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
+        // const project = await repos.project.findById({ id: params.project.id });
 
         const actionAttributes: factory.action.check.paymentMethod.movieTicket.IAttributes = {
             project: params.project,
@@ -279,12 +275,9 @@ export function checkMovieTicket(
 
             // イベント情報取得
             let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-            if (project.settings === undefined || project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
             const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 
@@ -390,12 +383,9 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             // イベント情報取得
             let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-            if (project.settings === undefined || project.settings.chevre === undefined) {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
             const eventService = new chevre.service.Event({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 

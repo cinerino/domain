@@ -60,11 +60,6 @@ export function close(params: {
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         try {
             let closingAccount: IClosingAccount = {
                 accountType: params.accountType,
@@ -93,7 +88,7 @@ export function close(params: {
             }
 
             const accountService = new pecorinoapi.service.Account({
-                endpoint: project.settings.pecorino.endpoint,
+                endpoint: credentials.pecorino.endpoint,
                 auth: pecorinoAuthClient
             });
             await accountService.close(closingAccount);
@@ -116,9 +111,6 @@ export function search(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
@@ -136,7 +128,7 @@ export function search(params: {
 
             if (accountNumbers.length > 0) {
                 const accountService = new pecorinoapi.service.Account({
-                    endpoint: project.settings.pecorino.endpoint,
+                    endpoint: credentials.pecorino.endpoint,
                     auth: pecorinoAuthClient
                 });
                 const searchAccountResult = await accountService.search({
@@ -182,9 +174,6 @@ export function searchMoneyTransferActions(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
@@ -205,7 +194,7 @@ export function searchMoneyTransferActions(params: {
             }
 
             const accountService = new pecorinoapi.service.Account({
-                endpoint: project.settings.pecorino.endpoint,
+                endpoint: credentials.pecorino.endpoint,
                 auth: pecorinoAuthClient
             });
             const searchMoneyTransferActionsResult = await accountService.searchMoneyTransferActions({
@@ -234,20 +223,14 @@ export function openWithoutOwnershipInfo(params: {
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.chevre?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-        if (typeof project.settings?.pecorino?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
 
         const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
         const accountService = new pecorinoapi.service.Account({
-            endpoint: project.settings.pecorino.endpoint,
+            endpoint: credentials.pecorino.endpoint,
             auth: pecorinoAuthClient
         });
 
@@ -288,12 +271,9 @@ export function deposit(params: {
     }) => {
         try {
             const project = await repos.project.findById({ id: params.project.id });
-            if (typeof project.settings?.chevre?.endpoint !== 'string') {
-                throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-            }
 
             const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
             const { transactionNumber } = await transactionNumberService.publish({
@@ -302,7 +282,7 @@ export function deposit(params: {
 
             // Chevreで入金
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: project.settings.chevre.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
 

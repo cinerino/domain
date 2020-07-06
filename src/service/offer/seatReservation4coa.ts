@@ -142,7 +142,7 @@ async function offer2availableSalesTicket(params: {
             // Chevreでオファー検索トライ
             const offerIdentifier = `COA-${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
             const offerService = new chevre.service.Offer({
-                endpoint: <string>params.project.settings?.chevre?.endpoint,
+                endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
             const searchOffersResult = await offerService.search({
@@ -607,12 +607,8 @@ export function create(params: {
         // イベントを取得
         let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -834,12 +830,8 @@ export function changeOffers(params: {
         // イベントを取得
         let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        if (project.settings?.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
-
         const eventService = new chevre.service.Event({
-            endpoint: project.settings.chevre.endpoint,
+            endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 

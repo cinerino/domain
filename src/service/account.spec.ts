@@ -11,7 +11,7 @@ import * as domain from '../index';
 let sandbox: sinon.SinonSandbox;
 // let redisClient: redis.RedisClient;
 
-const project = { id: 'id', settings: { chevre: { endpoint: '' }, pecorino: { endpoint: '' } } };
+const project = { id: 'id' };
 
 before(() => {
     sandbox = sinon.createSandbox();

@@ -30,6 +30,7 @@ npm install @cinerino/domain
 | `CHEVRE_AUTHORIZE_SERVER_DOMAIN`       | true     |                   | Chevre credentials             |
 | `CHEVRE_CLIENT_ID`                     | true     |                   | Chevre credentials             |
 | `CHEVRE_CLIENT_SECRET`                 | true     |                   | Chevre credentials             |
+| `CHEVRE_ENDPOINT`                      | true     |                   | Chevre credentials             |
 | `CUSTOM_SEARCH_ENGINE_ID`              | true     |                   | Google Custom Search Engine ID |
 | `COA_ENDPOINT`                         | true     |                   | COA credentilas                |
 | `COA_REFRESH_TOKEN`                    | true     |                   | credentilas                    |
@@ -43,6 +44,7 @@ npm install @cinerino/domain
 | `PECORINO_AUTHORIZE_SERVER_DOMAIN`     | true     |                   | Pecorino credentials           |
 | `PECORINO_CLIENT_ID`                   | true     |                   | Pecorino credentials           |
 | `PECORINO_CLIENT_SECRET`               | true     |                   | Pecorino credentials           |
+| `PECORINO_ENDPOINT`                    | true     |                   | Pecorino credentials           |
 | `SENDGRID_API_KEY`                     | true     |                   | SendGrid API key               |
 
 ## Code Samples

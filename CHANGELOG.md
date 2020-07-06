@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- Chevreエンドポイントを環境変数として設定するように変更
+- Pecorinoエンドポイントを環境変数として設定するように変更
+
 ### Deprecated
 
 ### Removed
