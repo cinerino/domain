@@ -247,8 +247,6 @@ export function voidTransaction(
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
             transaction = await repos.transaction.findInProgressById({
@@ -317,8 +315,6 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         const action = await repos.action.start(params);
 
         try {
-            // const project = await repos.project.findById({ id: params.project.id });
-
             const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient

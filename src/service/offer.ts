@@ -93,8 +93,6 @@ export function searchEventOffers(params: {
     return async (__: {
         project: ProjectRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
         const eventService = new chevre.service.Event({

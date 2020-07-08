@@ -175,8 +175,6 @@ export function registerService(params: factory.action.interact.register.service
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         // アクション開始
         const registerActionAttributes = params;
         const action = await repos.action.start(registerActionAttributes);

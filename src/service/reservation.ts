@@ -161,8 +161,6 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
         action: ActionRepo;
         project: ProjectRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
 
         // アクション開始

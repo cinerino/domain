@@ -198,8 +198,6 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
