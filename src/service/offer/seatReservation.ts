@@ -808,7 +808,14 @@ export function validateAcceptedOffers(params: {
                                 priceCurrency: factory.chevre.priceCurrency.JPY,
                                 valueAddedTaxIncluded: true,
                                 appliesToVideoFormat: '2D',
-                                appliesToMovieTicketType: mvtkTicketCodeIn.kbnKensyu
+                                appliesToMovieTicket: {
+                                    typeOf: factory.chevre.paymentMethodType.MovieTicket,
+                                    serviceType: mvtkTicketCodeIn.kbnKensyu
+                                },
+                                ...{
+                                    // 互換性維持対応
+                                    appliesToMovieTicketType: mvtkTicketCodeIn.kbnKensyu
+                                }
                             }
                         ];
 

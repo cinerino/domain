@@ -165,6 +165,7 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
 /**
  * 座席予約オファー承認に対してムビチケ承認条件が整っているかどうか検証する
  */
+// tslint:disable-next-line:max-func-body-length
 function validateMovieTicket(
     paymentMethodType: factory.paymentMethodType.MovieTicket,
     transaction: factory.transaction.placeOrder.ITransaction
@@ -204,12 +205,18 @@ function validateMovieTicket(
                 offer.priceSpecification.priceComponent.forEach((component) => {
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
+                        // 互換性維持対応
+                        let serviceType: string = (<any>component).appliesToMovieTicketType;
+                        if (typeof component.appliesToMovieTicket?.serviceType === 'string') {
+                            serviceType = component.appliesToMovieTicket.serviceType;
+                        }
+
                         requiredMovieTickets.push({
                             project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                             typeOf: paymentMethodType,
                             identifier: '',
                             accessCode: '',
-                            serviceType: component.appliesToMovieTicketType,
+                            serviceType: serviceType,
                             serviceOutput: {
                                 reservationFor: { typeOf: event.typeOf, id: event.id },
                                 reservedTicket: { ticketedSeat: ticketedSeat4MovieTicket }
