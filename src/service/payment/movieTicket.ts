@@ -82,8 +82,6 @@ export function authorize(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
-        // const project = await repos.project.findById({ id: transaction.project.id });
-
         // イベント1つのみ許可
         const eventIds = [...new Set(params.object.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
         if (eventIds.length !== 1) {
@@ -256,8 +254,6 @@ export function checkMovieTicket(
         movieTicket: MovieTicketRepo;
         paymentMethod: PaymentMethodRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         const actionAttributes: factory.action.check.paymentMethod.movieTicket.IAttributes = {
             project: params.project,
             typeOf: factory.actionType.CheckAction,

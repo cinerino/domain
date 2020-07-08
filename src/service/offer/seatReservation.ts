@@ -939,8 +939,6 @@ export function cancel(params: {
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transaction.id
