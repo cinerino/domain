@@ -95,6 +95,12 @@ export function authorize(params: {
         }
         const movieTicketIdentifier = movieTicketIdentifiers[0];
 
+        // ムビチケ系統の決済方法タイプは動的
+        const paymentMethodType = params.object.movieTickets[0]?.typeOf;
+        if (typeof paymentMethodType !== 'string') {
+            throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
+        }
+
         // イベント情報取得
         let screeningEvent: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
@@ -121,7 +127,7 @@ export function authorize(params: {
                 accountId: movieTicketIdentifier,
                 amount: 0,
                 paymentMethodId: movieTicketIdentifier,
-                typeOf: factory.paymentMethodType.MovieTicket
+                typeOf: paymentMethodType
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -135,7 +141,7 @@ export function authorize(params: {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
             const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
-                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
+                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
@@ -187,10 +193,10 @@ export function authorize(params: {
         const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
             accountId: movieTicketIdentifier,
             amount: 0,
-            paymentMethod: factory.paymentMethodType.MovieTicket,
+            paymentMethod: paymentMethodType,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: movieTicketIdentifier,
-            name: (typeof params.object.name === 'string') ? params.object.name : String(factory.paymentMethodType.MovieTicket),
+            name: (typeof params.object.name === 'string') ? params.object.name : paymentMethodType,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.unitCode.C62,
@@ -254,6 +260,12 @@ export function checkMovieTicket(
         movieTicket: MovieTicketRepo;
         paymentMethod: PaymentMethodRepo;
     }) => {
+        // ムビチケ系統の決済方法タイプは動的
+        const paymentMethodType = params.object.movieTickets[0]?.typeOf;
+        if (typeof paymentMethodType !== 'string') {
+            throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
+        }
+
         const actionAttributes: factory.action.check.paymentMethod.movieTicket.IAttributes = {
             project: params.project,
             typeOf: factory.actionType.CheckAction,
@@ -289,7 +301,7 @@ export function checkMovieTicket(
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
             const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
-                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
+                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
@@ -319,7 +331,7 @@ export function checkMovieTicket(
                 };
                 await repos.paymentMethod.paymentMethodModel.findOneAndUpdate(
                     {
-                        typeOf: factory.paymentMethodType.MovieTicket,
+                        typeOf: paymentMethodType,
                         identifier: movieTicket.identifier
                     },
                     movieTicket,
@@ -362,6 +374,12 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
         }
 
+        // ムビチケ系統の決済方法タイプは動的
+        const paymentMethodType = params.object[0]?.movieTickets[0]?.typeOf;
+        if (typeof paymentMethodType !== 'string') {
+            throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
+        }
+
         // アクション開始
         const action = await repos.action.start(params);
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
@@ -399,7 +417,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
             const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
-                seller.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
+                seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
@@ -520,9 +538,15 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
+        // ムビチケ系統の決済方法タイプは動的
+        const paymentMethodType = params.object.typeOf;
+        if (typeof paymentMethodType !== 'string') {
+            throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
+        }
+
         // 本アクションに対応するPayActionを取り出す
         const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.MovieTicket>({
-            object: { typeOf: factory.paymentMethodType.MovieTicket, paymentMethodId: params.object.paymentMethodId },
+            object: { typeOf: paymentMethodType, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
 

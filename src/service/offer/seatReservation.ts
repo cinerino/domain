@@ -677,7 +677,7 @@ export function validateAcceptedOffers(params: {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
                         }
                         const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
-                            movieTheater.paymentAccepted.find((a) => a.paymentMethodType === factory.paymentMethodType.MovieTicket);
+                            movieTheater.paymentAccepted.find((a) => a.paymentMethodType === movieTicket.typeOf);
                         if (movieTicketPaymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
                         }

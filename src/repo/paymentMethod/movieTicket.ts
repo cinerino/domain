@@ -51,6 +51,12 @@ export class MvtkRepository {
             }
         });
 
+        // ムビチケ、MGチケット等、指定された決済方法タイプ
+        const paymentMethodType = params.movieTickets[0]?.typeOf;
+        if (typeof paymentMethodType !== 'string') {
+            throw new factory.errors.ArgumentNull('movieTickets.typeOf');
+        }
+
         let skhnCd = params.screeningEvent.superEvent.workPerformed.identifier;
 
         const eventOffers = params.screeningEvent.offers;
@@ -96,7 +102,7 @@ export class MvtkRepository {
                             [...Array(Number(ykknInfo.ykknKnshbtsmiNum))].forEach(() => {
                                 movieTickets.push({
                                     project: { typeOf: factory.organizationType.Project, id: params.screeningEvent.project.id },
-                                    typeOf: factory.paymentMethodType.MovieTicket,
+                                    typeOf: paymentMethodType,
                                     identifier: knyknrNoInfo.knyknrNo,
                                     accessCode: knyknrNoInfo.pinCd,
                                     serviceType: ykknInfo.ykknshTyp,
@@ -125,7 +131,7 @@ export class MvtkRepository {
                             [...Array(Number(mkknInfo.mkknKnshbtsmiNum))].forEach(() => {
                                 movieTickets.push({
                                     project: { typeOf: factory.organizationType.Project, id: params.screeningEvent.project.id },
-                                    typeOf: factory.paymentMethodType.MovieTicket,
+                                    typeOf: paymentMethodType,
                                     identifier: knyknrNoInfo.knyknrNo,
                                     accessCode: knyknrNoInfo.pinCd,
                                     amount: {

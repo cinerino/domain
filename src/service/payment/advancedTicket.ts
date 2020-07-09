@@ -143,7 +143,7 @@ function savePaymentMethods(params: {
 }
 
 function seatSyncInfoIn2movieTickets(params: {
-    typeOf: factory.paymentMethodType.MovieTicket | string;
+    typeOf: factory.paymentMethodType.MovieTicket | factory.paymentMethodType.MGTicket;
     event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     seatSyncInfoIn: factory.action.authorize.paymentMethod.movieTicket.ISeatInfoSyncIn;
 }): factory.action.authorize.paymentMethod.movieTicket.IObject[] {

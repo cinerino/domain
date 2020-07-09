@@ -7,7 +7,7 @@ async function main() {
 
     const now = new Date();
     const startThrough = moment(now)
-        .add(-12, 'months')
+        .add(-6, 'months')
         .toDate();
 
     console.log('deleting...startThrough:', startThrough);
@@ -20,12 +20,35 @@ async function main() {
 
     let result;
 
+    result = await actionRepo.actionModel.deleteMany({
+        startDate: { $lt: startThrough }
+    })
+        .exec();
+    console.log('actions deleted', result);
+
     result = await taskRepo.taskModel.deleteMany({
-        runsAt: { $lt: startThrough },
-        status: { $ne: domain.factory.taskStatus.Ready }
+        runsAt: { $lt: startThrough }
     })
         .exec();
     console.log('tasks deleted', result);
+
+    result = await transactionRepo.transactionModel.deleteMany({
+        startDate: { $lt: startThrough }
+    })
+        .exec();
+    console.log('transactions deleted', result);
+
+    result = await invoiceRepo.invoiceModel.deleteMany({
+        createdAt: { $lt: startThrough }
+    })
+        .exec();
+    console.log('invoices deleted', result);
+
+    result = await orderRepo.orderModel.deleteMany({
+        orderDate: { $lt: startThrough }
+    })
+        .exec();
+    console.log('orders deleted', result);
 
     // await mongoose.disconnect();
 }
