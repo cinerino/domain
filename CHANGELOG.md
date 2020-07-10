@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - update @cinerino/factory
 - オファーと価格仕様のappliesToMovieTicketType→appliesToMovieTicket対応
 - ムビチケ系統決済処理をMGTicketに対応
+- ムビチケサービスエンドポイント設定をChevreへ移行
 
 ### Deprecated
 

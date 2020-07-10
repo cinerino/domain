@@ -369,10 +369,10 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined || project.settings.mvtkReserve === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
+        // const project = await repos.project.findById({ id: params.project.id });
+        // if (project.settings === undefined || project.settings.mvtkReserve === undefined) {
+        //     throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        // }
 
         // ムビチケ系統の決済方法タイプは動的
         const paymentMethodType = params.object[0]?.movieTickets[0]?.typeOf;
@@ -471,8 +471,13 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
             }
 
+            const paymentServiceUrl = await getMvtkReserveEndpoint({
+                project: params.project,
+                paymentMethodType: paymentMethodType
+            });
+
             const movieTicketSeatService = new mvtkapi.service.Seat({
-                endpoint: project.settings.mvtkReserve.endpoint,
+                endpoint: paymentServiceUrl,
                 auth: mvtkReserveAuthClient
             });
 
@@ -541,7 +546,7 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         // ムビチケ系統の決済方法タイプは動的
         const paymentMethodType = params.object.typeOf;
         if (typeof paymentMethodType !== 'string') {
-            throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
+            throw new factory.errors.ArgumentNull('object.typeOf');
         }
 
         // 本アクションに対応するPayActionを取り出す
@@ -554,13 +559,18 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
             throw new factory.errors.NotFound('PayAction');
         }
 
-        const project = await repos.project.findById({ id: params.project.id });
-        if (typeof project.settings?.mvtkReserve?.endpoint !== 'string') {
-            throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        }
+        // const project = await repos.project.findById({ id: params.project.id });
+        // if (typeof project.settings?.mvtkReserve?.endpoint !== 'string') {
+        //     throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
+        // }
+
+        const paymentServiceUrl = await getMvtkReserveEndpoint({
+            project: params.project,
+            paymentMethodType: paymentMethodType
+        });
 
         const movieTicketSeatService = new mvtkapi.service.Seat({
-            endpoint: project.settings.mvtkReserve.endpoint,
+            endpoint: paymentServiceUrl,
             auth: mvtkReserveAuthClient
         });
 
@@ -604,4 +614,28 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         // 潜在アクション
         await onRefund(params)({ project: repos.project, task: repos.task });
     };
+}
+
+async function getMvtkReserveEndpoint(params: {
+    project: { id: string };
+    paymentMethodType: string;
+}): Promise<string> {
+    const projectService = new chevre.service.Project({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+    const chevreProject = await projectService.findById({ id: params.project.id });
+    const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
+        return s.typeOf === chevre.factory.service.paymentService.PaymentServiceType.MovieTicket
+            && s.serviceOutput?.typeOf === params.paymentMethodType;
+    });
+    if (paymentServiceSetting === undefined) {
+        throw new factory.errors.NotFound('PaymentService');
+    }
+    const paymentServiceUrl = paymentServiceSetting.availableChannel?.serviceUrl;
+    if (typeof paymentServiceUrl !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.serviceUrl');
+    }
+
+    return paymentServiceUrl;
 }
