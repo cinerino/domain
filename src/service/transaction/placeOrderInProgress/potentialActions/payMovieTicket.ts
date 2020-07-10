@@ -13,7 +13,10 @@ export async function createPayMovieTicketActions(params: {
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket)
+            // tslint:disable-next-line:no-suspicious-comment
+            // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket
+                || a.result.paymentMethod === factory.paymentMethodType.MGTicket)
             // PaymentDueステータスのアクションのみ、着券アクションをセット
             // 着券済の場合は、PaymentCompleteステータス
             .filter((a) => {

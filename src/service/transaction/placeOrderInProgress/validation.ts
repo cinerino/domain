@@ -61,9 +61,11 @@ export function validateTransaction(transaction: factory.transaction.placeOrder.
     validateProfile(transaction);
     validatePrice(transaction);
     validateAccount(transaction);
-    validateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
+
     // tslint:disable-next-line:no-suspicious-comment
-    // validateMovieTicket('MGTicket', transaction); // TODO 実装
+    // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
+    validateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
+    validateMovieTicket(factory.paymentMethodType.MGTicket, transaction);
 }
 
 function validateProfile(transaction: factory.transaction.placeOrder.ITransaction) {
@@ -165,8 +167,9 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
 /**
  * 座席予約オファー承認に対してムビチケ承認条件が整っているかどうか検証する
  */
+// tslint:disable-next-line:max-func-body-length
 function validateMovieTicket(
-    paymentMethodType: factory.paymentMethodType.MovieTicket,
+    paymentMethodType: factory.paymentMethodType.MovieTicket | factory.paymentMethodType.MGTicket,
     transaction: factory.transaction.placeOrder.ITransaction
 ) {
     const authorizeActions = transaction.object.authorizeActions;
@@ -203,13 +206,20 @@ function validateMovieTicket(
 
                 offer.priceSpecification.priceComponent.forEach((component) => {
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
-                    if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification) {
+                    if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification
+                        && component.appliesToMovieTicket?.typeOf === paymentMethodType) {
+                        // 互換性維持対応
+                        let serviceType: string = (<any>component).appliesToMovieTicketType;
+                        if (typeof component.appliesToMovieTicket?.serviceType === 'string') {
+                            serviceType = component.appliesToMovieTicket.serviceType;
+                        }
+
                         requiredMovieTickets.push({
                             project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                            typeOf: paymentMethodType,
+                            typeOf: <any>paymentMethodType,
                             identifier: '',
                             accessCode: '',
-                            serviceType: component.appliesToMovieTicketType,
+                            serviceType: serviceType,
                             serviceOutput: {
                                 reservationFor: { typeOf: event.typeOf, id: event.id },
                                 reservedTicket: { ticketedSeat: ticketedSeat4MovieTicket }
