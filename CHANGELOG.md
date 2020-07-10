@@ -10,12 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @chevre/api-nodejs-client
-- update @cinerino/factory
-- オファーと価格仕様のappliesToMovieTicketType→appliesToMovieTicket対応
-- ムビチケ系統決済処理をMGTicketに対応
-- ムビチケサービスエンドポイント設定をChevreへ移行
-
 ### Deprecated
 
 ### Removed
@@ -23,6 +17,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v7.14.0 - 2020-07-10
+
+### Changed
+
+- update @chevre/api-nodejs-client
+- update @cinerino/factory
+- オファーと価格仕様のappliesToMovieTicketType→appliesToMovieTicket対応
+- ムビチケ系統決済処理をMGTicketに対応
+- ムビチケサービスエンドポイント設定をChevreへ移行
 
 ## v7.13.0 - 2020-07-08
 
