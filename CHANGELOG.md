@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- Eメール送信時にSendGridへユニーク引数を追加
+
 ### Deprecated
 
 ### Removed

@@ -40,10 +40,8 @@ export function sendEmailMessage(params: factory.action.transfer.send.message.em
         let result: any = {};
 
         try {
-            const apiKey = (project.settings !== undefined && typeof project.settings.sendgridApiKey === 'string')
-                ? project.settings.sendgridApiKey
-                : undefined;
-            if (apiKey === undefined) {
+            const apiKey = project.settings?.sendgridApiKey;
+            if (typeof apiKey !== 'string') {
                 throw new factory.errors.ServiceUnavailable('API Key not found');
             }
 
@@ -66,13 +64,13 @@ export function sendEmailMessage(params: factory.action.transfer.send.message.em
                 // sendAt: moment(email.send_at).unix(),
                 // 追跡用に通知IDをカスタムフィールドとしてセットする
                 customArgs: {
-                    emailMessage: emailMessage.identifier
+                    emailMessage: emailMessage.identifier,
+                    actionId: action.id,
+                    projectId: project.id
                 }
             };
 
-            debug('requesting sendgrid api...', msg);
             const response = await sgMail.send(msg);
-            debug('email sent. status code:', response[0].statusCode);
 
             // check the response.
             if (response[0].statusCode !== ACCEPTED) {
