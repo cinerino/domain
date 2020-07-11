@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v7.14.2 - 2020-07-11
+
+### Changed
+
+- Eメール送信時にSendGridへユニーク引数を追加
+
 ## v7.14.1 - 2020-07-10
 
 ### Changed
