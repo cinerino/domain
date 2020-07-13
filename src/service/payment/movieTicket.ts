@@ -2,7 +2,6 @@
  * ムビチケ決済サービス
  */
 import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
-import * as moment from 'moment-timezone';
 
 import { credentials } from '../../credentials';
 
@@ -21,6 +20,8 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { findPayActionByOrderNumber, onRefund } from './any';
+
+import { createSeatInfoSyncIn } from './movieTicket/factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -362,18 +363,12 @@ export function checkMovieTicket(
  * ムビチケ着券
  */
 export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMovieTicket>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
         seller: SellerRepo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-        // if (project.settings === undefined || project.settings.mvtkReserve === undefined) {
-        //     throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        // }
-
         // ムビチケ系統の決済方法タイプは動的
         const paymentMethodType = params.object[0]?.movieTickets[0]?.typeOf;
         if (typeof paymentMethodType !== 'string') {
@@ -382,8 +377,10 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
         // アクション開始
         const action = await repos.action.start(params);
+
         let seatInfoSyncIn: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn;
         let seatInfoSyncResult: mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncResult;
+
         try {
             // イベントがひとつに特定されているかどうか確認
             const eventIds = Array.from(new Set(params.object.reduce<string[]>(
@@ -396,80 +393,18 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const eventId = eventIds[0];
 
             // イベント情報取得
-            let screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-
             const eventService = new chevre.service.Event({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
+            const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
 
-            screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
-                id: eventId
-            });
-
-            const order = params.purpose;
-
-            // ショップ情報取得
-            const seller = await repos.seller.findById({
-                id: order.seller.id
-            });
-            if (seller.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
-            }
-            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
-                seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
-            if (movieTicketPaymentAccepted === undefined) {
-                throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
-            }
+            const seller = await repos.seller.findById({ id: params.purpose.seller.id });
 
             // 全購入管理番号のムビチケをマージ
             const movieTickets = params.object.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
                 (a, b) => [...a, ...b.movieTickets], []
             );
-
-            const knyknrNoInfo: mvtkapi.mvtk.services.seat.seatInfoSync.IKnyknrNoInfo[] = [];
-            movieTickets.forEach((movieTicket) => {
-                let knyknrNoInfoByKnyknrNoIndex = knyknrNoInfo.findIndex((i) => i.knyknrNo === movieTicket.identifier);
-                if (knyknrNoInfoByKnyknrNoIndex < 0) {
-                    knyknrNoInfoByKnyknrNoIndex = knyknrNoInfo.push({
-                        knyknrNo: movieTicket.identifier,
-                        pinCd: movieTicket.accessCode,
-                        knshInfo: []
-                    }) - 1;
-                }
-
-                let knshInfoIndex = knyknrNoInfo[knyknrNoInfoByKnyknrNoIndex].knshInfo.findIndex(
-                    (i) => i.knshTyp === movieTicket.serviceType
-                );
-                if (knshInfoIndex < 0) {
-                    knshInfoIndex = knyknrNoInfo[knyknrNoInfoByKnyknrNoIndex].knshInfo.push({
-                        knshTyp: movieTicket.serviceType,
-                        miNum: 0
-                    }) - 1;
-                }
-                knyknrNoInfo[knyknrNoInfoByKnyknrNoIndex].knshInfo[knshInfoIndex].miNum += 1;
-            });
-
-            const seatNumbers = movieTickets.map((t) => t.serviceOutput.reservedTicket.ticketedSeat.seatNumber);
-
-            let skhnCd = screeningEvent.superEvent.workPerformed.identifier;
-
-            const offers = screeningEvent.offers;
-            if (offers === undefined) {
-                throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
-            }
-
-            const offeredThrough = offers.offeredThrough;
-            // イベントインポート元がCOAの場合、作品コード連携方法が異なる
-            if (offeredThrough !== undefined && offeredThrough.identifier === factory.service.webAPI.Identifier.COA) {
-                const DIGITS = -2;
-                let eventCOAInfo: any;
-                if (Array.isArray(screeningEvent.additionalProperty)) {
-                    const coaInfoProperty = screeningEvent.additionalProperty.find((p) => p.name === 'coaInfo');
-                    eventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
-                }
-                skhnCd = `${eventCOAInfo.titleCode}${`00${eventCOAInfo.titleBranchNum}`.slice(DIGITS)}`;
-            }
 
             const paymentServiceUrl = await getMvtkReserveEndpoint({
                 project: params.project,
@@ -481,26 +416,13 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
                 auth: mvtkReserveAuthClient
             });
 
-            seatInfoSyncIn = {
-                kgygishCd: movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
-                yykDvcTyp: mvtkapi.mvtk.services.seat.seatInfoSync.ReserveDeviceType.EntertainerSitePC, // 予約デバイス区分
-                trkshFlg: mvtkapi.mvtk.services.seat.seatInfoSync.DeleteFlag.False, // 取消フラグ
-                kgygishSstmZskyykNo: order.orderNumber, // 興行会社システム座席予約番号
-                kgygishUsrZskyykNo: order.confirmationNumber.toString(), // 興行会社ユーザー座席予約番号
-                jeiDt: moment(screeningEvent.startDate)
-                    .tz('Asia/Tokyo')
-                    .format('YYYY/MM/DD HH:mm:ss'), // 上映日時
-                kijYmd: moment(screeningEvent.startDate)
-                    .tz('Asia/Tokyo')
-                    .format('YYYY/MM/DD'), // 計上年月日
-                stCd: movieTicketPaymentAccepted.movieTicketInfo.stCd,
-                screnCd: screeningEvent.location.branchCode, // スクリーンコード
-                knyknrNoInfo: knyknrNoInfo,
-                zskInfo: seatNumbers.map((seatNumber) => {
-                    return { zskCd: seatNumber };
-                }),
-                skhnCd: skhnCd // 作品コード
-            };
+            seatInfoSyncIn = createSeatInfoSyncIn({
+                paymentMethodType: paymentMethodType,
+                movieTickets: movieTickets,
+                event: event,
+                order: params.purpose,
+                seller: seller
+            });
 
             seatInfoSyncResult = await movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
 

@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- ムビチケ決済処理を細分化
+
 ### Deprecated
 
 ### Removed
