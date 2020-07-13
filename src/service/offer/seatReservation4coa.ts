@@ -488,28 +488,32 @@ async function validateOffers(
     // 必ず定義されている前提
     const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
 
-    // COA券種取得(非会員)
-    const salesTickets4nonMember = await reserveService.salesTicket({
-        theaterCode: coaInfo.theaterCode,
-        dateJouei: coaInfo.dateJouei,
-        titleCode: coaInfo.titleCode,
-        titleBranchNum: coaInfo.titleBranchNum,
-        timeBegin: coaInfo.timeBegin,
-        flgMember: COA.factory.reserve.FlgMember.NonMember
-    });
-    availableSalesTickets.push(...salesTickets4nonMember);
-
-    // COA券種取得(会員)
-    if (isMember) {
-        const salesTickets4member = await reserveService.salesTicket({
+    try {
+        // COA券種取得(非会員)
+        const salesTickets4nonMember = await reserveService.salesTicket({
             theaterCode: coaInfo.theaterCode,
             dateJouei: coaInfo.dateJouei,
             titleCode: coaInfo.titleCode,
             titleBranchNum: coaInfo.titleBranchNum,
             timeBegin: coaInfo.timeBegin,
-            flgMember: COA.factory.reserve.FlgMember.Member
+            flgMember: COA.factory.reserve.FlgMember.NonMember
         });
-        availableSalesTickets.push(...salesTickets4member);
+        availableSalesTickets.push(...salesTickets4nonMember);
+
+        // COA券種取得(会員)
+        if (isMember) {
+            const salesTickets4member = await reserveService.salesTicket({
+                theaterCode: coaInfo.theaterCode,
+                dateJouei: coaInfo.dateJouei,
+                titleCode: coaInfo.titleCode,
+                titleBranchNum: coaInfo.titleBranchNum,
+                timeBegin: coaInfo.timeBegin,
+                flgMember: COA.factory.reserve.FlgMember.Member
+            });
+            availableSalesTickets.push(...salesTickets4member);
+        }
+    } catch (error) {
+        throw handleCOAReserveTemporarilyError(error);
     }
 
     // 利用可能でないチケットコードがオファーに含まれていれば引数エラー

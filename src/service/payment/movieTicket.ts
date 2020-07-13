@@ -481,11 +481,6 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
             throw new factory.errors.NotFound('PayAction');
         }
 
-        // const project = await repos.project.findById({ id: params.project.id });
-        // if (typeof project.settings?.mvtkReserve?.endpoint !== 'string') {
-        //     throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-        // }
-
         const paymentServiceUrl = await getMvtkReserveEndpoint({
             project: params.project,
             paymentMethodType: paymentMethodType
