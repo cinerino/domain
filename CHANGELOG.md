@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v7.14.3 - 2020-07-13
+
+### Changed
+
+- ムビチケ決済処理を細分化
+- COA仮予約時のエラーハンドリングを強化
+
 ## v7.14.2 - 2020-07-11
 
 ### Changed

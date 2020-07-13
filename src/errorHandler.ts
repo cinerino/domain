@@ -25,7 +25,7 @@ export function handleCOAReserveTemporarilyError(error: any) {
         if (reserveServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
             handledError = new errors.Argument('Event', error.message);
         } else {
-            handledError = new errors.ServiceUnavailable('Reserve service temporarily unavailable');
+            handledError = new errors.ServiceUnavailable(`Reserve service temporarily unavailable. name:${error.name} code:${error.code} message:${error.message}`);
         }
     }
 
