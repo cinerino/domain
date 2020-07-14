@@ -130,7 +130,7 @@ export function searchEventOffers(params: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createScreeningRoomFromCOA(
-    project: { typeOf: 'Project'; id: string },
+    project: { typeOf: factory.organizationType.Project; id: string },
     screenFromCOA: COA.factory.master.IScreenResult
 ): factory.chevre.place.screeningRoom.IPlace {
     const sections: factory.chevre.place.screeningRoomSection.IPlaceWithOffer[] = [];
@@ -183,7 +183,7 @@ export function createScreeningRoomFromCOA(
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createMovieTheaterFromCOA(
-    project: { typeOf: 'Project'; id: string },
+    project: { typeOf: factory.organizationType.Project; id: string },
     theaterFromCOA: COA.factory.master.ITheaterResult,
     screensFromCOA: COA.factory.master.IScreenResult[]
 ): factory.chevre.place.movieTheater.IPlace {

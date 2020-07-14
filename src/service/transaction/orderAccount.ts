@@ -237,7 +237,7 @@ function processAuthorizeProductOffer(params: {
         const customer = params.customer;
         const transaction = params.transaction;
 
-        const project: factory.chevre.project.IProject = { typeOf: 'Project', id: params.project.id };
+        const project: factory.chevre.project.IProject = { typeOf: factory.organizationType.Project, id: params.project.id };
         const seller: factory.order.ISeller
             = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 

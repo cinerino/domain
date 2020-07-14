@@ -26,7 +26,7 @@ export async function createReturnPointAwardActions(params: {
                 object: a,
                 agent: order.customer,
                 recipient: {
-                    project: transaction.project,
+                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                     typeOf: order.seller.typeOf,
                     id: order.seller.id,
                     name: order.seller.name,

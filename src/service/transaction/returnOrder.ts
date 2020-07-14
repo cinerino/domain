@@ -90,7 +90,7 @@ export function start(
             typeOf: factory.transactionType.ReturnOrder,
             agent: params.agent,
             seller: {
-                project: params.project,
+                project: { typeOf: params.project.typeOf, id: params.project.id },
                 id: seller.id,
                 typeOf: seller.typeOf,
                 name: seller.name,

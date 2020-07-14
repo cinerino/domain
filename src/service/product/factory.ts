@@ -25,7 +25,7 @@ export function createOrderProgramMembershipActionAttributes(params: {
         name: <any>params.product.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
-            project: { typeOf: 'Project', id: seller.project.id },
+            project: { typeOf: factory.organizationType.Project, id: seller.project.id },
             id: seller.id,
             typeOf: seller.typeOf
         },

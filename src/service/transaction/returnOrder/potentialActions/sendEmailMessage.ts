@@ -27,7 +27,7 @@ export async function createSendEmailMessaegActionsOnReturn(params: {
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
-                            project: transaction.project,
+                            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                             typeOf: order.seller.typeOf,
                             id: order.seller.id,
                             name: order.seller.name,
