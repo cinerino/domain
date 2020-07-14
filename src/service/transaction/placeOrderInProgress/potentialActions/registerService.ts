@@ -117,7 +117,7 @@ function createOrderProgramMembershipTask(params: {
             object: {
                 ...acceptedOffer,
                 itemOffered: {
-                    project: { typeOf: 'Project', id: params.order.project.id },
+                    project: { typeOf: factory.organizationType.Project, id: params.order.project.id },
                     typeOf: serviceOutput?.typeOf,
                     name: serviceOutput.name,
                     hostingOrganization: serviceOutput.issuedBy,

@@ -34,7 +34,7 @@ export async function createRefundMovieTicketActions(params: {
                         typeOf: factory.actionType.SendAction,
                         object: emailMessage,
                         agent: {
-                            project: transaction.project,
+                            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                             typeOf: order.seller.typeOf,
                             id: order.seller.id,
                             name: order.seller.name,
@@ -59,7 +59,7 @@ export async function createRefundMovieTicketActions(params: {
                         typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
                         object: p,
                         agent: {
-                            project: transaction.project,
+                            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                             typeOf: order.seller.typeOf,
                             id: order.seller.id,
                             name: order.seller.name,
