@@ -68,7 +68,7 @@ export function authorize(params: {
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const seller = await sellerService.findById({ id: transaction.seller.id });
+        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
@@ -281,7 +281,7 @@ export function voidTransaction(params: {
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const seller = await sellerService.findById({ id: transaction.seller.id });
+        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
@@ -448,7 +448,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const seller = await sellerService.findById({ id: transaction.seller.id });
+        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
@@ -668,7 +668,7 @@ function generateOrderId(params: {
 }
 
 function getGMOInfoFromSeller(params: {
-    seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
+    seller: factory.seller.ISeller;
 }) {
     let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>;
 

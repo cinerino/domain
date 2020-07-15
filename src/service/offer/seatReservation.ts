@@ -129,7 +129,7 @@ export function create(params: {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             object: params.object,
             event: event,
-            seller: transaction.seller
+            seller: { typeOf: transaction.seller.typeOf, id: String(transaction.seller.id) }
         })(repos);
 
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;

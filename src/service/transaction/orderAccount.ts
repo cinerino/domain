@@ -71,7 +71,7 @@ export function orderAccount(params: {
         });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        const customer = await repos.person.findById({ userId: params.agent.id });
+        const customer = await repos.person.findById({ userId: String(params.agent.id) });
 
         // プロダクト検索
         const searchProductsResult = await productService.search({
@@ -124,7 +124,7 @@ export function orderAccount(params: {
                 .add(5, 'minutes')
                 .toDate(),
             agent: customer,
-            seller: { typeOf: seller.typeOf, id: seller.id },
+            seller: { typeOf: seller.typeOf, id: String(seller.id) },
             object: {}
         })(repos);
 
@@ -238,7 +238,7 @@ function processAuthorizeProductOffer(params: {
 
         const project: factory.chevre.project.IProject = { typeOf: factory.organizationType.Project, id: params.project.id };
         const seller: factory.order.ISeller
-            = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
+            = { project: project, typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
 
         // 口座名称はユーザーネーム
         const serviceOutputName: string | undefined = (typeof params.serviceOutputName === 'string')

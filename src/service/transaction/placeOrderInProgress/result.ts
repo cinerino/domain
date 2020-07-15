@@ -5,7 +5,7 @@ import * as factory from '../../../factory';
 import { createProductItems } from './result/acceptedOffers';
 
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
-export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
+export type ISeller = factory.seller.ISeller;
 
 export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction;
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
@@ -25,6 +25,7 @@ export function createOrder(params: {
     isGift: boolean;
 }): factory.order.IOrder {
     const seller: factory.order.ISeller = {
+        project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
         id: params.transaction.seller.id,
         identifier: params.transaction.seller.identifier,
         name: (typeof params.transaction.seller.name === 'string')
@@ -320,6 +321,7 @@ function createReservationAcceptedOffers(params: {
                             priceSpecification: requestedOffer.priceSpecification,
                             priceCurrency: factory.priceCurrency.JPY,
                             seller: {
+                                project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                                 typeOf: params.seller.typeOf,
                                 name: params.seller.name
                             }
@@ -377,6 +379,7 @@ function createMoneyTransferAcceptedOffers(params: {
                 // priceSpecification: requestedOffer.priceSpecification,
                 priceCurrency: factory.priceCurrency.JPY,
                 seller: {
+                    project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                     typeOf: params.seller.typeOf,
                     name: params.seller.name
                 }

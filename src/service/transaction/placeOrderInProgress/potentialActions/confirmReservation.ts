@@ -185,7 +185,7 @@ function createConfirmReservationActionObject(params: {
                         reservedTicket: {
                             issuedBy: {
                                 typeOf: order.seller.typeOf,
-                                name: order.seller.name
+                                name: (typeof order.seller.name === 'string') ? order.seller.name : String(order.seller.name?.ja)
                             }
                         },
                         underName: {

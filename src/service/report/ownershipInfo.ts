@@ -109,7 +109,7 @@ export function ownershipInfo2report<T extends factory.ownershipInfo.IGoodType>(
         identifier: ownershipInfo.identifier,
         ownedBy: {
             typeOf: ownershipInfo.ownedBy.typeOf,
-            id: ownershipInfo.ownedBy.id
+            id: String(ownershipInfo.ownedBy.id)
         },
         typeOfGood: {
             typeOf: ownershipInfo.typeOfGood.typeOf

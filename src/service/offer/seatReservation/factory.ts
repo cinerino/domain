@@ -300,6 +300,7 @@ export function responseBody2acceptedOffers4result(params: {
                         ? itemOffered.priceCurrency
                         : factory.priceCurrency.JPY,
                     seller: {
+                        project: { typeOf: params.project.typeOf, id: params.project.id },
                         typeOf: seller.typeOf,
                         name: (typeof seller.name === 'string')
                             ? seller.name

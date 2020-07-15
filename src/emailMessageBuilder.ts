@@ -21,8 +21,8 @@ async function createEmailMessageText(params: {
     renderFilePath: string;
     renderFileOptions: pug.LocalsObject;
 }): Promise<string> {
-    const emailTemplate = (params.email !== undefined) ? params.email.template : undefined;
-    const emailText = (params.email !== undefined) ? params.email.text : undefined;
+    const emailTemplate = params.email?.template;
+    const emailText = params.email?.text;
     let emailMessageText: string;
 
     if (typeof emailText === 'string') {
@@ -73,7 +73,7 @@ async function createEmailMessageAbout(params: {
 }): Promise<string> {
     let about: string;
 
-    if (params.email !== undefined && typeof params.email.about === 'string') {
+    if (typeof params.email?.about === 'string') {
         about = params.email.about;
     } else {
         about = await new Promise<string>((resolve, reject) => {
@@ -102,14 +102,12 @@ function createEmailMessageSender(params: {
 }): factory.creativeWork.message.email.IParticipant {
     return {
         typeOf: params.order.seller.typeOf,
-        name: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.name === 'string')
+        name: (typeof params.email?.sender?.name === 'string')
             ? params.email.sender.name
-            : params.order.seller.name,
-        email: (params.email !== undefined
-            && params.email.sender !== undefined
-            && typeof params.email.sender.email === 'string')
+            : (typeof params.order.seller.name === 'string')
+                ? params.order.seller.name
+                : (typeof params.order.seller.name?.ja === 'string') ? params.order.seller.name?.ja : String(params.order.seller.id),
+        email: (typeof params.email?.sender?.email === 'string')
             ? params.email.sender.email
             : DEFAULT_SENDER_EMAIL
     };
@@ -151,14 +149,10 @@ export async function createSendOrderMessage(params: {
 
     const toRecipient: factory.creativeWork.message.email.IParticipant = {
         typeOf: params.order.customer.typeOf,
-        name: (params.email !== undefined
-            && params.email.toRecipient !== undefined
-            && typeof params.email.toRecipient.name === 'string')
+        name: (typeof params.email?.toRecipient?.name === 'string')
             ? params.email.toRecipient.name
             : `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-        email: (params.email !== undefined
-            && params.email.toRecipient !== undefined
-            && typeof params.email.toRecipient.email === 'string')
+        email: (typeof params.email?.toRecipient?.email === 'string')
             ? params.email.toRecipient.email
             : defaultToRecipientEmail
     };
@@ -302,14 +296,10 @@ export async function createReturnOrderMessage(params: {
 
     const toRecipient: factory.creativeWork.message.email.IParticipant = {
         typeOf: params.order.customer.typeOf,
-        name: (params.email !== undefined
-            && params.email.toRecipient !== undefined
-            && typeof params.email.toRecipient.name === 'string')
+        name: (typeof params.email?.toRecipient?.name === 'string')
             ? params.email.toRecipient.name
             : `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-        email: (params.email !== undefined
-            && params.email.toRecipient !== undefined
-            && typeof params.email.toRecipient.email === 'string')
+        email: (typeof params.email?.toRecipient?.email === 'string')
             ? params.email.toRecipient.email
             : defaultToRecipientEmail
     };
@@ -368,14 +358,10 @@ export async function createRefundMessage(params: {
 
     const toRecipient: factory.creativeWork.message.email.IParticipant = {
         typeOf: params.order.customer.typeOf,
-        name: (params.email !== undefined
-            && params.email.toRecipient !== undefined
-            && typeof params.email.toRecipient.name === 'string')
+        name: (typeof params.email?.toRecipient?.name === 'string')
             ? params.email.toRecipient.name
             : `${params.order.customer.familyName} ${params.order.customer.givenName}`,
-        email: (params.email !== undefined
-            && params.email.toRecipient !== undefined
-            && typeof params.email.toRecipient.email === 'string')
+        email: (typeof params.email?.toRecipient?.email === 'string')
             ? params.email.toRecipient.email
             : defaultToRecipientEmail
     };

@@ -25,11 +25,11 @@ export function createOwnershipInfosFromOrder(params: {
         const ownedFrom = params.order.orderDate;
 
         const seller = params.order.seller;
-        const acquiredFrom = {
-            project: params.order.project,
+        const acquiredFrom: factory.ownershipInfo.IOwner = {
+            project: { typeOf: params.order.project.typeOf, id: params.order.project.id },
             id: seller.id,
             typeOf: seller.typeOf,
-            name: { ja: seller.name, en: '' },
+            name: seller.name,
             telephone: seller.telephone,
             url: seller.url
         };
