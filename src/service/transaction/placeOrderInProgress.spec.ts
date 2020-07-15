@@ -57,7 +57,7 @@ describe('start()', () => {
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -125,7 +125,7 @@ describe('start()', () => {
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -185,7 +185,7 @@ describe('start()', () => {
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -250,7 +250,7 @@ describe('start()', () => {
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);

@@ -3,6 +3,9 @@
  */
 import * as moment from 'moment';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
@@ -14,6 +17,14 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import * as PaymentCardService from '../payment/paymentCard';
 
 import { createPotentialActions } from './moneyTransfer/potentialActions';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
@@ -46,7 +57,11 @@ export function start(
         seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
-        const seller = await repos.seller.findById({ id: params.seller.id });
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: params.seller.id });
 
         // 金額をfix
         const amount = params.object.amount;

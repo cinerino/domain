@@ -115,9 +115,11 @@ export function authorize(params: {
         });
 
         // ショップ情報取得
-        const movieTheater = await repos.seller.findById({
-            id: transaction.seller.id
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
         });
+        const movieTheater = await sellerService.findById({ id: transaction.seller.id });
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
@@ -295,9 +297,11 @@ export function checkMovieTicket(
             });
 
             // ショップ情報取得
-            const movieTheater = await repos.seller.findById({
-                id: params.object.seller.id
+            const sellerService = new chevre.service.Seller({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
             });
+            const movieTheater = await sellerService.findById({ id: params.object.seller.id });
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
@@ -399,7 +403,11 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             });
             const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: eventId });
 
-            const seller = await repos.seller.findById({ id: params.purpose.seller.id });
+            const sellerService = new chevre.service.Seller({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const seller = await sellerService.findById({ id: params.purpose.seller.id });
 
             // 全購入管理番号のムビチケをマージ
             const movieTickets = params.object.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(

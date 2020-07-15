@@ -670,9 +670,11 @@ export function validateAcceptedOffers(params: {
                             throw new factory.errors.Argument('Offer', 'Movie Ticket accessCode not specified');
                         }
 
-                        const movieTheater = await repos.seller.findById({
-                            id: params.seller.id
+                        const sellerService = new chevre.service.Seller({
+                            endpoint: credentials.chevre.endpoint,
+                            auth: chevreAuthClient
                         });
+                        const movieTheater = await sellerService.findById({ id: params.seller.id });
                         if (movieTheater.paymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
                         }

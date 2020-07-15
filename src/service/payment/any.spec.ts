@@ -58,7 +58,7 @@ describe('汎用決済承認', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);

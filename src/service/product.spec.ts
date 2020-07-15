@@ -39,7 +39,7 @@ describe('プロダクト注文タスクを作成する', () => {
             .expects('findById')
             .once()
             .resolves(project);
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);

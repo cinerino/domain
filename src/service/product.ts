@@ -64,7 +64,12 @@ export function createOrderTask(params: {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
-        const seller = await repos.seller.findById({ id: params.object.seller.id });
+
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: params.object.seller.id });
 
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,

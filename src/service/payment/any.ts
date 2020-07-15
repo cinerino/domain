@@ -3,6 +3,9 @@
  */
 import * as createDebug from 'debug';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
@@ -12,6 +15,14 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('cinerino-domain:service');
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
@@ -44,11 +55,6 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
-        // 販売者情報取得
-        const seller = await repos.seller.findById({
-            id: transaction.seller.id
-        });
-
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
             project: transaction.project,
@@ -61,6 +67,13 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         const action = await repos.action.start(actionAttributes);
 
         try {
+            // 販売者情報取得
+            const sellerService = new chevre.service.Seller({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const seller = await sellerService.findById({ id: transaction.seller.id });
+
             if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
             }

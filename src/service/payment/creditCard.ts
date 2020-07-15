@@ -6,6 +6,9 @@ import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 import * as util from 'util';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
@@ -19,6 +22,14 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { findPayActionByOrderNumber, onRefund } from './any';
 
 const debug = createDebug('cinerino-domain:service');
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export import IUncheckedCardRaw = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
 export import IUncheckedCardTokenized = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;
@@ -34,6 +45,7 @@ export type IAuthorizeOperation<T> = (repos: {
 /**
  * クレジットカードオーソリ取得
  */
+// tslint:disable-next-line:max-func-body-length
 export function authorize(params: {
     project: { id: string };
     agent: { id: string };
@@ -55,7 +67,12 @@ export function authorize(params: {
 
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        const seller = await repos.seller.findById({ id: transaction.seller.id });
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: transaction.seller.id });
+
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
         // GMOオーダーIDはカスタム指定可能
@@ -264,9 +281,11 @@ export function voidTransaction(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const seller = await repos.seller.findById({
-            id: transaction.seller.id
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
         });
+        const seller = await sellerService.findById({ id: transaction.seller.id });
 
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
@@ -330,12 +349,6 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         if (project.settings.gmo === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
-
-        // const seller = await repos.seller.findById({
-        //     id: params.purpose.seller.id
-        // });
-
-        // const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
         // アクション開始
         const action = await repos.action.start(params);
@@ -437,9 +450,11 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
             id: params.purpose.id
         });
 
-        const seller = await repos.seller.findById({
-            id: transaction.seller.id
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
         });
+        const seller = await sellerService.findById({ id: transaction.seller.id });
 
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 

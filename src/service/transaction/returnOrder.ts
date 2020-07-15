@@ -3,7 +3,11 @@
  */
 import * as moment from 'moment';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
@@ -13,6 +17,14 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createPotentialActions } from './returnOrder/potentialActions';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
@@ -46,7 +58,12 @@ export function start(
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        const seller = await repos.seller.findById({ id: params.seller.id });
+
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: params.seller.id });
 
         if (!Array.isArray(params.object.order)) {
             params.object.order = [params.object.order];

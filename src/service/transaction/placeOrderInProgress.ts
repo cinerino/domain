@@ -3,6 +3,9 @@
  */
 import * as moment from 'moment';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
@@ -20,6 +23,14 @@ import {
     validateTransaction,
     validateWaiterPassport
 } from './placeOrderInProgress/validation';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type IStartOperation<T> = (repos: {
@@ -43,7 +54,12 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
-        const seller = await repos.seller.findById({ id: params.seller.id });
+
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: params.seller.id });
 
         const passport = await validateWaiterPassport(params);
 
@@ -189,7 +205,12 @@ export function confirm(params: IConfirmParams) {
         }
 
         const project = await repos.project.findById({ id: transaction.project.id });
-        const seller = await repos.seller.findById({ id: transaction.seller.id });
+
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: transaction.seller.id });
 
         // 取引に対する全ての承認アクションをマージ
         transaction.object.authorizeActions = await searchAuthorizeActions(params)(repos);
