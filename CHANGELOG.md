@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 販売者リポジトリをChevreへ移行
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.0.0 - 2020-07-15
+
+### Changed
+
+- 販売者リポジトリをChevreへ移行
 
 ## v7.14.4 - 2020-07-14
 
