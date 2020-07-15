@@ -12,7 +12,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -31,7 +30,6 @@ export type IStartOperation<T> = (repos: {
     invoice: InvoiceRepo;
     order: OrderRepo;
     project: ProjectRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -54,7 +52,6 @@ export function start(
         invoice: InvoiceRepo;
         order: OrderRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -214,7 +211,6 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });

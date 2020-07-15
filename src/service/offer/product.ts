@@ -10,7 +10,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleChevreError } from '../../errorHandler';
@@ -38,7 +37,6 @@ export type IAuthorizeOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -136,7 +134,6 @@ export function authorize(params: {
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const now = new Date();

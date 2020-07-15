@@ -25,7 +25,6 @@ async function main() {
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
     const projectRepo = new domain.repository.Project(mongoose.connection);
     const registerActionInProgressRepo = new domain.repository.action.RegisterServiceInProgress(redisClient);
-    const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderRepo = new domain.repository.Order(mongoose.connection);
     const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
@@ -70,7 +69,6 @@ async function main() {
         person: personRepo,
         registerActionInProgress: registerActionInProgressRepo,
         project: projectRepo,
-        seller: sellerRepo,
         transaction: transactionRepo
     });
     console.log('ordered', result.order.orderNumber);

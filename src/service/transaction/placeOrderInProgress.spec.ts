@@ -50,7 +50,6 @@ describe('start()', () => {
         };
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -84,8 +83,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
-            transaction: transactionRepo,
-            seller: sellerRepo
+            transaction: transactionRepo
         });
 
         assert.deepEqual(result, transaction);
@@ -118,7 +116,6 @@ describe('start()', () => {
         };
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -152,8 +149,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
-            transaction: transactionRepo,
-            seller: sellerRepo
+            transaction: transactionRepo
         });
         assert.deepEqual(result, transaction);
         sandbox.verify();
@@ -178,7 +174,6 @@ describe('start()', () => {
         const verifyResult = new Error('verifyError');
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -211,8 +206,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
-            transaction: transactionRepo,
-            seller: sellerRepo
+            transaction: transactionRepo
         })
             .catch((err) => err);
         assert(result instanceof domain.factory.errors.Argument);
@@ -243,7 +237,6 @@ describe('start()', () => {
         };
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -277,8 +270,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
-            transaction: transactionRepo,
-            seller: sellerRepo
+            transaction: transactionRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, startResult);

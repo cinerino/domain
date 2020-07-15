@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
-    const selllerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
     const sellers = await selllerRepo.search({});
@@ -29,7 +28,6 @@ async function main() {
         },
         object: {}
     })({
-        seller: selllerRepo,
         transaction: transactionRepo
     });
     console.log('transaction started', transaction.id);

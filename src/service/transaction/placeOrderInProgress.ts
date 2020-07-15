@@ -12,7 +12,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
@@ -35,7 +34,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type IStartOperation<T> = (repos: {
     project: ProjectRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -50,7 +48,6 @@ export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDet
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -180,7 +177,6 @@ export function confirm(params: IConfirmParams) {
         action: ActionRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
-        seller: SellerRepo;
         orderNumber: OrderNumberRepo;
         confirmationNumber?: ConfirmationNumberRepo;
     }) => {

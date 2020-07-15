@@ -10,7 +10,6 @@ import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as OfferService from '../offer';
@@ -37,7 +36,6 @@ export type IOrderOperation<T> = (repos: {
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -63,7 +61,6 @@ export function orderAccount(params: {
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -168,7 +165,6 @@ function processPlaceOrder(params: {
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
@@ -232,7 +228,6 @@ function processAuthorizeProductOffer(params: {
         action: ActionRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
         productService: chevre.service.Product;

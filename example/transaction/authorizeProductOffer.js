@@ -24,7 +24,6 @@ async function main() {
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
     const projectRepo = new domain.repository.Project(mongoose.connection);
     const registerActionInProgressRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
-    const sellerRepo = new domain.repository.Seller(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
     const confirmationNumberRepo = new domain.repository.ConfirmationNumber(redisClient);
@@ -69,7 +68,6 @@ async function main() {
         }
     })({
         project: projectRepo,
-        seller: sellerRepo,
         transaction: transactionRepo
     });
     console.log('transaction started', transaction);
@@ -105,7 +103,6 @@ async function main() {
         ownershipInfo: ownershipInfoRepo,
         project: projectRepo,
         registerActionInProgress: registerActionInProgressRepo,
-        seller: sellerRepo,
         transaction: transactionRepo
     });
     console.log('authorized.', authorizeAction);
@@ -164,7 +161,6 @@ async function main() {
     })({
         action: actionRepo,
         project: projectRepo,
-        seller: sellerRepo,
         transaction: transactionRepo,
         orderNumber: orderNumberRepo,
         confirmationNumber: confirmationNumberRepo

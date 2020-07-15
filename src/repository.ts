@@ -17,7 +17,6 @@ import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTic
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as RoleRepo } from './repo/role';
-import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
@@ -99,11 +98,6 @@ export namespace rateLimit {
  * ロールリポジトリ
  */
 export class Role extends RoleRepo { }
-
-/**
- * 販売者リポジトリ
- */
-export class Seller extends SellerRepo { }
 
 /**
  * タスクリポジトリ

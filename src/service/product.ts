@@ -12,7 +12,6 @@ import { handleChevreError } from '../errorHandler';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as ProjectRepo } from '../repo/project';
-import { MongoRepository as SellerRepo } from '../repo/seller';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as OfferService from './offer';
@@ -27,7 +26,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type ICreateOrderTaskOperation<T> = (repos: {
     project: ProjectRepo;
-    seller: SellerRepo;
     task: TaskRepo;
 }) => Promise<T>;
 
@@ -58,7 +56,6 @@ export function createOrderTask(params: {
 }): ICreateOrderTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
         project: ProjectRepo;
-        seller: SellerRepo;
         task: TaskRepo;
     }) => {
         const now = new Date();

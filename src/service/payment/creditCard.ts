@@ -15,7 +15,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -38,7 +37,6 @@ export import IUnauthorizedCardOfMember = factory.chevre.paymentMethod.paymentCa
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     project: ProjectRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -55,7 +53,6 @@ export function authorize(params: {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -257,7 +254,6 @@ export function voidTransaction(params: {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -336,7 +332,6 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
     }): Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>> => {
         const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
@@ -430,7 +425,6 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -517,7 +511,6 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         action: ActionRepo;
         order: OrderRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {

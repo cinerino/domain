@@ -15,7 +15,6 @@ import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as PaymentMethodRepo } from '../../repo/paymentMethod';
 import { ICheckResult, MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -42,7 +41,6 @@ const mvtkReserveAuthClient = new mvtkapi.auth.ClientCredentials({
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     project: ProjectRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
     movieTicket: MovieTicketRepo;
 }) => Promise<T>;
@@ -50,7 +48,6 @@ export type IAuthorizeOperation<T> = (repos: {
 export type ICheckMovieTicketOperation<T> = (repos: {
     action: ActionRepo;
     project: ProjectRepo;
-    seller: SellerRepo;
     movieTicket: MovieTicketRepo;
     paymentMethod: PaymentMethodRepo;
 }) => Promise<T>;
@@ -67,7 +64,6 @@ export function authorize(params: {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         movieTicket: MovieTicketRepo;
     }) => {
@@ -259,7 +255,6 @@ export function checkMovieTicket(
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         movieTicket: MovieTicketRepo;
         paymentMethod: PaymentMethodRepo;
     }) => {
@@ -371,7 +366,6 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
     }) => {
         // ムビチケ系統の決済方法タイプは動的
         const paymentMethodType = params.object[0]?.movieTickets[0]?.typeOf;
