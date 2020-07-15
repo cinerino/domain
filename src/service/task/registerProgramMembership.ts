@@ -12,7 +12,6 @@ import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { orderProgramMembership } from '../transaction/orderProgramMembership';
@@ -54,7 +53,6 @@ export function call(data: factory.task.IData<factory.taskName.RegisterProgramMe
                     confirmationNumber: new ConfirmationNumberRepo(settings.redisClient),
                     creditCard: creditCardRepo,
                     orderNumber: new OrderNumberRepo(settings.redisClient),
-                    seller: new SellerRepo(settings.connection),
                     ownershipInfo: new OwnershipInfoRepo(settings.connection),
                     person: personRepo,
                     project: new ProjectRepo(settings.connection),

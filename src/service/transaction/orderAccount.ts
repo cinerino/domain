@@ -10,7 +10,6 @@ import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as OfferService from '../offer';
@@ -37,7 +36,6 @@ export type IOrderOperation<T> = (repos: {
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -63,7 +61,6 @@ export function orderAccount(params: {
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -111,7 +108,11 @@ export function orderAccount(params: {
             throw new factory.errors.NotFound('seller of product offer');
         }
 
-        const seller = await repos.seller.findById({ id: productOfferSellerId });
+        const sellerService = new chevre.service.Seller({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const seller = await sellerService.findById({ id: productOfferSellerId });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder> | undefined;
 
@@ -164,7 +165,6 @@ function processPlaceOrder(params: {
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
@@ -228,7 +228,6 @@ function processAuthorizeProductOffer(params: {
         action: ActionRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
         productService: chevre.service.Product;

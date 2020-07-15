@@ -47,7 +47,6 @@ describe('汎用決済承認', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const sellerRepo = new domain.repository.Seller(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
@@ -58,7 +57,7 @@ describe('汎用決済承認', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(sellerRepo)
+        sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -77,8 +76,7 @@ describe('汎用決済承認', () => {
             }
         })({
             action: actionRepo,
-            transaction: transactionRepo,
-            seller: sellerRepo
+            transaction: transactionRepo
         });
 
         assert.deepEqual(result, action);

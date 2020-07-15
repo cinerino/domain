@@ -11,7 +11,6 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleChevreError, handleCOAReserveTemporarilyError } from '../../errorHandler';
@@ -53,7 +52,6 @@ export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     movieTicket: MovieTicketRepo;
     project: ProjectRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -83,7 +81,6 @@ export function create(params: {
         action: ActionRepo;
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -522,7 +519,6 @@ export function validateAcceptedOffers(params: {
     return async (repos: {
         movieTicket: MovieTicketRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         const masterService = new COA.service.Master(
             {
@@ -670,9 +666,11 @@ export function validateAcceptedOffers(params: {
                             throw new factory.errors.Argument('Offer', 'Movie Ticket accessCode not specified');
                         }
 
-                        const movieTheater = await repos.seller.findById({
-                            id: params.seller.id
+                        const sellerService = new chevre.service.Seller({
+                            endpoint: credentials.chevre.endpoint,
+                            auth: chevreAuthClient
                         });
+                        const movieTheater = await sellerService.findById({ id: params.seller.id });
                         if (movieTheater.paymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
                         }

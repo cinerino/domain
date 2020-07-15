@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v8.0.0 - 2020-07-15
+
+### Changed
+
+- 販売者リポジトリをChevreへ移行
+
 ## v7.14.4 - 2020-07-14
 
 ### Changed

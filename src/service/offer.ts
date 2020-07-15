@@ -3,7 +3,6 @@ import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as ProjectRepo } from '../repo/project';
-import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as MonetaryAmountOfferService from './offer/monetaryAmount';
 import * as ProductOfferService from './offer/product';
@@ -51,7 +50,6 @@ export type ISearchEventOffersOperation<T> = (repos: {
 
 export type ISearchEventTicketOffersOperation<T> = (repos: {
     project: ProjectRepo;
-    seller: SellerRepo;
 }) => Promise<T>;
 
 export interface ISearchEventsResult {
@@ -364,7 +362,6 @@ export function searchEventTicketOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         project: ProjectRepo;
-        seller: SellerRepo;
     }) => {
         const now = moment();
 

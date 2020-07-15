@@ -12,7 +12,6 @@ import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { findAccount } from '../account';
@@ -43,7 +42,6 @@ export type IOrderOperation<T> = (repos: {
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -62,7 +60,6 @@ export function orderProgramMembership(
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -140,7 +137,6 @@ function processPlaceOrder(params: {
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
     }) => {
@@ -214,7 +210,6 @@ function processAuthorizeProductOffer(params: {
         action: ActionRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
         productService: chevre.service.Product;
@@ -309,7 +304,6 @@ function processAuthorizeCreditCard(params: {
         creditCard: CreditCardRepo;
         person: PersonRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)

@@ -7,7 +7,6 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handlePecorinoError } from '../../errorHandler';
@@ -23,7 +22,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     project: ProjectRepo;
-    seller: SellerRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -36,7 +34,6 @@ export function authorize(params: {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        seller: SellerRepo;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
