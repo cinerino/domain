@@ -69,7 +69,7 @@ export function start(
         const orders = await repos.order.search({
             project: { id: { $eq: project.id } },
             orderNumbers: params.object.order.map((o) => o.orderNumber),
-            seller: { ids: [seller.id] }
+            seller: { ids: [String(seller.id)] }
         });
 
         if (orders.length !== params.object.order.length) {
@@ -167,7 +167,7 @@ function validateOrder(params: {
 function checkReturnPolicy(
     params: {
         reason: factory.transaction.returnOrder.Reason;
-        seller: factory.seller.IOrganization<any>;
+        seller: factory.seller.ISeller;
     }) {
     let returnPolicies = params.seller.hasMerchantReturnPolicy;
     if (!Array.isArray(returnPolicies)) {

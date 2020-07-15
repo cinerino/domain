@@ -9,7 +9,7 @@ export function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
     product: factory.chevre.product.IProduct;
-    seller: factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
+    seller: factory.seller.ISeller;
 }): factory.task.IData<factory.taskName.OrderProgramMembership> {
     const offer = params.offer;
     const seller = params.seller;
@@ -44,6 +44,7 @@ export function createOrderProgramMembershipActionAttributes(params: {
         priceSpecification: offer.priceSpecification,
         itemOffered: itemOffered,
         seller: {
+            project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
             typeOf: seller.typeOf,
             id: seller.id,
             name: (typeof seller.name === 'string')

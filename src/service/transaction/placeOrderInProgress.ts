@@ -206,7 +206,7 @@ export function confirm(params: IConfirmParams) {
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const seller = await sellerService.findById({ id: transaction.seller.id });
+        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
         // 取引に対する全ての承認アクションをマージ
         transaction.object.authorizeActions = await searchAuthorizeActions(params)(repos);

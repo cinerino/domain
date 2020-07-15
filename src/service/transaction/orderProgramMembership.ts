@@ -65,10 +65,10 @@ export function orderProgramMembership(
         const project = await repos.project.findById({ id: params.project.id });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
-        const customer = await repos.person.findById({ userId: params.agent.id });
+        const customer = await repos.person.findById({ userId: String(params.agent.id) });
 
         const acceptedOffer = params.object;
-        const seller = <factory.seller.IOrganization<any>>acceptedOffer.itemOffered.hostingOrganization;
+        const seller = <factory.seller.ISeller>acceptedOffer.itemOffered.hostingOrganization;
         if (seller === undefined) {
             throw new factory.errors.NotFound('ProgramMembership HostingOrganization');
         }
@@ -84,7 +84,7 @@ export function orderProgramMembership(
                     .add(5, 'minutes')
                     .toDate(),
                 agent: customer,
-                seller: { typeOf: seller.typeOf, id: seller.id },
+                seller: { typeOf: seller.typeOf, id: String(seller.id) },
                 object: {}
             })(repos);
 
@@ -219,8 +219,12 @@ function processAuthorizeProductOffer(params: {
         const transaction = params.transaction;
 
         const project: factory.chevre.project.IProject = { typeOf: factory.organizationType.Project, id: params.project.id };
-        const seller: factory.order.ISeller
-            = { typeOf: transaction.seller.typeOf, id: transaction.seller.id, name: transaction.seller.name };
+        const seller: factory.order.ISeller = {
+            project: project,
+            typeOf: transaction.seller.typeOf,
+            id: transaction.seller.id,
+            name: transaction.seller.name
+        };
 
         // オファーにポイント特典設定があるかどうか確認
         let pointAward: factory.chevre.product.IPointAward | undefined;
@@ -228,7 +232,7 @@ function processAuthorizeProductOffer(params: {
         const offers = await OfferService.product.search({
             project: { id: params.project.id },
             itemOffered: { id: params.product.id },
-            seller: { id: seller.id }
+            seller: { id: String(seller.id) }
         })(repos);
         const acceptedProductOffer = offers.find((o) => o.identifier === acceptedOffer.identifier);
         if (acceptedProductOffer === undefined) {

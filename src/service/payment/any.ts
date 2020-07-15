@@ -69,7 +69,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
-            const seller = await sellerService.findById({ id: transaction.seller.id });
+            const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
             if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);

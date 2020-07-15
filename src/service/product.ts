@@ -77,7 +77,7 @@ export function createOrderTask(params: {
         const offers = await OfferService.product.search({
             project: { id: project.id },
             itemOffered: { id: String(product.id) },
-            seller: { id: seller.id },
+            seller: { id: String(seller.id) },
             availableAt: { id: params.location.id }
         })(repos);
         const acceptedOffer = offers.find((o) => o.id === params.object.id);

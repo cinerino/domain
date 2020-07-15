@@ -598,8 +598,8 @@ export function order2report(params: {
             .toISOString(),
         seller: {
             typeOf: order.seller.typeOf,
-            id: order.seller.id,
-            name: order.seller.name,
+            id: String(order.seller.id),
+            name: String(order.seller.name),
             url: (order.seller.url !== undefined) ? order.seller.url : ''
         },
         customer: {

@@ -358,7 +358,7 @@ export function validateAcceptedOffers(params: {
     object: factory.action.authorize.offer.product.IObject;
     product: factory.chevre.product.IProduct;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
-    seller: factory.seller.IOrganization<factory.seller.IAttributes<any>>;
+    seller: factory.seller.ISeller;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.product.IObject> => {
@@ -418,7 +418,7 @@ export function validateAcceptedOffers(params: {
                         ? { pointAward: offerWithoutDetail.itemOffered?.pointAward }
                         : undefined
                 },
-                seller: { typeOf: params.seller.typeOf, id: params.seller.id, name: params.seller.name }
+                seller: { project: project, typeOf: params.seller.typeOf, id: params.seller.id, name: params.seller.name }
             };
         }));
     };

@@ -8,7 +8,7 @@ export function createSeatInfoSyncIn(params: {
     movieTickets: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[];
     event: factory.event.screeningEvent.IEvent;
     order: factory.order.ISimpleOrder;
-    seller: factory.seller.IOrganization<factory.seller.IAttributes<any>>;
+    seller: factory.seller.ISeller;
 }): mvtkapi.mvtk.services.seat.seatInfoSync.ISeatInfoSyncIn {
     const event = params.event;
 

@@ -302,7 +302,7 @@ export function transaction2report(params: {
                 .toISOString() : '',
             seller: {
                 typeOf: params.transaction.seller.typeOf,
-                id: params.transaction.seller.id,
+                id: String(params.transaction.seller.id),
                 name: (typeof params.transaction.seller.name === 'string')
                     ? params.transaction.seller.name
                     : String(params.transaction.seller.name?.ja),
@@ -341,7 +341,7 @@ export function transaction2report(params: {
                 .toISOString() : '',
             seller: {
                 typeOf: params.transaction.seller.typeOf,
-                id: params.transaction.seller.id,
+                id: String(params.transaction.seller.id),
                 name: (typeof params.transaction.seller.name === 'string')
                     ? params.transaction.seller.name
                     : String(params.transaction.seller.name?.ja),

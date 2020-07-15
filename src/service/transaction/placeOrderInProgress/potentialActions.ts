@@ -14,15 +14,13 @@ import { createSendEmailMessageActions } from './potentialActions/sendEmailMessa
 
 import * as factory from '../../../factory';
 
-export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
-
 /**
  * 取引のポストアクションを作成する
  */
 export async function createPotentialActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
-    seller: ISeller;
+    seller: factory.seller.ISeller;
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // 予約確定アクション

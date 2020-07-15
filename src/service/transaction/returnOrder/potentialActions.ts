@@ -66,8 +66,8 @@ export async function createPotentialActions(params: {
             },
             agent: transaction.agent,
             recipient: {
-                project: order.project,
-                ...order.seller
+                ...order.seller,
+                project: { typeOf: order.project.typeOf, id: order.project.id }
             },
             potentialActions: {
                 cancelReservation: cancelReservationActions,

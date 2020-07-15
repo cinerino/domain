@@ -85,7 +85,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 const productId = o.typeOfGood.issuedThrough?.id;
                 if (typeof productId === 'string') {
                     await processUnlock({
-                        agent: { id: o.ownedBy.id },
+                        agent: { id: String(o.ownedBy.id) },
                         product: { id: productId },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     })(repos);
