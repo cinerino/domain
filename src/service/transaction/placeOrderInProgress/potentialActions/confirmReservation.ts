@@ -138,7 +138,6 @@ function createConfirmReservationActionObject(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     reserveTransaction: factory.action.authorize.offer.seatReservation.IResponseBody<factory.service.webAPI.Identifier.Chevre>;
 }): factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> {
-    // let confirmReservationParams: factory.transaction.placeOrder.IConfirmReservationParams[] = [];
     let confirmReservationParams
         = params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.confirmReservation;
     if (!Array.isArray(confirmReservationParams)) {
@@ -154,10 +153,7 @@ function createConfirmReservationActionObject(params: {
         = [
             ...(Array.isArray(order.identifier)) ? order.identifier : [],
             { name: 'orderNumber', value: order.orderNumber },
-            // { name: 'customerGroup', value: 'Customer' },
-            // { name: 'paymentNo', value: params.paymentNo },
             { name: 'transaction', value: params.transaction.id },
-            // { name: 'gmoOrderId', value: params.gmoOrderId },
             { name: 'paymentMethod', value: paymentMethodNames },
             ...(typeof customer.age === 'string')
                 ? [{ name: 'age', value: customer.age }]
@@ -171,7 +167,6 @@ function createConfirmReservationActionObject(params: {
     const confirmReservationObject:
         factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
         typeOf: factory.chevre.transactionType.Reserve,
-        // id: params.reserveTransaction.id,
         transactionNumber: params.reserveTransaction.transactionNumber,
         object: {
             reservations: (Array.isArray(params.reserveTransaction.object.reservations))
@@ -190,13 +185,7 @@ function createConfirmReservationActionObject(params: {
                         },
                         underName: {
                             ...<any>order.customer,
-                            // typeOf: params.order.customer.typeOf,
-                            // id: params.order.customer.id,
                             name: String(params.order.customer.name),
-                            // familyName: params.order.customer.familyName,
-                            // givenName: params.order.customer.givenName,
-                            // email: params.order.customer.email,
-                            // telephone: params.order.customer.telephone,
                             identifier: defaultUnderNameIdentifiers
                         }
                     };
@@ -208,9 +197,8 @@ function createConfirmReservationActionObject(params: {
     const confirmReservationObjectParams = confirmReservationParams.find((p) => {
         const object = <factory.action.interact.confirm.reservation.IObject4Chevre>p.object;
 
-        return object !== undefined
-            && object.typeOf === factory.chevre.transactionType.Reserve
-            && object.id === params.reserveTransaction.id;
+        return object?.typeOf === factory.chevre.transactionType.Reserve
+            && object?.id === params.reserveTransaction.id;
     });
 
     // 予約確定パラメータの指定があれば上書きする
@@ -222,14 +210,12 @@ function createConfirmReservationActionObject(params: {
         if (customizedConfirmReservationObject.object !== undefined) {
             if (Array.isArray(customizedConfirmReservationObject.object.reservations)) {
                 customizedConfirmReservationObject.object.reservations.forEach((r) => {
-                    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-                        r.underName.identifier.push(...defaultUnderNameIdentifiers);
+                    if (Array.isArray(r.underName?.identifier)) {
+                        r.underName?.identifier.push(...defaultUnderNameIdentifiers);
                     }
 
-                    if (r.reservedTicket !== undefined
-                        && r.reservedTicket.underName !== undefined
-                        && Array.isArray(r.reservedTicket.underName.identifier)) {
-                        r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
+                    if (Array.isArray(r.reservedTicket?.underName?.identifier)) {
+                        r.reservedTicket?.underName?.identifier.push(...defaultUnderNameIdentifiers);
                     }
                 });
             }

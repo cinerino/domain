@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- ttts専用paymentNoをconfirmationNumberに統合
+
 ### Deprecated
 
 ### Removed
