@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- USE_SEPARATE_MOVIE_TICKET_PAYMENT設定を追加
+
 ### Changed
 
 ### Deprecated
