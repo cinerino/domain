@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- GMOオーダーIDをChevre取引番号に変更
+
 ### Deprecated
 
 ### Removed

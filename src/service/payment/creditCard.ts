@@ -3,8 +3,6 @@
  */
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
-import * as moment from 'moment-timezone';
-import * as util from 'util';
 
 import { credentials } from '../../credentials';
 
@@ -43,13 +41,13 @@ export type IAuthorizeOperation<T> = (repos: {
 /**
  * クレジットカードオーソリ取得
  */
-// tslint:disable-next-line:max-func-body-length
 export function authorize(params: {
     project: { id: string };
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.creditCard.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.creditCard.IAction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -72,10 +70,14 @@ export function authorize(params: {
 
         const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
 
-        // GMOオーダーIDはカスタム指定可能
-        const orderId = (typeof params.object.orderId === 'string') ? params.object.orderId : generateOrderId({
-            project: params.project,
-            transaction: params.purpose
+        // 取引番号生成
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const { transactionNumber } = await transactionNumberService.publish({
+            project: { id: project.id }
         });
 
         // 承認アクションを開始する
@@ -84,7 +86,7 @@ export function authorize(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
-                paymentMethodId: orderId
+                paymentMethodId: transactionNumber
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -101,7 +103,7 @@ export function authorize(params: {
                 project: project,
                 shopId: shopId,
                 shopPass: shopPass,
-                orderId: orderId,
+                orderId: transactionNumber,
                 object: params.object
             });
         } catch (error) {
@@ -122,7 +124,7 @@ export function authorize(params: {
             searchTradeResult = await creditCardService.searchTrade({
                 shopId: shopId,
                 shopPass: shopPass,
-                orderId: orderId
+                orderId: transactionNumber
             });
         } catch (error) {
             // no op
@@ -134,7 +136,7 @@ export function authorize(params: {
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: orderId,
+            paymentMethodId: transactionNumber,
             name: (typeof params.object.name === 'string') ? params.object.name : String(factory.paymentMethodType.CreditCard),
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
@@ -235,7 +237,7 @@ function handleAuthorizeError(error: any) {
         // オーダーID重複エラーの場合
         const duplicateError = error.errors.find((gmoError: any) => gmoError.info.match(/^E01040010$/));
         if (duplicateError !== undefined) {
-            handledError = new factory.errors.AlreadyInUse('action.object', ['orderId'], duplicateError.userMessage);
+            handledError = new factory.errors.AlreadyInUse('orderId', [], duplicateError.userMessage);
         }
 
         // その他のGMOエラーに場合、なんらかのクライアントエラー
@@ -641,30 +643,6 @@ async function processChangeTransaction(params: {
     }));
 
     return alterTranResult;
-}
-
-/**
- * GMOオーダーIDを生成する
- */
-function generateOrderId(params: {
-    project: { id: string };
-    transaction: { id: string };
-}) {
-    // tslint:disable-next-line:no-magic-numbers
-    const projectId = `${params.project.id}---`.slice(0, 3)
-        .toUpperCase();
-    const dateTime = moment()
-        .tz('Asia/Tokyo')
-        .format('YYMMDDhhmmssSSS');
-    // tslint:disable-next-line:no-magic-numbers
-    const transactionId = params.transaction.id.slice(-6);
-
-    return util.format(
-        '%s%s%s',
-        projectId, // プロジェクトIDの頭数文字
-        dateTime,
-        transactionId
-    );
 }
 
 function getGMOInfoFromSeller(params: {
