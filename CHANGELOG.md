@@ -8,11 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- USE_SEPARATE_MOVIE_TICKET_PAYMENT設定を追加
-
 ### Changed
-
-- ttts専用paymentNoをconfirmationNumberに統合
 
 ### Deprecated
 
@@ -21,6 +17,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.1.0 - 2020-07-17
+
+### Added
+
+- USE_SEPARATE_MOVIE_TICKET_PAYMENT設定を追加
+
+### Changed
+
+- ttts専用paymentNoをconfirmationNumberに統合
 
 ## v8.0.1 - 2020-07-15
 
