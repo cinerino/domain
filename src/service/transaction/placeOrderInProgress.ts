@@ -387,18 +387,19 @@ function createConfirmationNumber(params: {
     };
 }
 
-export const PAYMENT_NO_MIN_LENGTH = 6;
+// export const PAYMENT_NO_MIN_LENGTH = 6;
 export function createConfirmationNumber4identifier(params: {
     confirmationNumber: string;
     order: factory.order.IOrder;
 }) {
     const confirmationNumber = params.confirmationNumber;
 
-    // tslint:disable-next-line:no-magic-numbers
-    const paymentNo = (confirmationNumber.length < PAYMENT_NO_MIN_LENGTH)
-        // tslint:disable-next-line:no-magic-numbers
-        ? `000000${confirmationNumber}`.slice(-PAYMENT_NO_MIN_LENGTH)
-        : confirmationNumber;
+    // 6桁固定という使用の場合はこちら
+    // const paymentNo = (confirmationNumber.length < PAYMENT_NO_MIN_LENGTH)
+    //     ? `000000${confirmationNumber}`.slice(-PAYMENT_NO_MIN_LENGTH)
+    //     : confirmationNumber;
+    const paymentNo: string = String(confirmationNumber);
+
     let eventStartDateStr = moment(params.order.orderDate)
         .tz('Asia/Tokyo')
         .format('YYYYMMDD');

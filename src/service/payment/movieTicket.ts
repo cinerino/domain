@@ -117,6 +117,14 @@ export function authorize(params: {
         });
         const movieTheater = await sellerService.findById({ id: String(transaction.seller.id) });
 
+        // まず取引番号発行
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const publishResult = await transactionNumberService.publish({ project: { id: transaction.project.id } });
+        const transactionNumber = publishResult.transactionNumber;
+
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
             project: transaction.project,
@@ -125,7 +133,8 @@ export function authorize(params: {
                 ...params.object,
                 accountId: movieTicketIdentifier,
                 amount: 0,
-                paymentMethodId: movieTicketIdentifier,
+                // paymentMethodId: movieTicketIdentifier,
+                paymentMethodId: transactionNumber, // 決済方法IDをtransactionNumberに変更
                 typeOf: paymentMethodType
             },
             agent: transaction.agent,
@@ -194,7 +203,8 @@ export function authorize(params: {
             amount: 0,
             paymentMethod: paymentMethodType,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: movieTicketIdentifier,
+            // paymentMethodId: movieTicketIdentifier,
+            paymentMethodId: transactionNumber, // 決済方法IDをtransactionNumberに変更
             name: (typeof params.object.name === 'string') ? params.object.name : paymentMethodType,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
@@ -420,6 +430,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             seatInfoSyncIn = createSeatInfoSyncIn({
                 paymentMethodType: paymentMethodType,
+                paymentMethodId: params.object[0].paymentMethod.paymentMethodId,
                 movieTickets: movieTickets,
                 event: event,
                 order: params.purpose,

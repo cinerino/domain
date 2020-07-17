@@ -3,7 +3,7 @@
  * 進行中の注文取引サービステスト
  */
 import * as waiter from '@waiter/domain';
-import * as moment from 'moment';
+// import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 // import * as pug from 'pug';
@@ -278,39 +278,39 @@ describe('start()', () => {
     });
 });
 
-describe('createConfirmationNumber4identifier()', () => {
-    beforeEach(() => {
-        delete process.env.WAITER_PASSPORT_ISSUER;
-    });
+// describe('createConfirmationNumber4identifier()', () => {
+//     beforeEach(() => {
+//         delete process.env.WAITER_PASSPORT_ISSUER;
+//     });
 
-    afterEach(() => {
-        sandbox.restore();
-    });
+//     afterEach(() => {
+//         sandbox.restore();
+//     });
 
-    it('paymentNoの桁数が適切であること', async () => {
-        const confirmationNumber = '1';
-        const customer = { telephone: '+819012345678' };
-        const reservation = {
-            typeOf: domain.factory.chevre.reservationType.EventReservation,
-            reservationFor: {
-                startDate: moment('2020-01-01T00:00:00Z')
-                    .toDate()
-            }
-        };
+//     it('paymentNoの桁数が適切であること', async () => {
+//         const confirmationNumber = '1';
+//         const customer = { telephone: '+819012345678' };
+//         const reservation = {
+//             typeOf: domain.factory.chevre.reservationType.EventReservation,
+//             reservationFor: {
+//                 startDate: moment('2020-01-01T00:00:00Z')
+//                     .toDate()
+//             }
+//         };
 
-        const { paymentNo }
-            = domain.service.transaction.placeOrderInProgress.createConfirmationNumber4identifier({
-                confirmationNumber: confirmationNumber,
-                order: <any>{
-                    acceptedOffers: [{
-                        itemOffered: reservation
-                    }],
-                    confirmationNumber: confirmationNumber,
-                    customer: customer
-                }
-            });
+//         const { paymentNo }
+//             = domain.service.transaction.placeOrderInProgress.createConfirmationNumber4identifier({
+//                 confirmationNumber: confirmationNumber,
+//                 order: <any>{
+//                     acceptedOffers: [{
+//                         itemOffered: reservation
+//                     }],
+//                     confirmationNumber: confirmationNumber,
+//                     customer: customer
+//                 }
+//             });
 
-        assert(paymentNo.length >= domain.service.transaction.placeOrderInProgress.PAYMENT_NO_MIN_LENGTH);
-        sandbox.verify();
-    });
-});
+//         assert(paymentNo.length >= domain.service.transaction.placeOrderInProgress.PAYMENT_NO_MIN_LENGTH);
+//         sandbox.verify();
+//     });
+// });
