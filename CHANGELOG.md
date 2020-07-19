@@ -18,6 +18,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v8.2.0 - 2020-07-19
+
+### Changed
+
+- GMOオーダーIDをChevre取引番号に変更
+
+### Removed
+
+- USE_SEPARATE_MOVIE_TICKET_PAYMENT設定を削除
+
 ## v8.1.0 - 2020-07-17
 
 ### Added

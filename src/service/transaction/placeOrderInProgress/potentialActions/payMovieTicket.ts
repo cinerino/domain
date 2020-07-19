@@ -1,7 +1,5 @@
 import * as factory from '../../../../factory';
 
-const USE_SEPARATE_MOVIE_TICKET_PAYMENT = process.env.USE_SEPARATE_MOVIE_TICKET_PAYMENT === '1';
-
 export async function createPayMovieTicketActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
@@ -28,60 +26,24 @@ export async function createPayMovieTicketActions(params: {
             });
 
     if (authorizeMovieTicketActions.length > 0) {
-        if (USE_SEPARATE_MOVIE_TICKET_PAYMENT) {
-            authorizeMovieTicketActions.forEach((a) => {
-                const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+        authorizeMovieTicketActions.forEach((a) => {
+            const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
 
-                payMovieTicketActions.push({
-                    project: params.transaction.project,
-                    typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-                    object: [{
-                        typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
-                        paymentMethod: {
-                            accountId: result.accountId,
-                            additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
-                            name: result.name,
-                            paymentMethodId: result.paymentMethodId,
-                            totalPaymentDue: result.totalPaymentDue,
-                            typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod
-                        },
-                        movieTickets: a.object.movieTickets
-                    }],
-                    agent: params.transaction.agent,
-                    purpose: {
-                        project: params.order.project,
-                        typeOf: params.order.typeOf,
-                        seller: params.order.seller,
-                        customer: params.order.customer,
-                        confirmationNumber: params.order.confirmationNumber,
-                        orderNumber: params.order.orderNumber,
-                        price: params.order.price,
-                        priceCurrency: params.order.priceCurrency,
-                        orderDate: params.order.orderDate
-                    }
-                });
-            });
-        } else {
             payMovieTicketActions.push({
                 project: params.transaction.project,
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
-                object: authorizeMovieTicketActions
-                    .map((a) => {
-                        const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
-
-                        return {
-                            typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
-                            paymentMethod: {
-                                accountId: result.accountId,
-                                additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
-                                name: result.name,
-                                paymentMethodId: result.paymentMethodId,
-                                totalPaymentDue: result.totalPaymentDue,
-                                typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod
-                            },
-                            movieTickets: a.object.movieTickets
-                        };
-                    }),
+                object: [{
+                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    paymentMethod: {
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: <factory.paymentMethodType.MovieTicket>result.paymentMethod
+                    },
+                    movieTickets: a.object.movieTickets
+                }],
                 agent: params.transaction.agent,
                 purpose: {
                     project: params.order.project,
@@ -95,7 +57,7 @@ export async function createPayMovieTicketActions(params: {
                     orderDate: params.order.orderDate
                 }
             });
-        }
+        });
     }
 
     return payMovieTicketActions;
