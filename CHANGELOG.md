@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- USE_SEPARATE_MOVIE_TICKET_PAYMENT設定を削除
+
 ### Fixed
 
 ### Security
