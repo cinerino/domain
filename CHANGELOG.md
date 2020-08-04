@@ -14,11 +14,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
-- 不要なイベント検索ファンクションを削除
-
 ### Fixed
 
 ### Security
+
+## v8.3.1 - 2020-08-04
+
+### Removed
+
+- 不要なイベント検索ファンクションを削除
 
 ## v8.3.0 - 2020-08-03
 
