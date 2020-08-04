@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 不要なイベント検索ファンクションを削除
+
 ### Fixed
 
 ### Security

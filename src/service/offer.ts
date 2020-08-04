@@ -40,10 +40,6 @@ const coaAuthClient = new COA.auth.RefreshToken({
     refreshToken: credentials.coa.refreshToken
 });
 
-export type ISearchEventsOperation<T> = (repos: {
-    project: ProjectRepo;
-}) => Promise<T>;
-
 export type ISearchEventOffersOperation<T> = (repos: {
     project: ProjectRepo;
 }) => Promise<T>;
@@ -51,35 +47,6 @@ export type ISearchEventOffersOperation<T> = (repos: {
 export type ISearchEventTicketOffersOperation<T> = (repos: {
     project: ProjectRepo;
 }) => Promise<T>;
-
-export interface ISearchEventsResult {
-    data: factory.event.screeningEvent.IEvent[];
-    totalCount?: number;
-}
-
-/**
- * イベント検索
- */
-export function searchEvents(params: {
-    project: factory.project.IProject;
-    conditions: factory.event.screeningEvent.ISearchConditions;
-}): ISearchEventsOperation<ISearchEventsResult> {
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        const eventService = new chevre.service.Event({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        return eventService.search<factory.chevre.eventType.ScreeningEvent>({
-            ...params.conditions,
-            project: { ids: [project.id] }
-        });
-    };
-}
 
 /**
  * イベントに対する座席オファーを検索する
