@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 決済承認アクションのinstrumentを決済サービスとして定義
+- 決済承認アクションのobject.typeOfを'Payment'に統一
+
 ### Deprecated
 
 ### Removed
