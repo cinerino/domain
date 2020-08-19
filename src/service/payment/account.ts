@@ -96,7 +96,8 @@ export function authorize(params: {
                     pendingTransaction: {
                         transactionNumber: transactionNumber
                     }
-                }
+                },
+                paymentMethod: factory.paymentMethodType.Account
             },
             agent: transaction.agent,
             recipient: recipient,

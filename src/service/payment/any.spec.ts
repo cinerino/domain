@@ -71,6 +71,7 @@ describe('汎用決済承認', () => {
             purpose: transaction,
             object: {
                 typeOf: domain.factory.paymentMethodType.Cash,
+                paymentMethod: domain.factory.paymentMethodType.Cash,
                 amount: amount,
                 additionalProperty: additionalProperty
             }

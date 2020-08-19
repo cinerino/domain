@@ -86,6 +86,7 @@ export function authorize(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
+                paymentMethod: factory.paymentMethodType.CreditCard,
                 paymentMethodId: transactionNumber
             },
             agent: transaction.agent,

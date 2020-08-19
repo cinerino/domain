@@ -77,6 +77,7 @@ export function authorize(params: {
                 ...(params.object.fromLocation !== undefined)
                     ? { accountId: params.object.fromLocation.identifier }
                     : {},
+                paymentMethod: params.object?.fromLocation?.typeOf,
                 typeOf: factory.paymentMethodType.PaymentCard
             },
             agent: transaction.agent,
