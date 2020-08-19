@@ -99,38 +99,30 @@ function createPaymentMethods(params: {
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
     let price = 0;
 
+    const authorizePaymentActions = <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+                && a.result?.typeof === factory.action.authorize.paymentMethod.any.ResultType.Payment);
+
     // 決済方法をセット
-    Object.keys(factory.paymentMethodType)
-        .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-
-            params.transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.result !== undefined)
-                .filter((a) => a.object.typeOf === paymentMethodType)
-                .forEach((a: factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>) => {
-                    const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
-                    paymentMethods.push({
-                        accountId: result.accountId,
-                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
-                        name: result.name,
-                        paymentMethodId: result.paymentMethodId,
-                        totalPaymentDue: result.totalPaymentDue,
-                        typeOf: <any>result.paymentMethod
-                    });
-                });
-
-            // 決済方法から注文金額の計算
-            price += params.transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.object.typeOf === paymentMethodType)
-                .filter((a) => {
-                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
-
-                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
-                })
-                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
+    authorizePaymentActions.forEach((a) => {
+        const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+        paymentMethods.push({
+            accountId: result.accountId,
+            additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+            name: result.name,
+            paymentMethodId: result.paymentMethodId,
+            totalPaymentDue: result.totalPaymentDue,
+            typeOf: <any>result.paymentMethod
         });
+    });
+
+    // 決済方法から注文金額の計算
+    price += authorizePaymentActions
+        .filter((a) => {
+            return a.result?.totalPaymentDue?.currency === factory.priceCurrency.JPY;
+        })
+        .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
 
     return { paymentMethods, price };
 }

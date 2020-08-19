@@ -210,6 +210,26 @@ schema.index(
 );
 
 schema.index(
+    { 'object.paymentMethod': 1, startDate: -1 },
+    {
+        name: 'searchByObjectPaymentMethod',
+        partialFilterExpression: {
+            'object.paymentMethod': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'object.paymentMethodId': 1, startDate: -1 },
+    {
+        name: 'searchByObjectPaymentMethodId',
+        partialFilterExpression: {
+            'object.paymentMethodId': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'object.paymentMethod.paymentMethodId': 1, startDate: -1 },
     {
         name: 'searchByObjectPaymentMethodPaymentMethodId',

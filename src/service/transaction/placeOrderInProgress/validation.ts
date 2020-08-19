@@ -85,19 +85,15 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
     let priceBySeller = 0;
 
     // 決済承認を確認
-    Object.keys(factory.paymentMethodType)
-        .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
-            priceByAgent += authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.object.typeOf === paymentMethodType)
-                .filter((a) => {
-                    const totalPaymentDue = (<IAuthorizeAnyPaymentResult>a.result).totalPaymentDue;
+    const authorizePaymentActions = <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+        authorizeActions.filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+            && a.result?.typeof === factory.action.authorize.paymentMethod.any.ResultType.Payment);
 
-                    return totalPaymentDue !== undefined && totalPaymentDue.currency === factory.priceCurrency.JPY;
-                })
-                .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
-        });
+    priceByAgent += authorizePaymentActions
+        .filter((a) => {
+            return a.result?.totalPaymentDue?.currency === factory.priceCurrency.JPY;
+        })
+        .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
 
     // 販売者が提供するアイテムの発生金額
     priceBySeller += authorizeActions
@@ -115,7 +111,7 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
     const authorizeActions = transaction.object.authorizeActions;
     const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.account.IAction[]>authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
+        .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.Account);
 
     const requiredMonetaryAmountByAccountType: {
         currency: string;
@@ -176,7 +172,7 @@ function validateMovieTicket(
 
     const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === paymentMethodType);
+        .filter((a) => a.result?.paymentMethod === paymentMethodType);
 
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         authorizeActions

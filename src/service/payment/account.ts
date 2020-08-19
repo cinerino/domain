@@ -281,7 +281,7 @@ export function voidTransaction(
                     }
                 })
                     .then((actions) => actions
-                        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account)
+                        .filter((a) => a.object.paymentMethod === factory.paymentMethodType.Account)
                     );
         }
 
@@ -365,7 +365,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
     }) => {
         // 本アクションに対応するPayActionを取り出す
         const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.Account>({
-            object: { typeOf: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
+            object: { paymentMethod: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
 

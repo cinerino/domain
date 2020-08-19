@@ -466,8 +466,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
                 id: transaction.id
             }
         });
-        authorizeActions = authorizeActions
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
+        authorizeActions = authorizeActions.filter((a) => a.object.paymentMethod === factory.paymentMethodType.CreditCard);
 
         // GMO流入量制限を考慮して、直列にゆっくり処理
         // await Promise.all(authorizeActions.map(async (action) => {
@@ -520,7 +519,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
     }) => {
         // 本アクションに対応するPayActionを取り出す
         const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.CreditCard>({
-            object: { typeOf: factory.paymentMethodType.CreditCard, paymentMethodId: params.object.paymentMethodId },
+            object: { paymentMethod: factory.paymentMethodType.CreditCard, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
 
