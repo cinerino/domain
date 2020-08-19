@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v8.6.1 - 2020-08-19
+
+### Changed
+
+- 注文取引確定時の決済承認リストが承認アクションのobject.typeOfに依存しないように調整
+
 ## v8.6.0 - 2020-08-19
 
 ### Changed
