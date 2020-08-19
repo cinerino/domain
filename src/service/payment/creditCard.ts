@@ -148,7 +148,8 @@ export function authorize(params: {
             entryTranArgs: authorizeResult.entryTranArgs,
             entryTranResult: authorizeResult.entryTranResult,
             execTranArgs: authorizeResult.execTranArgs,
-            execTranResult: authorizeResult.execTranResult
+            execTranResult: authorizeResult.execTranResult,
+            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
