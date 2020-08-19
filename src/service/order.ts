@@ -52,10 +52,10 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             // 注文保管
             await repos.order.createIfNotExist(order);
 
-            const authorizePaymentActions = <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
-                placeOrderTransaction.object.authorizeActions
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
-                        && a.result?.typeof === factory.action.authorize.paymentMethod.any.ResultType.Payment);
+            const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+                placeOrderTransaction.object.authorizeActions)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+                    && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
 
             // 請求書作成
             const invoices: factory.invoice.IInvoice[] = [];
