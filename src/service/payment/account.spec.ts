@@ -87,7 +87,7 @@ describe('service.payment.account.authorize()', () => {
             purpose: transaction,
             agent: transaction.agent,
             object: {
-                typeOf: domain.factory.paymentMethodType.Account,
+                typeOf: domain.factory.action.authorize.paymentMethod.any.ResultType.Payment,
                 paymentMethod: domain.factory.paymentMethodType.Account,
                 amount: amount,
                 fromAccount: {
@@ -182,7 +182,7 @@ describe('service.payment.account.authorize()', () => {
             purpose: transaction,
             agent: transaction.agent,
             object: {
-                typeOf: domain.factory.paymentMethodType.Account,
+                typeOf: domain.factory.action.authorize.paymentMethod.any.ResultType.Payment,
                 paymentMethod: domain.factory.paymentMethodType.Account,
                 amount: amount,
                 currency: domain.factory.priceCurrency.JPY,
