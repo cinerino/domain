@@ -212,7 +212,8 @@ export function authorize(params: {
                 value: params.object.movieTickets.length
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-            ...checkResult
+            ...checkResult,
+            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });

@@ -151,7 +151,8 @@ export function authorize(params: {
                 value: params.object.amount
             },
             ...(params.object.fromAccount !== undefined) ? { fromAccount: params.object.fromAccount } : {},
-            ...(params.object.toAccount !== undefined) ? { toAccount: params.object.toAccount } : {}
+            ...(params.object.toAccount !== undefined) ? { toAccount: params.object.toAccount } : {},
+            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });

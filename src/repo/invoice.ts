@@ -221,7 +221,7 @@ export class MongoRepository {
 
     public async changePaymentStatus(params: {
         referencesOrder: { orderNumber: string };
-        paymentMethod: factory.paymentMethodType;
+        paymentMethod: string;
         paymentMethodId: string;
         paymentStatus: factory.paymentStatusType;
     }) {

@@ -109,7 +109,8 @@ export function authorize<T extends factory.paymentMethodType>(params: {
                 currency: factory.priceCurrency.JPY,
                 value: params.object.amount
             },
-            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : []
+            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
+            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });

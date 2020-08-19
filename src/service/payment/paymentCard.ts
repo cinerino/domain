@@ -131,7 +131,8 @@ export function authorize(params: {
                 value: params.object.amount
             },
             ...(params.object.fromLocation !== undefined) ? { fromLocation: params.object.fromLocation } : {},
-            ...(params.object.toLocation !== undefined) ? { toLocation: params.object.toLocation } : {}
+            ...(params.object.toLocation !== undefined) ? { toLocation: params.object.toLocation } : {},
+            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });

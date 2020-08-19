@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v8.5.0 - 2020-08-19
+
+### Changed
+
+- 決済承認アクションにresult.typeOfを追加
+
 ## v8.4.0 - 2020-08-19
 
 ### Changed
