@@ -85,9 +85,10 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
     let priceBySeller = 0;
 
     // 決済承認を確認
-    const authorizePaymentActions = <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
-        authorizeActions.filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
-            && a.result?.typeof === factory.action.authorize.paymentMethod.any.ResultType.Payment);
+    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+        authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+            && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
 
     priceByAgent += authorizePaymentActions
         .filter((a) => {

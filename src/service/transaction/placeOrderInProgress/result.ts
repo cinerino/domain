@@ -99,10 +99,10 @@ function createPaymentMethods(params: {
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
     let price = 0;
 
-    const authorizePaymentActions = <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
-                && a.result?.typeof === factory.action.authorize.paymentMethod.any.ResultType.Payment);
+    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+        params.transaction.object.authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+            && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
 
     // 決済方法をセット
     authorizePaymentActions.forEach((a) => {
