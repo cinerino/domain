@@ -9,10 +9,9 @@ export async function createPayPaymentCardActions(params: {
     const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.result !== undefined)
             // tslint:disable-next-line:no-suspicious-comment
             // TODO Chevre決済カードサービスに対して動的にコントロール
-            .filter((a) => a.object.typeOf === factory.paymentMethodType.PaymentCard);
+            .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.PaymentCard);
 
     return authorizePaymentCardActions.map((a) => {
         const result = <factory.action.authorize.paymentMethod.paymentCard.IResult>a.result;

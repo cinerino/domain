@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 注文取引確定時の決済承認リストが静的な決済方法管理に依存しないように調整
+- 注文取引確定時の決済承認リストが承認アクションのobject.typeOfに依存しないように調整
+- アクションコレクションインデックス調整
 
 ### Deprecated
 

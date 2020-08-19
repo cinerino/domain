@@ -111,7 +111,7 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
     const authorizeActions = transaction.object.authorizeActions;
     const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.account.IAction[]>authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.Account);
+        .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.Account);
 
     const requiredMonetaryAmountByAccountType: {
         currency: string;
@@ -172,7 +172,7 @@ function validateMovieTicket(
 
     const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === paymentMethodType);
+        .filter((a) => a.result?.paymentMethod === paymentMethodType);
 
     const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
         authorizeActions

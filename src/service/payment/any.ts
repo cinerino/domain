@@ -52,13 +52,19 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
+        // 互換性維持対応としてobject.typeOfを使用
+        let paymentMethodType = (<any>params).object?.typeOf;
+        if (typeof params.object?.paymentMethod === 'string') {
+            paymentMethodType = params.object.paymentMethod;
+        }
+
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
-                paymentMethod: params.object?.typeOf
+                paymentMethod: paymentMethodType
             },
             agent: transaction.agent,
             recipient: transaction.seller,
@@ -75,12 +81,12 @@ export function authorize<T extends factory.paymentMethodType>(params: {
             const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
             if (seller.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
+                throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
             }
             const paymentAccepted = <factory.seller.IPaymentAccepted<T>>
-                seller.paymentAccepted.find((a) => a.paymentMethodType === params.object.typeOf);
+                seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transaction', `${params.object.typeOf} payment not accepted`);
+                throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
             }
         } catch (error) {
             debug(error);
@@ -100,10 +106,10 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         const result: factory.action.authorize.paymentMethod.any.IResult<T> = {
             accountId: '',
             amount: params.object.amount,
-            paymentMethod: params.object.typeOf,
+            paymentMethod: paymentMethodType,
             paymentStatus: factory.paymentStatusType.PaymentComplete,
             paymentMethodId: '',
-            name: (typeof params.object.name === 'string') ? params.object.name : String(params.object.typeOf),
+            name: (typeof params.object.name === 'string') ? params.object.name : String(paymentMethodType),
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.priceCurrency.JPY,
@@ -156,7 +162,7 @@ export function voidTransaction(params: {
 
 export function findPayActionByOrderNumber<T extends factory.paymentMethodType | string>(params: {
     object: {
-        typeOf: T;
+        paymentMethod: T;
         paymentMethodId: string;
     };
     purpose: { orderNumber: string };
@@ -170,7 +176,7 @@ export function findPayActionByOrderNumber<T extends factory.paymentMethodType |
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
         return (<factory.action.trade.pay.IAction<T>[]>payActions)
-            .filter((a) => a.object[0].paymentMethod.typeOf === params.object.typeOf)
+            .filter((a) => a.object[0].paymentMethod.typeOf === params.object.paymentMethod)
             .find((a) => {
                 return a.object.some((p) => p.paymentMethod.paymentMethodId === params.object.paymentMethodId);
                 // a.object[0].paymentMethod.paymentMethodId === params.object.paymentMethodId
