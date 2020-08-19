@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 決済承認アクションにobject.paymentMethodを追加
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.4.0 - 2020-08-19
+
+### Changed
+
+- 決済承認アクションにobject.paymentMethodを追加
 
 ## v8.3.1 - 2020-08-04
 
