@@ -133,7 +133,7 @@ export function authorize(params: {
                 ...params.object,
                 accountId: movieTicketIdentifier,
                 amount: 0,
-                // paymentMethodId: movieTicketIdentifier,
+                paymentMethod: paymentMethodType,
                 paymentMethodId: transactionNumber, // 決済方法IDをtransactionNumberに変更
                 typeOf: paymentMethodType
             },

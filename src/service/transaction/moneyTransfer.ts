@@ -139,6 +139,7 @@ function authorizePaymentCard(params: {
                 object: {
                     amount: transaction.object.amount,
                     typeOf: fromLocation.typeOf,
+                    paymentMethod: fromLocation.typeOf,
                     fromLocation: fromLocation,
                     toLocation: toLocation,
                     ...{
@@ -155,6 +156,7 @@ function authorizePaymentCard(params: {
                 object: {
                     amount: transaction.object.amount,
                     typeOf: fromLocation.typeOf,
+                    paymentMethod: fromLocation.typeOf,
                     fromLocation: fromLocation,
                     ...{
                         description: transaction.object.description
