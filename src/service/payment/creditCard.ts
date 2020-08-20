@@ -93,7 +93,7 @@ export function authorize(params: {
             agent: transaction.agent,
             instrument: {
                 typeOf: 'WebAPI',
-                identifier: factory.action.authorize.paymentMethod.any.ServiceIdentifier.GMO
+                identifier: <any>'GMO'
             },
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
