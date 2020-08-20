@@ -141,7 +141,8 @@ export function authorize(params: {
             agent: transaction.agent,
             instrument: {
                 typeOf: 'WebAPI',
-                identifier: factory.action.authorize.paymentMethod.any.ServiceIdentifier.MovieTicket
+                identifier: <any>'MovieTicket'
+                // identifier: factory.action.authorize.paymentMethod.any.ServiceIdentifier.MovieTicket
             },
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
