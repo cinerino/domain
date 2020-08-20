@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 決済承認アクションのinstrumentを決済アクションに連携
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.8.0 - 2020-08-20
+
+### Changed
+
+- 決済承認アクションのinstrumentを決済アクションに連携
 
 ## v8.7.1 - 2020-08-20
 
