@@ -9,21 +9,18 @@ export async function createPayMovieTicketActions(params: {
     const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
 
     // ムビチケ着券は、注文単位でまとめて実行しないと失敗するので注意
-    const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.result !== undefined)
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.MovieTicket
-                || a.result.paymentMethod === factory.paymentMethodType.MGTicket)
-            // PaymentDueステータスのアクションのみ、着券アクションをセット
-            // 着券済の場合は、PaymentCompleteステータス
-            .filter((a) => {
-                const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
-
-                return result.paymentStatus === factory.paymentStatusType.PaymentDue;
-            });
+    const authorizeMovieTicketActions =
+        (<factory.action.authorize.paymentMethod.movieTicket.IAction[]>params.transaction.object.authorizeActions)
+            .filter(
+                (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+                    // tslint:disable-next-line:no-suspicious-comment
+                    // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
+                    && (a.result?.paymentMethod === factory.paymentMethodType.MovieTicket
+                        || a.result?.paymentMethod === factory.paymentMethodType.MGTicket)
+                    // PaymentDueステータスのアクションのみ、着券アクションをセット
+                    // 着券済の場合は、PaymentCompleteステータス
+                    && a.result?.paymentStatus === factory.paymentStatusType.PaymentDue
+            );
 
     if (authorizeMovieTicketActions.length > 0) {
         authorizeMovieTicketActions.forEach((a) => {
@@ -55,7 +52,8 @@ export async function createPayMovieTicketActions(params: {
                     price: params.order.price,
                     priceCurrency: params.order.priceCurrency,
                     orderDate: params.order.orderDate
-                }
+                },
+                ...(typeof a.instrument?.typeOf === 'string') ? { instrument: a.instrument } : undefined
             });
         });
     }

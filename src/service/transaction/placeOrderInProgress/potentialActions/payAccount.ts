@@ -6,11 +6,12 @@ export async function createPayAccountActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[]> {
     // 口座決済アクション
-    const authorizeAccountActions = <factory.action.authorize.paymentMethod.account.IAction[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.Account);
+    const authorizeAccountActions =
+        (<factory.action.authorize.paymentMethod.account.IAction[]>params.transaction.object.authorizeActions)
+            .filter(
+                (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+                    && a.result?.paymentMethod === factory.paymentMethodType.Account
+            );
 
     return authorizeAccountActions.map((a) => {
         const result = <factory.action.authorize.paymentMethod.account.IResult>a.result;
@@ -42,7 +43,8 @@ export async function createPayAccountActions(params: {
                 price: params.order.price,
                 priceCurrency: params.order.priceCurrency,
                 orderDate: params.order.orderDate
-            }
+            },
+            ...(typeof a.instrument?.typeOf === 'string') ? { instrument: a.instrument } : undefined
         };
     });
 }
