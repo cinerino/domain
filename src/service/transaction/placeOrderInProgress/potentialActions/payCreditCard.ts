@@ -8,11 +8,12 @@ export async function createPayCreditCardActions(params: {
     // クレジットカード決済アクション
     const payCreditCardActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>[] = [];
 
-    const authorizeCreditCardActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.result !== undefined)
-            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.CreditCard);
+    const authorizeCreditCardActions =
+        (<factory.action.authorize.paymentMethod.creditCard.IAction[]>params.transaction.object.authorizeActions)
+            .filter(
+                (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+                    && a.result?.paymentMethod === factory.paymentMethodType.CreditCard
+            );
 
     authorizeCreditCardActions.forEach((a) => {
         const result = <factory.action.authorize.paymentMethod.creditCard.IResult>a.result;
@@ -46,7 +47,8 @@ export async function createPayCreditCardActions(params: {
                     price: params.order.price,
                     priceCurrency: params.order.priceCurrency,
                     orderDate: params.order.orderDate
-                }
+                },
+                ...(typeof a.instrument?.typeOf === 'string') ? { instrument: a.instrument } : undefined
             });
         }
     });
