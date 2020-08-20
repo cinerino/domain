@@ -320,7 +320,8 @@ function processAuthorizeCreditCard(params: {
             project: { id: params.project.id },
             agent: params.customer,
             object: {
-                typeOf: factory.paymentMethodType.CreditCard,
+                // typeOf: factory.paymentMethodType.CreditCard,
+                typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment,
                 paymentMethod: factory.paymentMethodType.CreditCard,
                 amount: params.object.amount,
                 method: GMO.utils.util.Method.Lump,

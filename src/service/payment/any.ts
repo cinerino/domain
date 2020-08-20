@@ -64,7 +64,8 @@ export function authorize<T extends factory.paymentMethodType>(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
-                paymentMethod: paymentMethodType
+                paymentMethod: paymentMethodType,
+                typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
             },
             agent: transaction.agent,
             recipient: transaction.seller,

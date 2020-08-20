@@ -138,7 +138,8 @@ function authorizePaymentCard(params: {
                 agent: { id: transaction.agent.id },
                 object: {
                     amount: transaction.object.amount,
-                    typeOf: fromLocation.typeOf,
+                    typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment,
+                    // typeOf: fromLocation.typeOf,
                     paymentMethod: fromLocation.typeOf,
                     fromLocation: fromLocation,
                     toLocation: toLocation,
@@ -155,7 +156,8 @@ function authorizePaymentCard(params: {
                 agent: { id: transaction.agent.id },
                 object: {
                     amount: transaction.object.amount,
-                    typeOf: fromLocation.typeOf,
+                    typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment,
+                    // typeOf: fromLocation.typeOf,
                     paymentMethod: fromLocation.typeOf,
                     fromLocation: fromLocation,
                     ...{

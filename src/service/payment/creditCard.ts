@@ -87,9 +87,14 @@ export function authorize(params: {
             object: {
                 ...params.object,
                 paymentMethod: factory.paymentMethodType.CreditCard,
-                paymentMethodId: transactionNumber
+                paymentMethodId: transactionNumber,
+                typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
             },
             agent: transaction.agent,
+            instrument: {
+                typeOf: 'WebAPI',
+                identifier: factory.action.authorize.paymentMethod.any.ServiceIdentifier.GMO
+            },
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
         };

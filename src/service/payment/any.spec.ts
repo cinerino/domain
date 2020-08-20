@@ -70,7 +70,7 @@ describe('汎用決済承認', () => {
             agent: agent,
             purpose: transaction,
             object: {
-                typeOf: domain.factory.paymentMethodType.Cash,
+                typeOf: domain.factory.action.authorize.paymentMethod.any.ResultType.Payment,
                 paymentMethod: domain.factory.paymentMethodType.Cash,
                 amount: amount,
                 additionalProperty: additionalProperty

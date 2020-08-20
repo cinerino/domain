@@ -135,9 +135,14 @@ export function authorize(params: {
                 amount: 0,
                 paymentMethod: paymentMethodType,
                 paymentMethodId: transactionNumber, // 決済方法IDをtransactionNumberに変更
-                typeOf: paymentMethodType
+                typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
+                // typeOf: paymentMethodType
             },
             agent: transaction.agent,
+            instrument: {
+                typeOf: 'WebAPI',
+                identifier: factory.action.authorize.paymentMethod.any.ServiceIdentifier.MovieTicket
+            },
             recipient: transaction.seller,
             purpose: { typeOf: transaction.typeOf, id: transaction.id }
         };
