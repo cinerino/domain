@@ -54,9 +54,10 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
                 await CreditCardPaymentService.payCreditCard(params)(repos);
                 break;
 
-            // case factory.service.paymentService.PaymentServiceType.MovieTicket:
-            //     await MovieTicketPaymentService.payMovieTicket(params)(repos);
-            //     break;
+            case factory.paymentMethodType.MGTicket:
+            case factory.paymentMethodType.MovieTicket:
+                await MovieTicketPaymentService.payMovieTicket(params)(repos);
+                break;
 
             default:
                 throw new factory.errors.NotImplemented(`Payment method '${paymentMethodType}' not implemented`);
