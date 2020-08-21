@@ -187,10 +187,10 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.payMovieTicket)) {
                 taskAttributes.push(...potentialActions.payMovieTicket.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayMovieTicket> => {
+                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.PayMovieTicket,
+                            name: factory.taskName.Pay,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
