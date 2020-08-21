@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- クレジットカード決済タスクを汎用決済タスクに変更
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.9.0 - 2020-08-21
+
+### Changed
+
+- クレジットカード決済タスクを汎用決済タスクに変更
 
 ## v8.8.0 - 2020-08-20
 
