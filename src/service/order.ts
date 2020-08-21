@@ -149,10 +149,10 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.payCreditCard)) {
                 taskAttributes.push(...potentialActions.payCreditCard.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayCreditCard> => {
+                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.PayCreditCard,
+                            name: factory.taskName.Pay,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
