@@ -50,6 +50,10 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         const paymentMethodType = params.object[0]?.paymentMethod.typeOf;
 
         switch (paymentMethodType) {
+            case factory.paymentMethodType.Account:
+                await AccountPaymentService.payAccount(params)(repos);
+                break;
+
             case factory.paymentMethodType.CreditCard:
                 await CreditCardPaymentService.payCreditCard(params)(repos);
                 break;
@@ -57,6 +61,10 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
             case factory.paymentMethodType.MGTicket:
             case factory.paymentMethodType.MovieTicket:
                 await MovieTicketPaymentService.payMovieTicket(params)(repos);
+                break;
+
+            case factory.paymentMethodType.PaymentCard:
+                await PaymentCardPaymentService.payPaymentCard(params)(repos);
                 break;
 
             default:

@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 口座決済タスクを汎用決済タスクに変更
+- ペイメントカード決済タスクを汎用決済タスクに変更
+
 ### Deprecated
 
 ### Removed
