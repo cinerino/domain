@@ -8,12 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- 汎用決済中止タスクを追加
-
 ### Changed
-
-- 口座決済タスクを汎用決済タスクに変更
-- ペイメントカード決済タスクを汎用決済タスクに変更
 
 ### Deprecated
 
@@ -22,6 +17,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.11.0 - 2020-08-23
+
+### Added
+
+- 汎用決済中止タスクを追加
+
+### Changed
+
+- 口座決済タスクを汎用決済タスクに変更
+- ペイメントカード決済タスクを汎用決済タスクに変更
 
 ## v8.10.0 - 2020-08-21
 
