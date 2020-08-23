@@ -514,7 +514,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
 /**
  * クレジットカード返金処理を実行する
  */
-export function refundCreditCard(params: factory.task.IData<factory.taskName.RefundCreditCard>) {
+export function refundCreditCard(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;

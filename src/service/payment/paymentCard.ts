@@ -391,7 +391,7 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPa
 /**
  * プリペイド返金処理を実行する
  */
-export function refundPaymentCard(params: factory.task.IData<factory.taskName.RefundPaymentCard>) {
+export function refundPaymentCard(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
