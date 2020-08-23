@@ -168,10 +168,10 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.payAccount)) {
                 taskAttributes.push(...potentialActions.payAccount.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayAccount> => {
+                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.PayAccount,
+                            name: factory.taskName.Pay,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -206,10 +206,10 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.payPaymentCard)) {
                 taskAttributes.push(...potentialActions.payPaymentCard.map(
-                    (a): factory.task.IAttributes<factory.taskName.PayPaymentCard> => {
+                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.PayPaymentCard,
+                            name: factory.taskName.Pay,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
