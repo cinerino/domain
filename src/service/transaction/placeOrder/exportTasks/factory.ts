@@ -100,37 +100,9 @@ export function createTasks(params: {
                 }
             };
 
-            const cancelCreditCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelCreditCard> = {
+            const voidPaymentTaskAttributes: factory.task.IAttributes<factory.taskName.VoidPayment> = {
                 project: { typeOf: project.typeOf, id: project.id },
-                name: factory.taskName.CancelCreditCard,
-                status: factory.taskStatus.Ready,
-                runsAt: taskRunsAt,
-                remainingNumberOfTries: 10,
-                numberOfTried: 0,
-                executionResults: [],
-                data: {
-                    project: { typeOf: project.typeOf, id: project.id },
-                    purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                }
-            };
-
-            const cancelAccountTaskAttributes: factory.task.IAttributes<factory.taskName.CancelAccount> = {
-                project: { typeOf: project.typeOf, id: project.id },
-                name: factory.taskName.CancelAccount,
-                status: factory.taskStatus.Ready,
-                runsAt: taskRunsAt,
-                remainingNumberOfTries: 10,
-                numberOfTried: 0,
-                executionResults: [],
-                data: {
-                    project: { typeOf: project.typeOf, id: project.id },
-                    purpose: { typeOf: transaction.typeOf, id: transaction.id }
-                }
-            };
-
-            const cancelPaymentCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPaymentCard> = {
-                project: { typeOf: project.typeOf, id: project.id },
-                name: factory.taskName.CancelPaymentCard,
+                name: factory.taskName.VoidPayment,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
                 remainingNumberOfTries: 10,
@@ -159,9 +131,7 @@ export function createTasks(params: {
             taskAttributes.push(
                 cancelSeatReservationTaskAttributes,
                 voidRegisterServiceTaskAttributes,
-                cancelCreditCardTaskAttributes,
-                cancelAccountTaskAttributes,
-                cancelPaymentCardTaskAttributes,
+                voidPaymentTaskAttributes,
                 voidMoneyTransferTaskAttributes
             );
             break;
