@@ -357,7 +357,7 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
 /**
  * 口座返金処理を実行する
  */
-export function refundAccount(params: factory.task.IData<factory.taskName.RefundAccount>) {
+export function refundAccount(params: factory.task.IData<factory.taskName.Refund>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;

@@ -402,10 +402,10 @@ export function onReturn(
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.refundCreditCard)) {
                 taskAttributes.push(...potentialActions.refundCreditCard.map(
-                    (a): factory.task.IAttributes<factory.taskName.RefundCreditCard> => {
+                    (a): factory.task.IAttributes<factory.taskName.Refund> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.RefundCreditCard,
+                            name: factory.taskName.Refund,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -422,10 +422,10 @@ export function onReturn(
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.refundAccount)) {
                 taskAttributes.push(...potentialActions.refundAccount.map(
-                    (a): factory.task.IAttributes<factory.taskName.RefundAccount> => {
+                    (a): factory.task.IAttributes<factory.taskName.Refund> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.RefundAccount,
+                            name: factory.taskName.Refund,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -442,10 +442,10 @@ export function onReturn(
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.refundMovieTicket)) {
                 taskAttributes.push(...potentialActions.refundMovieTicket.map(
-                    (a): factory.task.IAttributes<factory.taskName.RefundMovieTicket> => {
+                    (a): factory.task.IAttributes<factory.taskName.Refund> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.RefundMovieTicket,
+                            name: factory.taskName.Refund,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,

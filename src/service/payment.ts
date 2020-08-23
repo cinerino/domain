@@ -3,7 +3,9 @@
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as InvoiceRepo } from '../repo/invoice';
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as ProjectRepo } from '../repo/project';
+import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as AccountPaymentService from './payment/account';
@@ -121,6 +123,43 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
                 default:
                 // no op
             }
+        }
+    };
+}
+
+/**
+ * 返金
+ */
+export function refund(params: factory.task.IData<factory.taskName.Refund>) {
+    return async (repos: {
+        action: ActionRepo;
+        order: OrderRepo;
+        project: ProjectRepo;
+        task: TaskRepo;
+        transaction: TransactionRepo;
+    }) => {
+        const paymentMethodType = params.object.typeOf;
+
+        switch (paymentMethodType) {
+            case factory.paymentMethodType.Account:
+                await AccountPaymentService.refundAccount(params)(repos);
+                break;
+
+            case factory.paymentMethodType.CreditCard:
+                await CreditCardPaymentService.refundCreditCard(params)(repos);
+                break;
+
+            case factory.paymentMethodType.MGTicket:
+            case factory.paymentMethodType.MovieTicket:
+                await MovieTicketPaymentService.refundMovieTicket(params)(repos);
+                break;
+
+            case factory.paymentMethodType.PaymentCard:
+                await PaymentCardPaymentService.refundPaymentCard(params)(repos);
+                break;
+
+            default:
+                throw new factory.errors.NotImplemented(`Payment method '${paymentMethodType}' not implemented`);
         }
     };
 }

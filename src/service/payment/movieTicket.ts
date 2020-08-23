@@ -478,7 +478,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 /**
  * ムビチケ着券取消
  */
-export function refundMovieTicket(params: factory.task.IData<factory.taskName.RefundMovieTicket>) {
+export function refundMovieTicket(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -492,7 +492,10 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
 
         // 本アクションに対応するPayActionを取り出す
         const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.MGTicket | factory.paymentMethodType.MovieTicket>({
-            object: { paymentMethod: paymentMethodType, paymentMethodId: params.object.paymentMethodId },
+            object: {
+                paymentMethod: <factory.paymentMethodType.MGTicket | factory.paymentMethodType.MovieTicket>paymentMethodType,
+                paymentMethodId: params.object.paymentMethodId
+            },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
 
