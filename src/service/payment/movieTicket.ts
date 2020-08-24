@@ -377,14 +377,16 @@ export function checkMovieTicket(
 /**
  * ムビチケ着券
  */
-export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMovieTicket>) {
+export function payMovieTicket(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
     }) => {
+        const actionObject = <factory.action.trade.pay.IObject<factory.paymentMethodType.MovieTicket>>params.object;
+
         // ムビチケ系統の決済方法タイプは動的
-        const paymentMethodType = params.object[0]?.movieTickets[0]?.typeOf;
+        const paymentMethodType = actionObject[0]?.movieTickets[0]?.typeOf;
         if (typeof paymentMethodType !== 'string') {
             throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
         }
@@ -397,7 +399,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
         try {
             // イベントがひとつに特定されているかどうか確認
-            const eventIds = Array.from(new Set(params.object.reduce<string[]>(
+            const eventIds = Array.from(new Set(actionObject.reduce<string[]>(
                 (a, b) => [...a, ...b.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)],
                 []
             )));
@@ -420,7 +422,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const seller = await sellerService.findById({ id: String(params.purpose.seller.id) });
 
             // 全購入管理番号のムビチケをマージ
-            const movieTickets = params.object.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
+            const movieTickets = actionObject.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
                 (a, b) => [...a, ...b.movieTickets], []
             );
 
@@ -436,7 +438,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             seatInfoSyncIn = createSeatInfoSyncIn({
                 paymentMethodType: paymentMethodType,
-                paymentMethodId: params.object[0].paymentMethod.paymentMethodId,
+                paymentMethodId: actionObject[0].paymentMethod.paymentMethodId,
                 movieTickets: movieTickets,
                 event: event,
                 order: params.purpose,
@@ -445,7 +447,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             seatInfoSyncResult = await movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
+            await Promise.all(actionObject.map(async (paymentMethod) => {
                 await repos.invoice.changePaymentStatus({
                     referencesOrder: { orderNumber: params.purpose.orderNumber },
                     paymentMethod: paymentMethod.paymentMethod.typeOf,

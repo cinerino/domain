@@ -242,9 +242,7 @@ async function processAccountTransaction(params: {
 /**
  * 口座承認取消
  */
-export function voidTransaction(
-    params: factory.task.IData<factory.taskName.CancelAccount>
-) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidPayment>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -308,7 +306,7 @@ export function voidTransaction(
 /**
  * 口座支払実行
  */
-export function payAccount(params: factory.task.IData<factory.taskName.PayAccount>) {
+export function payAccount(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;

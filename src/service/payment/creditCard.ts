@@ -336,7 +336,7 @@ export function voidTransaction(params: {
 /**
  * クレジットカード売上確定
  */
-export function payCreditCard(params: factory.task.IData<factory.taskName.PayCreditCard>) {
+export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
@@ -430,7 +430,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
 /**
  * クレジットカードオーソリ取消
  */
-export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName.CancelCreditCard>) {
+export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName.VoidPayment>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;

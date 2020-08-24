@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 個別決済タスクを削除
+- 個別決済中止タスクを削除
+- 個別返金タスクを削除
+
 ### Fixed
 
 ### Security

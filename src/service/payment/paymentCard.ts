@@ -277,7 +277,7 @@ async function processMoneyTransferTransaction(params: {
  * プリペイドカード決済承認取消
  */
 export function voidTransaction(
-    params: factory.task.IData<factory.taskName.CancelPaymentCard>
+    params: factory.task.IData<factory.taskName.VoidPayment>
 ) {
     return async (repos: {
         action: ActionRepo;
@@ -343,7 +343,7 @@ export function voidTransaction(
 /**
  * プリペイドカード決済実行
  */
-export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPaymentCard>) {
+export function payPaymentCard(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
