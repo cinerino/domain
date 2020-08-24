@@ -144,6 +144,25 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(sendOrderTask);
             }
 
+            // 決済タスク
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.pay)) {
+                taskAttributes.push(...potentialActions.pay.map(
+                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
+                        return {
+                            project: a.project,
+                            name: factory.taskName.Pay,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }));
+            }
+
             // クレジットカード決済
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */

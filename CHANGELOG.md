@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文後の個別決済アクションを汎用決済アクションに変更
+
 ### Deprecated
 
 ### Removed

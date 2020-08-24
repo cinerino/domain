@@ -31,16 +31,17 @@ export async function createPotentialActions(params: {
     // 通貨転送アクション
     const moneyTransferActions = await createMoneyTransferActions(params);
 
-    // クレジットカード決済アクション
+    // 決済アクション
     const payCreditCardActions = await createPayCreditCardActions(params);
-
-    // 口座決済アクション
     const payAccountActions = await createPayAccountActions(params);
-
-    // ムビチケ決済アクション
     const payMovieTicketActions = await createPayMovieTicketActions(params);
-
     const payPaymentCardActions = await createPayPaymentCardActions(params);
+    const payActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType | string>[] = [
+        ...payCreditCardActions,
+        ...payAccountActions,
+        ...payMovieTicketActions,
+        ...payPaymentCardActions
+    ];
 
     // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
     const givePointAwardActions = await createGivePointAwardActions(params);
@@ -76,10 +77,13 @@ export async function createPotentialActions(params: {
             potentialActions: {
                 givePointAward: givePointAwardActions,
                 informOrder: informOrderActionsOnPlaceOrder,
-                payAccount: payAccountActions,
-                payCreditCard: payCreditCardActions,
-                payMovieTicket: payMovieTicketActions,
-                payPaymentCard: payPaymentCardActions,
+
+                pay: payActions,
+                // payAccount: payAccountActions,
+                // payCreditCard: payCreditCardActions,
+                // payMovieTicket: payMovieTicketActions,
+                // payPaymentCard: payPaymentCardActions,
+
                 sendOrder: sendOrderActionAttributes
             },
             purpose: {
