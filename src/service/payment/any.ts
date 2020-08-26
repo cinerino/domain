@@ -170,13 +170,13 @@ export function findPayActionByOrderNumber<T extends factory.paymentMethodType |
 }) {
     return async (repos: {
         action: ActionRepo;
-    }): Promise<factory.action.trade.pay.IAction<T> | undefined> => {
+    }): Promise<factory.action.trade.pay.IAction | undefined> => {
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: params.purpose.orderNumber });
-        const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
+        const payActions = <factory.action.trade.pay.IAction[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
-        return (<factory.action.trade.pay.IAction<T>[]>payActions)
+        return payActions
             .filter((a) => a.object[0].paymentMethod.typeOf === params.object.paymentMethod)
             .find((a) => {
                 return a.object.some((p) => p.paymentMethod.paymentMethodId === params.object.paymentMethodId);
@@ -189,7 +189,7 @@ export function findPayActionByOrderNumber<T extends factory.paymentMethodType |
  * 返金後のアクション
  */
 export function onRefund(
-    refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType | string>,
+    refundActionAttributes: factory.action.trade.refund.IAttributes,
     order?: factory.order.IOrder
 ) {
     return async (repos: {

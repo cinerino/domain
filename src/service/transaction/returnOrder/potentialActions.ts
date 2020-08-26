@@ -34,7 +34,7 @@ export async function createPotentialActions(params: {
         const refundCreditCardActions = await createRefundCreditCardActions({ ...params, order, returnOrderActionParams });
         const refundAccountActions = await createRefundAccountActions({ ...params, order, returnOrderActionParams });
         const refundMovieTicketActions = await createRefundMovieTicketActions({ ...params, order, returnOrderActionParams });
-        const refundActions: factory.action.trade.refund.IAttributes<factory.paymentMethodType | string>[] = [
+        const refundActions: factory.action.trade.refund.IAttributes[] = [
             ...refundCreditCardActions,
             ...refundAccountActions,
             ...refundMovieTicketActions

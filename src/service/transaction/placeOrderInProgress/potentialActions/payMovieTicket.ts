@@ -4,9 +4,9 @@ export async function createPayMovieTicketActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[]> {
+}): Promise<factory.action.trade.pay.IAttributes[]> {
     // ムビチケ決済アクション
-    const payMovieTicketActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
+    const payMovieTicketActions: factory.action.trade.pay.IAttributes[] = [];
 
     // ムビチケ着券は、注文単位でまとめて実行しないと失敗するので注意
     const authorizeMovieTicketActions =

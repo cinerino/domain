@@ -358,7 +358,7 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.Pay>)
                 auth: chevreAuthClient
             });
 
-            await Promise.all((<factory.action.trade.pay.IAttributes<factory.paymentMethodType.PaymentCard>>params).object.map(
+            await Promise.all(params.object.map(
                 async (paymentMethod) => {
                     const pendingTransaction = (<any>paymentMethod).pendingTransaction;
                     await moneyTransferService.confirm(pendingTransaction);
@@ -385,7 +385,7 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.Pay>)
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<any> = {};
+        const actionResult: factory.action.trade.pay.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }

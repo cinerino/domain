@@ -8,12 +8,12 @@ export async function createRefundMovieTicketActions(params: {
     order: factory.order.IOrder;
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
-}): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[]> {
+}): Promise<factory.action.trade.refund.IAttributes[]> {
     const transaction = params.transaction;
     const order = params.order;
 
     // ムビチケ着券返金アクション
-    let refundMovieTicketActions: factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>[] = [];
+    let refundMovieTicketActions: factory.action.trade.refund.IAttributes[] = [];
     const refundMovieTicket = params.returnOrderActionParams?.potentialActions?.refundMovieTicket === true;
     if (refundMovieTicket) {
         // tslint:disable-next-line:no-suspicious-comment
@@ -24,7 +24,7 @@ export async function createRefundMovieTicketActions(params: {
 
         refundMovieTicketActions =
             await Promise.all(movieTicketPaymentMethods
-                .map(async (p): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.MovieTicket>> => {
+                .map(async (p): Promise<factory.action.trade.refund.IAttributes> => {
                     const emailMessage = await emailMessageBuilder.createRefundMessage({
                         order,
                         paymentMethods: [p]

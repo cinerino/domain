@@ -321,9 +321,12 @@ export function payAccount(params: factory.task.IData<factory.taskName.Pay>) {
                 auth: chevreAuthClient
             });
 
-            await Promise.all((<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>>params).object.map(
+            await Promise.all(params.object.map(
                 async (paymentMethod) => {
                     const pendingTransaction = paymentMethod.pendingTransaction;
+                    if (pendingTransaction === undefined) {
+                        throw new factory.errors.NotFound('object.pendingTransaction');
+                    }
 
                     await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
 
@@ -349,7 +352,7 @@ export function payAccount(params: factory.task.IData<factory.taskName.Pay>) {
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
+        const actionResult: factory.action.trade.pay.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -397,6 +400,10 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 });
 
                 const pendingTransaction = paymentMethod.pendingTransaction;
+                if (pendingTransaction === undefined) {
+                    throw new factory.errors.NotFound('payAction.object.pendingTransaction');
+                }
+
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
                 await moneyTransferService.start({

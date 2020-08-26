@@ -4,7 +4,7 @@ export async function createPayPaymentCardActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes<any>[]> {
+}): Promise<factory.action.trade.pay.IAttributes[]> {
     // 口座決済アクション
     const authorizePaymentCardActions =
         (<factory.action.authorize.paymentMethod.paymentCard.IAction[]>params.transaction.object.authorizeActions)

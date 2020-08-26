@@ -341,7 +341,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
-    }): Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>> => {
+    }): Promise<factory.action.trade.pay.IAction> => {
         const project = await repos.project.findById({ id: params.project.id });
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -361,9 +361,12 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
         try {
             const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
 
-            await Promise.all((<factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>>params).object.map(
+            await Promise.all(params.object.map(
                 async (paymentMethod) => {
                     const entryTranArgs = paymentMethod.entryTranArgs;
+                    if (entryTranArgs === undefined) {
+                        throw new factory.errors.NotFound('object.entryTranArgs');
+                    }
 
                     // 取引状態参照
                     const searchTradeResult = await creditCardService.searchTrade({
@@ -420,11 +423,11 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.CreditCard> = {
+        const actionResult: factory.action.trade.pay.IResult = {
             creditCardSales: alterTranResults
         };
 
-        return <Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>>>
+        return <Promise<factory.action.trade.pay.IAction>>
             repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -581,7 +584,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
 
 async function processChangeTransaction(params: {
     project: factory.project.IProject;
-    payAction: factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>;
+    payAction: factory.action.trade.pay.IAction;
     cancellationFee: number;
 }): Promise<GMO.services.credit.IAlterTranResult[]> {
     const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
@@ -598,6 +601,9 @@ async function processChangeTransaction(params: {
     const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
     await Promise.all(payAction.object.map(async (paymentMethod) => {
         const entryTranArgs = paymentMethod.entryTranArgs;
+        if (entryTranArgs === undefined) {
+            throw new factory.errors.NotFound('payAction.object.entryTranArgs');
+        }
 
         // 取引状態参照
         const searchTradeResult = await creditCardService.searchTrade({

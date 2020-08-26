@@ -8,7 +8,7 @@ export async function createRefundAccountActions(params: {
     order: factory.order.IOrder;
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
-}): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account>[]> {
+}): Promise<factory.action.trade.refund.IAttributes[]> {
     const transaction = params.transaction;
     const order = params.order;
 
@@ -16,7 +16,7 @@ export async function createRefundAccountActions(params: {
         .filter((p) => p.typeOf === factory.paymentMethodType.Account);
 
     return Promise.all(accountPaymentMethods
-        .map(async (p): Promise<factory.action.trade.refund.IAttributes<factory.paymentMethodType.Account>> => {
+        .map(async (p): Promise<factory.action.trade.refund.IAttributes> => {
             const emailMessage = await emailMessageBuilder.createRefundMessage({
                 order,
                 paymentMethods: [p]

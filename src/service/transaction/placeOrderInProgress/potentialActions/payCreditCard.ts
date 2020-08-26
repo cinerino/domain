@@ -4,9 +4,9 @@ export async function createPayCreditCardActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>[]> {
+}): Promise<factory.action.trade.pay.IAttributes[]> {
     // クレジットカード決済アクション
-    const payCreditCardActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>[] = [];
+    const payCreditCardActions: factory.action.trade.pay.IAttributes[] = [];
 
     const authorizeCreditCardActions =
         (<factory.action.authorize.paymentMethod.creditCard.IAction[]>params.transaction.object.authorizeActions)

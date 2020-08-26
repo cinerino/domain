@@ -377,16 +377,17 @@ export function checkMovieTicket(
 /**
  * ムビチケ着券
  */
+// tslint:disable-next-line:max-func-body-length
 export function payMovieTicket(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
     }) => {
-        const actionObject = <factory.action.trade.pay.IObject<factory.paymentMethodType.MovieTicket>>params.object;
+        const actionObject = params.object;
 
         // ムビチケ系統の決済方法タイプは動的
-        const paymentMethodType = actionObject[0]?.movieTickets[0]?.typeOf;
+        const paymentMethodType = (Array.isArray(actionObject[0]?.movieTickets)) ? actionObject[0]?.movieTickets[0]?.typeOf : undefined;
         if (typeof paymentMethodType !== 'string') {
             throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
         }
@@ -400,7 +401,10 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.Pay>)
         try {
             // イベントがひとつに特定されているかどうか確認
             const eventIds = Array.from(new Set(actionObject.reduce<string[]>(
-                (a, b) => [...a, ...b.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)],
+                (a, b) => [
+                    ...a,
+                    ...(Array.isArray(b.movieTickets)) ? b.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id) : []
+                ],
                 []
             )));
             if (eventIds.length !== 1) {
@@ -423,7 +427,11 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.Pay>)
 
             // 全購入管理番号のムビチケをマージ
             const movieTickets = actionObject.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
-                (a, b) => [...a, ...b.movieTickets], []
+                (a, b) => [
+                    ...a,
+                    ...(Array.isArray(b.movieTickets)) ? b.movieTickets : []
+                ],
+                []
             );
 
             const paymentServiceUrl = await getMvtkReserveEndpoint({
@@ -469,7 +477,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.Pay>)
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
+        const actionResult: factory.action.trade.pay.IResult = {
             seatInfoSyncIn: seatInfoSyncIn,
             seatInfoSyncResult: seatInfoSyncResult
         };
@@ -546,7 +554,7 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
+        const actionResult: factory.action.trade.pay.IResult = {
             seatInfoSyncIn: seatInfoSyncIn,
             seatInfoSyncResult: seatInfoSyncResult
         };
