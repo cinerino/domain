@@ -71,7 +71,7 @@ export function createOrder(params: {
 
     return {
         project: params.transaction.project,
-        typeOf: 'Order',
+        typeOf: factory.order.OrderType.Order,
         seller: seller,
         customer: customer,
         price: price,
@@ -93,10 +93,10 @@ export function createOrder(params: {
 function createPaymentMethods(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): {
-    paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[];
+    paymentMethods: factory.order.IPaymentMethod[];
     price: number;
 } {
-    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
+    const paymentMethods: factory.order.IPaymentMethod[] = [];
     let price = 0;
 
     const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>

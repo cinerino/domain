@@ -6,7 +6,7 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
 
 async function createRefundCreditCardPotentialActions(params: {
     order: factory.order.IOrder;
-    paymentMethod: factory.order.IPaymentMethod<factory.paymentMethodType.CreditCard>;
+    paymentMethod: factory.order.IPaymentMethod;
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IPotentialActions> {
@@ -101,7 +101,7 @@ export async function createRefundCreditCardActions(params: {
     const order = params.order;
 
     // クレジットカード返金アクション作成
-    const creditCardPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.CreditCard>[]>params.order.paymentMethods
+    const creditCardPaymentMethods = params.order.paymentMethods
         .filter((p) => p.typeOf === factory.paymentMethodType.CreditCard)
         // 決済連携していないクレジットカード決済を除外する
         .filter((p) => typeof p.paymentMethodId === 'string' && p.paymentMethodId.length > 0);

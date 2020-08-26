@@ -18,9 +18,10 @@ export async function createRefundMovieTicketActions(params: {
     if (refundMovieTicket) {
         // tslint:disable-next-line:no-suspicious-comment
         // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
-        const movieTicketPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.MovieTicket>[]>
-            params.order.paymentMethods.filter((p) => p.typeOf === factory.paymentMethodType.MovieTicket
-                || p.typeOf === factory.paymentMethodType.MGTicket);
+        const movieTicketPaymentMethods = params.order.paymentMethods.filter(
+            (p) => p.typeOf === factory.paymentMethodType.MovieTicket
+                || p.typeOf === factory.paymentMethodType.MGTicket
+        );
 
         refundMovieTicketActions =
             await Promise.all(movieTicketPaymentMethods

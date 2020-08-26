@@ -6,7 +6,7 @@ export type IAction = factory.action.IAction<factory.action.IAttributes<factory.
 
 async function createRefundPotentialActions(params: {
     order: factory.order.IOrder;
-    paymentMethod: factory.order.IPaymentMethod<string>;
+    paymentMethod: factory.order.IPaymentMethod;
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
 }): Promise<factory.action.trade.refund.IPotentialActions> {
@@ -105,11 +105,10 @@ export async function createRefundActions(params: {
         nonrefundingPaymentMethodTypes.push(factory.paymentMethodType.MovieTicket);
     }
 
-    const refundingPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.Account>[]>params.order.paymentMethods
-        .filter(
-            (p) => typeof p.paymentMethodId === 'string' && p.paymentMethodId.length > 0
-                && !nonrefundingPaymentMethodTypes.includes(p.typeOf) // 返金対象外に含まれない決済方法のみ
-        );
+    const refundingPaymentMethods = params.order.paymentMethods.filter(
+        (p) => typeof p.paymentMethodId === 'string' && p.paymentMethodId.length > 0
+            && !nonrefundingPaymentMethodTypes.includes(p.typeOf) // 返金対象外に含まれない決済方法のみ
+    );
 
     return Promise.all(refundingPaymentMethods.map(async (p): Promise<factory.action.trade.refund.IAttributes> => {
         const potentialActionsOnRefund = await createRefundPotentialActions({

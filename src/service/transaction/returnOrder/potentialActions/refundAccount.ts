@@ -12,7 +12,7 @@ export async function createRefundAccountActions(params: {
     const transaction = params.transaction;
     const order = params.order;
 
-    const accountPaymentMethods = <factory.order.IPaymentMethod<factory.paymentMethodType.Account>[]>params.order.paymentMethods
+    const accountPaymentMethods = params.order.paymentMethods
         .filter((p) => p.typeOf === factory.paymentMethodType.Account);
 
     return Promise.all(accountPaymentMethods
