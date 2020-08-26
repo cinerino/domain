@@ -22,7 +22,7 @@ export async function createPayCreditCardActions(params: {
                 project: params.transaction.project,
                 typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
                 object: [{
-                    typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    typeOf: factory.action.trade.pay.ObjectType.PaymentMethod,
                     paymentMethod: {
                         accountId: result.accountId,
                         additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
@@ -31,8 +31,6 @@ export async function createPayCreditCardActions(params: {
                         totalPaymentDue: result.totalPaymentDue,
                         typeOf: <factory.paymentMethodType.CreditCard>result.paymentMethod
                     },
-                    price: result.amount,
-                    priceCurrency: factory.priceCurrency.JPY,
                     entryTranArgs: result.entryTranArgs,
                     execTranArgs: result.execTranArgs
                 }],

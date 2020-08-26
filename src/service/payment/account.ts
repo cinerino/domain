@@ -321,18 +321,20 @@ export function payAccount(params: factory.task.IData<factory.taskName.Pay>) {
                 auth: chevreAuthClient
             });
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
-                const pendingTransaction = paymentMethod.pendingTransaction;
+            await Promise.all((<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>>params).object.map(
+                async (paymentMethod) => {
+                    const pendingTransaction = paymentMethod.pendingTransaction;
 
-                await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
+                    await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
 
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
-            }));
+                    await repos.invoice.changePaymentStatus({
+                        referencesOrder: { orderNumber: params.purpose.orderNumber },
+                        paymentMethod: paymentMethod.paymentMethod.typeOf,
+                        paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                        paymentStatus: factory.paymentStatusType.PaymentComplete
+                    });
+                }
+            ));
         } catch (error) {
             // actionにエラー結果を追加
             try {

@@ -358,17 +358,19 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.Pay>)
                 auth: chevreAuthClient
             });
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
-                const pendingTransaction = paymentMethod.pendingTransaction;
-                await moneyTransferService.confirm(pendingTransaction);
+            await Promise.all((<factory.action.trade.pay.IAttributes<factory.paymentMethodType.PaymentCard>>params).object.map(
+                async (paymentMethod) => {
+                    const pendingTransaction = (<any>paymentMethod).pendingTransaction;
+                    await moneyTransferService.confirm(pendingTransaction);
 
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
-            }));
+                    await repos.invoice.changePaymentStatus({
+                        referencesOrder: { orderNumber: params.purpose.orderNumber },
+                        paymentMethod: paymentMethod.paymentMethod.typeOf,
+                        paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                        paymentStatus: factory.paymentStatusType.PaymentComplete
+                    });
+                }
+            ));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -421,7 +423,7 @@ export function refundPaymentCard(params: factory.task.IData<factory.taskName.Re
             });
 
             await Promise.all(payAction.object.map(async (paymentMethod) => {
-                const pendingTransaction = paymentMethod.pendingTransaction;
+                const pendingTransaction = (<any>paymentMethod).pendingTransaction;
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
                 const moneyTransferTransaction = await moneyTransferService.start({

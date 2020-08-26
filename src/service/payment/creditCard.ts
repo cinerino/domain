@@ -361,50 +361,52 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
         try {
             const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
-                const entryTranArgs = paymentMethod.entryTranArgs;
+            await Promise.all((<factory.action.trade.pay.IAttributes<factory.paymentMethodType.CreditCard>>params).object.map(
+                async (paymentMethod) => {
+                    const entryTranArgs = paymentMethod.entryTranArgs;
 
-                // 取引状態参照
-                const searchTradeResult = await creditCardService.searchTrade({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    orderId: entryTranArgs.orderId
-                });
-
-                if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
-                    debug('already in SALES');
-                    // すでに実売上済み
-                    alterTranResults.push({
-                        accessId: searchTradeResult.accessId,
-                        accessPass: searchTradeResult.accessPass,
-                        forward: searchTradeResult.forward,
-                        approve: searchTradeResult.approve,
-                        tranId: searchTradeResult.tranId,
-                        tranDate: ''
-                    });
-                } else {
-                    debug('calling alterTran...');
-                    alterTranResults.push(await creditCardService.alterTran({
+                    // 取引状態参照
+                    const searchTradeResult = await creditCardService.searchTrade({
                         shopId: entryTranArgs.shopId,
                         shopPass: entryTranArgs.shopPass,
-                        accessId: searchTradeResult.accessId,
-                        accessPass: searchTradeResult.accessPass,
-                        jobCd: GMO.utils.util.JobCd.Sales,
-                        amount: paymentMethod.price
-                    }));
+                        orderId: entryTranArgs.orderId
+                    });
 
-                    // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
-                    // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
-                    // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
+                    if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
+                        debug('already in SALES');
+                        // すでに実売上済み
+                        alterTranResults.push({
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            forward: searchTradeResult.forward,
+                            approve: searchTradeResult.approve,
+                            tranId: searchTradeResult.tranId,
+                            tranDate: ''
+                        });
+                    } else {
+                        debug('calling alterTran...');
+                        alterTranResults.push(await creditCardService.alterTran({
+                            shopId: entryTranArgs.shopId,
+                            shopPass: entryTranArgs.shopPass,
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            jobCd: GMO.utils.util.JobCd.Sales,
+                            amount: paymentMethod.paymentMethod.totalPaymentDue?.value
+                        }));
+
+                        // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
+                        // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
+                        // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
+                    }
+
+                    await repos.invoice.changePaymentStatus({
+                        referencesOrder: { orderNumber: params.purpose.orderNumber },
+                        paymentMethod: paymentMethod.paymentMethod.typeOf,
+                        paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                        paymentStatus: factory.paymentStatusType.PaymentComplete
+                    });
                 }
-
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
-            }));
+            ));
         } catch (error) {
             // actionにエラー結果を追加
             try {
