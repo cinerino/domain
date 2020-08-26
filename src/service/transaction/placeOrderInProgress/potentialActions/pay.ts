@@ -29,12 +29,6 @@ export async function createPayActions(params: {
                     totalPaymentDue: result.totalPaymentDue,
                     typeOf: result.paymentMethod
                 },
-                ...(result.paymentMethod === factory.paymentMethodType.CreditCard)
-                    ? {
-                        price: result.amount,
-                        priceCurrency: factory.priceCurrency.JPY
-                    }
-                    : undefined,
                 ...((<factory.action.authorize.paymentMethod.account.IResult>result).pendingTransaction !== undefined)
                     ? { pendingTransaction: (<factory.action.authorize.paymentMethod.account.IResult>result).pendingTransaction }
                     : undefined,
