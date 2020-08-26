@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文後の個別決済アクションを汎用決済アクションに変更
 - 注文返品後の個別返金アクションを汎用返金アクションに変更
 - 決済アクションを最適化
+- 注文後の決済アクション作成処理を汎用化
+- 注文返品後の返金アクション作成処理を汎用化
 
 ### Deprecated
 

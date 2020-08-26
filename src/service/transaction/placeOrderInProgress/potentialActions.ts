@@ -6,10 +6,6 @@ import {
 } from './potentialActions/informOrder';
 import { createMoneyTransferActions } from './potentialActions/moneyTransfer';
 import { createPayActions } from './potentialActions/pay';
-// import { createPayAccountActions } from './potentialActions/payAccount';
-// import { createPayCreditCardActions } from './potentialActions/payCreditCard';
-// import { createPayMovieTicketActions } from './potentialActions/payMovieTicket';
-// import { createPayPaymentCardActions } from './potentialActions/payPaymentCard';
 import { createRegisterServiceActions } from './potentialActions/registerService';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
@@ -33,16 +29,6 @@ export async function createPotentialActions(params: {
     const moneyTransferActions = await createMoneyTransferActions(params);
 
     // 決済アクション
-    // const payCreditCardActions = await createPayCreditCardActions(params);
-    // const payAccountActions = await createPayAccountActions(params);
-    // const payMovieTicketActions = await createPayMovieTicketActions(params);
-    // const payPaymentCardActions = await createPayPaymentCardActions(params);
-    // const payActions: factory.action.trade.pay.IAttributes<factory.paymentMethodType | string>[] = [
-    //     ...payCreditCardActions,
-    //     ...payAccountActions,
-    //     ...payMovieTicketActions,
-    //     ...payPaymentCardActions
-    // ];
     const payActions = await createPayActions(params);
 
     // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
