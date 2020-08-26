@@ -44,9 +44,9 @@ export type IAuthorizeOperation<T> = (repos: {
 export function authorize(params: {
     project: { id: string };
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.creditCard.IObject;
+    object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.creditCard.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -81,7 +81,7 @@ export function authorize(params: {
         });
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -137,7 +137,7 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
+        const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
@@ -173,7 +173,7 @@ async function processAuthorizeCreditCard(params: {
     shopId: string;
     shopPass: string;
     orderId: string;
-    object: factory.action.authorize.paymentMethod.creditCard.IObject;
+    object: factory.action.authorize.paymentMethod.any.IObject;
 }): Promise<IAuthorizeResult> {
     const project = params.project;
 
@@ -300,7 +300,7 @@ export function voidTransaction(params: {
             throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
         }
 
-        action = <factory.action.authorize.paymentMethod.creditCard.IAction>
+        action = <factory.action.authorize.paymentMethod.any.IAction>
             await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
         const orderId = action.object.paymentMethodId;
@@ -469,7 +469,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
         const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
 
         // クレジットカード仮売上アクションを取得
-        let authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>await repos.action.searchByPurpose({
+        let authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>await repos.action.searchByPurpose({
             typeOf: factory.actionType.AuthorizeAction,
             purpose: {
                 typeOf: factory.transactionType.PlaceOrder,

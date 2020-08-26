@@ -56,10 +56,10 @@ export type ICheckMovieTicketOperation<T> = (repos: {
  * 承認アクション
  */
 export function authorize(params: {
-    object: factory.action.authorize.paymentMethod.movieTicket.IObject;
+    object: factory.action.authorize.paymentMethod.any.IObject;
     agent: { id: string };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.movieTicket.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -79,21 +79,26 @@ export function authorize(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
+        const movieTickets = params.object.movieTickets;
+        if (!Array.isArray(movieTickets)) {
+            throw new factory.errors.ArgumentNull('object.movieTickets');
+        }
+
         // イベント1つのみ許可
-        const eventIds = [...new Set(params.object.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
+        const eventIds = [...new Set(movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
         if (eventIds.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of events must be 1');
         }
 
         // ムビチケ購入管理番号は1つのみ許可
-        const movieTicketIdentifiers = [...new Set(params.object.movieTickets.map((t) => t.identifier))];
+        const movieTicketIdentifiers = [...new Set(movieTickets.map((t) => t.identifier))];
         if (movieTicketIdentifiers.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of movie ticket identifiers must be 1');
         }
         const movieTicketIdentifier = movieTicketIdentifiers[0];
 
         // ムビチケ系統の決済方法タイプは動的
-        const paymentMethodType = params.object.movieTickets[0]?.typeOf;
+        const paymentMethodType = movieTickets[0]?.typeOf;
         if (typeof paymentMethodType !== 'string') {
             throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
         }
@@ -126,7 +131,7 @@ export function authorize(params: {
         const transactionNumber = publishResult.transactionNumber;
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -160,7 +165,7 @@ export function authorize(params: {
             }
 
             checkResult = await repos.movieTicket.checkByIdentifier({
-                movieTickets: params.object.movieTickets,
+                movieTickets: movieTickets,
                 movieTicketPaymentAccepted: movieTicketPaymentAccepted,
                 screeningEvent: screeningEvent
             });
@@ -169,18 +174,18 @@ export function authorize(params: {
             const availableMovieTickets = checkResult.movieTickets.filter((t) => t.amount?.validThrough === undefined);
 
             // 総数が足りているか
-            if (availableMovieTickets.length < params.object.movieTickets.length) {
+            if (availableMovieTickets.length < movieTickets.length) {
                 throw new factory.errors.Argument(
                     'movieTickets',
-                    `${params.object.movieTickets.length - availableMovieTickets.length} movie tickets short`
+                    `${movieTickets.length - availableMovieTickets.length} movie tickets short`
                 );
             }
 
             // 券種ごとに枚数が足りているか
-            const serviceTypes = [...new Set(params.object.movieTickets.map((t) => t.serviceType))];
+            const serviceTypes = [...new Set(movieTickets.map((t) => t.serviceType))];
             serviceTypes.forEach((serviceType) => {
                 const availableMovieTicketsByServiceType = availableMovieTickets.filter((t) => t.serviceType === serviceType);
-                const requiredMovieTicketsByServiceType = params.object.movieTickets.filter((t) => t.serviceType === serviceType);
+                const requiredMovieTicketsByServiceType = movieTickets.filter((t) => t.serviceType === serviceType);
                 if (availableMovieTicketsByServiceType.length < requiredMovieTicketsByServiceType.length) {
                     const shortNumber = requiredMovieTicketsByServiceType.length - availableMovieTicketsByServiceType.length;
                     throw new factory.errors.Argument(
@@ -203,7 +208,7 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
+        const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: movieTicketIdentifier,
             amount: 0,
             paymentMethod: paymentMethodType,
@@ -214,7 +219,7 @@ export function authorize(params: {
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.unitCode.C62,
-                value: params.object.movieTickets.length
+                value: movieTickets.length
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             ...checkResult,

@@ -10,7 +10,7 @@ export async function createPayMovieTicketActions(params: {
 
     // ムビチケ着券は、注文単位でまとめて実行しないと失敗するので注意
     const authorizeMovieTicketActions =
-        (<factory.action.authorize.paymentMethod.movieTicket.IAction[]>params.transaction.object.authorizeActions)
+        (<factory.action.authorize.paymentMethod.any.IAction[]>params.transaction.object.authorizeActions)
             .filter(
                 (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
                     // tslint:disable-next-line:no-suspicious-comment
@@ -24,7 +24,7 @@ export async function createPayMovieTicketActions(params: {
 
     if (authorizeMovieTicketActions.length > 0) {
         authorizeMovieTicketActions.forEach((a) => {
-            const result = <factory.action.authorize.paymentMethod.movieTicket.IResult>a.result;
+            const result = <factory.action.authorize.paymentMethod.any.IResult>a.result;
 
             payMovieTicketActions.push({
                 project: params.transaction.project,

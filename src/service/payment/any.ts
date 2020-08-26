@@ -33,9 +33,9 @@ export type IAuthorizeOperation<T> = (repos: {
  */
 export function authorize<T extends factory.paymentMethodType>(params: {
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.any.IObject<T>;
+    object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction<T>> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -59,7 +59,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         }
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -104,7 +104,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
 
         // アクションを完了
         debug('ending authorize action...');
-        const result: factory.action.authorize.paymentMethod.any.IResult<T> = {
+        const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: '',
             amount: params.object.amount,
             paymentMethod: paymentMethodType,
@@ -149,8 +149,7 @@ export function voidTransaction(params: {
         }
 
         action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        const actionResult = <factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>action.result;
-        debug('actionResult:', actionResult);
+        // const actionResult = <factory.action.authorize.paymentMethod.any.IResult>action.result;
 
         // 承認取消
         try {

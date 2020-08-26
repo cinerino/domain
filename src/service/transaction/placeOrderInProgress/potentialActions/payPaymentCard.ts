@@ -7,7 +7,7 @@ export async function createPayPaymentCardActions(params: {
 }): Promise<factory.action.trade.pay.IAttributes[]> {
     // 口座決済アクション
     const authorizePaymentCardActions =
-        (<factory.action.authorize.paymentMethod.paymentCard.IAction[]>params.transaction.object.authorizeActions)
+        (<factory.action.authorize.paymentMethod.any.IAction[]>params.transaction.object.authorizeActions)
             .filter(
                 (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
                     // tslint:disable-next-line:no-suspicious-comment
@@ -16,7 +16,7 @@ export async function createPayPaymentCardActions(params: {
             );
 
     return authorizePaymentCardActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.paymentCard.IResult>a.result;
+        const result = <factory.action.authorize.paymentMethod.any.IResult>a.result;
 
         return {
             project: params.transaction.project,
@@ -32,7 +32,7 @@ export async function createPayPaymentCardActions(params: {
                     typeOf: result.paymentMethod
                 },
                 pendingTransaction:
-                    (<factory.action.authorize.paymentMethod.paymentCard.IResult>a.result).pendingTransaction
+                    (<factory.action.authorize.paymentMethod.any.IResult>a.result).pendingTransaction
             }],
             agent: params.transaction.agent,
             purpose: {

@@ -41,12 +41,12 @@ export type IAuthorizeOperation<T> = (repos: {
 export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.account.IObject & {
-        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount;
+    object: factory.action.authorize.paymentMethod.any.IObject & {
+        fromAccount?: factory.action.authorize.paymentMethod.any.IAccount;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -81,7 +81,7 @@ export function authorize(params: {
         });
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -107,7 +107,7 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
+        let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
 
         try {
             pendingTransaction = await processAccountTransaction({
@@ -131,7 +131,7 @@ export function authorize(params: {
             throw error;
         }
 
-        const actionResult: factory.action.authorize.paymentMethod.account.IResult = {
+        const actionResult: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: (params.object.fromAccount !== undefined)
                 ? params.object.fromAccount.accountNumber
                 : '',
@@ -164,14 +164,14 @@ export function authorize(params: {
 async function processAccountTransaction(params: {
     transactionNumber: string;
     project: factory.project.IProject;
-    object: factory.action.authorize.paymentMethod.account.IObject & {
-        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount;
+    object: factory.action.authorize.paymentMethod.any.IObject & {
+        fromAccount?: factory.action.authorize.paymentMethod.any.IAccount;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.account.IPendingTransaction> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
+}): Promise<factory.action.authorize.paymentMethod.any.IPendingTransaction> {
+    let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
 
     const transaction = params.transaction;
 
@@ -256,10 +256,10 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
             });
         }
 
-        let authorizeActions: factory.action.authorize.paymentMethod.account.IAction[];
+        let authorizeActions: factory.action.authorize.paymentMethod.any.IAction[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.paymentMethod.account.IAction>
+            const authorizeAction = <factory.action.authorize.paymentMethod.any.IAction>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -271,7 +271,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.paymentMethod.account.IAction[]>
+            authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>
                 await repos.action.searchByPurpose({
                     typeOf: factory.actionType.AuthorizeAction,
                     purpose: {
@@ -295,9 +295,10 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
-                const pendingTransaction = action.result.pendingTransaction;
-
-                await moneyTransferService.cancel({ transactionNumber: pendingTransaction.transactionNumber });
+                const pendingTransactionNumber = action.result.pendingTransaction?.transactionNumber;
+                if (typeof pendingTransactionNumber === 'string') {
+                    await moneyTransferService.cancel({ transactionNumber: pendingTransactionNumber });
+                }
             }
         }));
     };

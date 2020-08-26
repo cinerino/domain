@@ -86,7 +86,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
         transaction: TransactionRepo;
     }) => {
         // 決済承認アクションを検索
-        let authorizeActions = <factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+        let authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>
             await repos.action.searchByPurpose({
                 typeOf: factory.actionType.AuthorizeAction,
                 purpose: {

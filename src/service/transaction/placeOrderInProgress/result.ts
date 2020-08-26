@@ -4,7 +4,7 @@ import * as factory from '../../../factory';
 
 import { createProductItems } from './result/acceptedOffers';
 
-export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
+export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult;
 export type ISeller = factory.seller.ISeller;
 
 export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction;
@@ -99,14 +99,14 @@ function createPaymentMethods(params: {
     const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
     let price = 0;
 
-    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
         params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
             && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
 
     // 決済方法をセット
     authorizePaymentActions.forEach((a) => {
-        const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+        const result = (<factory.action.authorize.paymentMethod.any.IResult>a.result);
         paymentMethods.push({
             accountId: result.accountId,
             additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],

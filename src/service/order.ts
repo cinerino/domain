@@ -52,7 +52,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             // 注文保管
             await repos.order.createIfNotExist(order);
 
-            const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+            const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
                 placeOrderTransaction.object.authorizeActions)
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
                     && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
@@ -61,7 +61,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             const invoices: factory.invoice.IInvoice[] = [];
 
             authorizePaymentActions.forEach((a) => {
-                const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                const result = (<factory.action.authorize.paymentMethod.any.IResult>a.result);
 
                 // 決済方法と決済IDごとに金額をまとめて請求書を作成する
                 const existingInvoiceIndex = invoices.findIndex((i) => {

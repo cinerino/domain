@@ -9,14 +9,14 @@ export async function createPayCreditCardActions(params: {
     const payCreditCardActions: factory.action.trade.pay.IAttributes[] = [];
 
     const authorizeCreditCardActions =
-        (<factory.action.authorize.paymentMethod.creditCard.IAction[]>params.transaction.object.authorizeActions)
+        (<factory.action.authorize.paymentMethod.any.IAction[]>params.transaction.object.authorizeActions)
             .filter(
                 (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
                     && a.result?.paymentMethod === factory.paymentMethodType.CreditCard
             );
 
     authorizeCreditCardActions.forEach((a) => {
-        const result = <factory.action.authorize.paymentMethod.creditCard.IResult>a.result;
+        const result = <factory.action.authorize.paymentMethod.any.IResult>a.result;
         if (result.paymentStatus === factory.paymentStatusType.PaymentDue) {
             payCreditCardActions.push({
                 project: params.transaction.project,

@@ -5,7 +5,7 @@ export async function createPayActions(params: {
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.trade.pay.IAttributes[]> {
-    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
         params.transaction.object.authorizeActions)
         .filter(
             (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
@@ -14,7 +14,7 @@ export async function createPayActions(params: {
         );
 
     return authorizePaymentActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result;
+        const result = <factory.action.authorize.paymentMethod.any.IResult>a.result;
 
         return {
             project: params.transaction.project,
@@ -29,17 +29,17 @@ export async function createPayActions(params: {
                     totalPaymentDue: result.totalPaymentDue,
                     typeOf: result.paymentMethod
                 },
-                ...((<factory.action.authorize.paymentMethod.account.IResult>result).pendingTransaction !== undefined)
-                    ? { pendingTransaction: (<factory.action.authorize.paymentMethod.account.IResult>result).pendingTransaction }
+                ...(result.pendingTransaction !== undefined)
+                    ? { pendingTransaction: result.pendingTransaction }
                     : undefined,
-                ...((<factory.action.authorize.paymentMethod.creditCard.IResult>result).entryTranArgs !== undefined)
-                    ? { entryTranArgs: (<factory.action.authorize.paymentMethod.creditCard.IResult>result).entryTranArgs }
+                ...(result.entryTranArgs !== undefined)
+                    ? { entryTranArgs: result.entryTranArgs }
                     : undefined,
-                ...((<factory.action.authorize.paymentMethod.creditCard.IResult>result).execTranArgs !== undefined)
-                    ? { execTranArgs: (<factory.action.authorize.paymentMethod.creditCard.IResult>result).execTranArgs }
+                ...(result.execTranArgs !== undefined)
+                    ? { execTranArgs: result.execTranArgs }
                     : undefined,
-                ...(Array.isArray((<factory.action.authorize.paymentMethod.movieTicket.IObject>a.object).movieTickets))
-                    ? { movieTickets: (<factory.action.authorize.paymentMethod.movieTicket.IObject>a.object).movieTickets }
+                ...(Array.isArray(a.object.movieTickets))
+                    ? { movieTickets: a.object.movieTickets }
                     : undefined
 
             }],
