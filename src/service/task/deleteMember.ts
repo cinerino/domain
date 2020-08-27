@@ -11,6 +11,7 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
 import * as CustomerService from '../customer';
+import { getPaymentServiceChannel } from '../payment/creditCard';
 
 /**
  * タスク実行関数
@@ -19,16 +20,19 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
     return async (settings: IConnectionSettings) => {
         const projectRepo = new ProjectRepo(settings.connection);
         const project = await projectRepo.findById({ id: data.project.id });
-        if (project.settings === undefined
-            || project.settings.cognito === undefined
-            || project.settings.gmo === undefined) {
+        if (project.settings?.cognito === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
+        const paymentServiceCredentials = await getPaymentServiceChannel({
+            project: { id: data.project.id },
+            paymentMethodType: factory.paymentMethodType.CreditCard
+        });
+
         const creditCardRepo = new CreditCardRepo({
-            siteId: project.settings.gmo.siteId,
-            sitePass: project.settings.gmo.sitePass,
-            cardService: new GMO.service.Card({ endpoint: project.settings.gmo.endpoint })
+            siteId: paymentServiceCredentials.siteId,
+            sitePass: paymentServiceCredentials.sitePass,
+            cardService: new GMO.service.Card({ endpoint: paymentServiceCredentials.endpoint })
         });
 
         const personRepo = new PersonRepo({

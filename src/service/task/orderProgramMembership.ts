@@ -14,6 +14,7 @@ import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { getPaymentServiceChannel } from '../payment/creditCard';
 import { orderProgramMembership } from '../transaction/orderProgramMembership';
 
 /**
@@ -29,16 +30,19 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
 
         const projectRepo = new ProjectRepo(settings.connection);
         const project = await projectRepo.findById({ id: data.project.id });
-        if (project.settings === undefined
-            || project.settings.gmo === undefined
-            || project.settings.cognito === undefined) {
+        if (project.settings?.cognito === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
+        const paymentServiceCredentials = await getPaymentServiceChannel({
+            project: { id: data.project.id },
+            paymentMethodType: factory.paymentMethodType.CreditCard
+        });
+
         const creditCardRepo = new CreditCardRepo({
-            siteId: project.settings.gmo.siteId,
-            sitePass: project.settings.gmo.sitePass,
-            cardService: new GMO.service.Card({ endpoint: project.settings.gmo.endpoint })
+            siteId: paymentServiceCredentials.siteId,
+            sitePass: paymentServiceCredentials.sitePass,
+            cardService: new GMO.service.Card({ endpoint: paymentServiceCredentials.endpoint })
         });
 
         const personRepo = new PersonRepo({
