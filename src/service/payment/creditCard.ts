@@ -148,8 +148,8 @@ export function authorize(params: {
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             entryTranArgs: authorizeResult.entryTranArgs,
-            entryTranResult: authorizeResult.entryTranResult,
-            execTranArgs: authorizeResult.execTranArgs,
+            // entryTranResult: authorizeResult.entryTranResult,
+            // execTranArgs: authorizeResult.execTranArgs,
             execTranResult: authorizeResult.execTranResult,
             typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
@@ -166,11 +166,11 @@ export interface IAuthorizeResult {
 }
 
 async function processAuthorizeCreditCard(params: {
-    shopId: string;
-    shopPass: string;
     orderId: string;
     object: factory.action.authorize.paymentMethod.any.IObject;
     paymentServiceCredentials: IPaymentServiceCredentials;
+    shopId: string;
+    shopPass: string;
 }): Promise<IAuthorizeResult> {
     // GMOオーソリ取得
     let entryTranArgs: GMO.services.credit.IEntryTranArgs;
@@ -332,20 +332,29 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
                 paymentMethodType: factory.paymentMethodType.CreditCard
             });
 
+            const sellerService = new chevre.service.Seller({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const seller = await sellerService.findById({ id: String(params.recipient?.id) });
+
+            const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+
             const creditCardService = new GMO.service.Credit({ endpoint: paymentServiceCredentials.endpoint });
 
             await Promise.all(params.object.map(
                 async (paymentMethod) => {
-                    const entryTranArgs = paymentMethod.entryTranArgs;
-                    if (entryTranArgs === undefined) {
-                        throw new factory.errors.NotFound('object.entryTranArgs');
-                    }
+                    const orderId = paymentMethod.paymentMethod.paymentMethodId;
+                    // const entryTranArgs = paymentMethod.entryTranArgs;
+                    // if (entryTranArgs === undefined) {
+                    //     throw new factory.errors.NotFound('object.entryTranArgs');
+                    // }
 
                     // 取引状態参照
                     const searchTradeResult = await creditCardService.searchTrade({
-                        shopId: entryTranArgs.shopId,
-                        shopPass: entryTranArgs.shopPass,
-                        orderId: entryTranArgs.orderId
+                        shopId: shopId,
+                        shopPass: shopPass,
+                        orderId: orderId
                     });
 
                     if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
@@ -362,8 +371,8 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
                     } else {
                         debug('calling alterTran...');
                         alterTranResults.push(await creditCardService.alterTran({
-                            shopId: entryTranArgs.shopId,
-                            shopPass: entryTranArgs.shopPass,
+                            shopId: shopId,
+                            shopPass: shopPass,
                             accessId: searchTradeResult.accessId,
                             accessPass: searchTradeResult.accessPass,
                             jobCd: GMO.utils.util.JobCd.Sales,
@@ -527,10 +536,20 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
                 paymentMethodType: factory.paymentMethodType.CreditCard
             });
 
+            const sellerService = new chevre.service.Seller({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            const seller = await sellerService.findById({ id: String(params.agent?.id) });
+
+            const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+
             alterTranResult = await processChangeTransaction({
                 payAction: payAction,
                 cancellationFee: returnOrderTransaction.object.cancellationFee,
-                paymentServiceCredentials
+                paymentServiceCredentials,
+                shopId,
+                shopPass
             });
         } catch (error) {
             try {
@@ -554,6 +573,8 @@ async function processChangeTransaction(params: {
     payAction: factory.action.trade.pay.IAction;
     cancellationFee: number;
     paymentServiceCredentials: IPaymentServiceCredentials;
+    shopId: string;
+    shopPass: string;
 }): Promise<GMO.services.credit.IAlterTranResult[]> {
     const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
 
@@ -561,16 +582,17 @@ async function processChangeTransaction(params: {
 
     const creditCardService = new GMO.service.Credit({ endpoint: params.paymentServiceCredentials.endpoint });
     await Promise.all(payAction.object.map(async (paymentMethod) => {
-        const entryTranArgs = paymentMethod.entryTranArgs;
-        if (entryTranArgs === undefined) {
-            throw new factory.errors.NotFound('payAction.object.entryTranArgs');
-        }
+        const orderId = paymentMethod.paymentMethod.paymentMethodId;
+        // const entryTranArgs = paymentMethod.entryTranArgs;
+        // if (entryTranArgs === undefined) {
+        //     throw new factory.errors.NotFound('payAction.object.entryTranArgs');
+        // }
 
         // 取引状態参照
         const searchTradeResult = await creditCardService.searchTrade({
-            shopId: entryTranArgs.shopId,
-            shopPass: entryTranArgs.shopPass,
-            orderId: entryTranArgs.orderId
+            shopId: params.shopId,
+            shopPass: params.shopPass,
+            orderId: orderId
         });
         debug('searchTradeResult is', searchTradeResult);
 
@@ -587,8 +609,8 @@ async function processChangeTransaction(params: {
             // 手数料0円であれば、決済取り消し(返品)処理
             if (params.cancellationFee === 0) {
                 alterTranResult.push(await creditCardService.alterTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
+                    shopId: params.shopId,
+                    shopPass: params.shopPass,
                     accessId: searchTradeResult.accessId,
                     accessPass: searchTradeResult.accessPass,
                     jobCd: GMO.utils.util.JobCd.Void
@@ -596,8 +618,8 @@ async function processChangeTransaction(params: {
                 debug('GMO alterTranResult is', alterTranResult);
             } else {
                 const changeTranResult = await creditCardService.changeTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
+                    shopId: params.shopId,
+                    shopPass: params.shopPass,
                     accessId: searchTradeResult.accessId,
                     accessPass: searchTradeResult.accessPass,
                     jobCd: GMO.utils.util.JobCd.Capture,

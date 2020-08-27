@@ -3,9 +3,6 @@ import * as factory from '../../../factory';
 import { createCancelReservationActions } from './potentialActions/cancelReservation';
 import { createInformOrderActionsOnReturn } from './potentialActions/informOrder';
 import { createRefundActions } from './potentialActions/refund';
-// import { createRefundAccountActions } from './potentialActions/refundAccount';
-// import { createRefundCreditCardActions } from './potentialActions/refundCreditCard';
-// import { createRefundMovieTicketActions } from './potentialActions/refundMovieTicket';
 import { createSendEmailMessaegActionsOnReturn } from './potentialActions/sendEmailMessage';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
@@ -32,14 +29,6 @@ export async function createPotentialActions(params: {
         const returnOrderActionParams = returnOrderParams?.find((p) => p.object?.orderNumber === order.orderNumber);
 
         // 返金アクション
-        // const refundCreditCardActions = await createRefundCreditCardActions({ ...params, order, returnOrderActionParams });
-        // const refundAccountActions = await createRefundAccountActions({ ...params, order, returnOrderActionParams });
-        // const refundMovieTicketActions = await createRefundMovieTicketActions({ ...params, order, returnOrderActionParams });
-        // const refundActions: factory.action.trade.refund.IAttributes[] = [
-        //     ...refundCreditCardActions,
-        //     ...refundAccountActions,
-        //     ...refundMovieTicketActions
-        // ];
         const refundActions = await createRefundActions({ ...params, order, returnOrderActionParams });
 
         // ポイントインセンティブの数だけ、返却アクションを作成(いったん保留)

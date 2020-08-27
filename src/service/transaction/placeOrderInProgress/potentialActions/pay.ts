@@ -29,21 +29,11 @@ export async function createPayActions(params: {
                     totalPaymentDue: result.totalPaymentDue,
                     typeOf: result.paymentMethod
                 },
-                ...(result.pendingTransaction !== undefined)
-                    ? { pendingTransaction: result.pendingTransaction }
-                    : undefined,
-                ...(result.entryTranArgs !== undefined)
-                    ? { entryTranArgs: result.entryTranArgs }
-                    : undefined,
-                ...(result.execTranArgs !== undefined)
-                    ? { execTranArgs: result.execTranArgs }
-                    : undefined,
-                ...(Array.isArray(a.object.movieTickets))
-                    ? { movieTickets: a.object.movieTickets }
-                    : undefined
-
+                ...(result.pendingTransaction !== undefined) ? { pendingTransaction: result.pendingTransaction } : undefined,
+                ...(Array.isArray(a.object.movieTickets)) ? { movieTickets: a.object.movieTickets } : undefined
             }],
             agent: params.transaction.agent,
+            recipient: params.transaction.seller,
             purpose: {
                 project: params.order.project,
                 typeOf: params.order.typeOf,

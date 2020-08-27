@@ -213,7 +213,6 @@ export function authorize(params: {
             amount: 0,
             paymentMethod: paymentMethodType,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            // paymentMethodId: movieTicketIdentifier,
             paymentMethodId: transactionNumber, // 決済方法IDをtransactionNumberに変更
             name: (typeof params.object.name === 'string') ? params.object.name : paymentMethodType,
             totalPaymentDue: {
@@ -222,7 +221,7 @@ export function authorize(params: {
                 value: movieTickets.length
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-            ...checkResult,
+            purchaseNumberAuthResult: checkResult.purchaseNumberAuthResult,
             typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
