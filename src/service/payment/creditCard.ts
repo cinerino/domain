@@ -34,41 +34,32 @@ export import IUnauthorizedCardOfMember = factory.chevre.paymentMethod.paymentCa
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
-    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
 /**
- * クレジットカードオーソリ取得
+ * クレジットカード決済承認
  */
 export function authorize(params: {
     project: { id: string };
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.creditCard.IObject;
+    object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.creditCard.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings === undefined || project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
 
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
+        const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(transaction.seller.id) } });
 
-        const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+        const paymentServiceCredentials = await getPaymentServiceChannel({
+            project: params.project,
+            paymentMethodType: factory.paymentMethodType.CreditCard
+        });
 
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
@@ -77,11 +68,11 @@ export function authorize(params: {
         });
 
         const { transactionNumber } = await transactionNumberService.publish({
-            project: { id: project.id }
+            project: { id: params.project.id }
         });
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.creditCard.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -106,11 +97,11 @@ export function authorize(params: {
 
         try {
             authorizeResult = await processAuthorizeCreditCard({
-                project: project,
                 shopId: shopId,
                 shopPass: shopPass,
                 orderId: transactionNumber,
-                object: params.object
+                object: params.object,
+                paymentServiceCredentials
             });
         } catch (error) {
             try {
@@ -124,7 +115,7 @@ export function authorize(params: {
         }
 
         try {
-            const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+            const creditCardService = new GMO.service.Credit({ endpoint: paymentServiceCredentials.endpoint });
 
             // ベストエフォートでクレジットカード詳細情報を取得
             searchTradeResult = await creditCardService.searchTrade({
@@ -137,7 +128,7 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        const result: factory.action.authorize.paymentMethod.creditCard.IResult = {
+        const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
             amount: params.object.amount,
             paymentMethod: factory.paymentMethodType.CreditCard,
@@ -151,8 +142,8 @@ export function authorize(params: {
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             entryTranArgs: authorizeResult.entryTranArgs,
-            entryTranResult: authorizeResult.entryTranResult,
-            execTranArgs: authorizeResult.execTranArgs,
+            // entryTranResult: authorizeResult.entryTranResult,
+            // execTranArgs: authorizeResult.execTranArgs,
             execTranResult: authorizeResult.execTranResult,
             typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
@@ -169,27 +160,19 @@ export interface IAuthorizeResult {
 }
 
 async function processAuthorizeCreditCard(params: {
-    project: factory.project.IProject;
+    orderId: string;
+    object: factory.action.authorize.paymentMethod.any.IObject;
+    paymentServiceCredentials: IPaymentServiceCredentials;
     shopId: string;
     shopPass: string;
-    orderId: string;
-    object: factory.action.authorize.paymentMethod.creditCard.IObject;
 }): Promise<IAuthorizeResult> {
-    const project = params.project;
-
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore if */
-    if (project.settings === undefined || project.settings.gmo === undefined) {
-        throw new factory.errors.ServiceUnavailable('Project settings not found');
-    }
-
     // GMOオーソリ取得
     let entryTranArgs: GMO.services.credit.IEntryTranArgs;
     let entryTranResult: GMO.services.credit.IEntryTranResult;
     let execTranArgs: GMO.services.credit.IExecTranArgs;
     let execTranResult: GMO.services.credit.IExecTranResult;
 
-    const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+    const creditCardService = new GMO.service.Credit({ endpoint: params.paymentServiceCredentials.endpoint });
 
     entryTranArgs = {
         shopId: params.shopId,
@@ -208,8 +191,8 @@ async function processAuthorizeCreditCard(params: {
         accessPass: entryTranResult.accessPass,
         orderId: params.orderId,
         method: params.object.method,
-        siteId: project.settings.gmo.siteId,
-        sitePass: project.settings.gmo.sitePass,
+        siteId: params.paymentServiceCredentials.siteId,
+        sitePass: params.paymentServiceCredentials.sitePass,
         cardNo: (<IUncheckedCardRaw>creditCard).cardNo,
         cardPass: (<IUncheckedCardRaw>creditCard).cardPass,
         expire: (<IUncheckedCardRaw>creditCard).expire,
@@ -262,21 +245,8 @@ export function voidTransaction(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -286,13 +256,12 @@ export function voidTransaction(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
+        const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(transaction.seller.id) } });
 
-        const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+        const paymentServiceCredentials = await getPaymentServiceChannel({
+            project: params.project,
+            paymentMethodType: factory.paymentMethodType.CreditCard
+        });
 
         // 取引内のアクションかどうか確認
         let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
@@ -300,11 +269,11 @@ export function voidTransaction(params: {
             throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
         }
 
-        action = <factory.action.authorize.paymentMethod.creditCard.IAction>
+        action = <factory.action.authorize.paymentMethod.any.IAction>
             await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
         const orderId = action.object.paymentMethodId;
-        const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+        const creditCardService = new GMO.service.Credit({ endpoint: paymentServiceCredentials.endpoint });
 
         // オーソリ取消
         // 現時点では、ここで失敗したらオーソリ取消をあきらめる
@@ -336,75 +305,75 @@ export function voidTransaction(params: {
 /**
  * クレジットカード売上確定
  */
-export function payCreditCard(params: factory.task.IData<factory.taskName.PayCreditCard>) {
+export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
-        project: ProjectRepo;
-    }): Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>> => {
-        const project = await repos.project.findById({ id: params.project.id });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-
+    }): Promise<factory.action.trade.pay.IAction> => {
         // アクション開始
         const action = await repos.action.start(params);
         const alterTranResults: GMO.services.credit.IAlterTranResult[] = [];
 
         try {
-            const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+            const paymentServiceCredentials = await getPaymentServiceChannel({
+                project: params.project,
+                paymentMethodType: factory.paymentMethodType.CreditCard
+            });
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
-                const entryTranArgs = paymentMethod.entryTranArgs;
+            const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(params.recipient?.id) } });
 
-                // 取引状態参照
-                const searchTradeResult = await creditCardService.searchTrade({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    orderId: entryTranArgs.orderId
-                });
+            const creditCardService = new GMO.service.Credit({ endpoint: paymentServiceCredentials.endpoint });
 
-                if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
-                    debug('already in SALES');
-                    // すでに実売上済み
-                    alterTranResults.push({
-                        accessId: searchTradeResult.accessId,
-                        accessPass: searchTradeResult.accessPass,
-                        forward: searchTradeResult.forward,
-                        approve: searchTradeResult.approve,
-                        tranId: searchTradeResult.tranId,
-                        tranDate: ''
+            await Promise.all(params.object.map(
+                async (paymentMethod) => {
+                    const orderId = paymentMethod.paymentMethod.paymentMethodId;
+                    // const entryTranArgs = paymentMethod.entryTranArgs;
+                    // if (entryTranArgs === undefined) {
+                    //     throw new factory.errors.NotFound('object.entryTranArgs');
+                    // }
+
+                    // 取引状態参照
+                    const searchTradeResult = await creditCardService.searchTrade({
+                        shopId: shopId,
+                        shopPass: shopPass,
+                        orderId: orderId
                     });
-                } else {
-                    debug('calling alterTran...');
-                    alterTranResults.push(await creditCardService.alterTran({
-                        shopId: entryTranArgs.shopId,
-                        shopPass: entryTranArgs.shopPass,
-                        accessId: searchTradeResult.accessId,
-                        accessPass: searchTradeResult.accessPass,
-                        jobCd: GMO.utils.util.JobCd.Sales,
-                        amount: paymentMethod.price
-                    }));
 
-                    // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
-                    // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
-                    // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
+                    if (searchTradeResult.jobCd === GMO.utils.util.JobCd.Sales) {
+                        debug('already in SALES');
+                        // すでに実売上済み
+                        alterTranResults.push({
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            forward: searchTradeResult.forward,
+                            approve: searchTradeResult.approve,
+                            tranId: searchTradeResult.tranId,
+                            tranDate: ''
+                        });
+                    } else {
+                        debug('calling alterTran...');
+                        alterTranResults.push(await creditCardService.alterTran({
+                            shopId: shopId,
+                            shopPass: shopPass,
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            jobCd: GMO.utils.util.JobCd.Sales,
+                            amount: paymentMethod.paymentMethod.totalPaymentDue?.value
+                        }));
+
+                        // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
+                        // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
+                        // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
+                    }
+
+                    await repos.invoice.changePaymentStatus({
+                        referencesOrder: { orderNumber: params.purpose.orderNumber },
+                        paymentMethod: paymentMethod.paymentMethod.typeOf,
+                        paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                        paymentStatus: factory.paymentStatusType.PaymentComplete
+                    });
                 }
-
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
-            }));
+            ));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -418,11 +387,11 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.CreditCard> = {
+        const actionResult: factory.action.trade.pay.IResult = {
             creditCardSales: alterTranResults
         };
 
-        return <Promise<factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>>>
+        return <Promise<factory.action.trade.pay.IAction>>
             repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -430,41 +399,27 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.PayCre
 /**
  * クレジットカードオーソリ取消
  */
-export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName.CancelCreditCard>) {
+export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName.VoidPayment>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (project.settings.gmo === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-
         const transaction = await repos.transaction.findById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
         });
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+        const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(transaction.seller.id) } });
+
+        const paymentServiceCredentials = await getPaymentServiceChannel({
+            project: params.project,
+            paymentMethodType: factory.paymentMethodType.CreditCard
         });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
-        const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
-
-        const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+        const creditCardService = new GMO.service.Credit({ endpoint: paymentServiceCredentials.endpoint });
 
         // クレジットカード仮売上アクションを取得
-        let authorizeActions = <factory.action.authorize.paymentMethod.creditCard.IAction[]>await repos.action.searchByPurpose({
+        let authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>await repos.action.searchByPurpose({
             typeOf: factory.actionType.AuthorizeAction,
             purpose: {
                 typeOf: factory.transactionType.PlaceOrder,
@@ -517,13 +472,13 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
 export function refundCreditCard(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
-        order: OrderRepo;
         project: ProjectRepo;
+        order: OrderRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.CreditCard>({
+        const payAction = await findPayActionByOrderNumber({
             object: { paymentMethod: factory.paymentMethodType.CreditCard, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
@@ -531,8 +486,6 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         if (payAction === undefined) {
             throw new factory.errors.NotFound('PayAction');
         }
-
-        const project = await repos.project.findById({ id: params.project.id });
 
         const refundActionAttributes = params;
 
@@ -554,10 +507,19 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         let alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
 
         try {
+            const paymentServiceCredentials = await getPaymentServiceChannel({
+                project: params.project,
+                paymentMethodType: factory.paymentMethodType.CreditCard
+            });
+
+            const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(params.agent?.id) } });
+
             alterTranResult = await processChangeTransaction({
-                project: project,
                 payAction: payAction,
-                cancellationFee: returnOrderTransaction.object.cancellationFee
+                cancellationFee: returnOrderTransaction.object.cancellationFee,
+                paymentServiceCredentials,
+                shopId,
+                shopPass
             });
         } catch (error) {
             try {
@@ -578,30 +540,29 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
 }
 
 async function processChangeTransaction(params: {
-    project: factory.project.IProject;
-    payAction: factory.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>;
+    payAction: factory.action.trade.pay.IAction;
     cancellationFee: number;
+    paymentServiceCredentials: IPaymentServiceCredentials;
+    shopId: string;
+    shopPass: string;
 }): Promise<GMO.services.credit.IAlterTranResult[]> {
     const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
 
-    const project = params.project;
     const payAction = params.payAction;
 
-    // tslint:disable-next-line:no-single-line-block-comment
-    /* istanbul ignore if */
-    if (project.settings === undefined || project.settings.gmo === undefined) {
-        throw new factory.errors.ServiceUnavailable('Project settings not satisfied');
-    }
-
-    const creditCardService = new GMO.service.Credit({ endpoint: project.settings.gmo.endpoint });
+    const creditCardService = new GMO.service.Credit({ endpoint: params.paymentServiceCredentials.endpoint });
     await Promise.all(payAction.object.map(async (paymentMethod) => {
-        const entryTranArgs = paymentMethod.entryTranArgs;
+        const orderId = paymentMethod.paymentMethod.paymentMethodId;
+        // const entryTranArgs = paymentMethod.entryTranArgs;
+        // if (entryTranArgs === undefined) {
+        //     throw new factory.errors.NotFound('payAction.object.entryTranArgs');
+        // }
 
         // 取引状態参照
         const searchTradeResult = await creditCardService.searchTrade({
-            shopId: entryTranArgs.shopId,
-            shopPass: entryTranArgs.shopPass,
-            orderId: entryTranArgs.orderId
+            shopId: params.shopId,
+            shopPass: params.shopPass,
+            orderId: orderId
         });
         debug('searchTradeResult is', searchTradeResult);
 
@@ -618,8 +579,8 @@ async function processChangeTransaction(params: {
             // 手数料0円であれば、決済取り消し(返品)処理
             if (params.cancellationFee === 0) {
                 alterTranResult.push(await creditCardService.alterTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
+                    shopId: params.shopId,
+                    shopPass: params.shopPass,
                     accessId: searchTradeResult.accessId,
                     accessPass: searchTradeResult.accessPass,
                     jobCd: GMO.utils.util.JobCd.Void
@@ -627,8 +588,8 @@ async function processChangeTransaction(params: {
                 debug('GMO alterTranResult is', alterTranResult);
             } else {
                 const changeTranResult = await creditCardService.changeTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
+                    shopId: params.shopId,
+                    shopPass: params.shopPass,
                     accessId: searchTradeResult.accessId,
                     accessPass: searchTradeResult.accessPass,
                     jobCd: GMO.utils.util.JobCd.Capture,
@@ -651,17 +612,23 @@ async function processChangeTransaction(params: {
     return alterTranResult;
 }
 
-function getGMOInfoFromSeller(params: {
-    seller: factory.seller.ISeller;
+async function getSellerCredentials(params: {
+    seller: { id: string };
 }) {
-    let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>;
+    let creditCardPaymentAccepted: factory.seller.ICreditCardPaymentAccepted;
 
-    if (!Array.isArray(params.seller.paymentAccepted)) {
+    const sellerService = new chevre.service.Seller({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+    const seller = await sellerService.findById({ id: params.seller.id });
+
+    if (!Array.isArray(seller.paymentAccepted)) {
         throw new factory.errors.Argument('transaction', 'Credit card payment not accepted');
     }
 
-    creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
-        params.seller.paymentAccepted.find(
+    creditCardPaymentAccepted = <factory.seller.ICreditCardPaymentAccepted>
+        seller.paymentAccepted.find(
             (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
         );
     if (creditCardPaymentAccepted === undefined) {
@@ -677,5 +644,43 @@ function getGMOInfoFromSeller(params: {
         shopId: creditCardPaymentAccepted.gmoInfo.shopId,
         shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
         siteId: creditCardPaymentAccepted.gmoInfo.siteId
+    };
+}
+
+interface IPaymentServiceCredentials {
+    endpoint: string;
+    siteId: string;
+    sitePass: string;
+}
+
+export async function getPaymentServiceChannel(params: {
+    project: { id: string };
+    paymentMethodType: string;
+}): Promise<IPaymentServiceCredentials> {
+    const projectService = new chevre.service.Project({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+    const chevreProject = await projectService.findById({ id: params.project.id });
+    const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
+        return s.typeOf === chevre.factory.service.paymentService.PaymentServiceType.CreditCard
+            && s.serviceOutput?.typeOf === params.paymentMethodType;
+    });
+
+    const availableChannel = paymentServiceSetting?.availableChannel;
+    if (typeof availableChannel?.serviceUrl !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.serviceUrl');
+    }
+    if (typeof availableChannel?.credentials?.siteId !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.credentials.siteId');
+    }
+    if (typeof availableChannel?.credentials?.sitePass !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.credentials.sitePass');
+    }
+
+    return {
+        endpoint: availableChannel.serviceUrl,
+        siteId: availableChannel.credentials.siteId,
+        sitePass: availableChannel.credentials.sitePass
     };
 }

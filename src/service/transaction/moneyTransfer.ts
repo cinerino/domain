@@ -358,9 +358,9 @@ export function exportTasksById(params: {
 
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                const cancelPaymentCardTaskAttributes: factory.task.IAttributes<factory.taskName.CancelPaymentCard> = {
+                const voidPaymentTaskAttributes: factory.task.IAttributes<factory.taskName.VoidPayment> = {
                     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                    name: factory.taskName.CancelPaymentCard,
+                    name: factory.taskName.VoidPayment,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
@@ -372,9 +372,7 @@ export function exportTasksById(params: {
                     }
                 };
 
-                taskAttributes.push(
-                    cancelPaymentCardTaskAttributes
-                );
+                taskAttributes.push(voidPaymentTaskAttributes);
 
                 break;
 

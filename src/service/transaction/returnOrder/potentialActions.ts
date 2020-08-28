@@ -2,9 +2,7 @@ import * as factory from '../../../factory';
 
 import { createCancelReservationActions } from './potentialActions/cancelReservation';
 import { createInformOrderActionsOnReturn } from './potentialActions/informOrder';
-import { createRefundAccountActions } from './potentialActions/refundAccount';
-import { createRefundCreditCardActions } from './potentialActions/refundCreditCard';
-import { createRefundMovieTicketActions } from './potentialActions/refundMovieTicket';
+import { createRefundActions } from './potentialActions/refund';
 import { createSendEmailMessaegActionsOnReturn } from './potentialActions/sendEmailMessage';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
@@ -30,14 +28,8 @@ export async function createPotentialActions(params: {
 
         const returnOrderActionParams = returnOrderParams?.find((p) => p.object?.orderNumber === order.orderNumber);
 
-        // クレジットカード返金アクション
-        const refundCreditCardActions = await createRefundCreditCardActions({ ...params, order, returnOrderActionParams });
-
-        // 口座返金アクション
-        const refundAccountActions = await createRefundAccountActions({ ...params, order, returnOrderActionParams });
-
-        // ムビチケ着券返金アクション
-        const refundMovieTicketActions = await createRefundMovieTicketActions({ ...params, order, returnOrderActionParams });
+        // 返金アクション
+        const refundActions = await createRefundActions({ ...params, order, returnOrderActionParams });
 
         // ポイントインセンティブの数だけ、返却アクションを作成(いったん保留)
         // const returnPointAwardActions = await createReturnPointAwardActions(params);
@@ -72,10 +64,10 @@ export async function createPotentialActions(params: {
             potentialActions: {
                 cancelReservation: cancelReservationActions,
                 informOrder: informOrderActionsOnReturn,
-                refundCreditCard: refundCreditCardActions,
-                refundAccount: refundAccountActions,
-                refundMGTicket: [],
-                refundMovieTicket: refundMovieTicketActions,
+                refund: refundActions,
+                // refundCreditCard: refundCreditCardActions,
+                // refundAccount: refundAccountActions,
+                // refundMovieTicket: refundMovieTicketActions,
                 returnPointAward: returnPointAwardActions,
                 sendEmailMessage: sendEmailMessaegActionsOnReturn
             }

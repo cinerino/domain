@@ -40,12 +40,12 @@ export type IAuthorizeOperation<T> = (repos: {
 export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.paymentCard.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.paymentCard.IPaymentCard;
+    object: factory.action.authorize.paymentMethod.any.IObject & {
+        fromLocation?: factory.action.authorize.paymentMethod.any.IPaymentCard;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.paymentCard.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -69,7 +69,7 @@ export function authorize(params: {
         }
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.paymentCard.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -77,7 +77,7 @@ export function authorize(params: {
                 ...(params.object.fromLocation !== undefined)
                     ? { accountId: params.object.fromLocation.identifier }
                     : {},
-                paymentMethod: params.object?.fromLocation?.typeOf,
+                paymentMethod: <string>params.object?.fromLocation?.typeOf,
                 typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
             },
             agent: transaction.agent,
@@ -87,7 +87,7 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction;
+        let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
 
         try {
             pendingTransaction = await processMoneyTransferTransaction({
@@ -110,12 +110,12 @@ export function authorize(params: {
             throw error;
         }
 
-        const actionResult: factory.action.authorize.paymentMethod.paymentCard.IResult = {
+        const actionResult: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: (params.object.fromLocation !== undefined)
                 ? params.object.fromLocation.identifier
                 : '',
             amount: params.object.amount,
-            paymentMethod: params.object.fromLocation?.typeOf,
+            paymentMethod: <string>params.object.fromLocation?.typeOf,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: pendingTransaction.id,
             name: (typeof params.object.name === 'string')
@@ -142,14 +142,14 @@ export function authorize(params: {
 // tslint:disable-next-line:max-func-body-length
 async function processMoneyTransferTransaction(params: {
     project: factory.project.IProject;
-    object: factory.action.authorize.paymentMethod.paymentCard.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.paymentCard.IPaymentCard;
+    object: factory.action.authorize.paymentMethod.any.IObject & {
+        fromLocation?: factory.action.authorize.paymentMethod.any.IPaymentCard;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.paymentCard.IPendingTransaction;
+}): Promise<factory.action.authorize.paymentMethod.any.IPendingTransaction> {
+    let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
 
     const transaction = params.transaction;
 
@@ -277,7 +277,7 @@ async function processMoneyTransferTransaction(params: {
  * プリペイドカード決済承認取消
  */
 export function voidTransaction(
-    params: factory.task.IData<factory.taskName.CancelPaymentCard>
+    params: factory.task.IData<factory.taskName.VoidPayment>
 ) {
     return async (repos: {
         action: ActionRepo;
@@ -292,10 +292,10 @@ export function voidTransaction(
             });
         }
 
-        let authorizeActions: factory.action.authorize.paymentMethod.paymentCard.IAction[];
+        let authorizeActions: factory.action.authorize.paymentMethod.any.IAction[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.paymentMethod.paymentCard.IAction>
+            const authorizeAction = <factory.action.authorize.paymentMethod.any.IAction>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -307,7 +307,7 @@ export function voidTransaction(
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
+            authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>
                 await repos.action.searchByPurpose({
                     typeOf: factory.actionType.AuthorizeAction,
                     purpose: {
@@ -333,8 +333,10 @@ export function voidTransaction(
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
-                const pendingTransaction = action.result.pendingTransaction;
-                await moneyTransferService.cancel({ id: pendingTransaction.id });
+                const pendingTransactionId = action.result.pendingTransaction?.id;
+                if (typeof pendingTransactionId === 'string') {
+                    await moneyTransferService.cancel({ id: pendingTransactionId });
+                }
             }
         }));
     };
@@ -343,7 +345,7 @@ export function voidTransaction(
 /**
  * プリペイドカード決済実行
  */
-export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPaymentCard>) {
+export function payPaymentCard(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
@@ -358,17 +360,19 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPa
                 auth: chevreAuthClient
             });
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
-                const pendingTransaction = paymentMethod.pendingTransaction;
-                await moneyTransferService.confirm(pendingTransaction);
+            await Promise.all(params.object.map(
+                async (paymentMethod) => {
+                    const pendingTransaction = (<any>paymentMethod).pendingTransaction;
+                    await moneyTransferService.confirm(pendingTransaction);
 
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
-            }));
+                    await repos.invoice.changePaymentStatus({
+                        referencesOrder: { orderNumber: params.purpose.orderNumber },
+                        paymentMethod: paymentMethod.paymentMethod.typeOf,
+                        paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                        paymentStatus: factory.paymentStatusType.PaymentComplete
+                    });
+                }
+            ));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -383,7 +387,7 @@ export function payPaymentCard(params: factory.task.IData<factory.taskName.PayPa
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<any> = {};
+        const actionResult: factory.action.trade.pay.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -398,7 +402,7 @@ export function refundPaymentCard(params: factory.task.IData<factory.taskName.Re
         task: TaskRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<typeof params.object.typeOf>({
+        const payAction = await findPayActionByOrderNumber({
             object: { paymentMethod: params.object.typeOf, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
@@ -421,7 +425,7 @@ export function refundPaymentCard(params: factory.task.IData<factory.taskName.Re
             });
 
             await Promise.all(payAction.object.map(async (paymentMethod) => {
-                const pendingTransaction = paymentMethod.pendingTransaction;
+                const pendingTransaction = (<any>paymentMethod).pendingTransaction;
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
                 const moneyTransferTransaction = await moneyTransferService.start({

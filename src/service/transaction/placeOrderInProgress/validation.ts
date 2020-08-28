@@ -8,7 +8,7 @@ import { format } from 'util';
 import * as factory from '../../../factory';
 
 const debug = createDebug('cinerino-domain:service');
-export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>;
+export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult;
 
 export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
@@ -19,7 +19,7 @@ export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seat
 export type IAuthorizeSeatReservationOfferResult =
     factory.action.authorize.offer.seatReservation.IResult<factory.service.webAPI.Identifier>;
 
-export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.account.IAccount;
+export type IAuthorizePointAccountPayment = factory.action.authorize.paymentMethod.any.IAccount;
 
 export type IAuthorizeActionResultBySeller =
     factory.action.authorize.offer.product.IResult |
@@ -85,7 +85,7 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
     let priceBySeller = 0;
 
     // 決済承認を確認
-    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
         authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
             && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
@@ -110,7 +110,7 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
 
 function validateAccount(transaction: factory.transaction.placeOrder.ITransaction) {
     const authorizeActions = transaction.object.authorizeActions;
-    const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.account.IAction[]>authorizeActions)
+    const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.any.IAction[]>authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.Account);
 
@@ -171,7 +171,7 @@ function validateMovieTicket(
 ) {
     const authorizeActions = transaction.object.authorizeActions;
 
-    const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.movieTicket.IAction[]>authorizeActions
+    const authorizeMovieTicketActions = <factory.action.authorize.paymentMethod.any.IAction[]>authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.result?.paymentMethod === paymentMethodType);
 
@@ -231,7 +231,7 @@ function validateMovieTicket(
 
     const authorizedMovieTickets: factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[] = [];
     authorizeMovieTicketActions.forEach((a) => {
-        authorizedMovieTickets.push(...a.object.movieTickets);
+        authorizedMovieTickets.push(...(Array.isArray(a.object.movieTickets)) ? a.object.movieTickets : []);
     });
     debug(authorizedMovieTickets.length, 'movie tickets authorized');
 

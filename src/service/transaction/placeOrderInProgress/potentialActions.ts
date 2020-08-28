@@ -5,10 +5,7 @@ import {
     createInformOrderOnSentActions
 } from './potentialActions/informOrder';
 import { createMoneyTransferActions } from './potentialActions/moneyTransfer';
-import { createPayAccountActions } from './potentialActions/payAccount';
-import { createPayCreditCardActions } from './potentialActions/payCreditCard';
-import { createPayMovieTicketActions } from './potentialActions/payMovieTicket';
-import { createPayPaymentCardActions } from './potentialActions/payPaymentCard';
+import { createPayActions } from './potentialActions/pay';
 import { createRegisterServiceActions } from './potentialActions/registerService';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
@@ -31,16 +28,8 @@ export async function createPotentialActions(params: {
     // 通貨転送アクション
     const moneyTransferActions = await createMoneyTransferActions(params);
 
-    // クレジットカード決済アクション
-    const payCreditCardActions = await createPayCreditCardActions(params);
-
-    // 口座決済アクション
-    const payAccountActions = await createPayAccountActions(params);
-
-    // ムビチケ決済アクション
-    const payMovieTicketActions = await createPayMovieTicketActions(params);
-
-    const payPaymentCardActions = await createPayPaymentCardActions(params);
+    // 決済アクション
+    const payActions = await createPayActions(params);
 
     // ポイントインセンティブに対する承認アクションの分だけ、ポイントインセンティブ付与アクションを作成する
     const givePointAwardActions = await createGivePointAwardActions(params);
@@ -76,10 +65,13 @@ export async function createPotentialActions(params: {
             potentialActions: {
                 givePointAward: givePointAwardActions,
                 informOrder: informOrderActionsOnPlaceOrder,
-                payAccount: payAccountActions,
-                payCreditCard: payCreditCardActions,
-                payMovieTicket: payMovieTicketActions,
-                payPaymentCard: payPaymentCardActions,
+
+                pay: payActions,
+                // payAccount: payAccountActions,
+                // payCreditCard: payCreditCardActions,
+                // payMovieTicket: payMovieTicketActions,
+                // payPaymentCard: payPaymentCardActions,
+
                 sendOrder: sendOrderActionAttributes
             },
             purpose: {

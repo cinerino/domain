@@ -82,9 +82,9 @@ export class MongoRepository {
             .exec();
     }
 
-    public async search<T extends factory.paymentMethodType>(
+    public async search(
         params: factory.chevre.paymentMethod.ISearchConditions
-    ): Promise<factory.chevre.paymentMethod.IPaymentMethod<T>[]> {
+    ): Promise<factory.chevre.paymentMethod.IPaymentMethod<any>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.paymentMethodModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},

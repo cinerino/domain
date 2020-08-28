@@ -31,11 +31,11 @@ export type IAuthorizeOperation<T> = (repos: {
 /**
  * 承認アクション
  */
-export function authorize<T extends factory.paymentMethodType>(params: {
+export function authorize(params: {
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.any.IObject<T>;
+    object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction<T>> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -59,7 +59,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
         }
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes<T> = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -84,7 +84,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
             if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
             }
-            const paymentAccepted = <factory.seller.IPaymentAccepted<T>>
+            const paymentAccepted = <factory.seller.IPaymentAccepted>
                 seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
@@ -104,7 +104,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
 
         // アクションを完了
         debug('ending authorize action...');
-        const result: factory.action.authorize.paymentMethod.any.IResult<T> = {
+        const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: '',
             amount: params.object.amount,
             paymentMethod: paymentMethodType,
@@ -149,8 +149,7 @@ export function voidTransaction(params: {
         }
 
         action = await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        const actionResult = <factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>action.result;
-        debug('actionResult:', actionResult);
+        // const actionResult = <factory.action.authorize.paymentMethod.any.IResult>action.result;
 
         // 承認取消
         try {
@@ -161,22 +160,22 @@ export function voidTransaction(params: {
     };
 }
 
-export function findPayActionByOrderNumber<T extends factory.paymentMethodType | string>(params: {
+export function findPayActionByOrderNumber(params: {
     object: {
-        paymentMethod: T;
+        paymentMethod: string;
         paymentMethodId: string;
     };
     purpose: { orderNumber: string };
 }) {
     return async (repos: {
         action: ActionRepo;
-    }): Promise<factory.action.trade.pay.IAction<T> | undefined> => {
+    }): Promise<factory.action.trade.pay.IAction | undefined> => {
         const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: params.purpose.orderNumber });
-        const payActions = <factory.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
+        const payActions = <factory.action.trade.pay.IAction[]>actionsOnOrder
             .filter((a) => a.typeOf === factory.actionType.PayAction)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
-        return (<factory.action.trade.pay.IAction<T>[]>payActions)
+        return payActions
             .filter((a) => a.object[0].paymentMethod.typeOf === params.object.paymentMethod)
             .find((a) => {
                 return a.object.some((p) => p.paymentMethod.paymentMethodId === params.object.paymentMethodId);
@@ -189,7 +188,7 @@ export function findPayActionByOrderNumber<T extends factory.paymentMethodType |
  * 返金後のアクション
  */
 export function onRefund(
-    refundActionAttributes: factory.action.trade.refund.IAttributes<factory.paymentMethodType | string>,
+    refundActionAttributes: factory.action.trade.refund.IAttributes,
     order?: factory.order.IOrder
 ) {
     return async (repos: {

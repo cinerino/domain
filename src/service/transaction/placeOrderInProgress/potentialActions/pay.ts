@@ -1,38 +1,39 @@
 import * as factory from '../../../../factory';
 
-export async function createPayAccountActions(params: {
+export async function createPayActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes<factory.paymentMethodType.Account>[]> {
-    // 口座決済アクション
-    const authorizeAccountActions =
-        (<factory.action.authorize.paymentMethod.account.IAction[]>params.transaction.object.authorizeActions)
-            .filter(
-                (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
-                    && a.result?.paymentMethod === factory.paymentMethodType.Account
-            );
+}): Promise<factory.action.trade.pay.IAttributes[]> {
+    const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
+        params.transaction.object.authorizeActions)
+        .filter(
+            (a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+                && a.object.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment
+                && a.result?.paymentStatus === factory.paymentStatusType.PaymentDue
+        );
 
-    return authorizeAccountActions.map((a) => {
-        const result = <factory.action.authorize.paymentMethod.account.IResult>a.result;
+    return authorizePaymentActions.map((a) => {
+        const result = <factory.action.authorize.paymentMethod.any.IResult>a.result;
 
         return {
             project: params.transaction.project,
             typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
             object: [{
-                typeOf: <factory.action.trade.pay.TypeOfObject>'PaymentMethod',
+                typeOf: factory.action.trade.pay.ObjectType.PaymentMethod,
                 paymentMethod: {
                     accountId: result.accountId,
                     additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
                     name: result.name,
                     paymentMethodId: result.paymentMethodId,
                     totalPaymentDue: result.totalPaymentDue,
-                    typeOf: <factory.paymentMethodType.Account>result.paymentMethod
+                    typeOf: result.paymentMethod
                 },
-                pendingTransaction:
-                    (<factory.action.authorize.paymentMethod.account.IResult>a.result).pendingTransaction
+                ...(result.pendingTransaction !== undefined) ? { pendingTransaction: result.pendingTransaction } : undefined,
+                ...(Array.isArray(a.object.movieTickets)) ? { movieTickets: a.object.movieTickets } : undefined
             }],
             agent: params.transaction.agent,
+            recipient: params.transaction.seller,
             purpose: {
                 project: params.order.project,
                 typeOf: params.order.typeOf,

@@ -4,7 +4,7 @@ function createMoneyTransferActions(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }): factory.action.transfer.moneyTransfer.IAttributes[] {
     // 通貨転送アクション属性作成
-    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.paymentCard.IAction[]>
+    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.any.IAction[]>
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             // tslint:disable-next-line:no-suspicious-comment
@@ -12,7 +12,7 @@ function createMoneyTransferActions(params: {
             .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.PaymentCard);
 
     return authorizePaymentCardActions.map((a) => {
-        const actionResult = <factory.action.authorize.paymentMethod.paymentCard.IResult>a.result;
+        const actionResult = <factory.action.authorize.paymentMethod.any.IResult>a.result;
 
         if (a.object.fromLocation !== undefined) {
             // if ((<IFromLocation>a.object.fromLocation).accountType !== 'Coin') {
@@ -24,6 +24,10 @@ function createMoneyTransferActions(params: {
             // if (a.object.toLocation.accountType !== 'Coin') {
             //     throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
             // }
+        }
+
+        if (actionResult.pendingTransaction === undefined) {
+            throw new factory.errors.NotFound('action.result.pendingTransaction');
         }
 
         const fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>params.transaction.object.fromLocation;

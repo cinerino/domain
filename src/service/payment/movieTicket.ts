@@ -56,10 +56,10 @@ export type ICheckMovieTicketOperation<T> = (repos: {
  * 承認アクション
  */
 export function authorize(params: {
-    object: factory.action.authorize.paymentMethod.movieTicket.IObject;
+    object: factory.action.authorize.paymentMethod.any.IObject;
     agent: { id: string };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.movieTicket.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -79,21 +79,26 @@ export function authorize(params: {
         //     throw new factory.errors.Forbidden('Transaction not yours');
         // }
 
+        const movieTickets = params.object.movieTickets;
+        if (!Array.isArray(movieTickets)) {
+            throw new factory.errors.ArgumentNull('object.movieTickets');
+        }
+
         // イベント1つのみ許可
-        const eventIds = [...new Set(params.object.movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
+        const eventIds = [...new Set(movieTickets.map((t) => t.serviceOutput.reservationFor.id))];
         if (eventIds.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of events must be 1');
         }
 
         // ムビチケ購入管理番号は1つのみ許可
-        const movieTicketIdentifiers = [...new Set(params.object.movieTickets.map((t) => t.identifier))];
+        const movieTicketIdentifiers = [...new Set(movieTickets.map((t) => t.identifier))];
         if (movieTicketIdentifiers.length !== 1) {
             throw new factory.errors.Argument('movieTickets', 'Number of movie ticket identifiers must be 1');
         }
         const movieTicketIdentifier = movieTicketIdentifiers[0];
 
         // ムビチケ系統の決済方法タイプは動的
-        const paymentMethodType = params.object.movieTickets[0]?.typeOf;
+        const paymentMethodType = movieTickets[0]?.typeOf;
         if (typeof paymentMethodType !== 'string') {
             throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
         }
@@ -126,7 +131,7 @@ export function authorize(params: {
         const transactionNumber = publishResult.transactionNumber;
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.movieTicket.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -153,14 +158,14 @@ export function authorize(params: {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
 
             checkResult = await repos.movieTicket.checkByIdentifier({
-                movieTickets: params.object.movieTickets,
+                movieTickets: movieTickets,
                 movieTicketPaymentAccepted: movieTicketPaymentAccepted,
                 screeningEvent: screeningEvent
             });
@@ -169,18 +174,18 @@ export function authorize(params: {
             const availableMovieTickets = checkResult.movieTickets.filter((t) => t.amount?.validThrough === undefined);
 
             // 総数が足りているか
-            if (availableMovieTickets.length < params.object.movieTickets.length) {
+            if (availableMovieTickets.length < movieTickets.length) {
                 throw new factory.errors.Argument(
                     'movieTickets',
-                    `${params.object.movieTickets.length - availableMovieTickets.length} movie tickets short`
+                    `${movieTickets.length - availableMovieTickets.length} movie tickets short`
                 );
             }
 
             // 券種ごとに枚数が足りているか
-            const serviceTypes = [...new Set(params.object.movieTickets.map((t) => t.serviceType))];
+            const serviceTypes = [...new Set(movieTickets.map((t) => t.serviceType))];
             serviceTypes.forEach((serviceType) => {
                 const availableMovieTicketsByServiceType = availableMovieTickets.filter((t) => t.serviceType === serviceType);
-                const requiredMovieTicketsByServiceType = params.object.movieTickets.filter((t) => t.serviceType === serviceType);
+                const requiredMovieTicketsByServiceType = movieTickets.filter((t) => t.serviceType === serviceType);
                 if (availableMovieTicketsByServiceType.length < requiredMovieTicketsByServiceType.length) {
                     const shortNumber = requiredMovieTicketsByServiceType.length - availableMovieTicketsByServiceType.length;
                     throw new factory.errors.Argument(
@@ -203,21 +208,20 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        const result: factory.action.authorize.paymentMethod.movieTicket.IResult = {
+        const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: movieTicketIdentifier,
             amount: 0,
             paymentMethod: paymentMethodType,
             paymentStatus: factory.paymentStatusType.PaymentDue,
-            // paymentMethodId: movieTicketIdentifier,
             paymentMethodId: transactionNumber, // 決済方法IDをtransactionNumberに変更
             name: (typeof params.object.name === 'string') ? params.object.name : paymentMethodType,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
                 currency: factory.unitCode.C62,
-                value: params.object.movieTickets.length
+                value: movieTickets.length
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-            ...checkResult,
+            purchaseNumberAuthResult: checkResult.purchaseNumberAuthResult,
             typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
         };
 
@@ -316,7 +320,7 @@ export function checkMovieTicket(
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
@@ -377,14 +381,17 @@ export function checkMovieTicket(
 /**
  * ムビチケ着券
  */
-export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMovieTicket>) {
+// tslint:disable-next-line:max-func-body-length
+export function payMovieTicket(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
         project: ProjectRepo;
     }) => {
+        const actionObject = params.object;
+
         // ムビチケ系統の決済方法タイプは動的
-        const paymentMethodType = params.object[0]?.movieTickets[0]?.typeOf;
+        const paymentMethodType = (Array.isArray(actionObject[0]?.movieTickets)) ? actionObject[0]?.movieTickets[0]?.typeOf : undefined;
         if (typeof paymentMethodType !== 'string') {
             throw new factory.errors.ArgumentNull('object.movieTickets.typeOf');
         }
@@ -397,8 +404,11 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
         try {
             // イベントがひとつに特定されているかどうか確認
-            const eventIds = Array.from(new Set(params.object.reduce<string[]>(
-                (a, b) => [...a, ...b.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id)],
+            const eventIds = Array.from(new Set(actionObject.reduce<string[]>(
+                (a, b) => [
+                    ...a,
+                    ...(Array.isArray(b.movieTickets)) ? b.movieTickets.map((ticket) => ticket.serviceOutput.reservationFor.id) : []
+                ],
                 []
             )));
             if (eventIds.length !== 1) {
@@ -420,8 +430,12 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
             const seller = await sellerService.findById({ id: String(params.purpose.seller.id) });
 
             // 全購入管理番号のムビチケをマージ
-            const movieTickets = params.object.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
-                (a, b) => [...a, ...b.movieTickets], []
+            const movieTickets = actionObject.reduce<factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket[]>(
+                (a, b) => [
+                    ...a,
+                    ...(Array.isArray(b.movieTickets)) ? b.movieTickets : []
+                ],
+                []
             );
 
             const paymentServiceUrl = await getMvtkReserveEndpoint({
@@ -436,7 +450,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             seatInfoSyncIn = createSeatInfoSyncIn({
                 paymentMethodType: paymentMethodType,
-                paymentMethodId: params.object[0].paymentMethod.paymentMethodId,
+                paymentMethodId: actionObject[0].paymentMethod.paymentMethodId,
                 movieTickets: movieTickets,
                 event: event,
                 order: params.purpose,
@@ -445,7 +459,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
 
             seatInfoSyncResult = await movieTicketSeatService.seatInfoSync(seatInfoSyncIn);
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
+            await Promise.all(actionObject.map(async (paymentMethod) => {
                 await repos.invoice.changePaymentStatus({
                     referencesOrder: { orderNumber: params.purpose.orderNumber },
                     paymentMethod: paymentMethod.paymentMethod.typeOf,
@@ -467,7 +481,7 @@ export function payMovieTicket(params: factory.task.IData<factory.taskName.PayMo
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
+        const actionResult: factory.action.trade.pay.IResult = {
             seatInfoSyncIn: seatInfoSyncIn,
             seatInfoSyncResult: seatInfoSyncResult
         };
@@ -491,9 +505,9 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         }
 
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.MGTicket | factory.paymentMethodType.MovieTicket>({
+        const payAction = await findPayActionByOrderNumber({
             object: {
-                paymentMethod: <factory.paymentMethodType.MGTicket | factory.paymentMethodType.MovieTicket>paymentMethodType,
+                paymentMethod: paymentMethodType,
                 paymentMethodId: params.object.paymentMethodId
             },
             purpose: { orderNumber: params.purpose.orderNumber }
@@ -544,7 +558,7 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.MovieTicket> = {
+        const actionResult: factory.action.trade.pay.IResult = {
             seatInfoSyncIn: seatInfoSyncIn,
             seatInfoSyncResult: seatInfoSyncResult
         };

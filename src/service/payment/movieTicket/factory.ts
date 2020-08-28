@@ -14,7 +14,7 @@ export function createSeatInfoSyncIn(params: {
     const event = params.event;
 
     // ショップ情報取得
-    const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket> | undefined>
+    const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted | undefined>
         params.seller.paymentAccepted?.find((a) => a.paymentMethodType === params.paymentMethodType);
     if (movieTicketPaymentAccepted === undefined) {
         throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');

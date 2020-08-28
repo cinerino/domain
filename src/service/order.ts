@@ -52,7 +52,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             // 注文保管
             await repos.order.createIfNotExist(order);
 
-            const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction<factory.paymentMethodType>[]>
+            const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
                 placeOrderTransaction.object.authorizeActions)
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
                     && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
@@ -61,7 +61,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             const invoices: factory.invoice.IInvoice[] = [];
 
             authorizePaymentActions.forEach((a) => {
-                const result = (<factory.action.authorize.paymentMethod.any.IResult<factory.paymentMethodType>>a.result);
+                const result = (<factory.action.authorize.paymentMethod.any.IResult>a.result);
 
                 // 決済方法と決済IDごとに金額をまとめて請求書を作成する
                 const existingInvoiceIndex = invoices.findIndex((i) => {
@@ -144,68 +144,11 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
                 taskAttributes.push(sendOrderTask);
             }
 
-            // クレジットカード決済
+            // 決済タスク
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(potentialActions.payCreditCard)) {
-                taskAttributes.push(...potentialActions.payCreditCard.map(
-                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.Pay,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }));
-            }
-
-            // 口座決済
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.payAccount)) {
-                taskAttributes.push(...potentialActions.payAccount.map(
-                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.Pay,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }));
-            }
-
-            // ムビチケ決済
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.payMovieTicket)) {
-                taskAttributes.push(...potentialActions.payMovieTicket.map(
-                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.Pay,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }));
-            }
-
-            // プリペイドカード決済
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.payPaymentCard)) {
-                taskAttributes.push(...potentialActions.payPaymentCard.map(
+            if (Array.isArray(potentialActions.pay)) {
+                taskAttributes.push(...potentialActions.pay.map(
                     (a): factory.task.IAttributes<factory.taskName.Pay> => {
                         return {
                             project: a.project,
@@ -400,48 +343,8 @@ export function onReturn(
 
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray(potentialActions.refundCreditCard)) {
-                taskAttributes.push(...potentialActions.refundCreditCard.map(
-                    (a): factory.task.IAttributes<factory.taskName.Refund> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.Refund,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }
-                ));
-            }
-
-            // 口座返金タスク
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.refundAccount)) {
-                taskAttributes.push(...potentialActions.refundAccount.map(
-                    (a): factory.task.IAttributes<factory.taskName.Refund> => {
-                        return {
-                            project: a.project,
-                            name: factory.taskName.Refund,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }
-                ));
-            }
-
-            // 口座返金タスク
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.refundMovieTicket)) {
-                taskAttributes.push(...potentialActions.refundMovieTicket.map(
+            if (Array.isArray(potentialActions.refund)) {
+                taskAttributes.push(...potentialActions.refund.map(
                     (a): factory.task.IAttributes<factory.taskName.Refund> => {
                         return {
                             project: a.project,

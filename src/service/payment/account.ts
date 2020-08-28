@@ -41,12 +41,12 @@ export type IAuthorizeOperation<T> = (repos: {
 export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.account.IObject & {
-        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount;
+    object: factory.action.authorize.paymentMethod.any.IObject & {
+        fromAccount?: factory.action.authorize.paymentMethod.any.IAccount;
         currency?: string;
     };
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.account.IAction> {
+}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
@@ -81,7 +81,7 @@ export function authorize(params: {
         });
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.account.IAttributes = {
+        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
@@ -107,7 +107,7 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
+        let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
 
         try {
             pendingTransaction = await processAccountTransaction({
@@ -131,7 +131,7 @@ export function authorize(params: {
             throw error;
         }
 
-        const actionResult: factory.action.authorize.paymentMethod.account.IResult = {
+        const actionResult: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: (params.object.fromAccount !== undefined)
                 ? params.object.fromAccount.accountNumber
                 : '',
@@ -164,14 +164,14 @@ export function authorize(params: {
 async function processAccountTransaction(params: {
     transactionNumber: string;
     project: factory.project.IProject;
-    object: factory.action.authorize.paymentMethod.account.IObject & {
-        fromAccount?: factory.action.authorize.paymentMethod.account.IAccount;
+    object: factory.action.authorize.paymentMethod.any.IObject & {
+        fromAccount?: factory.action.authorize.paymentMethod.any.IAccount;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.account.IPendingTransaction> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.account.IPendingTransaction;
+}): Promise<factory.action.authorize.paymentMethod.any.IPendingTransaction> {
+    let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
 
     const transaction = params.transaction;
 
@@ -242,9 +242,7 @@ async function processAccountTransaction(params: {
 /**
  * 口座承認取消
  */
-export function voidTransaction(
-    params: factory.task.IData<factory.taskName.CancelAccount>
-) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidPayment>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -258,10 +256,10 @@ export function voidTransaction(
             });
         }
 
-        let authorizeActions: factory.action.authorize.paymentMethod.account.IAction[];
+        let authorizeActions: factory.action.authorize.paymentMethod.any.IAction[];
 
         if (typeof params.id === 'string') {
-            const authorizeAction = <factory.action.authorize.paymentMethod.account.IAction>
+            const authorizeAction = <factory.action.authorize.paymentMethod.any.IAction>
                 await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
 
             // 取引内のアクションかどうか確認
@@ -273,7 +271,7 @@ export function voidTransaction(
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.paymentMethod.account.IAction[]>
+            authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>
                 await repos.action.searchByPurpose({
                     typeOf: factory.actionType.AuthorizeAction,
                     purpose: {
@@ -297,9 +295,10 @@ export function voidTransaction(
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
-                const pendingTransaction = action.result.pendingTransaction;
-
-                await moneyTransferService.cancel({ transactionNumber: pendingTransaction.transactionNumber });
+                const pendingTransactionNumber = action.result.pendingTransaction?.transactionNumber;
+                if (typeof pendingTransactionNumber === 'string') {
+                    await moneyTransferService.cancel({ transactionNumber: pendingTransactionNumber });
+                }
             }
         }));
     };
@@ -308,7 +307,7 @@ export function voidTransaction(
 /**
  * 口座支払実行
  */
-export function payAccount(params: factory.task.IData<factory.taskName.PayAccount>) {
+export function payAccount(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
         invoice: InvoiceRepo;
@@ -323,18 +322,23 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
                 auth: chevreAuthClient
             });
 
-            await Promise.all(params.object.map(async (paymentMethod) => {
-                const pendingTransaction = paymentMethod.pendingTransaction;
+            await Promise.all(params.object.map(
+                async (paymentMethod) => {
+                    const pendingTransaction = paymentMethod.pendingTransaction;
+                    if (pendingTransaction === undefined) {
+                        throw new factory.errors.NotFound('object.pendingTransaction');
+                    }
 
-                await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
+                    await moneyTransferService.confirm({ transactionNumber: pendingTransaction.transactionNumber });
 
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
-            }));
+                    await repos.invoice.changePaymentStatus({
+                        referencesOrder: { orderNumber: params.purpose.orderNumber },
+                        paymentMethod: paymentMethod.paymentMethod.typeOf,
+                        paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                        paymentStatus: factory.paymentStatusType.PaymentComplete
+                    });
+                }
+            ));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -349,7 +353,7 @@ export function payAccount(params: factory.task.IData<factory.taskName.PayAccoun
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult<factory.paymentMethodType.Account> = {};
+        const actionResult: factory.action.trade.pay.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -365,7 +369,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         task: TaskRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.Account>({
+        const payAction = await findPayActionByOrderNumber({
             object: { paymentMethod: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
@@ -397,6 +401,10 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                 });
 
                 const pendingTransaction = paymentMethod.pendingTransaction;
+                if (pendingTransaction === undefined) {
+                    throw new factory.errors.NotFound('payAction.object.pendingTransaction');
+                }
+
                 const description = `Refund [${pendingTransaction.object.description}]`;
 
                 await moneyTransferService.start({
