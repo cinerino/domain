@@ -402,7 +402,7 @@ export function refundPaymentCard(params: factory.task.IData<factory.taskName.Re
         task: TaskRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<typeof params.object.typeOf>({
+        const payAction = await findPayActionByOrderNumber({
             object: { paymentMethod: params.object.typeOf, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);

@@ -10,6 +10,7 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as AccountPaymentService from './payment/account';
 import * as AnyPaymentService from './payment/any';
+import * as ChevrePaymentService from './payment/chevre';
 import * as CreditCardPaymentService from './payment/creditCard';
 import * as MovieTicketPaymentService from './payment/movieTicket';
 import * as PaymentCardPaymentService from './payment/paymentCard';
@@ -25,6 +26,11 @@ export import account = AccountPaymentService;
  * 汎用決済
  */
 export import any = AnyPaymentService;
+
+/**
+ * Chevre決済
+ */
+export import chevre = ChevrePaymentService;
 
 /**
  * クレジットカード決済
@@ -50,6 +56,10 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         invoice: InvoiceRepo;
         project: ProjectRepo;
     }) => {
+        if (params.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre) {
+            throw new factory.errors.NotImplemented(`instrument '${params.instrument?.identifier}' not implemented`);
+        }
+
         const paymentMethodType = params.object[0]?.paymentMethod.typeOf;
 
         switch (paymentMethodType) {

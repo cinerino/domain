@@ -505,9 +505,9 @@ export function refundMovieTicket(params: factory.task.IData<factory.taskName.Re
         }
 
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.MGTicket | factory.paymentMethodType.MovieTicket>({
+        const payAction = await findPayActionByOrderNumber({
             object: {
-                paymentMethod: <factory.paymentMethodType.MGTicket | factory.paymentMethodType.MovieTicket>paymentMethodType,
+                paymentMethod: paymentMethodType,
                 paymentMethodId: params.object.paymentMethodId
             },
             purpose: { orderNumber: params.purpose.orderNumber }

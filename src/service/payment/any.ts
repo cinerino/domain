@@ -31,7 +31,7 @@ export type IAuthorizeOperation<T> = (repos: {
 /**
  * 承認アクション
  */
-export function authorize<T extends factory.paymentMethodType>(params: {
+export function authorize(params: {
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
@@ -84,7 +84,7 @@ export function authorize<T extends factory.paymentMethodType>(params: {
             if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
             }
-            const paymentAccepted = <factory.seller.IPaymentAccepted<T>>
+            const paymentAccepted = <factory.seller.IPaymentAccepted<string>>
                 seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
@@ -160,9 +160,9 @@ export function voidTransaction(params: {
     };
 }
 
-export function findPayActionByOrderNumber<T extends factory.paymentMethodType | string>(params: {
+export function findPayActionByOrderNumber(params: {
     object: {
-        paymentMethod: T;
+        paymentMethod: string;
         paymentMethodId: string;
     };
     purpose: { orderNumber: string };

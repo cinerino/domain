@@ -38,7 +38,7 @@ export type IAuthorizeOperation<T> = (repos: {
 }) => Promise<T>;
 
 /**
- * クレジットカードオーソリ取得
+ * クレジットカード決済承認
  */
 export function authorize(params: {
     project: { id: string };
@@ -54,13 +54,7 @@ export function authorize(params: {
 
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
-
-        const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+        const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(transaction.seller.id) } });
 
         const paymentServiceCredentials = await getPaymentServiceChannel({
             project: params.project,
@@ -262,13 +256,7 @@ export function voidTransaction(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
-
-        const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+        const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(transaction.seller.id) } });
 
         const paymentServiceCredentials = await getPaymentServiceChannel({
             project: params.project,
@@ -332,13 +320,7 @@ export function payCreditCard(params: factory.task.IData<factory.taskName.Pay>) 
                 paymentMethodType: factory.paymentMethodType.CreditCard
             });
 
-            const sellerService = new chevre.service.Seller({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-            const seller = await sellerService.findById({ id: String(params.recipient?.id) });
-
-            const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+            const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(params.recipient?.id) } });
 
             const creditCardService = new GMO.service.Credit({ endpoint: paymentServiceCredentials.endpoint });
 
@@ -427,13 +409,7 @@ export function cancelCreditCardAuth(params: factory.task.IData<factory.taskName
             id: params.purpose.id
         });
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
-
-        const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+        const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(transaction.seller.id) } });
 
         const paymentServiceCredentials = await getPaymentServiceChannel({
             project: params.project,
@@ -502,7 +478,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
         transaction: TransactionRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.CreditCard>({
+        const payAction = await findPayActionByOrderNumber({
             object: { paymentMethod: factory.paymentMethodType.CreditCard, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
@@ -536,13 +512,7 @@ export function refundCreditCard(params: factory.task.IData<factory.taskName.Ref
                 paymentMethodType: factory.paymentMethodType.CreditCard
             });
 
-            const sellerService = new chevre.service.Seller({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-            const seller = await sellerService.findById({ id: String(params.agent?.id) });
-
-            const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+            const { shopId, shopPass } = await getSellerCredentials({ seller: { id: String(params.agent?.id) } });
 
             alterTranResult = await processChangeTransaction({
                 payAction: payAction,
@@ -642,17 +612,23 @@ async function processChangeTransaction(params: {
     return alterTranResult;
 }
 
-function getGMOInfoFromSeller(params: {
-    seller: factory.seller.ISeller;
+async function getSellerCredentials(params: {
+    seller: { id: string };
 }) {
     let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>;
 
-    if (!Array.isArray(params.seller.paymentAccepted)) {
+    const sellerService = new chevre.service.Seller({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+    const seller = await sellerService.findById({ id: params.seller.id });
+
+    if (!Array.isArray(seller.paymentAccepted)) {
         throw new factory.errors.Argument('transaction', 'Credit card payment not accepted');
     }
 
     creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
-        params.seller.paymentAccepted.find(
+        seller.paymentAccepted.find(
             (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
         );
     if (creditCardPaymentAccepted === undefined) {

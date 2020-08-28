@@ -369,7 +369,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
         task: TaskRepo;
     }) => {
         // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber<factory.paymentMethodType.Account>({
+        const payAction = await findPayActionByOrderNumber({
             object: { paymentMethod: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
