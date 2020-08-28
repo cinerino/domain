@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文返品後の返金アクション作成処理を汎用化
 - 決済方法タイプに依存するジェネリック型を削除
 - プロジェクト設定からGMO情報を削除
+- 販売者の対応決済方法インターフェースの汎用性拡張
 
 ### Deprecated
 

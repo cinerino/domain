@@ -158,7 +158,7 @@ export function authorize(params: {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
@@ -320,7 +320,7 @@ export function checkMovieTicket(
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.MovieTicket>>
+            const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
                 movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');

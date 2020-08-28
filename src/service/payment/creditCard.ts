@@ -615,7 +615,7 @@ async function processChangeTransaction(params: {
 async function getSellerCredentials(params: {
     seller: { id: string };
 }) {
-    let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>;
+    let creditCardPaymentAccepted: factory.seller.ICreditCardPaymentAccepted;
 
     const sellerService = new chevre.service.Seller({
         endpoint: credentials.chevre.endpoint,
@@ -627,7 +627,7 @@ async function getSellerCredentials(params: {
         throw new factory.errors.Argument('transaction', 'Credit card payment not accepted');
     }
 
-    creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.paymentMethodType.CreditCard>>
+    creditCardPaymentAccepted = <factory.seller.ICreditCardPaymentAccepted>
         seller.paymentAccepted.find(
             (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
         );

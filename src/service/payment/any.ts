@@ -84,7 +84,7 @@ export function authorize(params: {
             if (seller.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
             }
-            const paymentAccepted = <factory.seller.IPaymentAccepted<string>>
+            const paymentAccepted = <factory.seller.IPaymentAccepted>
                 seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
