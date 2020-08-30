@@ -17,6 +17,8 @@ import * as PaymentCardPaymentService from './payment/paymentCard';
 
 import * as factory from '../factory';
 
+const USE_CHEVRE_REFUND_CREDIT_CARD = process.env.USE_CHEVRE_REFUND_CREDIT_CARD === '1';
+
 /**
  * 口座決済
  */
@@ -156,7 +158,11 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
                 break;
 
             case factory.paymentMethodType.CreditCard:
-                await CreditCardPaymentService.refundCreditCard(params)(repos);
+                if (USE_CHEVRE_REFUND_CREDIT_CARD) {
+                    await ChevrePaymentService.refund(params)(repos);
+                } else {
+                    await CreditCardPaymentService.refundCreditCard(params)(repos);
+                }
                 break;
 
             case factory.paymentMethodType.MGTicket:
