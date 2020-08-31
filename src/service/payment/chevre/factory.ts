@@ -17,7 +17,13 @@ export function creatPayTransactionStartParams(params: {
         project: { id: params.transaction.project.id, typeOf: chevre.factory.organizationType.Project },
         typeOf: chevre.factory.transactionType.Pay,
         transactionNumber: params.transactionNumber,
-        agent: { typeOf: params.transaction.agent.typeOf, name: params.transaction.agent.name },
+        agent: {
+            typeOf: params.transaction.agent.typeOf,
+            id: params.transaction.agent.id,
+            name: (params.transaction.agent.name !== undefined && params.transaction.agent.name !== null)
+                ? params.transaction.agent.name
+                : params.transaction.agent.id
+        },
         recipient: {
             id: params.transaction.seller.id,
             name: params.transaction.seller.name,

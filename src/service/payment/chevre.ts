@@ -141,7 +141,14 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
 
         try {
             for (const paymentMethod of params.object) {
-                await payService.confirm({ transactionNumber: paymentMethod.paymentMethod.paymentMethodId });
+                await payService.confirm({
+                    transactionNumber: paymentMethod.paymentMethod.paymentMethodId,
+                    potentialActions: {
+                        pay: {
+                            purpose: params.purpose
+                        }
+                    }
+                });
             }
         } catch (error) {
             // actionにエラー結果を追加
