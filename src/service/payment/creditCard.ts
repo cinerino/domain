@@ -17,6 +17,9 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { findPayActionByOrderNumber, onRefund } from './any';
+import * as ChevrePayment from './chevre';
+
+const USE_CHEVRE_PAY_CREDIT_CARD = process.env.USE_CHEVRE_PAY_CREDIT_CARD === '1';
 
 const debug = createDebug('cinerino-domain:service');
 
@@ -51,6 +54,9 @@ export function authorize(params: {
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
+        if (USE_CHEVRE_PAY_CREDIT_CARD) {
+            return ChevrePayment.authorize(params)(repos);
+        }
 
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
