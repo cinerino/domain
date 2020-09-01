@@ -209,7 +209,8 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
                 }
             });
             authorizeActions = authorizeActions.filter(
-                (a) => a.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre
+                (a) => a.object?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment
+                    && a.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre
             );
         }
 
