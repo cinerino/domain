@@ -149,6 +149,13 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
                         }
                     }
                 });
+
+                await repos.invoice.changePaymentStatus({
+                    referencesOrder: { orderNumber: params.purpose.orderNumber },
+                    paymentMethod: paymentMethod.paymentMethod.typeOf,
+                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                    paymentStatus: factory.paymentStatusType.PaymentComplete
+                });
             }
         } catch (error) {
             // actionにエラー結果を追加
