@@ -110,7 +110,8 @@ export function orderProgramMembership(
             }
 
             // 決済に関してクライアントエラーであれば、リトライしても無駄なので、正常終了
-            if (error instanceof factory.errors.Argument && error.argumentName === 'payment') {
+            if (error instanceof factory.errors.Argument
+                && (error.argumentName === 'payment' || error.argumentName === 'ChevreArgument')) {
                 return;
             }
 

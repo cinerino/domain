@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 決済承認処理をChevre決済に対応
 - 決済処理をChevre決済に対応
 - 決済中止処理をChevre決済に対応
+- Chevre,Pecorino,MovieticketReserveの400エラーハンドリングを調整
 
 ### Deprecated
 
