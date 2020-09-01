@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v8.14.0 - 2020-09-01
+
+### Added
+
 - USE_CHEVRE_REFUND_CREDIT_CARD設定を追加
 - USE_CHEVRE_PAY_CREDIT_CARD設定を追加
 
@@ -17,14 +31,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 決済処理をChevre決済に対応
 - 決済中止処理をChevre決済に対応
 - Chevre,Pecorino,MovieticketReserveの400エラーハンドリングを調整
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v8.13.0 - 2020-08-28
 
