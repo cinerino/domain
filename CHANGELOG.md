@@ -8,7 +8,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- USE_CHEVRE_PAY_MOVIE_TICKET設定を追加
+
 ### Changed
+
+- Chevre返金処理をクレジットカード以外の決済方法に対応
 
 ### Deprecated
 
