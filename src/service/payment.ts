@@ -17,6 +17,8 @@ import * as PaymentCardPaymentService from './payment/paymentCard';
 
 import * as factory from '../factory';
 
+const USE_CHEVRE_REFUND_CREDIT_CARD = process.env.USE_CHEVRE_REFUND_CREDIT_CARD === '1';
+
 /**
  * 口座決済
  */
@@ -57,7 +59,10 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         project: ProjectRepo;
     }) => {
         if (params.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre) {
-            throw new factory.errors.NotImplemented(`instrument '${params.instrument?.identifier}' not implemented`);
+            // throw new factory.errors.NotImplemented(`instrument '${params.instrument?.identifier}' not implemented`);
+            await ChevrePaymentService.pay(params)(repos);
+
+            return;
         }
 
         const paymentMethodType = params.object[0]?.paymentMethod.typeOf;
@@ -108,8 +113,21 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
             (a) => a.object.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment
         );
 
+        // Chevreを使用した承認を取り消し
+        const authorizeActionsWithChevre = authorizeActions.filter((a) => {
+            return a.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre;
+        });
+        if (authorizeActionsWithChevre.length > 0) {
+            await ChevrePaymentService.voidPayment(params)(repos);
+        }
+
+        // Chevre以外
+        const authorizeActionsWithoutChevre = authorizeActions.filter((a) => {
+            return a.instrument?.identifier !== factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre;
+        });
+
         // 承認アクションに存在する決済方法ごとに決済中止処理を実行する
-        const paymentMethodTypes = [...new Set(authorizeActions.map((a) => a.object.paymentMethod))];
+        const paymentMethodTypes = [...new Set(authorizeActionsWithoutChevre.map((a) => a.object.paymentMethod))];
 
         for (const paymentMethodType of paymentMethodTypes) {
             switch (paymentMethodType) {
@@ -156,7 +174,11 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
                 break;
 
             case factory.paymentMethodType.CreditCard:
-                await CreditCardPaymentService.refundCreditCard(params)(repos);
+                if (USE_CHEVRE_REFUND_CREDIT_CARD) {
+                    await ChevrePaymentService.refund(params)(repos);
+                } else {
+                    await CreditCardPaymentService.refundCreditCard(params)(repos);
+                }
                 break;
 
             case factory.paymentMethodType.MGTicket:

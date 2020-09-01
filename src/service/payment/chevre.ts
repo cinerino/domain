@@ -1,6 +1,8 @@
 /**
  * Chevre決済サービス
  */
+import * as moment from 'moment';
+
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -13,7 +15,8 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { findPayActionByOrderNumber, onRefund } from './any';
+import { onRefund } from './any';
+import { createAuthorizeResult, creatPayTransactionStartParams } from './chevre/factory';
 
 import { handleChevreError } from '../../errorHandler';
 
@@ -36,13 +39,28 @@ export function authorize(params: {
     object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
-
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
+
+        const paymentMethodType = params.object.paymentMethod;
+
+        // プロジェクトの対応決済サービスを確認
+        const projectService = new chevre.service.Project({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const chevreProject = await projectService.findById({ id: params.project.id });
+        const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
+            return s.serviceOutput?.typeOf === paymentMethodType;
+        });
+        if (paymentServiceSetting === undefined) {
+            throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${paymentMethodType}' not found`);
+        }
+
+        const paymentServiceType = paymentServiceSetting.typeOf;
 
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
@@ -60,7 +78,6 @@ export function authorize(params: {
             typeOf: factory.actionType.AuthorizeAction,
             object: {
                 ...params.object,
-                // paymentMethod: params.object?.paymentMethod,
                 paymentMethodId: transactionNumber,
                 typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
             },
@@ -74,8 +91,23 @@ export function authorize(params: {
         };
         const action = await repos.action.start(actionAttributes);
 
+        let payTransaction: chevre.factory.transaction.pay.ITransaction | undefined;
+
         try {
             // 決済取引開始
+            const payService = new chevre.service.transaction.Pay({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            const startParams = creatPayTransactionStartParams({
+                object: params.object,
+                paymentServiceType,
+                transaction: transaction,
+                transactionNumber: transactionNumber
+            });
+
+            payTransaction = await payService.start(startParams);
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
@@ -88,59 +120,9 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        const result: factory.action.authorize.paymentMethod.any.IResult = {
-            accountId: '',
-            amount: params.object.amount,
-            paymentMethod: params.object.paymentMethod,
-            paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: transactionNumber,
-            name: (typeof params.object.name === 'string') ? params.object.name : params.object.paymentMethod,
-            totalPaymentDue: {
-                typeOf: 'MonetaryAmount',
-                currency: factory.priceCurrency.JPY,
-                value: params.object.amount
-            },
-            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
-        };
+        const result = createAuthorizeResult({ paymentServiceType, payTransaction, object: params.object });
 
         return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
-    };
-}
-
-export function voidTransaction(params: {
-    project: { id: string };
-    agent: { id: string };
-    id: string;
-    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}) {
-    return async (repos: {
-        action: ActionRepo;
-        transaction: TransactionRepo;
-    }) => {
-        const transaction = await repos.transaction.findInProgressById({
-            typeOf: params.purpose.typeOf,
-            id: params.purpose.id
-        });
-
-        if (transaction.agent.id !== params.agent.id) {
-            throw new factory.errors.Forbidden('Transaction not yours');
-        }
-
-        // 取引内のアクションかどうか確認
-        let action = await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-        if (action.purpose.typeOf !== transaction.typeOf || action.purpose.id !== transaction.id) {
-            throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
-        }
-
-        action = <factory.action.authorize.paymentMethod.any.IAction>
-            await repos.action.cancel({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
-
-        try {
-            // no op
-        } catch (error) {
-            // no op
-        }
     };
 }
 
@@ -149,17 +131,32 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         action: ActionRepo;
         invoice: InvoiceRepo;
     }): Promise<factory.action.trade.pay.IAction> => {
+        const payService = new chevre.service.transaction.Pay({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
-            await Promise.all(params.object.map(
-                async (paymentMethod) => {
-                    const paymentMethodId = paymentMethod.paymentMethod.paymentMethodId;
-                    // tslint:disable-next-line:no-console
-                    console.log('paymentMethodId:', paymentMethodId);
-                }
-            ));
+            for (const paymentMethod of params.object) {
+                await payService.confirm({
+                    transactionNumber: paymentMethod.paymentMethod.paymentMethodId,
+                    potentialActions: {
+                        pay: {
+                            purpose: params.purpose
+                        }
+                    }
+                });
+
+                await repos.invoice.changePaymentStatus({
+                    referencesOrder: { orderNumber: params.purpose.orderNumber },
+                    paymentMethod: paymentMethod.paymentMethod.typeOf,
+                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                    paymentStatus: factory.paymentStatusType.PaymentComplete
+                });
+            }
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -191,23 +188,43 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
         });
 
         // 承認アクションを取得
-        let authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>await repos.action.searchByPurpose({
-            typeOf: factory.actionType.AuthorizeAction,
-            purpose: {
-                typeOf: factory.transactionType.PlaceOrder,
-                id: transaction.id
+        let authorizeActions: factory.action.authorize.paymentMethod.any.IAction[];
+
+        if (typeof params.id === 'string') {
+            const authorizeAction = <factory.action.authorize.paymentMethod.any.IAction>
+                await repos.action.findById({ typeOf: factory.actionType.AuthorizeAction, id: params.id });
+
+            // 取引内のアクションかどうか確認
+            if (authorizeAction.purpose.typeOf !== transaction.typeOf || authorizeAction.purpose.id !== transaction.id) {
+                throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
             }
+
+            authorizeActions = [authorizeAction];
+        } else {
+            authorizeActions = await repos.action.searchByPurpose({
+                typeOf: factory.actionType.AuthorizeAction,
+                purpose: {
+                    typeOf: factory.transactionType.PlaceOrder,
+                    id: transaction.id
+                }
+            });
+            authorizeActions = authorizeActions.filter(
+                (a) => a.object?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment
+                    && a.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre
+            );
+        }
+
+        const payService = new chevre.service.transaction.Pay({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
         });
-        authorizeActions = authorizeActions.filter(
-            (a) => a.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre
-        );
 
         for (const action of authorizeActions) {
             // 直列にゆっくり処理する場合↓
             // tslint:disable-next-line:no-magic-numbers
             // await new Promise((resolve) => setTimeout(() => { resolve(); }, 1000));
 
-            // const paymentMethodId = action.object.paymentMethodId;
+            await payService.cancel({ transactionNumber: action.object.paymentMethodId });
 
             await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
         }
@@ -222,15 +239,18 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
-        // 本アクションに対応するPayActionを取り出す
-        const payAction = await findPayActionByOrderNumber({
-            object: { paymentMethod: params.object.typeOf, paymentMethodId: params.object.paymentMethodId },
-            purpose: { orderNumber: params.purpose.orderNumber }
-        })(repos);
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const refundService = new chevre.service.transaction.Refund({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
 
-        if (payAction === undefined) {
-            throw new factory.errors.NotFound('PayAction');
-        }
+        const { transactionNumber } = await transactionNumberService.publish({
+            project: { id: params.project.id }
+        });
 
         const refundActionAttributes = params;
 
@@ -250,8 +270,36 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
 
         const action = await repos.action.start(refundActionAttributes);
 
+        let refundTransaction: chevre.factory.transaction.refund.ITransaction | undefined;
+
         try {
+            const refundFee: number = (typeof returnOrderTransaction.object.cancellationFee === 'number')
+                ? returnOrderTransaction.object.cancellationFee
+                : 0;
+
             // no op
+            refundTransaction = await refundService.start({
+                project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
+                typeOf: chevre.factory.transactionType.Refund,
+                transactionNumber: transactionNumber,
+                agent: { typeOf: params.agent.typeOf, name: params.agent.name, id: params.agent.id },
+                recipient: { typeOf: params.recipient.typeOf, name: params.recipient.name },
+                object: {
+                    typeOf: chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
+                    paymentMethod: {
+                        additionalProperty: params.object.additionalProperty,
+                        name: params.object.name,
+                        typeOf: params.object.typeOf,
+                        paymentMethodId: params.object.paymentMethodId
+                    },
+                    refundFee: refundFee
+                },
+                expires: moment()
+                    .add(1, 'minutes')
+                    .toDate()
+            });
+
+            await refundService.confirm({ transactionNumber });
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
@@ -263,7 +311,10 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
             throw error;
         }
 
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: {} });
+        const result: factory.action.trade.refund.IResult = {
+            refundTransaction
+        };
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
 
         // 潜在アクション
         await onRefund(refundActionAttributes, order)({ project: repos.project, task: repos.task });
