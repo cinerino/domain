@@ -208,13 +208,21 @@ export function confirm(params: IConfirmParams) {
         });
         const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
+        // プロジェクトの対応決済サービスを確認するためにChevreプロジェクトを検索
+        const projectService = new chevre.service.Project({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const chevreProject = await projectService.findById({ id: transaction.project.id });
+
         // 取引に対する全ての承認アクションをマージ
         transaction.object.authorizeActions = await searchAuthorizeActions(params)(repos);
 
         const result = await createResult({
             ...params,
             project: project,
-            transaction: transaction
+            transaction: transaction,
+            paymentServices: chevreProject.settings?.paymentServices
         })(repos);
 
         // ポストアクションを作成
@@ -256,6 +264,7 @@ export function confirm(params: IConfirmParams) {
 function createResult(params: IConfirmParams & {
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+    paymentServices?: factory.chevre.service.paymentService.IService[];
 }) {
     return async (repos: {
         orderNumber: OrderNumberRepo;
@@ -265,7 +274,7 @@ function createResult(params: IConfirmParams & {
         const transaction = params.transaction;
 
         // 取引の確定条件が全て整っているかどうか確認
-        validateTransaction(transaction);
+        validateTransaction(transaction, params.paymentServices);
 
         // 注文作成
         const order = createOrder({

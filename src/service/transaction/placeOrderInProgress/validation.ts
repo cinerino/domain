@@ -57,15 +57,26 @@ export async function validateWaiterPassport(params: IStartParams): Promise<fact
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
-export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
+export function validateTransaction(
+    transaction: factory.transaction.placeOrder.ITransaction,
+    paymentServices?: factory.chevre.service.paymentService.IService[]
+) {
     validateProfile(transaction);
     validatePrice(transaction);
     validateAccount(transaction);
 
-    // tslint:disable-next-line:no-suspicious-comment
-    // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
-    validateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
-    validateMovieTicket(factory.paymentMethodType.MGTicket, transaction);
+    // 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
+    if (Array.isArray(paymentServices)) {
+        const movieTicketPaymentServices = paymentServices.filter(
+            (s) => s.typeOf === factory.chevre.service.paymentService.PaymentServiceType.MovieTicket
+        );
+        movieTicketPaymentServices.forEach((s) => {
+            const paymentMethodType = s.serviceOutput?.typeOf;
+            if (typeof paymentMethodType === 'string') {
+                validateMovieTicket(paymentMethodType, transaction);
+            }
+        });
+    }
 }
 
 function validateProfile(transaction: factory.transaction.placeOrder.ITransaction) {
