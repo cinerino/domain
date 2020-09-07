@@ -377,8 +377,9 @@ function availableSalesTicket2offerWithDetails(params: {
             priceCurrency: factory.chevre.priceCurrency.JPY,
             valueAddedTaxIncluded: true,
             appliesToMovieTicket: {
-                typeOf: factory.chevre.paymentMethodType.MovieTicket,
-                serviceType: offer.ticketInfo.mvtkKbnKensyu
+                typeOf: factory.chevre.service.paymentService.PaymentServiceType.MovieTicket,
+                serviceType: offer.ticketInfo.mvtkKbnKensyu,
+                serviceOutput: { typeOf: factory.chevre.paymentMethodType.MovieTicket }
             },
             appliesToVideoFormat: offer.ticketInfo.kbnEisyahousiki,
             ...{
