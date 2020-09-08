@@ -32,7 +32,7 @@ export class MvtkRepository {
     // tslint:disable-next-line:max-func-body-length
     public async checkByIdentifier(params: {
         movieTickets: IMovieTicket[];
-        movieTicketPaymentAccepted: factory.seller.IMovieTicketPaymentAccepted;
+        movieTicketPaymentAccepted: factory.seller.IPaymentAccepted;
         screeningEvent: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     }): Promise<ICheckResult> {
         const movieTickets: factory.action.check.paymentMethod.movieTicket.IMovieTicketResult[] = [];
@@ -77,11 +77,11 @@ export class MvtkRepository {
         }
 
         purchaseNumberAuthIn = {
-            kgygishCd: params.movieTicketPaymentAccepted.movieTicketInfo.kgygishCd,
+            kgygishCd: <string>params.movieTicketPaymentAccepted.movieTicketInfo?.kgygishCd,
             jhshbtsCd: mvtkapi.mvtk.services.auth.purchaseNumberAuth.InformationTypeCode.All,
             knyknrNoInfoIn: knyknrNoInfoIn,
             skhnCd: skhnCd,
-            stCd: params.movieTicketPaymentAccepted.movieTicketInfo.stCd,
+            stCd: <string>params.movieTicketPaymentAccepted.movieTicketInfo?.stCd,
             jeiYmd: moment(params.screeningEvent.startDate)
                 .tz('Asia/Tokyo')
                 .format('YYYY/MM/DD')

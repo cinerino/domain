@@ -674,7 +674,7 @@ export function validateAcceptedOffers(params: {
                         if (movieTheater.paymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
                         }
-                        const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
+                        const movieTicketPaymentAccepted =
                             movieTheater.paymentAccepted.find((a) => a.paymentMethodType === movieTicket.typeOf);
                         if (movieTicketPaymentAccepted === undefined) {
                             throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
@@ -807,8 +807,9 @@ export function validateAcceptedOffers(params: {
                                 valueAddedTaxIncluded: true,
                                 appliesToVideoFormat: '2D',
                                 appliesToMovieTicket: {
-                                    typeOf: factory.chevre.paymentMethodType.MovieTicket,
-                                    serviceType: mvtkTicketCodeIn.kbnKensyu
+                                    typeOf: factory.chevre.service.paymentService.PaymentServiceType.MovieTicket,
+                                    serviceType: mvtkTicketCodeIn.kbnKensyu,
+                                    serviceOutput: { typeOf: factory.chevre.paymentMethodType.MovieTicket }
                                 },
                                 ...{
                                     // 互換性維持対応

@@ -17,6 +17,7 @@ import * as PaymentCardPaymentService from './payment/paymentCard';
 
 import * as factory from '../factory';
 
+const USE_CHEVRE_PAY_MOVIE_TICKET = process.env.USE_CHEVRE_PAY_MOVIE_TICKET === '1';
 const USE_CHEVRE_REFUND_CREDIT_CARD = process.env.USE_CHEVRE_REFUND_CREDIT_CARD === '1';
 
 /**
@@ -183,7 +184,11 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
 
             case factory.paymentMethodType.MGTicket:
             case factory.paymentMethodType.MovieTicket:
-                await MovieTicketPaymentService.refundMovieTicket(params)(repos);
+                if (USE_CHEVRE_PAY_MOVIE_TICKET) {
+                    await ChevrePaymentService.refund(params)(repos);
+                } else {
+                    await MovieTicketPaymentService.refundMovieTicket(params)(repos);
+                }
                 break;
 
             case factory.paymentMethodType.PaymentCard:

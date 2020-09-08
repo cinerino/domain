@@ -48,19 +48,7 @@ export function authorize(params: {
         const paymentMethodType = params.object.paymentMethod;
 
         // プロジェクトの対応決済サービスを確認
-        const projectService = new chevre.service.Project({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const chevreProject = await projectService.findById({ id: params.project.id });
-        const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
-            return s.serviceOutput?.typeOf === paymentMethodType;
-        });
-        if (paymentServiceSetting === undefined) {
-            throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${paymentMethodType}' not found`);
-        }
-
-        const paymentServiceType = paymentServiceSetting.typeOf;
+        const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
 
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
@@ -264,6 +252,12 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
             throw new factory.errors.NotFound('ReturnOrderTransaction');
         }
 
+        // プロジェクトの対応決済方法を確認
+        const paymentMethodType = params.object.typeOf;
+
+        // プロジェクトの対応決済サービスを確認
+        const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
+
         const order = await repos.order.findByOrderNumber({
             orderNumber: refundActionAttributes.purpose.orderNumber
         });
@@ -285,7 +279,7 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
                 agent: { typeOf: params.agent.typeOf, name: params.agent.name, id: params.agent.id },
                 recipient: { typeOf: params.recipient.typeOf, name: params.recipient.name },
                 object: {
-                    typeOf: chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
+                    typeOf: paymentServiceType,
                     paymentMethod: {
                         additionalProperty: params.object.additionalProperty,
                         name: params.object.name,
@@ -319,4 +313,24 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         // 潜在アクション
         await onRefund(refundActionAttributes, order)({ project: repos.project, task: repos.task });
     };
+}
+
+async function getPaymentServiceType(params: {
+    project: { id: string };
+    paymentMethodType: string;
+}): Promise<chevre.factory.service.paymentService.PaymentServiceType> {
+    // プロジェクトの対応決済サービスを確認
+    const projectService = new chevre.service.Project({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+    const chevreProject = await projectService.findById({ id: params.project.id });
+    const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
+        return s.serviceOutput?.typeOf === params.paymentMethodType;
+    });
+    if (paymentServiceSetting === undefined) {
+        throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
+    }
+
+    return paymentServiceSetting.typeOf;
 }

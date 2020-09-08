@@ -57,15 +57,26 @@ export async function validateWaiterPassport(params: IStartParams): Promise<fact
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
-export function validateTransaction(transaction: factory.transaction.placeOrder.ITransaction) {
+export function validateTransaction(
+    transaction: factory.transaction.placeOrder.ITransaction,
+    paymentServices?: factory.chevre.service.paymentService.IService[]
+) {
     validateProfile(transaction);
     validatePrice(transaction);
     validateAccount(transaction);
 
-    // tslint:disable-next-line:no-suspicious-comment
-    // TODO 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
-    validateMovieTicket(factory.paymentMethodType.MovieTicket, transaction);
-    validateMovieTicket(factory.paymentMethodType.MGTicket, transaction);
+    // 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
+    if (Array.isArray(paymentServices)) {
+        const movieTicketPaymentServices = paymentServices.filter(
+            (s) => s.typeOf === factory.chevre.service.paymentService.PaymentServiceType.MovieTicket
+        );
+        movieTicketPaymentServices.forEach((s) => {
+            const paymentMethodType = s.serviceOutput?.typeOf;
+            if (typeof paymentMethodType === 'string') {
+                validateMovieTicket(paymentMethodType, transaction);
+            }
+        });
+    }
 }
 
 function validateProfile(transaction: factory.transaction.placeOrder.ITransaction) {
@@ -166,7 +177,7 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
  */
 // tslint:disable-next-line:max-func-body-length
 function validateMovieTicket(
-    paymentMethodType: factory.paymentMethodType.MovieTicket | factory.paymentMethodType.MGTicket,
+    paymentMethodType: string,
     transaction: factory.transaction.placeOrder.ITransaction
 ) {
     const authorizeActions = transaction.object.authorizeActions;
@@ -204,11 +215,10 @@ function validateMovieTicket(
                 offer.priceSpecification.priceComponent.forEach((component) => {
                     // ムビチケ券種区分チャージ仕様があれば検証リストに追加
                     if (component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification
-                        && component.appliesToMovieTicket?.typeOf === paymentMethodType) {
-                        // 互換性維持対応
-                        let serviceType: string = (<any>component).appliesToMovieTicketType;
-                        if (typeof component.appliesToMovieTicket?.serviceType === 'string') {
-                            serviceType = component.appliesToMovieTicket.serviceType;
+                        && component.appliesToMovieTicket?.serviceOutput?.typeOf === paymentMethodType) {
+                        const serviceType = component.appliesToMovieTicket.serviceType;
+                        if (typeof serviceType !== 'string') {
+                            throw new factory.errors.ServiceUnavailable('offer.priceSpecification.priceComponent.appliesToMovieTicket.serviceType undefined');
                         }
 
                         requiredMovieTickets.push({

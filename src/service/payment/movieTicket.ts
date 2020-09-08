@@ -19,8 +19,11 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { findPayActionByOrderNumber, onRefund } from './any';
+import * as ChevrePayment from './chevre';
 
 import { createSeatInfoSyncIn } from './movieTicket/factory';
+
+const USE_CHEVRE_PAY_MOVIE_TICKET = process.env.USE_CHEVRE_PAY_MOVIE_TICKET === '1';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -56,8 +59,9 @@ export type ICheckMovieTicketOperation<T> = (repos: {
  * 承認アクション
  */
 export function authorize(params: {
-    object: factory.action.authorize.paymentMethod.any.IObject;
+    project: { id: string };
     agent: { id: string };
+    object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     // tslint:disable-next-line:max-func-body-length
@@ -67,6 +71,10 @@ export function authorize(params: {
         transaction: TransactionRepo;
         movieTicket: MovieTicketRepo;
     }) => {
+        if (USE_CHEVRE_PAY_MOVIE_TICKET) {
+            return ChevrePayment.authorize(params)(repos);
+        }
+
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -158,8 +166,7 @@ export function authorize(params: {
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
-                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
+            const movieTicketPaymentAccepted = movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transaction', 'Movie Ticket payment not accepted');
             }
@@ -320,8 +327,7 @@ export function checkMovieTicket(
             if (movieTheater.paymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }
-            const movieTicketPaymentAccepted = <factory.seller.IMovieTicketPaymentAccepted>
-                movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
+            const movieTicketPaymentAccepted = movieTheater.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
             if (movieTicketPaymentAccepted === undefined) {
                 throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
             }

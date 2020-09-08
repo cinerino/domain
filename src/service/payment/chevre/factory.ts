@@ -38,6 +38,7 @@ export function creatPayTransactionStartParams(params: {
                 additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
                 method: params.object.method,
                 creditCard: params.object.creditCard,
+                movieTickets: params.object.movieTickets,
                 name: (typeof params.object.name === 'string') ? params.object.name : params.object.paymentMethod
             }
         },
