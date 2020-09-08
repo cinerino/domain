@@ -8,14 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- USE_CHEVRE_PAY_MOVIE_TICKET設定を追加
-
 ### Changed
-
-- Chevre返金処理をクレジットカード以外の決済方法に対応
-- オファーの適用ムビチケ条件の決済方法として、appliesToMovieTicket.serviceOutput.typeOfを参照するように変更
-- 注文取引確定時のムビチケ系統決済に対する検証処理を、利用可能なムビチケ系統決済方法タイプに対して動的に実行するように調整
-- プロジェクトごとの管理者ユーザープール管理を統合
 
 ### Deprecated
 
@@ -24,6 +17,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.15.0 - 2020-09-08
+
+### Added
+
+- USE_CHEVRE_PAY_MOVIE_TICKET設定を追加
+
+### Changed
+
+- Chevre返金処理をクレジットカード以外の決済方法に対応
+- オファーの適用ムビチケ条件の決済方法として、appliesToMovieTicket.serviceOutput.typeOfを参照するように変更
+- 注文取引確定時のムビチケ系統決済に対する検証処理を、利用可能なムビチケ系統決済方法タイプに対して動的に実行するように調整
+- プロジェクトごとの管理者ユーザープール管理を統合
 
 ## v8.14.0 - 2020-09-01
 
