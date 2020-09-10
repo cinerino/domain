@@ -10,7 +10,7 @@ import * as domain from '../../index';
 require('sinon-mongoose');
 
 const project = {
-    typeOf: <domain.factory.organizationType.Project>domain.factory.organizationType.Project,
+    typeOf: <domain.factory.chevre.organizationType.Project>domain.factory.chevre.organizationType.Project,
     id: 'id'
 };
 

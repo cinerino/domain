@@ -37,7 +37,7 @@ export function createTasks(params: {
                         project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                         id: '',
                         name: { ja: webhookUrl, en: webhookUrl },
-                        typeOf: factory.organizationType.Corporation,
+                        typeOf: factory.chevre.organizationType.Corporation,
                         url: webhookUrl
                     },
                     typeOf: factory.actionType.InformAction

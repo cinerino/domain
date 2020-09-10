@@ -513,7 +513,7 @@ export function validateAcceptedOffers(params: {
     project: factory.chevre.project.IProject;
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    seller: { typeOf: factory.organizationType; id: string };
+    seller: { typeOf: factory.chevre.organizationType; id: string };
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -530,14 +530,14 @@ export function validateAcceptedOffers(params: {
 
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = <factory.chevre.event.screeningEvent.ITicketOffer[]>await OfferService.searchEventTicketOffers({
-            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             event: { id: params.event.id },
             seller: params.seller
         })(repos);
 
         // 座席オファーを検索
         const availableSeatOffers = await OfferService.searchEventOffers({
-            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             event: { id: params.event.id }
         })(repos);
 
@@ -683,7 +683,7 @@ export function validateAcceptedOffers(params: {
                         // ムビチケ認証
                         const checkResult = await repos.movieTicket.checkByIdentifier({
                             movieTickets: [{
-                                project: { typeOf: factory.organizationType.Project, id: params.project.id },
+                                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
                                 typeOf: <any>movieTicket.typeOf,
                                 identifier: movieTicket.identifier,
                                 accessCode: movieTicket.accessCode,

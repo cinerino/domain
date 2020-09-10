@@ -224,7 +224,7 @@ export function authorize(params: {
             name: (typeof params.object.name === 'string') ? params.object.name : paymentMethodType,
             totalPaymentDue: {
                 typeOf: 'MonetaryAmount',
-                currency: factory.unitCode.C62,
+                currency: factory.chevre.unitCode.C62,
                 value: movieTickets.length
             },
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],

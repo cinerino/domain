@@ -62,7 +62,7 @@ describe('プロダクト注文タスクを作成する', () => {
                 typeOf: domain.factory.chevre.offerType.Offer,
                 id: offers[0].id,
                 itemOffered: { id: 'productId' },
-                seller: { typeOf: domain.factory.organizationType.MovieTheater, id: 'sellerId' }
+                seller: { typeOf: domain.factory.chevre.organizationType.MovieTheater, id: 'sellerId' }
             },
             location: { id: 'locationId' }
         })({

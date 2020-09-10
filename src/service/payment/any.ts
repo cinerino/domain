@@ -208,7 +208,7 @@ export function onRefund(
                 taskAttributes.push(...informOrderByProject.map(
                     (informOrder): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
                         return {
-                            project: { typeOf: factory.organizationType.Project, id: project.id },
+                            project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
                             name: factory.taskName.TriggerWebhook,
                             status: factory.taskStatus.Ready,
                             runsAt: now,
@@ -220,10 +220,10 @@ export function onRefund(
                                     typeOf: order.seller.typeOf,
                                     name: order.seller.name,
                                     id: order.seller.id,
-                                    project: { typeOf: factory.organizationType.Project, id: project.id }
+                                    project: { typeOf: factory.chevre.organizationType.Project, id: project.id }
                                 },
                                 object: order,
-                                project: { typeOf: factory.organizationType.Project, id: project.id },
+                                project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
                                 recipient: {
                                     id: '',
                                     ...informOrder.recipient

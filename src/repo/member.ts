@@ -9,11 +9,11 @@ export enum RoleType {
 export interface IRole {
     typeOf: RoleType;
     roleName: string;
-    memberOf: { typeOf: factory.organizationType.Project; id: string };
+    memberOf: { typeOf: factory.chevre.organizationType.Project; id: string };
 }
 export interface IMember {
     typeOf: RoleType;
-    project: { typeOf: factory.organizationType.Project; id: string };
+    project: { typeOf: factory.chevre.organizationType.Project; id: string };
     member: {
         typeOf: factory.personType;
         id: string;

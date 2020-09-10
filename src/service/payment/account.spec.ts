@@ -10,7 +10,7 @@ import * as domain from '../../index';
 let sandbox: sinon.SinonSandbox;
 
 const project = {
-    typeOf: domain.factory.organizationType.Project,
+    typeOf: domain.factory.chevre.organizationType.Project,
     id: 'id'
 };
 

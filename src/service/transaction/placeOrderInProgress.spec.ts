@@ -32,7 +32,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
-            typeOf: domain.factory.organizationType.MovieTheater,
+            typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
             identifier: 'sellerIdentifier'
@@ -55,7 +55,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
+            .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
         sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
@@ -70,7 +70,7 @@ describe('start()', () => {
             .resolves(passport);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
+            project: { typeOf: domain.factory.chevre.organizationType.Project, id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -98,7 +98,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
-            typeOf: domain.factory.organizationType.MovieTheater,
+            typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
             identifier: 'sellerIdentifier'
@@ -121,7 +121,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
+            .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
         sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
@@ -136,7 +136,7 @@ describe('start()', () => {
             .resolves(transaction);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
+            project: { typeOf: domain.factory.chevre.organizationType.Project, id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -162,7 +162,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
-            typeOf: domain.factory.organizationType.MovieTheater,
+            typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
             identifier: 'sellerIdentifier'
@@ -179,7 +179,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
+            .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
         sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
@@ -193,7 +193,7 @@ describe('start()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
+            project: { typeOf: domain.factory.chevre.organizationType.Project, id: 'id' },
             expires: transaction.expires,
             object: {
                 passport: {
@@ -220,7 +220,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
-            typeOf: domain.factory.organizationType.MovieTheater,
+            typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
             identifier: 'sellerIdentifier'
@@ -242,7 +242,7 @@ describe('start()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ typeOf: domain.factory.organizationType.Project, id: 'projectId' });
+            .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
         sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
@@ -257,7 +257,7 @@ describe('start()', () => {
             .rejects(startResult);
 
         const result = await domain.service.transaction.placeOrderInProgress.start({
-            project: { typeOf: domain.factory.organizationType.Project, id: 'id' },
+            project: { typeOf: domain.factory.chevre.organizationType.Project, id: 'id' },
             expires: expires,
             object: {
                 passport: {

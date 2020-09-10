@@ -371,7 +371,7 @@ export function validateAcceptedOffers(params: {
             throw new factory.errors.ArgumentNull('object');
         }
 
-        const project: factory.chevre.project.IProject = { typeOf: factory.organizationType.Project, id: params.product.project.id };
+        const project: factory.chevre.project.IProject = { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id };
         const issuedBy: factory.chevre.organization.IOrganization = {
             project: project,
             id: params.seller.id,
@@ -435,7 +435,7 @@ function checkIfRegistered(params: {
         const serviceOutputType = params.product.serviceOutput?.typeOf;
 
         // メンバーシップについては、登録済かどうか確認する
-        if (params.product.typeOf === ProductType.MembershipService) {
+        if (params.product.typeOf === factory.chevre.product.ProductType.MembershipService) {
             if (typeof serviceOutputType === 'string') {
                 const ownershipInfos = await repos.ownershipInfo.search<string>({
                     typeOfGood: {
@@ -493,7 +493,7 @@ function processLock(params: {
     return async (repos: {
         registerActionInProgress: RegisterServiceInProgressRepo;
     }) => {
-        if (params.product.typeOf === ProductType.MembershipService) {
+        if (params.product.typeOf === factory.chevre.product.ProductType.MembershipService) {
             await repos.registerActionInProgress.lock(
                 {
                     agent: { id: params.agent.id },

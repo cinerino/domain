@@ -2,7 +2,7 @@ import * as moment from 'moment';
 
 import * as factory from '../../../../factory';
 
-import { availableProductTypes, ProductType } from '../../../offer/product/factory';
+import { availableProductTypes } from '../../../offer/product/factory';
 
 export async function createRegisterServiceActions(params: {
     order: factory.order.IOrder;
@@ -104,7 +104,7 @@ function createOrderProgramMembershipTask(params: {
 
     // ssktsへの互換性対応なので、限定的に
     const serviceOutput = acceptedOffer.itemOffered.serviceOutput;
-    if (acceptedOffer.itemOffered.typeOf === ProductType.MembershipService
+    if (acceptedOffer.itemOffered.typeOf === factory.chevre.product.ProductType.MembershipService
         && serviceOutput?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
         const memebershipFor = {
             typeOf: String(acceptedOffer.itemOffered.typeOf),
@@ -117,7 +117,7 @@ function createOrderProgramMembershipTask(params: {
             object: {
                 ...acceptedOffer,
                 itemOffered: {
-                    project: { typeOf: factory.organizationType.Project, id: params.order.project.id },
+                    project: { typeOf: factory.chevre.organizationType.Project, id: params.order.project.id },
                     typeOf: serviceOutput?.typeOf,
                     name: serviceOutput.name,
                     hostingOrganization: serviceOutput.issuedBy,
@@ -149,7 +149,7 @@ function createOrderProgramMembershipTask(params: {
         }
 
         // 期間単位としては秒のみ実装
-        if (unitPriceSpec.referenceQuantity.unitCode !== factory.unitCode.Sec) {
+        if (unitPriceSpec.referenceQuantity.unitCode !== factory.chevre.unitCode.Sec) {
             throw new factory.errors.NotImplemented('Only \'SEC\' is implemented for priceSpecification.referenceQuantity.unitCode ');
         }
         const referenceQuantityValue = unitPriceSpec.referenceQuantity.value;
