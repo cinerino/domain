@@ -158,7 +158,8 @@ export async function createSendOrderMessage(params: {
     };
 
     return {
-        typeOf: factory.creativeWorkType.EmailMessage,
+        project: { id: params.order.project.id, typeOf: params.order.project.typeOf },
+        typeOf: factory.chevre.creativeWorkType.EmailMessage,
         identifier: `SendOrder-${params.order.orderNumber}`,
         name: `SendOrder-${params.order.orderNumber}`,
         sender: sender,
@@ -305,7 +306,8 @@ export async function createReturnOrderMessage(params: {
     };
 
     return {
-        typeOf: factory.creativeWorkType.EmailMessage,
+        project: { id: params.order.project.id, typeOf: params.order.project.typeOf },
+        typeOf: factory.chevre.creativeWorkType.EmailMessage,
         identifier: `ReturnOrder-${params.order.orderNumber}`,
         name: `ReturnOrder-${params.order.orderNumber}`,
         sender: sender,
@@ -367,7 +369,8 @@ export async function createRefundMessage(params: {
     };
 
     return {
-        typeOf: factory.creativeWorkType.EmailMessage,
+        project: { id: params.order.project.id, typeOf: params.order.project.typeOf },
+        typeOf: factory.chevre.creativeWorkType.EmailMessage,
         identifier: `RefundOrder-${params.order.orderNumber}`,
         name: `RefundOrder-${params.order.orderNumber}`,
         sender: sender,

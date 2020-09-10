@@ -125,14 +125,15 @@ function responseBody2resultAcceptedOffer(params: {
                 // masked accessCode
                 ...(typeof responseBodyObject.itemOffered?.serviceOutput?.accessCode === 'string') ? { accessCode: 'xxx' } : undefined,
                 // メンバーシップの場合、属性保管
-                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === ProductType.MembershipService)
+                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf
+                    === factory.chevre.product.ProductType.MembershipService)
                     ? {
                         membershipFor: responseBodyObject.itemOffered?.serviceOutput?.issuedThrough,
                         hostingOrganization: responseBodyObject.itemOffered?.serviceOutput.issuedBy
                     }
                     : undefined,
                 // 口座の場合、属性保管
-                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === ProductType.Account)
+                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === factory.chevre.product.ProductType.Account)
                     ? {
                         accountNumber: responseBodyObject.itemOffered?.serviceOutput?.identifier,
                         accountType: responseBodyObject.itemOffered?.serviceOutput?.amount?.currency

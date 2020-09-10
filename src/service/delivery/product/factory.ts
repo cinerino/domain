@@ -37,18 +37,18 @@ export function createProductOwnershipInfo(params: {
     }
 
     switch (unitPriceSpec.referenceQuantity.unitCode) {
-        case factory.unitCode.Ann:
+        case factory.chevre.unitCode.Ann:
             ownedThrough = moment(params.ownedFrom)
                 .add(referenceQuantityValue, 'years')
                 .toDate();
             break;
 
-        case factory.unitCode.Day:
+        case factory.chevre.unitCode.Day:
             ownedThrough = moment(params.ownedFrom)
                 .add(referenceQuantityValue, 'days')
                 .toDate();
             break;
-        case factory.unitCode.Sec:
+        case factory.chevre.unitCode.Sec:
             ownedThrough = moment(params.ownedFrom)
                 .add(referenceQuantityValue, 'seconds')
                 .toDate();

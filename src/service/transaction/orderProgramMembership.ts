@@ -219,7 +219,7 @@ function processAuthorizeProductOffer(params: {
         const customer = params.customer;
         const transaction = params.transaction;
 
-        const project: factory.chevre.project.IProject = { typeOf: factory.organizationType.Project, id: params.project.id };
+        const project: factory.chevre.project.IProject = { typeOf: factory.chevre.organizationType.Project, id: params.project.id };
         const seller: factory.order.ISeller = {
             project: project,
             typeOf: transaction.seller.typeOf,
@@ -273,7 +273,7 @@ function processAuthorizeProductOffer(params: {
             priceCurrency: acceptedProductOffer.priceCurrency,
             itemOffered: {
                 project: project,
-                typeOf: OfferService.product.ProductType.MembershipService,
+                typeOf: factory.chevre.product.ProductType.MembershipService,
                 id: params.product.id,
                 serviceOutput: {
                     project: project,
@@ -290,7 +290,7 @@ function processAuthorizeProductOffer(params: {
 
         // メンバーシップオファー承認
         return OfferService.product.authorize({
-            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: { id: customer.id },
             object: object,
             transaction: { id: transaction.id }

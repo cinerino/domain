@@ -95,7 +95,7 @@ export function searchEventOffers(params: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createScreeningRoomFromCOA(
-    project: { typeOf: factory.organizationType.Project; id: string },
+    project: { typeOf: factory.chevre.organizationType.Project; id: string },
     screenFromCOA: COA.factory.master.IScreenResult
 ): factory.chevre.place.screeningRoom.IPlace {
     const sections: factory.chevre.place.screeningRoomSection.IPlaceWithOffer[] = [];
@@ -148,7 +148,7 @@ export function createScreeningRoomFromCOA(
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createMovieTheaterFromCOA(
-    project: { typeOf: factory.organizationType.Project; id: string },
+    project: { typeOf: factory.chevre.organizationType.Project; id: string },
     theaterFromCOA: COA.factory.master.ITheaterResult,
     screensFromCOA: COA.factory.master.IScreenResult[]
 ): factory.chevre.place.movieTheater.IPlace {
@@ -176,17 +176,17 @@ export function createMovieTheaterFromCOA(
             eligibleQuantity: {
                 typeOf: 'QuantitativeValue',
                 maxValue: 6,
-                unitCode: factory.unitCode.C62
+                unitCode: factory.chevre.unitCode.C62
             },
             availabilityStartsGraceTime: {
                 typeOf: 'QuantitativeValue',
                 value: -2,
-                unitCode: factory.unitCode.Day
+                unitCode: factory.chevre.unitCode.Day
             },
             availabilityEndsGraceTime: {
                 typeOf: 'QuantitativeValue',
                 value: 1200,
-                unitCode: factory.unitCode.Sec
+                unitCode: factory.chevre.unitCode.Sec
             }
         }
     };
@@ -222,7 +222,7 @@ async function searchEventOffers4COA(params: {
     const stateReserveSeatResult = await reserveService.stateReserveSeat(coaInfo);
 
     const movieTheater = createMovieTheaterFromCOA(
-        { typeOf: factory.organizationType.Project, id: event.project.id },
+        { typeOf: factory.chevre.organizationType.Project, id: event.project.id },
         await masterService.theater(coaInfo),
         await masterService.screen(coaInfo)
     );
@@ -287,7 +287,7 @@ export function searchEventTicketOffers(params: {
     /**
      * どの販売者に対して
      */
-    seller: { typeOf: factory.organizationType; id: string };
+    seller: { typeOf: factory.chevre.organizationType; id: string };
     /**
      * どの店舗に対して
      */

@@ -3,8 +3,6 @@
  */
 import * as factory from '../../factory';
 
-import { ProductType } from '../offer/product/factory';
-
 export function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;
     offer: factory.offer.IOffer;
@@ -20,17 +18,17 @@ export function createOrderProgramMembershipActionAttributes(params: {
     }
 
     const itemOffered: factory.programMembership.IProgramMembership = {
-        project: { typeOf: factory.organizationType.Project, id: params.product.project.id },
+        project: { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id },
         typeOf: <any>serviceOutputType,
         name: <any>params.product.name,
         // メンバーシップのホスト組織確定(この組織が決済対象となる)
         hostingOrganization: {
-            project: { typeOf: factory.organizationType.Project, id: seller.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: seller.project.id },
             id: seller.id,
             typeOf: seller.typeOf
         },
         membershipFor: {
-            typeOf: ProductType.MembershipService,
+            typeOf: factory.chevre.product.ProductType.MembershipService,
             id: <string>params.product.id
         }
     };
@@ -56,7 +54,7 @@ export function createOrderProgramMembershipActionAttributes(params: {
     return {
         agent: params.agent,
         object: acceptedOffer,
-        project: { typeOf: factory.organizationType.Project, id: params.product.project.id },
+        project: { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id },
         typeOf: factory.actionType.OrderAction
     };
 }

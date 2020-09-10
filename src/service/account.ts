@@ -342,7 +342,7 @@ export function findAccount(params: {
         ownershipInfo: OwnershipInfoRepo;
     }): Promise<factory.pecorino.account.IAccount> => {
         let accountOwnershipInfos = await search({
-            project: { typeOf: factory.organizationType.Project, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             conditions: {
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,

@@ -45,7 +45,7 @@ export function createOrderTask(params: {
             id: string;
         };
         seller: {
-            typeOf: factory.organizationType;
+            typeOf: factory.chevre.organizationType;
             id: string;
         };
     };

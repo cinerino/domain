@@ -140,7 +140,7 @@ describe('注文を検索する', () => {
             .resolves([new orderRepo.orderModel()]);
         const result = await orderRepo.search({
             seller: {
-                typeOf: domain.factory.organizationType.MovieTheater,
+                typeOf: domain.factory.chevre.organizationType.MovieTheater,
                 ids: ['sellerId']
             },
             customer: {

@@ -64,7 +64,7 @@ export function createAuthorizeResult(params: {
         case chevre.factory.service.paymentService.PaymentServiceType.MovieTicket:
             totalPaymentDue = {
                 typeOf: 'MonetaryAmount',
-                currency: factory.unitCode.C62,
+                currency: factory.chevre.unitCode.C62,
                 value: (Array.isArray(params.object.movieTickets)) ? params.object.movieTickets.length : 0
             };
             break;

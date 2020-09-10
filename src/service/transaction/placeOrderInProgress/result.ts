@@ -295,8 +295,8 @@ function createReservationAcceptedOffers(params: {
                                     typeOf: factory.chevre.offerType.Offer,
                                     id: requestedOffer.id,
                                     identifier: <string>requestedOffer.identifier,
-                                    name: <factory.multilingualString>requestedOffer.name,
-                                    description: <factory.multilingualString>requestedOffer.description,
+                                    name: <factory.chevre.multilingualString>requestedOffer.name,
+                                    description: <factory.chevre.multilingualString>requestedOffer.description,
                                     additionalProperty: requestedOffer.additionalProperty,
                                     priceCurrency: factory.priceCurrency.JPY
                                 }
@@ -307,7 +307,7 @@ function createReservationAcceptedOffers(params: {
                             project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
                             typeOf: <factory.chevre.offerType>'Offer',
                             id: requestedOffer.id,
-                            name: <factory.multilingualString>requestedOffer.name,
+                            name: <factory.chevre.multilingualString>requestedOffer.name,
                             itemOffered: reservation,
                             offeredThrough: { typeOf: <'WebAPI'>'WebAPI', identifier: factory.service.webAPI.Identifier.COA },
                             priceSpecification: requestedOffer.priceSpecification,
