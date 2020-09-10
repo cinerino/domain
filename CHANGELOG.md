@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- @chevre/factoryと重複するインターフェースを最適化
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v8.19.0 - 2020-09-10
+
+### Changed
+
+- @chevre/factoryと重複するインターフェースを最適化
 
 ## v8.18.0 - 2020-09-10
 
