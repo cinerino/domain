@@ -133,7 +133,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
                         await repos.task.taskModel.findOneAndUpdate(
                             {
                                 // 旧メンバーシップ注文タスクへの互換性維持
-                                name: { $in: [factory.taskName.OrderProgramMembership, factory.taskName.RegisterProgramMembership] },
+                                name: { $in: [factory.taskName.OrderProgramMembership] },
                                 'data.agent.id': {
                                     $exists: true,
                                     $eq: customer.id

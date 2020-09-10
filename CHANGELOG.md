@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v8.18.0 - 2020-09-10
+
+### Removed
+
+- RegisterProgramMembershipタスクを削除
+
 ## v8.17.0 - 2020-09-09
 
 ### Changed
