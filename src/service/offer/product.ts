@@ -18,8 +18,7 @@ import {
     availableProductTypes,
     createActionAttributes,
     createRegisterServiceStartParams,
-    createResult,
-    ProductType
+    createResult
 } from './product/factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -29,8 +28,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     scopes: [],
     state: ''
 });
-
-export import ProductType = ProductType;
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;

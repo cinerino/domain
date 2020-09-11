@@ -76,7 +76,7 @@ export function orderAccount(params: {
         // プロダクト検索
         const searchProductsResult = await productService.search({
             project: { id: { $eq: project.id } },
-            typeOf: { $eq: OfferService.product.ProductType.Account }
+            typeOf: { $eq: chevre.factory.product.ProductType.Account }
         });
         const accountProduct = searchProductsResult.data.find((p) => p.serviceOutput?.amount?.currency === params.accountType);
         if (accountProduct === undefined) {
