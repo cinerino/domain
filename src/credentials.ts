@@ -34,8 +34,8 @@ export const credentials = {
         clientId: <string>process.env.PECORINO_CLIENT_ID,
         clientSecret: <string>process.env.PECORINO_CLIENT_SECRET,
         endpoint: <string>process.env.PECORINO_ENDPOINT
+    },
+    sendGrid: {
+        apiKey: process.env.SENDGRID_API_KEY
     }
-    // sendGrid: {
-    //     apiKey: <string>process.env.SENDGRID_API_KEY
-    // }
 };

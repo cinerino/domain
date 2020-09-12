@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v8.20.0 - 2020-09-12
+
+### Changed
+
+- SendGrid設定に関して、プロセスレベルでの設定とプロジェクトレベルでの設定を両方有効化
+
 ## v8.19.0 - 2020-09-10
 
 ### Changed

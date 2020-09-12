@@ -3,18 +3,11 @@ import * as moment from 'moment';
 import * as chevre from '../../../chevre';
 import * as factory from '../../../factory';
 
-export enum ProductType {
-    Account = 'Account',
-    PaymentCard = 'PaymentCard',
-    PointCard = 'PointCard',
-    MembershipService = 'MembershipService'
-}
-
 export const availableProductTypes: string[] = [
-    ProductType.Account,
-    ProductType.PaymentCard,
-    ProductType.PointCard,
-    ProductType.MembershipService
+    chevre.factory.product.ProductType.Account,
+    chevre.factory.product.ProductType.PaymentCard,
+    // chevre.factory.product.ProductType.PointCard,
+    chevre.factory.product.ProductType.MembershipService
 ];
 
 export function createRegisterServiceStartParams(params: {
