@@ -40,7 +40,11 @@ export function sendEmailMessage(params: factory.action.transfer.send.message.em
         let result: any = {};
 
         try {
-            const apiKey = project.settings?.sendgridApiKey;
+            let apiKey = credentials.sendGrid.apiKey;
+            // プロジェクト固有のSendGrid設定があれば、そちらを使用
+            if (typeof project.settings?.sendgridApiKey === 'string' && project.settings.sendgridApiKey.length > 0) {
+                apiKey = project.settings.sendgridApiKey;
+            }
             if (typeof apiKey !== 'string') {
                 throw new factory.errors.ServiceUnavailable('API Key not found');
             }

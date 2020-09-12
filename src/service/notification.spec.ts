@@ -115,7 +115,7 @@ describe('sendEmailMessage()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ id: '', settings: { sendgridApiKey: '' } });
+            .resolves({ id: '', settings: { sendgridApiKey: 'xxx' } });
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
@@ -159,7 +159,7 @@ describe('sendEmailMessage()', () => {
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
-            .resolves({ id: '', settings: { sendgridApiKey: '' } });
+            .resolves({ id: '', settings: { sendgridApiKey: 'xxx' } });
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
