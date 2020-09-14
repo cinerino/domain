@@ -43,9 +43,9 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
 
             // 全クレジットカード削除
             let gmoMemberId = customer.id;
-            const useUsernameAsGMOMemberId = project.settings !== undefined && project.settings.useUsernameAsGMOMemberId === true;
+            const useUsernameAsGMOMemberId = project.settings?.useUsernameAsGMOMemberId === true;
             if (useUsernameAsGMOMemberId) {
-                if (customer.memberOf !== undefined && customer.memberOf.membershipNumber !== undefined) {
+                if (typeof customer.memberOf?.membershipNumber === 'string') {
                     gmoMemberId = customer.memberOf.membershipNumber;
                 }
             }

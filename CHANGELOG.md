@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- クレジットカード決済サービスを削除
+
 ### Fixed
 
 ### Security

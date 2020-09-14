@@ -14,7 +14,7 @@ import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { getPaymentServiceChannel } from '../payment/creditCard';
+import { getCreditCardPaymentServiceChannel } from '../payment/chevre';
 import { orderProgramMembership } from '../transaction/orderProgramMembership';
 
 /**
@@ -34,7 +34,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
-        const paymentServiceCredentials = await getPaymentServiceChannel({
+        const paymentServiceCredentials = await getCreditCardPaymentServiceChannel({
             project: { id: data.project.id },
             paymentMethodType: factory.paymentMethodType.CreditCard
         });
