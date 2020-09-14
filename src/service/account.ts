@@ -311,7 +311,7 @@ export function deposit(params: {
                         typeOf: factory.pecorino.transactionType.Deposit
                     },
                     ...{
-                        ignorePaymentCard: true
+                        // ignorePaymentCard: true
                     }
                 },
                 recipient: <any>{

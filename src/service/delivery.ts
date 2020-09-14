@@ -299,7 +299,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                         typeOf: factory.pecorino.transactionType.Deposit
                     },
                     ...{
-                        ignorePaymentCard: true
+                        // ignorePaymentCard: true
                     }
                 }
             });
@@ -392,7 +392,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                         typeOf: factory.pecorino.transactionType.Withdraw
                     },
                     ...{
-                        ignorePaymentCard: true
+                        // ignorePaymentCard: true
                     }
                 }
             });
