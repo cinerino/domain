@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - クレジットカード決済サービスを削除
+- ムビチケ決済サービスを削除
+- ムビチケリポジトリを削除
 
 ### Fixed
 

@@ -1,4 +1,3 @@
-import * as mvtkapi from '@movieticket/reserve-api-nodejs-client';
 import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 
@@ -9,7 +8,6 @@ import * as COA from '../../coa';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MvtkRepository as MovieTicketRepo } from '../../repo/paymentMethod/movieTicket';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -50,7 +48,6 @@ enum SeatingType {
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    movieTicket: MovieTicketRepo;
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -79,7 +76,6 @@ export function create(params: {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        movieTicket: MovieTicketRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
@@ -517,7 +513,6 @@ export function validateAcceptedOffers(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        movieTicket: MovieTicketRepo;
         project: ProjectRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         const masterService = new COA.service.Master(
@@ -681,33 +676,65 @@ export function validateAcceptedOffers(params: {
                         }
 
                         // ムビチケ認証
-                        const checkResult = await repos.movieTicket.checkByIdentifier({
-                            movieTickets: [{
-                                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-                                typeOf: <any>movieTicket.typeOf,
-                                identifier: movieTicket.identifier,
-                                accessCode: movieTicket.accessCode,
-                                serviceType: '',
-                                serviceOutput: <any>{}
-                            }],
-                            movieTicketPaymentAccepted: movieTicketPaymentAccepted,
-                            screeningEvent: params.event
+
+                        const payService = new chevre.service.transaction.Pay({
+                            endpoint: credentials.chevre.endpoint,
+                            auth: chevreAuthClient
                         });
+                        const checkAction = await payService.check({
+                            project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
+                            typeOf: chevre.factory.actionType.CheckAction,
+                            agent: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
+                            object: [{
+                                typeOf: chevre.factory.service.paymentService.PaymentServiceType.MovieTicket,
+                                paymentMethod: {
+                                    typeOf: movieTicket.typeOf,
+                                    additionalProperty: [],
+                                    name: movieTicket.typeOf,
+                                    paymentMethodId: '' // 使用されないので空でよし
+                                },
+                                movieTickets: [{
+                                    project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+                                    typeOf: movieTicket.typeOf,
+                                    identifier: movieTicket.identifier,
+                                    accessCode: movieTicket.accessCode,
+                                    serviceType: '',
+                                    serviceOutput: {
+                                        reservationFor: { id: params.event.id, typeOf: params.event.typeOf },
+                                        reservedTicket: {
+                                            ticketedSeat: {
+                                                typeOf: chevre.factory.placeType.Seat,
+                                                // seatingType?: ISeatingType;
+                                                seatNumber: ticketedSeat.seatNumber,
+                                                seatRow: '',
+                                                seatSection: ticketedSeat.seatSection
+                                            }
+                                        }
+                                    }
+                                }],
+                                seller: params.seller
+                            }]
+                        });
+                        const checkResult = checkAction.result;
 
-                        if (checkResult.movieTickets.length === 0) {
+                        if (checkResult?.movieTickets.length === 0) {
                             throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
                         }
-                        if (checkResult.purchaseNumberAuthResult.knyknrNoInfoOut === null) {
+                        if (checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut === null) {
                             throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
                         }
-                        if (checkResult.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo === null) {
+                        if (checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo === null) {
                             throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
                         }
 
-                        const purchaseNumberInfo: mvtkapi.mvtk.services.auth.purchaseNumberAuth.IPurchaseNumberInfo =
-                            checkResult.purchaseNumberAuthResult.knyknrNoInfoOut[0];
-                        const valieMovieTicketInfo: mvtkapi.mvtk.services.auth.purchaseNumberAuth.IValidTicket =
-                            checkResult.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0];
+                        const purchaseNumberInfo = checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0];
+                        const valieMovieTicketInfo = checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0];
+                        if (purchaseNumberInfo === undefined) {
+                            throw new factory.errors.Argument('Offer', 'purchaseNumberAuthResult.knyknrNoInfoOut[0] undefined');
+                        }
+                        if (valieMovieTicketInfo === undefined) {
+                            throw new factory.errors.Argument('Offer', 'purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0] undefined');
+                        }
 
                         let eventCOAInfo: any;
                         if (Array.isArray(params.event.additionalProperty)) {
