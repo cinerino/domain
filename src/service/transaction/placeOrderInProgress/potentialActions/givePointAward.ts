@@ -14,6 +14,7 @@ export async function createGivePointAwardActions(params: {
         // メンバーシップごとに、特典を確認してインセンティブ付与
         givePointAwardParams.forEach((givePointAwardParam) => {
             const amount = givePointAwardParam.object?.amount;
+
             const accountNumber = givePointAwardParam.object?.toLocation?.accountNumber;
             const accountType = givePointAwardParam.object?.toLocation?.accountType;
             const description = givePointAwardParam.object?.description;
@@ -30,6 +31,7 @@ export async function createGivePointAwardActions(params: {
                         typeOf: factory.action.transfer.give.pointAward.ObjectType.PointAward,
                         amount: amount,
                         toLocation: {
+                            typeOf: factory.chevre.paymentMethodType.Account,
                             accountNumber: accountNumber,
                             accountType: accountType
                         },

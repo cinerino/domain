@@ -99,8 +99,8 @@ export function stream(params: {
     };
 }
 
-export function ownershipInfo2report<T extends factory.ownershipInfo.IGoodType>(params: {
-    ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<T>>;
+export function ownershipInfo2report(params: {
+    ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 }): IOwnershipInfoReport {
     const ownershipInfo = params.ownershipInfo;
 

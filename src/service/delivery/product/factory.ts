@@ -2,8 +2,9 @@ import * as moment from 'moment';
 
 import * as factory from '../../../factory';
 
-export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
+export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
+// tslint:disable-next-line:cyclomatic-complexity
 export function createProductOwnershipInfo(params: {
     order: factory.order.IOrder;
     acceptedOffer: factory.order.IAcceptedOffer<factory.order.IServiceOutput>;
@@ -60,6 +61,22 @@ export function createProductOwnershipInfo(params: {
 
     const itemOffered = params.acceptedOffer.itemOffered;
 
+    const typeOfGood: factory.ownershipInfo.IServiceOutput = {
+        project: itemOffered.project,
+        identifier: itemOffered.identifier,
+        issuedThrough: itemOffered.issuedThrough,
+        typeOf: itemOffered.typeOf,
+        ...(itemOffered.validFor !== undefined) ? { validFor: itemOffered.validFor } : undefined,
+        ...(itemOffered.name !== undefined) ? { name: itemOffered.name } : undefined,
+        ...((<any>itemOffered).dateIssued !== undefined) ? { dateIssued: (<any>itemOffered).dateIssued } : undefined,
+        ...((<any>itemOffered).membershipFor !== undefined) ? { membershipFor: (<any>itemOffered).membershipFor } : undefined,
+        ...((<any>itemOffered).hostingOrganization !== undefined)
+            ? { hostingOrganization: (<any>itemOffered).hostingOrganization }
+            : undefined,
+        ...(typeof (<any>itemOffered).accountNumber === 'string') ? { accountNumber: (<any>itemOffered).accountNumber } : undefined,
+        ...(typeof (<any>itemOffered).accountType === 'string') ? { accountType: (<any>itemOffered).accountType } : undefined
+    };
+
     ownershipInfo = {
         project: params.order.project,
         typeOf: 'OwnershipInfo',
@@ -69,21 +86,7 @@ export function createProductOwnershipInfo(params: {
         acquiredFrom: params.acquiredFrom,
         ownedFrom: params.ownedFrom,
         ownedThrough: ownedThrough,
-        typeOfGood: {
-            project: itemOffered.project,
-            identifier: itemOffered.identifier,
-            issuedThrough: itemOffered.issuedThrough,
-            typeOf: itemOffered.typeOf,
-            ...(itemOffered.validFor !== undefined) ? { validFor: itemOffered.validFor } : undefined,
-            ...(itemOffered.name !== undefined) ? { name: itemOffered.name } : undefined,
-            ...((<any>itemOffered).dateIssued !== undefined) ? { dateIssued: (<any>itemOffered).dateIssued } : undefined,
-            ...((<any>itemOffered).membershipFor !== undefined) ? { membershipFor: (<any>itemOffered).membershipFor } : undefined,
-            ...((<any>itemOffered).hostingOrganization !== undefined)
-                ? { hostingOrganization: (<any>itemOffered).hostingOrganization }
-                : undefined,
-            ...(typeof (<any>itemOffered).accountNumber === 'string') ? { accountNumber: (<any>itemOffered).accountNumber } : undefined,
-            ...(typeof (<any>itemOffered).accountType === 'string') ? { accountType: (<any>itemOffered).accountType } : undefined
-        }
+        typeOfGood: typeOfGood
     };
 
     return ownershipInfo;

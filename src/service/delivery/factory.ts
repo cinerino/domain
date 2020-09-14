@@ -7,7 +7,7 @@ import { availableProductTypes } from '../offer/product/factory';
 import { createProductOwnershipInfo } from './product/factory';
 import { createReservationOwnershipInfo } from './reservation/factory';
 
-export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
+export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 /**
  * 注文から所有権を作成する

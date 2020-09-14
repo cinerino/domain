@@ -1,6 +1,6 @@
 import * as factory from '../../../factory';
 
-export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
+export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 export function createReservationOwnershipInfo(params: {
     order: factory.order.IOrder;
