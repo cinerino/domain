@@ -10,7 +10,7 @@ import * as ReservationOfferService from '../offer/reservation';
 /**
  * タスク実行関数
  */
-export function call(data: factory.task.IData<factory.taskName.CancelSeatReservation>): IOperation<void> {
+export function call(data: factory.task.IData<factory.taskName.VoidReserve>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
         const projectRepo = new ProjectRepo(settings.connection);

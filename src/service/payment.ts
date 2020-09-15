@@ -45,7 +45,6 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         project: ProjectRepo;
     }) => {
         if (params.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre) {
-            // throw new factory.errors.NotImplemented(`instrument '${params.instrument?.identifier}' not implemented`);
             await ChevrePaymentService.pay(params)(repos);
 
             return;

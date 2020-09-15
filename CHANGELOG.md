@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 所有権インターフェースの汎用性拡張
 - Chevre転送取引へのignorePaymentCard指定を削除
+- CancelSeatReservationタスクをVoidReserveタスクに変更
 
 ### Deprecated
 

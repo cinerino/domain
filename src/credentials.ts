@@ -24,11 +24,6 @@ export const credentials = {
         url: <string>process.env.LINE_NOTIFY_URL,
         accessToken: <string>process.env.LINE_NOTIFY_ACCESS_TOKEN
     },
-    mvtkReserve: {
-        authorizeServerDomain: <string>process.env.MVTK_RESERVE_AUTHORIZE_SERVER_DOMAIN,
-        clientId: <string>process.env.MVTK_RESERVE_CLIENT_ID,
-        clientSecret: <string>process.env.MVTK_RESERVE_CLIENT_SECRET
-    },
     pecorino: {
         authorizeServerDomain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN,
         clientId: <string>process.env.PECORINO_CLIENT_ID,

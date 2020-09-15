@@ -72,9 +72,9 @@ export function createTasks(params: {
         // 期限切れor中止の場合は、タスクリストを作成する
         case factory.transactionStatusType.Canceled:
         case factory.transactionStatusType.Expired:
-            const cancelSeatReservationTaskAttributes: factory.task.IAttributes<factory.taskName.CancelSeatReservation> = {
+            const voidReserveTaskAttributes: factory.task.IAttributes<factory.taskName.VoidReserve> = {
                 project: { typeOf: project.typeOf, id: project.id },
-                name: factory.taskName.CancelSeatReservation,
+                name: factory.taskName.VoidReserve,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
                 remainingNumberOfTries: 10,
@@ -129,7 +129,7 @@ export function createTasks(params: {
             };
 
             taskAttributes.push(
-                cancelSeatReservationTaskAttributes,
+                voidReserveTaskAttributes,
                 voidRegisterServiceTaskAttributes,
                 voidPaymentTaskAttributes,
                 voidMoneyTransferTaskAttributes
