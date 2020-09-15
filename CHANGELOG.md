@@ -10,11 +10,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v9.0.0 - 2020-09-15
+
+### Changed
+
 - 所有権インターフェースの汎用性拡張
 - Chevre転送取引へのignorePaymentCard指定を削除
 - CancelSeatReservationタスクをVoidReserveタスクに変更
-
-### Deprecated
 
 ### Removed
 
@@ -22,10 +32,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - ムビチケ決済サービスを削除
 - ムビチケリポジトリを削除
 - mvtkreserveapiのエクスポートを削除
-
-### Fixed
-
-### Security
 
 ## v8.20.0 - 2020-09-12
 
