@@ -36,7 +36,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<factory.ownershipInfo.IGoodType>>;
+export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 /**
  * 注文を配送する
@@ -82,7 +82,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
 
             // プロダクト登録プロセスロック解除
             await Promise.all(ownershipInfos.map(async (o) => {
-                const productId = o.typeOfGood.issuedThrough?.id;
+                const productId = (<factory.ownershipInfo.IServiceOutput>o.typeOfGood).issuedThrough?.id;
                 if (typeof productId === 'string') {
                     await processUnlock({
                         agent: { id: String(o.ownedBy.id) },
@@ -292,14 +292,14 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                         : params.purpose.typeOf,
                     fromLocation: agent,
                     toLocation: {
-                        typeOf: params.object.toLocation.accountType,
+                        typeOf: factory.chevre.paymentMethodType.Account,
                         identifier: params.object.toLocation.accountNumber
                     },
                     pendingTransaction: {
                         typeOf: factory.pecorino.transactionType.Deposit
                     },
                     ...{
-                        ignorePaymentCard: true
+                        // ignorePaymentCard: true
                     }
                 }
             });
@@ -392,7 +392,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                         typeOf: factory.pecorino.transactionType.Withdraw
                     },
                     ...{
-                        ignorePaymentCard: true
+                        // ignorePaymentCard: true
                     }
                 }
             });

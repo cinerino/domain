@@ -14,8 +14,7 @@ import { handleChevreError, handlePecorinoError } from '../errorHandler';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
-type IOwnershipInfoWithDetail =
-    factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.ownershipInfo.AccountGoodType.Account>>;
+type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 type IAccountsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
@@ -68,9 +67,9 @@ export function close(params: {
 
             // 所有者を指定された場合、口座所有権を確認
             if (params.ownedBy !== undefined) {
-                const accountOwnershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+                const accountOwnershipInfos = await repos.ownershipInfo.search({
                     typeOfGood: {
-                        typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                        typeOf: factory.chevre.paymentMethodType.Account,
                         accountType: params.accountType,
                         accountNumbers: [params.accountNumber]
                     },
@@ -82,8 +81,8 @@ export function close(params: {
                 }
 
                 closingAccount = {
-                    accountType: ownershipInfo.typeOfGood.accountType,
-                    accountNumber: ownershipInfo.typeOfGood.accountNumber
+                    accountType: (<factory.ownershipInfo.IAccount>ownershipInfo.typeOfGood).accountType,
+                    accountNumber: (<factory.ownershipInfo.IAccount>ownershipInfo.typeOfGood).accountNumber
                 };
             }
 
@@ -115,8 +114,8 @@ export function search(params: {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 口座所有権を検索
-            const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>(params.conditions);
-            const accountNumbers = ownershipInfos.map((o) => o.typeOfGood.accountNumber);
+            const ownershipInfos = await repos.ownershipInfo.search(params.conditions);
+            const accountNumbers = ownershipInfos.map((o) => (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber);
 
             const typeOfGood = params.conditions.typeOfGood;
             if (typeOfGood === undefined) {
@@ -140,7 +139,9 @@ export function search(params: {
                 });
 
                 ownershipInfosWithDetail = ownershipInfos.map((o) => {
-                    const account = searchAccountResult.data.find((a) => a.accountNumber === o.typeOfGood.accountNumber);
+                    const account = searchAccountResult.data.find(
+                        (a) => a.accountNumber === (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber
+                    );
                     if (account === undefined) {
                         throw new factory.errors.NotFound('Account');
                     }
@@ -177,9 +178,9 @@ export function searchMoneyTransferActions(params: {
 
         let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
-            const ownershipInfos = await repos.ownershipInfo.search<factory.ownershipInfo.AccountGoodType.Account>({
+            const ownershipInfos = await repos.ownershipInfo.search({
                 typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                    typeOf: factory.chevre.paymentMethodType.Account,
                     accountType: params.conditions.accountType,
                     accountNumber: params.conditions.accountNumber
                     // accountNumbers: [params.conditions.accountNumber]
@@ -302,7 +303,7 @@ export function deposit(params: {
                     },
                     fromLocation: params.agent,
                     toLocation: {
-                        typeOf: params.object.toLocation.accountType,
+                        typeOf: params.object.toLocation.typeOf,
                         identifier: params.object.toLocation.accountNumber
                     },
                     description: params.object.description,
@@ -310,7 +311,7 @@ export function deposit(params: {
                         typeOf: factory.pecorino.transactionType.Deposit
                     },
                     ...{
-                        ignorePaymentCard: true
+                        // ignorePaymentCard: true
                     }
                 },
                 recipient: <any>{
@@ -347,7 +348,7 @@ export function findAccount(params: {
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
                 typeOfGood: {
-                    typeOf: factory.ownershipInfo.AccountGoodType.Account,
+                    typeOf: factory.chevre.paymentMethodType.Account,
                     accountType: params.accountType
                 },
                 ownedBy: { id: params.customer.id },
@@ -361,11 +362,13 @@ export function findAccount(params: {
 
         // 開設口座に絞る
         accountOwnershipInfos =
-            accountOwnershipInfos.filter((o) => o.typeOfGood.status === factory.pecorino.accountStatusType.Opened);
+            accountOwnershipInfos.filter(
+                (o) => (<factory.pecorino.account.IAccount>o.typeOfGood).status === factory.pecorino.accountStatusType.Opened
+            );
         if (accountOwnershipInfos.length === 0) {
             throw new factory.errors.NotFound('accountOwnershipInfos');
         }
 
-        return accountOwnershipInfos[0].typeOfGood;
+        return <factory.pecorino.account.IAccount>accountOwnershipInfos[0].typeOfGood;
     };
 }

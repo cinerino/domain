@@ -434,7 +434,7 @@ function checkIfRegistered(params: {
         // メンバーシップについては、登録済かどうか確認する
         if (params.product.typeOf === factory.chevre.product.ProductType.MembershipService) {
             if (typeof serviceOutputType === 'string') {
-                const ownershipInfos = await repos.ownershipInfo.search<string>({
+                const ownershipInfos = await repos.ownershipInfo.search({
                     typeOfGood: {
                         typeOf: serviceOutputType
                     },
@@ -443,7 +443,9 @@ function checkIfRegistered(params: {
                     ownedThrough: params.now
                 });
 
-                const selectedProgramMembership = ownershipInfos.find((o) => o.typeOfGood.membershipFor?.id === params.product.id);
+                const selectedProgramMembership = ownershipInfos.find(
+                    (o) => (<any>o.typeOfGood).membershipFor?.id === params.product.id
+                );
                 if (selectedProgramMembership !== undefined) {
                     // Already registered
                     throw new factory.errors.Argument('object', 'Already registered');

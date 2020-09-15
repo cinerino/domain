@@ -32,7 +32,7 @@ export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
 /**
  * 座席仮予約取消
  */
-export function voidTransaction(params: factory.task.IData<factory.taskName.CancelSeatReservation>) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidReserve>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;

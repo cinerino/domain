@@ -13,7 +13,6 @@ import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
 import { MongoRepository as PaymentMethodRepo } from './repo/paymentMethod';
 import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard';
-import { MvtkRepository as MovieTicketRepo } from './repo/paymentMethod/movieTicket';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as RoleRepo } from './repo/role';
@@ -75,10 +74,6 @@ export namespace paymentMethod {
      * クレジットカードリポジトリ
      */
     export class CreditCard extends CreditCardRepo { }
-    /**
-     * ムビチケリポジトリ
-     */
-    export class MovieTicket extends MovieTicketRepo { }
 }
 
 /**

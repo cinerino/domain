@@ -17,7 +17,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { findAccount } from '../account';
 import { findCreditCard } from '../customer';
 import * as OfferService from '../offer';
-import * as CreditCardPaymentService from '../payment/creditCard';
+import * as ChevrePaymentService from '../payment/chevre';
 import * as TransactionService from '../transaction';
 
 import { credentials } from '../../credentials';
@@ -317,7 +317,7 @@ function processAuthorizeCreditCard(params: {
             customer: { id: params.customer.id }
         })(repos);
 
-        await CreditCardPaymentService.authorize({
+        await ChevrePaymentService.authorize({
             project: { id: params.project.id },
             agent: params.customer,
             object: {

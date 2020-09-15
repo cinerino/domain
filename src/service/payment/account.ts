@@ -228,8 +228,8 @@ async function processAccountTransaction(params: {
                 toLocation: recipient,
                 pendingTransaction: {
                     typeOf: factory.pecorino.transactionType.Withdraw
-                },
-                ignorePaymentCard: true
+                }
+                // ignorePaymentCard: true
             }
         });
     } else {
@@ -424,8 +424,8 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         toLocation: pendingTransaction.object.fromLocation,
                         pendingTransaction: {
                             typeOf: factory.pecorino.transactionType.Deposit
-                        },
-                        ignorePaymentCard: true
+                        }
+                        // ignorePaymentCard: true
                     }
                 });
 

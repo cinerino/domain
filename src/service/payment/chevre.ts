@@ -334,3 +334,41 @@ async function getPaymentServiceType(params: {
 
     return paymentServiceSetting.typeOf;
 }
+
+interface ICreditCardPaymentServiceCredentials {
+    endpoint: string;
+    siteId: string;
+    sitePass: string;
+}
+
+export async function getCreditCardPaymentServiceChannel(params: {
+    project: { id: string };
+    paymentMethodType: string;
+}): Promise<ICreditCardPaymentServiceCredentials> {
+    const projectService = new chevre.service.Project({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient
+    });
+    const chevreProject = await projectService.findById({ id: params.project.id });
+    const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
+        return s.typeOf === chevre.factory.service.paymentService.PaymentServiceType.CreditCard
+            && s.serviceOutput?.typeOf === params.paymentMethodType;
+    });
+
+    const availableChannel = paymentServiceSetting?.availableChannel;
+    if (typeof availableChannel?.serviceUrl !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.serviceUrl');
+    }
+    if (typeof availableChannel?.credentials?.siteId !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.credentials.siteId');
+    }
+    if (typeof availableChannel?.credentials?.sitePass !== 'string') {
+        throw new factory.errors.NotFound('paymentService.availableChannel.credentials.sitePass');
+    }
+
+    return {
+        endpoint: availableChannel.serviceUrl,
+        siteId: availableChannel.credentials.siteId,
+        sitePass: availableChannel.credentials.sitePass
+    };
+}

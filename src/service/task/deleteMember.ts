@@ -11,7 +11,7 @@ import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 
 import * as CustomerService from '../customer';
-import { getPaymentServiceChannel } from '../payment/creditCard';
+import { getCreditCardPaymentServiceChannel } from '../payment/chevre';
 
 /**
  * タスク実行関数
@@ -24,7 +24,7 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
-        const paymentServiceCredentials = await getPaymentServiceChannel({
+        const paymentServiceCredentials = await getCreditCardPaymentServiceChannel({
             project: { id: data.project.id },
             paymentMethodType: factory.paymentMethodType.CreditCard
         });

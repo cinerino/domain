@@ -5,8 +5,7 @@ import { modelName } from './mongoose/model/ownershipInfo';
 
 import * as factory from '../factory';
 
-export type IOwnershipInfo<T extends factory.ownershipInfo.IGoodType> =
-    factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood<T>>;
+export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 /**
  * 所有権リポジトリ
@@ -194,9 +193,7 @@ export class MongoRepository {
     /**
      * 所有権情報を保管する
      */
-    public async save(
-        ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>
-    ): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
+    public async save(ownershipInfo: IOwnershipInfo): Promise<IOwnershipInfo> {
         // 所有権ID発行
         const id = uuid.v4();
 
@@ -207,9 +204,7 @@ export class MongoRepository {
     /**
      * 所有権情報を保管する
      */
-    public async saveByIdentifier(
-        ownershipInfo: IOwnershipInfo<factory.ownershipInfo.IGoodType>
-    ): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
+    public async saveByIdentifier(ownershipInfo: IOwnershipInfo): Promise<IOwnershipInfo> {
         return this.ownershipInfoModel.findOneAndUpdate(
             { identifier: ownershipInfo.identifier },
             {
@@ -222,7 +217,7 @@ export class MongoRepository {
             .then((doc) => doc.toObject());
     }
 
-    public async findById(params: { id: string }): Promise<IOwnershipInfo<factory.ownershipInfo.IGoodType>> {
+    public async findById(params: { id: string }): Promise<IOwnershipInfo> {
         const doc = await this.ownershipInfoModel.findById(params.id)
             .exec();
         if (doc === null) {
@@ -243,9 +238,9 @@ export class MongoRepository {
     /**
      * 所有権を検索する
      */
-    public async search<T extends factory.ownershipInfo.IGoodType>(
+    public async search(
         params: factory.ownershipInfo.ISearchConditions
-    ): Promise<IOwnershipInfo<T>[]> {
+    ): Promise<IOwnershipInfo[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.ownershipInfoModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},

@@ -33,8 +33,7 @@ const coaAuthClient = new COA.auth.RefreshToken({
 
 type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
 
-type IOwnershipInfoWithDetail =
-    factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail<factory.chevre.reservationType.EventReservation>>;
+type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 
 export type ISearchEventReservationsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
@@ -253,10 +252,11 @@ export function searchScreeningEventReservations(
             // Chevre予約の場合、詳細を取得
             const reservationIds = ownershipInfos
                 .filter((o) => {
-                    return o.typeOfGood.bookingService === undefined
-                        || o.typeOfGood.bookingService.identifier === factory.service.webAPI.Identifier.Chevre;
+                    return (<factory.ownershipInfo.IReservation>o.typeOfGood).bookingService === undefined
+                        || (<factory.ownershipInfo.IReservation>o.typeOfGood).bookingService?.identifier
+                        === factory.service.webAPI.Identifier.Chevre;
                 })
-                .map((o) => <string>o.typeOfGood.id);
+                .map((o) => <string>(<factory.ownershipInfo.IReservation>o.typeOfGood).id);
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
@@ -274,7 +274,7 @@ export function searchScreeningEventReservations(
             }
 
             ownershipInfosWithDetail = ownershipInfos.map((o) => {
-                let reservation = chevreReservations.find((r) => r.id === o.typeOfGood.id);
+                let reservation = chevreReservations.find((r) => r.id === (<factory.ownershipInfo.IReservation>o.typeOfGood).id);
                 if (reservation === undefined) {
                     // COA予約の場合、typeOfGoodに詳細も含まれる
                     reservation = <IReservation>o.typeOfGood;

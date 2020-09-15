@@ -11,14 +11,9 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 import * as AccountPaymentService from './payment/account';
 import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
-import * as CreditCardPaymentService from './payment/creditCard';
-import * as MovieTicketPaymentService from './payment/movieTicket';
 import * as PaymentCardPaymentService from './payment/paymentCard';
 
 import * as factory from '../factory';
-
-const USE_CHEVRE_PAY_MOVIE_TICKET = process.env.USE_CHEVRE_PAY_MOVIE_TICKET === '1';
-const USE_CHEVRE_REFUND_CREDIT_CARD = process.env.USE_CHEVRE_REFUND_CREDIT_CARD === '1';
 
 /**
  * 口座決済
@@ -36,16 +31,6 @@ export import any = AnyPaymentService;
 export import chevre = ChevrePaymentService;
 
 /**
- * クレジットカード決済
- */
-export import creditCard = CreditCardPaymentService;
-
-/**
- * ムビチケ決済
- */
-export import movieTicket = MovieTicketPaymentService;
-
-/**
  * 決済カード決済
  */
 export import paymentCard = PaymentCardPaymentService;
@@ -60,7 +45,6 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         project: ProjectRepo;
     }) => {
         if (params.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre) {
-            // throw new factory.errors.NotImplemented(`instrument '${params.instrument?.identifier}' not implemented`);
             await ChevrePaymentService.pay(params)(repos);
 
             return;
@@ -71,15 +55,6 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
         switch (paymentMethodType) {
             case factory.paymentMethodType.Account:
                 await AccountPaymentService.payAccount(params)(repos);
-                break;
-
-            case factory.paymentMethodType.CreditCard:
-                await CreditCardPaymentService.payCreditCard(params)(repos);
-                break;
-
-            case factory.paymentMethodType.MGTicket:
-            case factory.paymentMethodType.MovieTicket:
-                await MovieTicketPaymentService.payMovieTicket(params)(repos);
                 break;
 
             case factory.paymentMethodType.PaymentCard:
@@ -136,15 +111,6 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
                     await AccountPaymentService.voidTransaction(params)(repos);
                     break;
 
-                case factory.paymentMethodType.CreditCard:
-                    await CreditCardPaymentService.cancelCreditCardAuth(params)(repos);
-                    break;
-
-                case factory.paymentMethodType.MGTicket:
-                case factory.paymentMethodType.MovieTicket:
-                    // await MovieTicketPaymentService.voidTransaction(params)(repos);
-                    break;
-
                 case factory.paymentMethodType.PaymentCard:
                     await PaymentCardPaymentService.voidTransaction(params)(repos);
                     break;
@@ -175,20 +141,12 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
                 break;
 
             case factory.paymentMethodType.CreditCard:
-                if (USE_CHEVRE_REFUND_CREDIT_CARD) {
-                    await ChevrePaymentService.refund(params)(repos);
-                } else {
-                    await CreditCardPaymentService.refundCreditCard(params)(repos);
-                }
+                await ChevrePaymentService.refund(params)(repos);
                 break;
 
             case factory.paymentMethodType.MGTicket:
             case factory.paymentMethodType.MovieTicket:
-                if (USE_CHEVRE_PAY_MOVIE_TICKET) {
-                    await ChevrePaymentService.refund(params)(repos);
-                } else {
-                    await MovieTicketPaymentService.refundMovieTicket(params)(repos);
-                }
+                await ChevrePaymentService.refund(params)(repos);
                 break;
 
             case factory.paymentMethodType.PaymentCard:
