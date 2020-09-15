@@ -4,7 +4,6 @@
  */
 import * as COA from '@motionpicture/coa-service';
 import * as GMO from '@motionpicture/gmo-service';
-import * as mvtkreserveapi from '@movieticket/reserve-api-nodejs-client';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
 import * as AWS from 'aws-sdk';
 
@@ -31,7 +30,6 @@ export import GMO = GMO;
  */
 export import pecorinoapi = pecorinoapi;
 export import chevre = chevre;
-export import mvtkreserveapi = mvtkreserveapi;
 
 /**
  * AWS SDK

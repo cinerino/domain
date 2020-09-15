@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - クレジットカード決済サービスを削除
 - ムビチケ決済サービスを削除
 - ムビチケリポジトリを削除
+- mvtkreserveapiのエクスポートを削除
 
 ### Fixed
 
