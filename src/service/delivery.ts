@@ -274,7 +274,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: <any>{
+                recipient: {
                     typeOf: params.recipient.typeOf,
                     id: params.recipient.id,
                     name: (typeof params.recipient.name === 'string')
@@ -285,6 +285,8 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 },
                 object: {
                     amount: {
+                        typeOf: 'MonetaryAmount',
+                        currency: params.object.toLocation.accountType,
                         value: params.object.amount
                     },
                     description: (typeof params.object.description === 'string')
@@ -296,10 +298,8 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                         identifier: params.object.toLocation.accountNumber
                     },
                     pendingTransaction: {
-                        typeOf: factory.pecorino.transactionType.Deposit
-                    },
-                    ...{
-                        // ignorePaymentCard: true
+                        typeOf: factory.pecorino.transactionType.Deposit,
+                        id: '' // 空でok
                     }
                 }
             });
@@ -378,21 +378,22 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: <any>recipient,
+                recipient: recipient,
                 object: {
-                    amount: { value: givePointAwardActionObject.amount },
+                    amount: {
+                        typeOf: 'MonetaryAmount',
+                        currency: givePointAwardActionObject.toLocation.accountType,
+                        value: givePointAwardActionObject.amount
+                    },
                     fromLocation: {
                         typeOf: factory.pecorino.account.TypeOf.Account,
-                        accountNumber: givePointAwardActionObject.toLocation.accountNumber,
-                        accountType: givePointAwardActionObject.toLocation.accountType
+                        identifier: givePointAwardActionObject.toLocation.accountNumber
                     },
                     toLocation: recipient,
-                    description: `${givePointAwardActionObject.description}取消`,
+                    description: `[Return Award]${givePointAwardActionObject.description}`,
                     pendingTransaction: {
-                        typeOf: factory.pecorino.transactionType.Withdraw
-                    },
-                    ...{
-                        // ignorePaymentCard: true
+                        typeOf: factory.pecorino.transactionType.Withdraw,
+                        id: '' // 空でok
                     }
                 }
             });

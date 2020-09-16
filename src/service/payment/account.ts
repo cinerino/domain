@@ -217,9 +217,13 @@ async function processAccountTransaction(params: {
             typeOf: chevre.factory.transactionType.MoneyTransfer,
             agent: agent,
             expires: expires,
-            recipient: <any>recipient,
+            recipient: recipient,
             object: {
-                amount: { value: params.object.amount },
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    currency: params.object.fromAccount.accountType,
+                    value: params.object.amount
+                },
                 description: description,
                 fromLocation: {
                     typeOf: params.object.fromAccount.accountType,
@@ -227,9 +231,9 @@ async function processAccountTransaction(params: {
                 },
                 toLocation: recipient,
                 pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Withdraw
+                    typeOf: factory.pecorino.transactionType.Withdraw,
+                    id: '' // 空でok
                 }
-                // ignorePaymentCard: true
             }
         });
     } else {
@@ -423,9 +427,9 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         fromLocation: pendingTransaction.object.toLocation,
                         toLocation: pendingTransaction.object.fromLocation,
                         pendingTransaction: {
-                            typeOf: factory.pecorino.transactionType.Deposit
+                            typeOf: factory.pecorino.transactionType.Deposit,
+                            id: '' // 空でok
                         }
-                        // ignorePaymentCard: true
                     }
                 });
 

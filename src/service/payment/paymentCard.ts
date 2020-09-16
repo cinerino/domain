@@ -193,7 +193,7 @@ async function processMoneyTransferTransaction(params: {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
-            recipient: <any>recipient,
+            recipient: recipient,
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
@@ -205,11 +205,13 @@ async function processMoneyTransferTransaction(params: {
                     typeOf: params.object.fromLocation.typeOf,
                     identifier: params.object.fromLocation.identifier
                 },
-                toLocation: <any>{
+                toLocation: {
+                    typeOf: recipient.typeOf,
                     name: recipient.name
                 },
                 pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Withdraw
+                    typeOf: factory.pecorino.transactionType.Withdraw,
+                    id: '' // 空でok
                 }
             }
         });
@@ -219,7 +221,7 @@ async function processMoneyTransferTransaction(params: {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
-            recipient: <any>recipient,
+            recipient: recipient,
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
@@ -236,7 +238,8 @@ async function processMoneyTransferTransaction(params: {
                     identifier: params.object.toLocation.identifier
                 },
                 pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Transfer
+                    typeOf: factory.pecorino.transactionType.Transfer,
+                    id: '' // 空でok
                 }
             }
         });
@@ -246,7 +249,7 @@ async function processMoneyTransferTransaction(params: {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             agent: agent,
             expires: expires,
-            recipient: <any>recipient,
+            recipient: recipient,
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
@@ -254,7 +257,8 @@ async function processMoneyTransferTransaction(params: {
                     currency: chevre.factory.priceCurrency.JPY
                 },
                 description: description,
-                fromLocation: <any>{
+                fromLocation: {
+                    typeOf: agent.typeOf,
                     name: agent.name
                 },
                 toLocation: {
@@ -262,7 +266,8 @@ async function processMoneyTransferTransaction(params: {
                     identifier: params.object.toLocation.identifier
                 },
                 pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Deposit
+                    typeOf: factory.pecorino.transactionType.Deposit,
+                    id: '' // 空でok
                 }
             }
         });

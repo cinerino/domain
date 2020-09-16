@@ -157,8 +157,8 @@ async function processStartDepositTransaction(params: {
                     value: Number(params.object.itemOffered.value),
                     currency: factory.chevre.priceCurrency.JPY
                 },
-                fromLocation: <any>{
-                    // typeOf: params.transaction.agent.typeOf,
+                fromLocation: {
+                    typeOf: params.transaction.agent.typeOf,
                     id: params.transaction.agent.id,
                     name: (typeof params.transaction.agent.name === 'string')
                         ? params.transaction.agent.name
@@ -167,10 +167,11 @@ async function processStartDepositTransaction(params: {
                 toLocation: params.object.toLocation,
                 description: description,
                 pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Deposit
+                    typeOf: factory.pecorino.transactionType.Deposit,
+                    id: '' // 空でok
                 }
             },
-            recipient: <any>{
+            recipient: {
                 typeOf: params.transaction.agent.typeOf,
                 id: params.transaction.agent.id,
                 name: (typeof params.transaction.agent.name === 'string')
