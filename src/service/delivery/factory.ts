@@ -59,8 +59,6 @@ export function createOwnershipInfosFromOrder(params: {
                 break;
 
             default:
-                // tslint:disable-next-line:no-suspicious-comment
-                // TODO Chevre決済カードサービスに対して動的にコントロール
                 const productType = (<factory.order.IServiceOutput>itemOffered).issuedThrough?.typeOf;
                 if (typeof productType === 'string' && availableProductTypes.indexOf(productType) >= 0) {
                     ownershipInfo = createProductOwnershipInfo({

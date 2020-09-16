@@ -226,7 +226,7 @@ async function processAccountTransaction(params: {
                 },
                 description: description,
                 fromLocation: {
-                    typeOf: params.object.fromAccount.accountType,
+                    typeOf: factory.chevre.paymentMethodType.Account,
                     identifier: params.object.fromAccount.accountNumber
                 },
                 toLocation: recipient,
