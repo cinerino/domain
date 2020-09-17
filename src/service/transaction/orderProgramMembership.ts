@@ -83,7 +83,11 @@ export function orderProgramMembership(
                     // tslint:disable-next-line:no-magic-numbers
                     .add(5, 'minutes')
                     .toDate(),
-                agent: customer,
+                agent: {
+                    typeOf: customer.typeOf,
+                    id: customer.id,
+                    memberOf: customer.memberOf
+                },
                 seller: { typeOf: seller.typeOf, id: String(seller.id) },
                 object: {}
             })(repos);
@@ -184,7 +188,15 @@ function processPlaceOrder(params: {
         await TransactionService.updateAgent({
             typeOf: transaction.typeOf,
             id: transaction.id,
-            agent: customer
+            agent: {
+                typeOf: customer.typeOf,
+                id: customer.id,
+                email: customer.email,
+                familyName: customer.familyName,
+                givenName: customer.givenName,
+                telephone: customer.telephone,
+                additionalProperty: []
+            }
         })(repos);
 
         // 取引確定
