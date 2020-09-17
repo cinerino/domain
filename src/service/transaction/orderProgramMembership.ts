@@ -86,6 +86,7 @@ export function orderProgramMembership(
                 agent: {
                     typeOf: customer.typeOf,
                     id: customer.id,
+                    identifier: customer.identifier,
                     memberOf: customer.memberOf
                 },
                 seller: { typeOf: seller.typeOf, id: String(seller.id) },
