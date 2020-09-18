@@ -196,6 +196,8 @@ function processPlaceOrder(params: {
                 familyName: customer.familyName,
                 givenName: customer.givenName,
                 telephone: customer.telephone,
+                // tslint:disable-next-line:no-suspicious-comment
+                // TODO タスクにadditionalPropertyの指定があれば適用
                 additionalProperty: []
             }
         })(repos);

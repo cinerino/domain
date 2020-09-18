@@ -52,7 +52,11 @@ export function createOrderProgramMembershipActionAttributes(params: {
     };
 
     return {
-        agent: params.agent,
+        // 最低限の情報のみagentに設定
+        agent: {
+            typeOf: params.agent.typeOf,
+            id: params.agent.id
+        },
         object: acceptedOffer,
         project: { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id },
         typeOf: factory.actionType.OrderAction
