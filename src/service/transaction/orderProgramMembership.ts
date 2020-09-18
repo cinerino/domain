@@ -87,7 +87,9 @@ export function orderProgramMembership(
                     typeOf: customer.typeOf,
                     id: customer.id,
                     identifier: customer.identifier,
-                    memberOf: customer.memberOf
+                    memberOf: customer.memberOf,
+                    // paramsにadditionalPropertyの指定があれば反映する
+                    ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : []
                 },
                 seller: { typeOf: seller.typeOf, id: String(seller.id) },
                 object: {}
@@ -195,10 +197,7 @@ function processPlaceOrder(params: {
                 email: customer.email,
                 familyName: customer.familyName,
                 givenName: customer.givenName,
-                telephone: customer.telephone,
-                // tslint:disable-next-line:no-suspicious-comment
-                // TODO タスクにadditionalPropertyの指定があれば適用
-                additionalProperty: []
+                telephone: customer.telephone
             }
         })(repos);
 

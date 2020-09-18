@@ -55,7 +55,9 @@ export function createOrderProgramMembershipActionAttributes(params: {
         // 最低限の情報のみagentに設定
         agent: {
             typeOf: params.agent.typeOf,
-            id: params.agent.id
+            id: params.agent.id,
+            // paramsにadditionalPropertyの指定があれば反映する
+            ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : []
         },
         object: acceptedOffer,
         project: { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id },
