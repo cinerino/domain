@@ -10,14 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @chevre/api-nodejs-client
-- update @cinerino/factory
-- update @pecorino/api-nodejs-client
-- ポイント口座での決済取引開始時のfromLocationのタイプをAccountに変更
-- メンバーシップ注文取引のcustomerを最適化
-- メンバーシップ注文タスクのagentを最適化
-- メンバーシップ注文タスクのagentの追加特性を注文取引に反映するように調整
-
 ### Deprecated
 
 ### Removed
@@ -25,6 +17,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v9.1.0 - 2020-09-18
+
+### Changed
+
+- update @chevre/api-nodejs-client
+- update @cinerino/factory
+- update @pecorino/api-nodejs-client
+- ポイント口座での決済取引開始時のfromLocationのタイプをAccountに変更
+- メンバーシップ注文取引のcustomerを最適化
+- メンバーシップ注文タスクのagentを最適化
+- メンバーシップ注文タスクのagentの追加特性を注文取引に反映するように調整
 
 ## v9.0.0 - 2020-09-15
 
