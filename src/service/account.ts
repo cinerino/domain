@@ -299,6 +299,8 @@ export function deposit(params: {
                     .toDate(),
                 object: {
                     amount: {
+                        typeOf: 'MonetaryAmount',
+                        currency: params.object.toLocation.accountType,
                         value: params.object.amount
                     },
                     fromLocation: params.agent,
@@ -308,13 +310,11 @@ export function deposit(params: {
                     },
                     description: params.object.description,
                     pendingTransaction: {
-                        typeOf: factory.pecorino.transactionType.Deposit
-                    },
-                    ...{
-                        // ignorePaymentCard: true
+                        typeOf: factory.pecorino.transactionType.Deposit,
+                        id: '' // 空でok
                     }
                 },
-                recipient: <any>{
+                recipient: {
                     ...params.recipient
                 }
             });

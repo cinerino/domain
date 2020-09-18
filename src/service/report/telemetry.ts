@@ -131,14 +131,6 @@ export interface ISellerFlowResult {
          */
         numberOfExpired: number;
         /**
-         * クレジットカード決済数
-         */
-        numberOfPaymentCreditCard: number;
-        /**
-         * ムビチケ割引数
-         */
-        numberOfDiscountMvtk: number;
-        /**
          * 取引の合計所要時間(ミリ秒)
          */
         totalRequiredTimeInMilliseconds: number;
@@ -653,10 +645,6 @@ function createSellerFlow(
                 numberOfStartedAndExpired: numberOfStartedAndExpired,
                 numberOfConfirmed: numberOfTransactionsConfirmed,
                 numberOfExpired: numberOfTransactionsExpired,
-                // tslint:disable-next-line:no-suspicious-comment
-                numberOfPaymentCreditCard: 0, // TODO 実装
-                // tslint:disable-next-line:no-suspicious-comment
-                numberOfDiscountMvtk: 0, // TODO 実装
                 totalRequiredTimeInMilliseconds: totalRequiredTimeInMilliseconds,
                 maxRequiredTimeInMilliseconds: maxRequiredTimeInMilliseconds,
                 minRequiredTimeInMilliseconds: minRequiredTimeInMilliseconds,

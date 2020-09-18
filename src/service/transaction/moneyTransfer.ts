@@ -179,9 +179,6 @@ function fixFromLocation(
 
         if (typeof fromLocation.typeOf === 'string') {
             const fromLocationObject = fromLocation;
-            // if (fromLocationObject.accountType !== 'Coin') {
-            //     throw new factory.errors.Argument('toLocation', `account type must be ${'Coin'}`);
-            // }
 
             fromLocation = {
                 typeOf: fromLocationObject.typeOf,
@@ -206,8 +203,6 @@ function fixToLocation(
             toLocation = <any>{
                 typeOf: params.object.toLocation.typeOf,
                 identifier: (<any>params.object.toLocation).identifier
-                // accountType: (<any>account).accountType,
-                // name: account.name
             };
         } else {
             toLocation = <any>{

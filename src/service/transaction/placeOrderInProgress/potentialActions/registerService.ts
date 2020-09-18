@@ -113,7 +113,11 @@ function createOrderProgramMembershipTask(params: {
 
         // 次回のメンバーシップ注文タスクを生成
         const orderProgramMembershipTaskData: factory.task.IData<factory.taskName.OrderProgramMembership> = {
-            agent: params.transaction.agent,
+            // 最低限の情報のみagentに設定
+            agent: {
+                typeOf: params.transaction.agent.typeOf,
+                id: params.transaction.agent.id
+            },
             object: {
                 ...acceptedOffer,
                 itemOffered: {
