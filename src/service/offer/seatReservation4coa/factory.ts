@@ -429,6 +429,7 @@ function availableSalesTicket2offerWithDetails(params: {
             mvtkKbnMaeuriken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnMaeuriken : '00',
             mvtkKbnKensyu: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnKensyu : '00',
             mvtkSalesPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkSalesPrice : 0,
+            kbnMgtk: '',
 
             usePoint: (coaPointTicket !== undefined) ? coaPointTicket.usePoint : 0
         },
