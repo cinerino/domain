@@ -1,4 +1,3 @@
-import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 
 import { credentials } from '../../../credentials';
@@ -8,8 +7,6 @@ import { handleCOAReserveTemporarilyError } from '../../../errorHandler';
 import * as chevre from '../../../chevre';
 import * as COA from '../../../coa';
 import * as factory from '../../../factory';
-
-const debug = createDebug('cinerino-domain:service');
 
 // tslint:disable-next-line:no-magic-numbers
 const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
@@ -209,26 +206,43 @@ async function offer2availableSalesTicket(params: {
     } else if (offer.ticketInfo.mvtkAppPrice > 0) {
         // ムビチケの場合、ムビチケ情報をCOA券種に変換
         try {
-            debug('finding mvtkTicket...', offer.ticketInfo.ticketCode);
-            const mvtkTicketcodeResult = await masterService.mvtkTicketcode({
-                theaterCode: coaInfo.theaterCode,
-                kbnDenshiken: offer.ticketInfo.mvtkKbnDenshiken,
-                kbnMaeuriken: offer.ticketInfo.mvtkKbnMaeuriken,
-                kbnKensyu: offer.ticketInfo.mvtkKbnKensyu,
-                salesPrice: offer.ticketInfo.mvtkSalesPrice,
-                appPrice: offer.ticketInfo.mvtkAppPrice,
-                kbnEisyahousiki: offer.ticketInfo.kbnEisyahousiki,
-                titleCode: coaInfo.titleCode,
-                titleBranchNum: coaInfo.titleBranchNum,
-                dateJouei: coaInfo.dateJouei
-            });
-            availableSalesTicket = {
-                ...mvtkTicketcodeResult,
-                // ムビチケチケットインターフェース属性が少なめなので補ってあげる
-                stdPrice: 0,
-                salePrice: mvtkTicketcodeResult.addPrice,
-                addGlasses: mvtkTicketcodeResult.addPriceGlasses
-            };
+            const kbnMgtk = offer.ticketInfo.kbnMgtk;
+            if (typeof kbnMgtk === 'string' && kbnMgtk === 'MG') {
+                const mgtkTicketcodeResult = await masterService.mgtkTicketcode({
+                    theaterCode: coaInfo.theaterCode,
+                    mgtkTicketcode: offer.ticketInfo.mvtkKbnKensyu, // MG券種区分
+                    titleCode: coaInfo.titleCode,
+                    titleBranchNum: coaInfo.titleBranchNum,
+                    dateJouei: coaInfo.dateJouei
+                });
+                availableSalesTicket = {
+                    ...mgtkTicketcodeResult,
+                    // ムビチケチケットインターフェース属性が少なめなので補ってあげる
+                    stdPrice: 0,
+                    salePrice: mgtkTicketcodeResult.addPrice,
+                    addGlasses: mgtkTicketcodeResult.addPriceGlasses
+                };
+            } else {
+                const mvtkTicketcodeResult = await masterService.mvtkTicketcode({
+                    theaterCode: coaInfo.theaterCode,
+                    kbnDenshiken: offer.ticketInfo.mvtkKbnDenshiken,
+                    kbnMaeuriken: offer.ticketInfo.mvtkKbnMaeuriken,
+                    kbnKensyu: offer.ticketInfo.mvtkKbnKensyu,
+                    salesPrice: offer.ticketInfo.mvtkSalesPrice,
+                    appPrice: offer.ticketInfo.mvtkAppPrice,
+                    kbnEisyahousiki: offer.ticketInfo.kbnEisyahousiki,
+                    titleCode: coaInfo.titleCode,
+                    titleBranchNum: coaInfo.titleBranchNum,
+                    dateJouei: coaInfo.dateJouei
+                });
+                availableSalesTicket = {
+                    ...mvtkTicketcodeResult,
+                    // ムビチケチケットインターフェース属性が少なめなので補ってあげる
+                    stdPrice: 0,
+                    salePrice: mvtkTicketcodeResult.addPrice,
+                    addGlasses: mvtkTicketcodeResult.addPriceGlasses
+                };
+            }
         } catch (error) {
             // COAサービスエラーの場合ハンドリング
             if (error.name === 'COAServiceError') {
@@ -355,6 +369,12 @@ function availableSalesTicket2offerWithDetails(params: {
     // tslint:disable-next-line:max-line-length
     let movieTicketTypeChargePriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification> | undefined;
     if (offer.ticketInfo.mvtkAppPrice > 0) {
+        const kbnMgtk = offer.ticketInfo.kbnMgtk;
+        let availablePaymentMethod: string = factory.chevre.paymentMethodType.MovieTicket;
+        if (typeof kbnMgtk === 'string' && kbnMgtk === 'MG') {
+            availablePaymentMethod = factory.chevre.paymentMethodType.MGTicket;
+        }
+
         movieTicketTypeChargePriceSpec = {
             project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
@@ -365,7 +385,7 @@ function availableSalesTicket2offerWithDetails(params: {
             appliesToMovieTicket: {
                 typeOf: factory.chevre.service.paymentService.PaymentServiceType.MovieTicket,
                 serviceType: offer.ticketInfo.mvtkKbnKensyu,
-                serviceOutput: { typeOf: factory.chevre.paymentMethodType.MovieTicket }
+                serviceOutput: { typeOf: availablePaymentMethod }
             },
             appliesToVideoFormat: offer.ticketInfo.kbnEisyahousiki,
             ...{
@@ -395,6 +415,34 @@ function availableSalesTicket2offerWithDetails(params: {
         };
     }
 
+    const ticketInfo: factory.offer.seatReservation.ICOATicketInfoWithDetails = {
+        ticketCode: availableSalesTicket.ticketCode,
+        ticketName: availableSalesTicket.ticketName,
+        ticketNameEng: availableSalesTicket.ticketNameEng,
+        ticketNameKana: availableSalesTicket.ticketNameKana,
+        stdPrice: availableSalesTicket.stdPrice,
+        addPrice: availableSalesTicket.addPrice,
+        disPrice: 0,
+        salePrice: salePrice,
+        spseatAdd1: spseatAdd1,
+        spseatAdd2: spseatAdd2,
+        spseatKbn: offer.ticketInfo.spseatKbn,
+        addGlasses: addGlasses,
+        ticketCount: 1,
+        seatNum: offer.seatNumber,
+
+        usePoint: (coaPointTicket !== undefined) ? coaPointTicket.usePoint : 0,
+
+        mvtkAppPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkAppPrice : 0,
+        kbnEisyahousiki: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.kbnEisyahousiki : '00',
+        mvtkNum: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkNum : '',
+        mvtkKbnDenshiken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnDenshiken : '00',
+        mvtkKbnMaeuriken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnMaeuriken : '00',
+        mvtkKbnKensyu: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnKensyu : '00',
+        mvtkSalesPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkSalesPrice : 0,
+        kbnMgtk: (typeof offer.ticketInfo.kbnMgtk === 'string') ? offer.ticketInfo.kbnMgtk : ''
+    };
+
     offerWithDetails = {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: factory.chevre.offerType.Offer,
@@ -406,33 +454,7 @@ function availableSalesTicket2offerWithDetails(params: {
         priceSpecification: priceSpecification,
         seatNumber: offer.seatNumber,
         seatSection: offer.seatSection,
-        ticketInfo: {
-            ticketCode: availableSalesTicket.ticketCode,
-            ticketName: availableSalesTicket.ticketName,
-            ticketNameEng: availableSalesTicket.ticketNameEng,
-            ticketNameKana: availableSalesTicket.ticketNameKana,
-            stdPrice: availableSalesTicket.stdPrice,
-            addPrice: availableSalesTicket.addPrice,
-            disPrice: 0,
-            salePrice: salePrice,
-            spseatAdd1: spseatAdd1,
-            spseatAdd2: spseatAdd2,
-            spseatKbn: offer.ticketInfo.spseatKbn,
-            addGlasses: addGlasses,
-            ticketCount: 1,
-            seatNum: offer.seatNumber,
-
-            mvtkAppPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkAppPrice : 0,
-            kbnEisyahousiki: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.kbnEisyahousiki : '00',
-            mvtkNum: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkNum : '',
-            mvtkKbnDenshiken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnDenshiken : '00',
-            mvtkKbnMaeuriken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnMaeuriken : '00',
-            mvtkKbnKensyu: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnKensyu : '00',
-            mvtkSalesPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkSalesPrice : 0,
-            kbnMgtk: '',
-
-            usePoint: (coaPointTicket !== undefined) ? coaPointTicket.usePoint : 0
-        },
+        ticketInfo: ticketInfo,
         ...(eligibleMonetaryAmount !== undefined) ? { eligibleMonetaryAmount: [eligibleMonetaryAmount] } : undefined
     };
 

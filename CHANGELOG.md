@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - update @motionpicture/coa-service
+- COA予約承認処理をMGチケットに対応
 
 ### Deprecated
 
