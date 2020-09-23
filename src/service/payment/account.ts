@@ -425,7 +425,10 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         amount: pendingTransaction.object.amount,
                         description: description,
                         fromLocation: pendingTransaction.object.toLocation,
-                        toLocation: pendingTransaction.object.fromLocation,
+                        toLocation: {
+                            typeOf: factory.chevre.paymentMethodType.Account,
+                            identifier: pendingTransaction.object.fromLocation.identifier
+                        },
                         pendingTransaction: {
                             typeOf: factory.pecorino.transactionType.Deposit,
                             id: '' // 空でok
