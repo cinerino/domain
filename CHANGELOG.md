@@ -18,6 +18,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v9.2.0 - 2020-09-23
+
+### Changed
+
+- update @motionpicture/coa-service
+- COA予約承認処理をMGチケットに対応
+- 口座決済返金時のtoLocationのタイプをAccountに変更
+
 ## v9.1.0 - 2020-09-18
 
 ### Changed

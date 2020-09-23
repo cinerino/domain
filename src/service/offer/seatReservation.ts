@@ -809,6 +809,7 @@ export function validateAcceptedOffers(params: {
                             mvtkKbnMaeuriken: mvtkTicketCodeIn.kbnMaeuriken,
                             mvtkKbnKensyu: mvtkTicketCodeIn.kbnKensyu,
                             mvtkSalesPrice: mvtkTicketCodeIn.salesPrice,
+                            kbnMgtk: '',
                             usePoint: 0
                         };
 
