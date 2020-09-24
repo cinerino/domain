@@ -141,9 +141,7 @@ export function authorize(params: {
             paymentMethodId: transactionNumber,
             name: (typeof params.object.name === 'string')
                 ? params.object.name
-                : (params.object.fromAccount !== undefined)
-                    ? String(params.object.fromAccount.accountType)
-                    : '',
+                : String(factory.paymentMethodType.Account),
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {

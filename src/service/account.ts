@@ -37,7 +37,6 @@ const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
 });
 
 export interface IClosingAccount {
-    accountType: string;
     accountNumber: string;
 }
 
@@ -52,7 +51,6 @@ export function close(params: {
     ownedBy?: {
         id: string;
     };
-    accountType: string;
     accountNumber: string;
 }): IAccountsOperation<void> {
     return async (repos: {
@@ -61,7 +59,6 @@ export function close(params: {
     }) => {
         try {
             let closingAccount: IClosingAccount = {
-                accountType: params.accountType,
                 accountNumber: params.accountNumber
             };
 
@@ -70,7 +67,6 @@ export function close(params: {
                 const accountOwnershipInfos = await repos.ownershipInfo.search({
                     typeOfGood: {
                         typeOf: factory.chevre.paymentMethodType.Account,
-                        accountType: params.accountType,
                         accountNumbers: [params.accountNumber]
                     },
                     ownedBy: params.ownedBy
@@ -81,7 +77,6 @@ export function close(params: {
                 }
 
                 closingAccount = {
-                    accountType: (<factory.ownershipInfo.IAccount>ownershipInfo.typeOfGood).accountType,
                     accountNumber: (<factory.ownershipInfo.IAccount>ownershipInfo.typeOfGood).accountNumber
                 };
             }
@@ -121,9 +116,6 @@ export function search(params: {
             if (typeOfGood === undefined) {
                 throw new factory.errors.ArgumentNull('typeOfGood');
             }
-            if (typeof typeOfGood.accountType !== 'string') {
-                throw new factory.errors.ArgumentNull('typeOfGood.accountType');
-            }
 
             if (accountNumbers.length > 0) {
                 const accountService = new pecorinoapi.service.Account({
@@ -132,7 +124,6 @@ export function search(params: {
                 });
                 const searchAccountResult = await accountService.search({
                     project: { id: { $eq: project.id } },
-                    accountType: typeOfGood.accountType,
                     accountNumbers: accountNumbers,
                     statuses: [],
                     limit: 100
@@ -181,7 +172,6 @@ export function searchMoneyTransferActions(params: {
             const ownershipInfos = await repos.ownershipInfo.search({
                 typeOfGood: {
                     typeOf: factory.chevre.paymentMethodType.Account,
-                    accountType: params.conditions.accountType,
                     accountNumber: params.conditions.accountNumber
                     // accountNumbers: [params.conditions.accountNumber]
                 },
@@ -336,7 +326,6 @@ export function findAccount(params: {
     customer: { id: string };
     project: { id: string };
     now: Date;
-    accountType: string;
 }) {
     return async (repos: {
         project: ProjectRepo;
@@ -348,8 +337,7 @@ export function findAccount(params: {
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
                 typeOfGood: {
-                    typeOf: factory.chevre.paymentMethodType.Account,
-                    accountType: params.accountType
+                    typeOf: factory.chevre.paymentMethodType.Account
                 },
                 ownedBy: { id: params.customer.id },
                 ownedFrom: params.now,

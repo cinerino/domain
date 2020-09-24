@@ -386,7 +386,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                         value: givePointAwardActionObject.amount
                     },
                     fromLocation: {
-                        typeOf: factory.pecorino.account.TypeOf.Account,
+                        typeOf: factory.chevre.paymentMethodType.Account,
                         identifier: givePointAwardActionObject.toLocation.accountNumber
                     },
                     toLocation: recipient,
