@@ -41,6 +41,7 @@ export type IOrderOperation<T> = (repos: {
 
 /**
  * 口座注文
+ * 通貨がaccountTypeの口座を注文する処理
  */
 export function orderAccount(params: {
     project: factory.project.IProject;

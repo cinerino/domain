@@ -14,18 +14,6 @@ function createMoneyTransferActions(params: {
     return authorizePaymentCardActions.map((a) => {
         const actionResult = <factory.action.authorize.paymentMethod.any.IResult>a.result;
 
-        if (a.object.fromLocation !== undefined) {
-            // if ((<IFromLocation>a.object.fromLocation).accountType !== 'Coin') {
-            //     throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
-            // }
-        }
-
-        if (a.object.toLocation !== undefined) {
-            // if (a.object.toLocation.accountType !== 'Coin') {
-            //     throw new factory.errors.Argument('Transaction', `account type must be ${'Coin'}`);
-            // }
-        }
-
         if (actionResult.pendingTransaction === undefined) {
             throw new factory.errors.NotFound('action.result.pendingTransaction');
         }

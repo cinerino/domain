@@ -259,8 +259,7 @@ function processAuthorizeProductOffer(params: {
             const toAccount = await findAccount({
                 customer: { id: params.customer.id },
                 project: transaction.project,
-                now: new Date(),
-                accountType: pointAwardByOffer.amount?.currency
+                now: new Date()
             })(repos);
 
             pointAward = {
