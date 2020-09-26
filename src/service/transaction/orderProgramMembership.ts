@@ -20,18 +20,7 @@ import * as OfferService from '../offer';
 import * as ChevrePaymentService from '../payment/chevre';
 import * as TransactionService from '../transaction';
 
-import { credentials } from '../../credentials';
-
-import * as chevre from '../../chevre';
 import * as factory from '../../factory';
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
@@ -150,11 +139,6 @@ function processPlaceOrder(params: {
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
         const acceptedOffer = params.acceptedOffer;
         const customer = params.customer;
         const transaction = params.transaction;
@@ -173,10 +157,7 @@ function processPlaceOrder(params: {
             transaction: transaction,
             acceptedOffer: acceptedOffer,
             product: { id: productId }
-        })({
-            ...repos,
-            productService: productService
-        });
+        })(repos);
 
         const amount = Number(authorizeProductOfferAction.result?.price);
         if (amount > 0) {
@@ -227,7 +208,6 @@ function processAuthorizeProductOffer(params: {
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: OwnershipInfoRepo;
-        productService: chevre.service.Product;
     }) => {
         const acceptedOffer = params.acceptedOffer;
         const customer = params.customer;
@@ -255,11 +235,13 @@ function processAuthorizeProductOffer(params: {
         }
 
         const pointAwardByOffer = acceptedProductOffer.itemOffered?.pointAward;
-        if (typeof pointAwardByOffer?.amount?.value === 'number' && typeof pointAwardByOffer?.amount?.currency === 'string') {
+        const pointAwardAccountType = pointAwardByOffer?.amount?.currency;
+        if (typeof pointAwardByOffer?.amount?.value === 'number' && typeof pointAwardAccountType === 'string') {
             const toAccount = await findAccount({
                 customer: { id: params.customer.id },
                 project: transaction.project,
-                now: new Date()
+                now: new Date(),
+                accountType: pointAwardAccountType
             })(repos);
 
             pointAward = {

@@ -424,7 +424,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
                         description: description,
                         fromLocation: pendingTransaction.object.toLocation,
                         toLocation: {
-                            typeOf: factory.chevre.paymentMethodType.Account,
+                            typeOf: paymentMethod.paymentMethod.typeOf,
                             identifier: pendingTransaction.object.fromLocation.identifier
                         },
                         pendingTransaction: {
