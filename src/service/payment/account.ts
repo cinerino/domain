@@ -37,7 +37,6 @@ export type IAuthorizeOperation<T> = (repos: {
  * 口座残高差し押さえ
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
-// tslint:disable-next-line:max-func-body-length
 export function authorize(params: {
     project: factory.project.IProject;
     agent: { id: string };
@@ -97,7 +96,7 @@ export function authorize(params: {
                         transactionNumber: transactionNumber
                     }
                 },
-                paymentMethod: factory.paymentMethodType.Account,
+                paymentMethod: params.object.paymentMethod,
                 typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
             },
             agent: transaction.agent,
@@ -136,12 +135,12 @@ export function authorize(params: {
                 ? params.object.fromAccount.accountNumber
                 : '',
             amount: params.object.amount,
-            paymentMethod: factory.paymentMethodType.Account,
+            paymentMethod: params.object.paymentMethod,
             paymentStatus: factory.paymentStatusType.PaymentDue,
             paymentMethodId: transactionNumber,
             name: (typeof params.object.name === 'string')
                 ? params.object.name
-                : String(factory.paymentMethodType.Account),
+                : String(params.object.paymentMethod),
             additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
             pendingTransaction: pendingTransaction,
             totalPaymentDue: {
@@ -224,7 +223,7 @@ async function processAccountTransaction(params: {
                 },
                 description: description,
                 fromLocation: {
-                    typeOf: factory.chevre.paymentMethodType.Account,
+                    typeOf: params.object.paymentMethod,
                     identifier: params.object.fromAccount.accountNumber
                 },
                 toLocation: recipient,
@@ -251,7 +250,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
         transaction: TransactionRepo;
     }) => {
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
-        if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
+        if (typeof params.agent?.id === 'string') {
             transaction = await repos.transaction.findInProgressById({
                 typeOf: params.purpose.typeOf,
                 id: params.purpose.id
@@ -372,7 +371,7 @@ export function refundAccount(params: factory.task.IData<factory.taskName.Refund
     }) => {
         // 本アクションに対応するPayActionを取り出す
         const payAction = await findPayActionByOrderNumber({
-            object: { paymentMethod: factory.paymentMethodType.Account, paymentMethodId: params.object.paymentMethodId },
+            object: { paymentMethod: params.object.typeOf, paymentMethodId: params.object.paymentMethodId },
             purpose: { orderNumber: params.purpose.orderNumber }
         })(repos);
 

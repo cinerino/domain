@@ -59,11 +59,16 @@ export async function validateWaiterPassport(params: IStartParams): Promise<fact
  */
 export function validateTransaction(
     transaction: factory.transaction.placeOrder.ITransaction,
-    paymentServices?: factory.chevre.service.paymentService.IService[]
+    paymentServices?: factory.chevre.service.paymentService.IService[],
+    accountTypes?: factory.chevre.categoryCode.ICategoryCode[]
 ) {
     validateProfile(transaction);
     validatePrice(transaction);
-    validateAccount(transaction);
+
+    // 利用可能な通貨単位に対して取引検証
+    if (Array.isArray(accountTypes) && accountTypes.length > 0) {
+        validateMonetaryAmount(transaction, accountTypes.map((a) => a.codeValue));
+    }
 
     // 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
     if (Array.isArray(paymentServices)) {
@@ -119,11 +124,19 @@ function validatePrice(transaction: factory.transaction.placeOrder.ITransaction)
     }
 }
 
-function validateAccount(transaction: factory.transaction.placeOrder.ITransaction) {
+/**
+ * JPY以外の通貨について取引を検証する
+ */
+function validateMonetaryAmount(
+    transaction: factory.transaction.placeOrder.ITransaction,
+    currencies: string[]
+) {
     const authorizeActions = transaction.object.authorizeActions;
     const authorizeMonetaryAmountActions = (<factory.action.authorize.paymentMethod.any.IAction[]>authorizeActions)
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.Account);
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+            && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment
+            && typeof a.result?.totalPaymentDue?.currency === 'string'
+            && currencies.includes(a.result.totalPaymentDue.currency));
 
     const requiredMonetaryAmountByAccountType: {
         currency: string;
@@ -131,8 +144,8 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
     }[] = [];
 
     (<IAuthorizeSeatReservationOffer[]>authorizeActions)
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+            && a.object.typeOf === factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
         .forEach(
             (a) => {
                 const amount = (<IAuthorizeSeatReservationOfferResult>a.result).amount;
@@ -149,7 +162,7 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
 
     const requiredAccountTypes = [...new Set(requiredMonetaryAmountByAccountType.map((m) => m.currency))];
     const authorizedAccountTypes = [...new Set(authorizeMonetaryAmountActions.map(
-        (m) => (<IAuthorizePointAccountPayment>m.object.fromAccount).accountType
+        (m) => <string>m.result?.totalPaymentDue?.currency
     ))];
 
     if (requiredAccountTypes.length !== authorizedAccountTypes.length) {
@@ -157,11 +170,12 @@ function validateAccount(transaction: factory.transaction.placeOrder.ITransactio
     }
 
     const requireMonetaryAmountSatisfied = requiredAccountTypes.every((accountType) => {
-        const requiredMonetaryAmount = requiredMonetaryAmountByAccountType.filter((m) => m.currency === accountType)
+        const requiredMonetaryAmount = requiredMonetaryAmountByAccountType
+            .filter((m) => m.currency === accountType)
             .reduce((a, b) => a + b.value, 0);
 
         const authorizedMonetaryAmount = authorizeMonetaryAmountActions
-            .filter((a) => (<IAuthorizePointAccountPayment>a.object.fromAccount).accountType === accountType)
+            .filter((a) => a.result?.totalPaymentDue?.currency === accountType)
             .reduce((a, b) => a + b.object.amount, 0);
 
         return requiredMonetaryAmount === authorizedMonetaryAmount;
