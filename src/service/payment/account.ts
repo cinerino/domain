@@ -93,6 +93,7 @@ export function authorize(params: {
                     : {},
                 ...{
                     pendingTransaction: {
+                        typeOf: factory.chevre.transactionType.MoneyTransfer,
                         transactionNumber: transactionNumber
                     }
                 },
@@ -272,17 +273,17 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
 
             authorizeActions = [authorizeAction];
         } else {
-            authorizeActions = <factory.action.authorize.paymentMethod.any.IAction[]>
-                await repos.action.searchByPurpose({
-                    typeOf: factory.actionType.AuthorizeAction,
-                    purpose: {
-                        typeOf: params.purpose.typeOf,
-                        id: params.purpose.id
-                    }
-                })
-                    .then((actions) => actions
-                        .filter((a) => a.object.paymentMethod === factory.paymentMethodType.Account)
-                    );
+            // object.pendingTransaction.typeOfがMoneyTransferの決済アクションについて処理する
+            authorizeActions = await repos.action.searchByPurpose({
+                typeOf: factory.actionType.AuthorizeAction,
+                purpose: {
+                    typeOf: params.purpose.typeOf,
+                    id: params.purpose.id
+                }
+            })
+                .then((actions: factory.action.authorize.paymentMethod.any.IAction[]) => actions
+                    .filter((a) => a.object.pendingTransaction?.typeOf === factory.chevre.transactionType.MoneyTransfer)
+                );
         }
 
         const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
@@ -296,7 +297,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (action.result !== undefined) {
-                const pendingTransactionNumber = action.result.pendingTransaction?.transactionNumber;
+                const pendingTransactionNumber = action.object.pendingTransaction?.transactionNumber;
                 if (typeof pendingTransactionNumber === 'string') {
                     await moneyTransferService.cancel({ transactionNumber: pendingTransactionNumber });
                 }
