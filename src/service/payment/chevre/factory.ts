@@ -39,7 +39,8 @@ export function creatPayTransactionStartParams(params: {
                 method: params.object.method,
                 creditCard: params.object.creditCard,
                 movieTickets: params.object.movieTickets,
-                name: (typeof params.object.name === 'string') ? params.object.name : params.object.paymentMethod
+                name: (typeof params.object.name === 'string') ? params.object.name : params.object.paymentMethod,
+                ...(typeof params.object.accountId === 'string') ? { accountId: params.object.accountId } : undefined
             }
         },
         expires: expires
@@ -51,26 +52,29 @@ export function createAuthorizeResult(params: {
     paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
     payTransaction: chevre.factory.transaction.pay.ITransaction;
 }): factory.action.authorize.paymentMethod.any.IResult {
-    let totalPaymentDue: chevre.factory.monetaryAmount.IMonetaryAmount;
-
-    switch (params.paymentServiceType) {
-        case chevre.factory.service.paymentService.PaymentServiceType.CreditCard:
-            totalPaymentDue = {
-                typeOf: 'MonetaryAmount',
-                currency: factory.priceCurrency.JPY,
-                value: params.object.amount
-            };
-            break;
-        case chevre.factory.service.paymentService.PaymentServiceType.MovieTicket:
-            totalPaymentDue = {
-                typeOf: 'MonetaryAmount',
-                currency: factory.chevre.unitCode.C62,
-                value: (Array.isArray(params.object.movieTickets)) ? params.object.movieTickets.length : 0
-            };
-            break;
-        default:
-            throw new factory.errors.NotImplemented(`Payment service ${params.paymentServiceType} not implemented`);
+    const totalPaymentDue = params.payTransaction.object.paymentMethod?.totalPaymentDue;
+    if (typeof totalPaymentDue?.typeOf !== 'string') {
+        throw new factory.errors.ServiceUnavailable('payTransaction.object.paymentMethod.totalPaymentDue undefined');
     }
+
+    // switch (params.paymentServiceType) {
+    //     case chevre.factory.service.paymentService.PaymentServiceType.CreditCard:
+    //         totalPaymentDue = {
+    //             typeOf: 'MonetaryAmount',
+    //             currency: factory.priceCurrency.JPY,
+    //             value: params.object.amount
+    //         };
+    //         break;
+    //     case chevre.factory.service.paymentService.PaymentServiceType.MovieTicket:
+    //         totalPaymentDue = {
+    //             typeOf: 'MonetaryAmount',
+    //             currency: factory.chevre.unitCode.C62,
+    //             value: (Array.isArray(params.object.movieTickets)) ? params.object.movieTickets.length : 0
+    //         };
+    //         break;
+    //     default:
+    //         throw new factory.errors.NotImplemented(`Payment service ${params.paymentServiceType} not implemented`);
+    // }
 
     return {
         accountId: (typeof params.payTransaction.object.paymentMethod?.accountId === 'string')

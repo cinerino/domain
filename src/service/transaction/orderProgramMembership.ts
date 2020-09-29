@@ -325,7 +325,8 @@ function processAuthorizeCreditCard(params: {
                     cardSeq: Number(creditCard.cardSeq)
                 }
             },
-            purpose: params.purpose
+            purpose: params.purpose,
+            paymentServiceType: factory.chevre.service.paymentService.PaymentServiceType.CreditCard
         })(repos);
     };
 }

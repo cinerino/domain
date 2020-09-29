@@ -38,6 +38,7 @@ export function authorize(params: {
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
+    paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
@@ -45,10 +46,10 @@ export function authorize(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        const paymentMethodType = params.object.paymentMethod;
-
+        const paymentServiceType = params.paymentServiceType;
         // プロジェクトの対応決済サービスを確認
-        const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
+        // const paymentMethodType = params.object.paymentMethod;
+        // const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
 
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
