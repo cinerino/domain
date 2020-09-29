@@ -36,11 +36,12 @@ export function creatPayTransactionStartParams(params: {
                 typeOf: params.object.paymentMethod,
                 amount: params.object.amount,
                 additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-                method: params.object.method,
                 creditCard: params.object.creditCard,
                 movieTickets: params.object.movieTickets,
-                name: (typeof params.object.name === 'string') ? params.object.name : params.object.paymentMethod,
-                ...(typeof params.object.accountId === 'string') ? { accountId: params.object.accountId } : undefined
+                ...(typeof params.object.method === 'string') ? { method: params.object.method } : undefined,
+                ...(typeof params.object.name === 'string') ? { name: params.object.name } : undefined,
+                ...(typeof params.object.accountId === 'string') ? { accountId: params.object.accountId } : undefined,
+                ...(typeof params.object.description === 'string') ? { description: params.object.description } : undefined
             }
         },
         expires: expires
