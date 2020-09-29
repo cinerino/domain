@@ -97,26 +97,26 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
             await ChevrePaymentService.voidPayment(params)(repos);
         }
 
-        // Chevre以外
-        const authorizeActionsWithoutChevre = authorizeActions.filter((a) => {
-            return a.instrument?.identifier !== factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre;
-        });
-
         await AccountPaymentService.voidTransaction(params)(repos);
 
+        // Chevre以外
+        // const authorizeActionsWithoutChevre = authorizeActions.filter((a) => {
+        //     return a.instrument?.identifier !== factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre;
+        // });
+
         // 承認アクションに存在する決済方法ごとに決済中止処理を実行する
-        const paymentMethodTypes = [...new Set(authorizeActionsWithoutChevre.map((a) => a.object.paymentMethod))];
+        // const paymentMethodTypes = [...new Set(authorizeActionsWithoutChevre.map((a) => a.object.paymentMethod))];
 
-        for (const paymentMethodType of paymentMethodTypes) {
-            switch (paymentMethodType) {
-                case factory.paymentMethodType.PaymentCard:
-                    await PaymentCardPaymentService.voidTransaction(params)(repos);
-                    break;
+        // for (const paymentMethodType of paymentMethodTypes) {
+        //     switch (paymentMethodType) {
+        //         case factory.paymentMethodType.PaymentCard:
+        //             await PaymentCardPaymentService.voidTransaction(params)(repos);
+        //             break;
 
-                default:
-                // no op
-            }
-        }
+        //         default:
+        //         // no op
+        //     }
+        // }
     };
 }
 
@@ -134,13 +134,13 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         const paymentMethodType = params.object.typeOf;
 
         switch (paymentMethodType) {
-            case factory.paymentMethodType.Account:
-                await AccountPaymentService.refundAccount(params)(repos);
-                break;
+            // case factory.paymentMethodType.Account:
+            //     await AccountPaymentService.refundAccount(params)(repos);
+            //     break;
 
-            case factory.paymentMethodType.PaymentCard:
-                await PaymentCardPaymentService.refundPaymentCard(params)(repos);
-                break;
+            // case factory.paymentMethodType.PaymentCard:
+            //     await PaymentCardPaymentService.refundPaymentCard(params)(repos);
+            //     break;
 
             default:
                 await ChevrePaymentService.refund(params)(repos);
