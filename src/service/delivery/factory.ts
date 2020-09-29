@@ -42,10 +42,13 @@ export function createOwnershipInfosFromOrder(params: {
             offerIndex
         );
 
+        const ownedBy = createOwnedby(params);
+
         switch (true) {
             case new RegExp(`^${factory.chevre.reservationType.EventReservation}$`).test(itemOffered.typeOf):
                 ownershipInfo = createReservationOwnershipInfo({
-                    order: params.order,
+                    project: params.order.project,
+                    ownedBy: ownedBy,
                     acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
@@ -62,7 +65,8 @@ export function createOwnershipInfosFromOrder(params: {
                 const productType = (<factory.order.IServiceOutput>itemOffered).issuedThrough?.typeOf;
                 if (typeof productType === 'string' && availableProductTypes.indexOf(productType) >= 0) {
                     ownershipInfo = createProductOwnershipInfo({
-                        order: params.order,
+                        project: params.order.project,
+                        ownedBy: ownedBy,
                         acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                         ownedFrom: ownedFrom,
                         identifier: identifier,
@@ -81,4 +85,21 @@ export function createOwnershipInfosFromOrder(params: {
     });
 
     return ownershipInfos;
+}
+
+function createOwnedby(params: {
+    order: factory.order.IOrder;
+}): factory.ownershipInfo.IOwner {
+    // 最低限の情報に絞る
+    const customer = params.order.customer;
+
+    return {
+        typeOf: customer.typeOf,
+        id: customer.id,
+        ...(customer.identifier !== undefined) ? { identifier: customer.identifier } : undefined,
+        ...(customer.memberOf !== undefined) ? { memberOf: customer.memberOf } : undefined,
+        ...(customer.familyName !== undefined) ? { familyName: customer.familyName } : undefined,
+        ...(customer.givenName !== undefined) ? { givenName: customer.givenName } : undefined,
+        ...(customer.name !== undefined) ? { name: customer.name } : undefined
+    };
 }
