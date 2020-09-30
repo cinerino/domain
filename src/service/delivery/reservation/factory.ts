@@ -1,3 +1,5 @@
+import * as moment from 'moment-timezone';
+
 import * as factory from '../../../factory';
 
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
@@ -17,7 +19,8 @@ export function createReservationOwnershipInfo(params: {
     // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
     // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
     // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
-    const ownedThrough = itemOffered.reservationFor.endDate;
+    const ownedThrough = moment(itemOffered.reservationFor.endDate)
+        .toDate();
 
     let bookingService = params.acceptedOffer.offeredThrough;
     if (bookingService === undefined) {
