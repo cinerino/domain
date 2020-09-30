@@ -18,6 +18,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v9.4.0 - 2020-09-30
+
+### Changed
+
+- factory.chevre.paymentMethodType.Accountへの依存を排除
+- Chevre決済サービスを口座決済に対応
+- 所有権のownedByを最適化
+- 所有権のacquiredFromを最適化
+
 ## v9.3.0 - 2020-09-24
 
 ### Changed

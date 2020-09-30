@@ -38,6 +38,7 @@ export function authorize(params: {
     agent: { id: string };
     object: factory.action.authorize.paymentMethod.any.IObject;
     purpose: factory.action.authorize.paymentMethod.any.IPurpose;
+    paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
@@ -45,10 +46,10 @@ export function authorize(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        const paymentMethodType = params.object.paymentMethod;
-
+        const paymentServiceType = params.paymentServiceType;
         // プロジェクトの対応決済サービスを確認
-        const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
+        // const paymentMethodType = params.object.paymentMethod;
+        // const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
 
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
@@ -279,7 +280,8 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
                 agent: { typeOf: params.agent.typeOf, name: params.agent.name, id: params.agent.id },
                 recipient: { typeOf: params.recipient.typeOf, name: params.recipient.name },
                 object: {
-                    typeOf: paymentServiceType,
+                    // paymentServiceType未指定であれば、Chevre側で自動選択される
+                    typeOf: (typeof paymentServiceType === 'string') ? paymentServiceType : <any>'',
                     paymentMethod: {
                         additionalProperty: params.object.additionalProperty,
                         name: params.object.name,
@@ -318,7 +320,7 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
 async function getPaymentServiceType(params: {
     project: { id: string };
     paymentMethodType: string;
-}): Promise<chevre.factory.service.paymentService.PaymentServiceType> {
+}): Promise<chevre.factory.service.paymentService.PaymentServiceType | undefined> {
     // プロジェクトの対応決済サービスを確認
     const projectService = new chevre.service.Project({
         endpoint: credentials.chevre.endpoint,
@@ -328,11 +330,11 @@ async function getPaymentServiceType(params: {
     const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
         return s.serviceOutput?.typeOf === params.paymentMethodType;
     });
-    if (paymentServiceSetting === undefined) {
-        throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
-    }
+    // if (paymentServiceSetting === undefined) {
+    //     throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
+    // }
 
-    return paymentServiceSetting.typeOf;
+    return paymentServiceSetting?.typeOf;
 }
 
 interface ICreditCardPaymentServiceCredentials {

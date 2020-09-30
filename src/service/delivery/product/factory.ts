@@ -6,7 +6,8 @@ export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.owners
 
 // tslint:disable-next-line:cyclomatic-complexity
 export function createProductOwnershipInfo(params: {
-    order: factory.order.IOrder;
+    project: { typeOf: factory.chevre.organizationType.Project; id: string };
+    ownedBy: factory.ownershipInfo.IOwner;
     acceptedOffer: factory.order.IAcceptedOffer<factory.order.IServiceOutput>;
     ownedFrom: Date;
     identifier: string;
@@ -78,11 +79,11 @@ export function createProductOwnershipInfo(params: {
     };
 
     ownershipInfo = {
-        project: params.order.project,
+        project: params.project,
         typeOf: 'OwnershipInfo',
         id: '',
         identifier: params.identifier,
-        ownedBy: params.order.customer,
+        ownedBy: params.ownedBy,
         acquiredFrom: params.acquiredFrom,
         ownedFrom: params.ownedFrom,
         ownedThrough: ownedThrough,

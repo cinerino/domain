@@ -1,3 +1,4 @@
+import * as moment from 'moment-timezone';
 import * as util from 'util';
 
 import * as factory from '../../factory';
@@ -22,30 +23,17 @@ export function createOwnershipInfosFromOrder(params: {
 
         let ownershipInfo: IOwnershipInfo | undefined;
 
-        const ownedFrom = params.order.orderDate;
-
-        const seller = params.order.seller;
-        const acquiredFrom: factory.ownershipInfo.IOwner = {
-            project: { typeOf: params.order.project.typeOf, id: params.order.project.id },
-            id: seller.id,
-            typeOf: seller.typeOf,
-            name: seller.name,
-            telephone: seller.telephone,
-            url: seller.url
-        };
-
-        const identifier = util.format(
-            '%s-%s-%s-%s',
-            params.order.customer.id,
-            itemOffered.typeOf,
-            params.order.orderNumber,
-            offerIndex
-        );
+        const ownedFrom = moment(params.order.orderDate)
+            .toDate();
+        const identifier = createOwnershipInfoIdentifier({ order: params.order, itemOffered, offerIndex });
+        const acquiredFrom = createAcquiredFrom(params);
+        const ownedBy = createOwnedby(params);
 
         switch (true) {
             case new RegExp(`^${factory.chevre.reservationType.EventReservation}$`).test(itemOffered.typeOf):
                 ownershipInfo = createReservationOwnershipInfo({
-                    order: params.order,
+                    project: params.order.project,
+                    ownedBy: ownedBy,
                     acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                     ownedFrom: ownedFrom,
                     identifier: identifier,
@@ -62,7 +50,8 @@ export function createOwnershipInfosFromOrder(params: {
                 const productType = (<factory.order.IServiceOutput>itemOffered).issuedThrough?.typeOf;
                 if (typeof productType === 'string' && availableProductTypes.indexOf(productType) >= 0) {
                     ownershipInfo = createProductOwnershipInfo({
-                        order: params.order,
+                        project: params.order.project,
+                        ownedBy: ownedBy,
                         acceptedOffer: { ...acceptedOffer, itemOffered: <any>itemOffered },
                         ownedFrom: ownedFrom,
                         identifier: identifier,
@@ -81,4 +70,49 @@ export function createOwnershipInfosFromOrder(params: {
     });
 
     return ownershipInfos;
+}
+
+function createOwnershipInfoIdentifier(params: {
+    order: factory.order.IOrder;
+    itemOffered: factory.order.IItemOffered;
+    offerIndex: number;
+}): string {
+    return util.format(
+        '%s-%s-%s-%s',
+        params.order.customer.id,
+        params.itemOffered.typeOf,
+        params.order.orderNumber,
+        params.offerIndex
+    );
+}
+
+function createAcquiredFrom(params: {
+    order: factory.order.IOrder;
+}): factory.ownershipInfo.IOwner {
+    // 最低限の情報に絞る
+    const seller = params.order.seller;
+
+    return {
+        project: { typeOf: params.order.project.typeOf, id: params.order.project.id },
+        id: seller.id,
+        typeOf: seller.typeOf,
+        name: seller.name
+    };
+}
+
+function createOwnedby(params: {
+    order: factory.order.IOrder;
+}): factory.ownershipInfo.IOwner {
+    // 最低限の情報に絞る
+    const customer = params.order.customer;
+
+    return {
+        typeOf: customer.typeOf,
+        id: customer.id,
+        ...(customer.identifier !== undefined) ? { identifier: customer.identifier } : undefined,
+        ...(customer.memberOf !== undefined) ? { memberOf: customer.memberOf } : undefined,
+        ...(customer.familyName !== undefined) ? { familyName: customer.familyName } : undefined,
+        ...(customer.givenName !== undefined) ? { givenName: customer.givenName } : undefined,
+        ...(customer.name !== undefined) ? { name: customer.name } : undefined
+    };
 }

@@ -294,7 +294,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                         : params.purpose.typeOf,
                     fromLocation: agent,
                     toLocation: {
-                        typeOf: factory.chevre.paymentMethodType.Account,
+                        typeOf: params.object.toLocation.typeOf,
                         identifier: params.object.toLocation.accountNumber
                     },
                     pendingTransaction: {
@@ -386,7 +386,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                         value: givePointAwardActionObject.amount
                     },
                     fromLocation: {
-                        typeOf: factory.chevre.paymentMethodType.Account,
+                        typeOf: givePointAwardActionObject.toLocation.typeOf,
                         identifier: givePointAwardActionObject.toLocation.accountNumber
                     },
                     toLocation: recipient,

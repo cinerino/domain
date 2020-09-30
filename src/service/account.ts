@@ -46,6 +46,11 @@ export interface IClosingAccount {
 export function close(params: {
     project: factory.project.IProject;
     /**
+     * 口座種別
+     * 'Account'など
+     */
+    typeOf: string;
+    /**
      * 所有者を指定しなければ、問答無用に口座番号から口座を解約します
      */
     ownedBy?: {
@@ -66,7 +71,7 @@ export function close(params: {
             if (params.ownedBy !== undefined) {
                 const accountOwnershipInfos = await repos.ownershipInfo.search({
                     typeOfGood: {
-                        typeOf: factory.chevre.paymentMethodType.Account,
+                        typeOf: params.typeOf,
                         accountNumbers: [params.accountNumber]
                     },
                     ownedBy: params.ownedBy
@@ -160,6 +165,13 @@ export function searchMoneyTransferActions(params: {
     ownedFrom?: Date;
     ownedThrough?: Date;
     conditions: pecorinoapi.factory.action.transfer.moneyTransfer.ISearchConditions;
+    typeOfGood: {
+        /**
+         * 口座種別
+         * 'Account'など
+         */
+        typeOf: string;
+    };
 }): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
@@ -171,9 +183,8 @@ export function searchMoneyTransferActions(params: {
         try {
             const ownershipInfos = await repos.ownershipInfo.search({
                 typeOfGood: {
-                    typeOf: factory.chevre.paymentMethodType.Account,
+                    typeOf: params.typeOfGood.typeOf,
                     accountNumber: params.conditions.accountNumber
-                    // accountNumbers: [params.conditions.accountNumber]
                 },
                 ownedBy: params.ownedBy,
                 ownedFrom: params.ownedFrom,
@@ -320,24 +331,43 @@ export function deposit(params: {
 
 /**
  * 所有口座を検索
+ * 指定した口座タイプの所有口座を検索する
  * 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件は以下の通り
  */
 export function findAccount(params: {
     customer: { id: string };
     project: { id: string };
     now: Date;
+    /**
+     * 口座タイプ
+     */
+    accountType: string;
 }) {
     return async (repos: {
         project: ProjectRepo;
         ownershipInfo: OwnershipInfoRepo;
     }): Promise<factory.pecorino.account.IAccount> => {
+        const productService = new chevre.service.Product({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const searchProductsResult = await productService.search({
+            project: { id: { $eq: params.project.id } },
+            typeOf: { $eq: chevre.factory.product.ProductType.Account }
+        });
+        const accountProduct = searchProductsResult.data.find((p) => p.serviceOutput?.amount?.currency === params.accountType);
+        if (accountProduct === undefined) {
+            throw new factory.errors.NotFound(`${params.accountType} Account Product`);
+        }
+
         let accountOwnershipInfos = await search({
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             conditions: {
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
                 typeOfGood: {
-                    typeOf: factory.chevre.paymentMethodType.Account
+                    typeOf: <string>accountProduct.serviceOutput?.typeOf
                 },
                 ownedBy: { id: params.customer.id },
                 ownedFrom: params.now,

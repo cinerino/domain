@@ -1,9 +1,12 @@
+import * as moment from 'moment-timezone';
+
 import * as factory from '../../../factory';
 
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 export function createReservationOwnershipInfo(params: {
-    order: factory.order.IOrder;
+    project: { typeOf: factory.chevre.organizationType.Project; id: string };
+    ownedBy: factory.ownershipInfo.IOwner;
     acceptedOffer: factory.order.IAcceptedOffer<factory.order.IReservation>;
     ownedFrom: Date;
     identifier: string;
@@ -16,7 +19,8 @@ export function createReservationOwnershipInfo(params: {
     // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
     // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
     // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
-    const ownedThrough = itemOffered.reservationFor.endDate;
+    const ownedThrough = moment(itemOffered.reservationFor.endDate)
+        .toDate();
 
     let bookingService = params.acceptedOffer.offeredThrough;
     if (bookingService === undefined) {
@@ -30,11 +34,11 @@ export function createReservationOwnershipInfo(params: {
     if (bookingService.identifier === factory.service.webAPI.Identifier.COA) {
         // COA予約の場合、typeOfGoodにはアイテムをそのまま挿入する
         ownershipInfo = {
-            project: params.order.project,
+            project: params.project,
             id: '',
             typeOf: 'OwnershipInfo',
             identifier: params.identifier,
-            ownedBy: params.order.customer,
+            ownedBy: params.ownedBy,
             acquiredFrom: params.acquiredFrom,
             ownedFrom: params.ownedFrom,
             ownedThrough: ownedThrough,
@@ -42,11 +46,11 @@ export function createReservationOwnershipInfo(params: {
         };
     } else {
         ownershipInfo = {
-            project: params.order.project,
+            project: params.project,
             typeOf: 'OwnershipInfo',
             id: '',
             identifier: params.identifier,
-            ownedBy: params.order.customer,
+            ownedBy: params.ownedBy,
             acquiredFrom: params.acquiredFrom,
             ownedFrom: params.ownedFrom,
             ownedThrough: ownedThrough,
