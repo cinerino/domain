@@ -24,32 +24,8 @@ export function createOrder(params: {
     orderStatus: factory.orderStatus;
     isGift: boolean;
 }): factory.order.IOrder {
-    const seller: factory.order.ISeller = {
-        project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
-        id: params.transaction.seller.id,
-        identifier: params.transaction.seller.identifier,
-        name: (typeof params.transaction.seller.name === 'string')
-            ? params.transaction.seller.name
-            : String(params.transaction.seller.name?.ja),
-        legalName: params.transaction.seller.legalName,
-        typeOf: params.transaction.seller.typeOf,
-        telephone: params.transaction.seller.telephone,
-        url: params.transaction.seller.url
-    };
-
-    // 購入者を識別する情報をまとめる
-    const profile = params.transaction.agent;
-    const customer: factory.order.ICustomer = {
-        ...profile,
-        name: (typeof profile.name === 'string')
-            ? profile.name
-            : `${profile.givenName} ${profile.familyName}`,
-        url: (typeof profile.url === 'string')
-            ? profile.url
-            : '',
-        identifier: (Array.isArray(profile.identifier)) ? profile.identifier : []
-    };
-
+    const seller = createSeller({ transaction: params.transaction });
+    const customer = createCustomer({ transaction: params.transaction });
     const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = [];
 
     // 座席予約がある場合
@@ -67,7 +43,7 @@ export function createOrder(params: {
     const discounts: factory.order.IDiscount[] = [];
 
     const name: string | undefined =
-        (typeof (<any>params.transaction.object).name === 'string') ? (<any>params.transaction.object).name : undefined;
+        (typeof params.transaction.object.name === 'string') ? params.transaction.object.name : undefined;
 
     return {
         project: params.transaction.project,
@@ -87,6 +63,42 @@ export function createOrder(params: {
         identifier: [],
         isGift: params.isGift,
         ...(typeof name === 'string') ? { name } : undefined
+    };
+}
+
+function createSeller(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+}): factory.order.ISeller {
+    const seller = params.transaction.seller;
+
+    return {
+        project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },
+        id: seller.id,
+        name: (typeof seller.name === 'string')
+            ? seller.name
+            : String(seller.name?.ja),
+        // legalName: seller.legalName,
+        typeOf: seller.typeOf,
+        ...(typeof seller.telephone === 'string') ? { telephone: seller.telephone } : undefined,
+        ...(typeof seller.url === 'string') ? { url: seller.url } : undefined
+    };
+}
+
+function createCustomer(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+}): factory.order.ICustomer {
+    // 購入者を識別する情報をまとめる
+    const profile = params.transaction.agent;
+
+    return {
+        ...profile,
+        identifier: (Array.isArray(profile.identifier)) ? profile.identifier : [],
+        name: (typeof profile.name === 'string')
+            ? profile.name
+            : `${profile.givenName} ${profile.familyName}`,
+        ...(typeof profile.url === 'string')
+            ? { url: profile.url }
+            : undefined
     };
 }
 

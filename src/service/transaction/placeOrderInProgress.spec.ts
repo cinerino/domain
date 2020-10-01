@@ -32,6 +32,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
+            project: { id: 'id' },
             typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
@@ -98,6 +99,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
+            project: { id: 'id' },
             typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
@@ -162,6 +164,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
+            project: { id: 'id' },
             typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },
@@ -220,6 +223,7 @@ describe('start()', () => {
             id: 'agentId'
         };
         const seller = {
+            project: { id: 'id' },
             typeOf: domain.factory.chevre.organizationType.MovieTheater,
             id: 'sellerId',
             name: { ja: 'ja', en: 'ne' },

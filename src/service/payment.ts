@@ -90,25 +90,6 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
         }
 
         await AccountPaymentService.voidTransaction(params)(repos);
-
-        // Chevre以外
-        // const authorizeActionsWithoutChevre = authorizeActions.filter((a) => {
-        //     return a.instrument?.identifier !== factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre;
-        // });
-
-        // 承認アクションに存在する決済方法ごとに決済中止処理を実行する
-        // const paymentMethodTypes = [...new Set(authorizeActionsWithoutChevre.map((a) => a.object.paymentMethod))];
-
-        // for (const paymentMethodType of paymentMethodTypes) {
-        //     switch (paymentMethodType) {
-        //         case factory.paymentMethodType.PaymentCard:
-        //             await PaymentCardPaymentService.voidTransaction(params)(repos);
-        //             break;
-
-        //         default:
-        //         // no op
-        //     }
-        // }
     };
 }
 
