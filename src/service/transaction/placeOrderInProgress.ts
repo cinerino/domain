@@ -14,6 +14,7 @@ import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
+import { createAttributes } from './placeOrderInProgress/factory';
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
 import { createOrder } from './placeOrderInProgress/result';
 import {
@@ -63,40 +64,8 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         // 注文通知パラメータ作成
         const informOrderParams = createInformOrderParams({ ...params, project: project });
 
-        const transactionObject: factory.transaction.placeOrder.IObject = {
-            passportToken: (params.object.passport !== undefined) ? params.object.passport.token : undefined,
-            passport: passport,
-            authorizeActions: [],
-            onOrderStatusChanged: {
-                informOrder: informOrderParams
-            },
-            ...((<any>params.object).clientUser !== undefined && (<any>params.object).clientUser !== null)
-                ? { clientUser: (<any>params.object).clientUser }
-                : undefined,
-            ...(typeof (<any>params).object?.name === 'string') ? { name: (<any>params).object?.name } : undefined
-        };
-
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
-        const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
-            project: { typeOf: project.typeOf, id: project.id },
-            typeOf: factory.transactionType.PlaceOrder,
-            status: factory.transactionStatusType.InProgress,
-            agent: params.agent,
-            seller: {
-                project: seller.project,
-                id: seller.id,
-                typeOf: seller.typeOf,
-                name: seller.name,
-                location: seller.location,
-                telephone: seller.telephone,
-                url: seller.url,
-                image: seller.image
-            },
-            object: transactionObject,
-            expires: params.expires,
-            startDate: new Date(),
-            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
-        };
+        const transactionAttributes = createAttributes(params, passport, informOrderParams, seller);
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
