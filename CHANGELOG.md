@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - 口座入金サービスを削除
+- 口座決済サービスを削除
 
 ### Fixed
 
