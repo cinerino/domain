@@ -2,7 +2,6 @@
  * 口座サービス
  */
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
-import * as moment from 'moment';
 
 import { credentials } from '../credentials';
 
@@ -256,76 +255,6 @@ export function openWithoutOwnershipInfo(params: {
         }
 
         return account;
-    };
-}
-
-/**
- * 入金処理を実行する
- */
-export function deposit(params: {
-    project: factory.project.IProject;
-    agent: pecorinoapi.factory.transaction.deposit.IAgent;
-    object: pecorinoapi.factory.transaction.deposit.IObject;
-    recipient: pecorinoapi.factory.transaction.deposit.IRecipient;
-}) {
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        try {
-            const project = await repos.project.findById({ id: params.project.id });
-
-            const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-            const { transactionNumber } = await transactionNumberService.publish({
-                project: { id: project.id }
-            });
-
-            // Chevreで入金
-            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            await moneyTransferService.start({
-                transactionNumber: transactionNumber,
-                project: { typeOf: project.typeOf, id: project.id },
-                typeOf: chevre.factory.transactionType.MoneyTransfer,
-                agent: {
-                    ...params.agent
-                },
-                expires: moment()
-                    .add(1, 'minutes')
-                    .toDate(),
-                object: {
-                    amount: {
-                        typeOf: 'MonetaryAmount',
-                        currency: params.object.toLocation.accountType,
-                        value: params.object.amount
-                    },
-                    fromLocation: params.agent,
-                    toLocation: {
-                        typeOf: params.object.toLocation.typeOf,
-                        identifier: params.object.toLocation.accountNumber
-                    },
-                    description: params.object.description,
-                    pendingTransaction: {
-                        typeOf: factory.pecorino.transactionType.Deposit,
-                        id: '' // 空でok
-                    }
-                },
-                recipient: {
-                    ...params.recipient
-                }
-            });
-
-            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
-        } catch (error) {
-            error = handleChevreError(error);
-            error = handlePecorinoError(error);
-            throw error;
-        }
     };
 }
 
