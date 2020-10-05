@@ -165,7 +165,7 @@ export function create(params: {
                 : [],
             requestBody: updTmpReserveSeatArgs,
             responseBody: updTmpReserveSeatResult,
-            ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined,
+            acceptedOffers: acceptedOffers4result,
             ...{ updTmpReserveSeatArgs, updTmpReserveSeatResult } // 互換性維持のため
         };
 
@@ -345,6 +345,19 @@ export function changeOffers(params: {
         authorizeAction.object.acceptedOffer = acceptedOffer;
         (<any>authorizeAction.object).offers = acceptedOffer; // 互換性維持のため
 
+        const updTmpReserveSeatResult = authorizeAction.result?.responseBody;
+        if (updTmpReserveSeatResult === undefined) {
+            throw new factory.errors.NotFound('action.result.responseBody');
+        }
+
+        const acceptedOffers4result = responseBody2acceptedOffers4result({
+            responseBody: updTmpReserveSeatResult,
+            object: authorizeAction.object,
+            event: screeningEvent,
+            seller: transaction.seller,
+            bookingTime: moment(authorizeAction.startDate)
+                .toDate()
+        });
         const { price, requiredPoint } = offers2resultPrice(acceptedOffer);
 
         const actionResult: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
@@ -356,7 +369,8 @@ export function changeOffers(params: {
                     currency: 'Point',
                     value: requiredPoint
                 }]
-                : []
+                : [],
+            acceptedOffers: acceptedOffers4result
         };
 
         // 座席予約承認アクションの供給情報を変更する
