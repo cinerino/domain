@@ -307,7 +307,7 @@ async function offer2availableSalesTicket(params: {
     };
 }
 
-// tslint:disable-next-line:max-func-body-length
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 function availableSalesTicket2offerWithDetails(params: {
     project: factory.chevre.project.IProject;
     availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket;
@@ -457,6 +457,28 @@ function availableSalesTicket2offerWithDetails(params: {
         seatNumber: offer.seatNumber,
         seatSection: offer.seatSection,
         ticketInfo: ticketInfo,
+        itemOffered: {
+            serviceOutput: {
+                typeOf: factory.chevre.reservationType.EventReservation,
+                reservedTicket: {
+                    typeOf: 'Ticket',
+                    ticketedSeat: {
+                        seatSection: offer.seatSection,
+                        seatNumber: offer.seatNumber,
+                        seatRow: '',
+                        // seatingType: selectedSeat.seatingType,
+                        typeOf: factory.chevre.placeType.Seat
+                    }
+                },
+                ...(typeof (<any>offer).itemOffered?.serviceOutput?.additionalTicketText === 'string')
+                    ? { additionalTicketText: (<any>offer).itemOffered.serviceOutput.additionalTicketText }
+                    : undefined,
+                ...(Array.isArray((<any>offer).itemOffered?.serviceOutput?.additionalProperty))
+                    ? { additionalProperty: (<any>offer).itemOffered.serviceOutput.additionalProperty }
+                    : undefined
+            }
+        },
+        ...((<any>offer).itemOffered !== undefined) ? { itemOffered: (<any>offer).itemOffered } : undefined,
         ...(eligibleMonetaryAmount !== undefined) ? { eligibleMonetaryAmount: [eligibleMonetaryAmount] } : undefined
     };
 
@@ -744,10 +766,10 @@ export function responseBody2acceptedOffers4result(params: {
                 project: { typeOf: event.project.typeOf, id: event.project.id },
                 typeOf: factory.chevre.offerType.Offer,
                 id: requestedOffer.id,
-                identifier: <string>requestedOffer.identifier,
+                identifier: requestedOffer.id,
                 name: requestedOffer.name,
-                description: requestedOffer.description,
-                additionalProperty: requestedOffer.additionalProperty,
+                // description: requestedOffer.description,
+                // additionalProperty: requestedOffer.additionalProperty,
                 priceCurrency: factory.priceCurrency.JPY
             }
         };
