@@ -1,4 +1,5 @@
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
 
@@ -13,6 +14,7 @@ import {
     createUpdTmpReserveSeatArgs,
     IAcceptedOfferWithoutDetail,
     offers2resultPrice,
+    responseBody2acceptedOffers4result,
     validateOffers
 } from './seatReservation4coa/factory';
 
@@ -141,6 +143,15 @@ export function create(params: {
             throw handleCOAReserveTemporarilyError(error);
         }
 
+        // 座席仮予約からオファー情報を生成する
+        const acceptedOffers4result = responseBody2acceptedOffers4result({
+            responseBody: updTmpReserveSeatResult,
+            object: action.object,
+            event: screeningEvent,
+            seller: transaction.seller,
+            bookingTime: moment(action.startDate)
+                .toDate()
+        });
         const { price, requiredPoint } = offers2resultPrice(acceptedOffer);
         const result: factory.action.authorize.offer.seatReservation.IResult<WebAPIIdentifier.COA> = {
             price: price,
@@ -154,6 +165,7 @@ export function create(params: {
                 : [],
             requestBody: updTmpReserveSeatArgs,
             responseBody: updTmpReserveSeatResult,
+            ...(acceptedOffers4result !== undefined) ? { acceptedOffers: acceptedOffers4result } : undefined,
             ...{ updTmpReserveSeatArgs, updTmpReserveSeatResult } // 互換性維持のため
         };
 

@@ -59,7 +59,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 listFreeSeat: [{ seatNum: 'seatNumber' }]
             }]
         };
-        const reserveSeatsTemporarilyResult = <any>{};
+        const reserveSeatsTemporarilyResult = <any>{ listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -156,7 +156,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 listFreeSeat: [{ seatNum: 'seatNumber' }]
             }]
         };
-        const reserveSeatsTemporarilyResult = <any>{};
+        const reserveSeatsTemporarilyResult = <any>{ listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -262,7 +262,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 listFreeSeat: [{ seatNum: 'seatNumber' }]
             }]
         };
-        const reserveSeatsTemporarilyResult = <any>{};
+        const reserveSeatsTemporarilyResult = <any>{ listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -366,7 +366,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 listFreeSeat: [{ seatNum: 'seatNumber' }]
             }]
         };
-        const reserveSeatsTemporarilyResult = <any>{};
+        const reserveSeatsTemporarilyResult = <any>{ listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -473,7 +473,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 listFreeSeat: [{ seatNum: 'seatNumber' }]
             }]
         };
-        const reserveSeatsTemporarilyResult = <any>{};
+        const reserveSeatsTemporarilyResult = <any>{ listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -579,7 +579,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 listFreeSeat: [{ seatNum: 'seatNumber' }]
             }]
         };
-        const reserveSeatsTemporarilyResult = <any>{};
+        const reserveSeatsTemporarilyResult = <any>{ listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'
@@ -1777,7 +1777,7 @@ describe('action.authorize.seatReservation.create()', () => {
                 })
             }]
         };
-        const updTmpReserveSeatResult = {};
+        const updTmpReserveSeatResult = { listTmpReserve: [] };
         const action = {
             typeOf: domain.factory.actionType.AuthorizeAction,
             id: 'actionId'

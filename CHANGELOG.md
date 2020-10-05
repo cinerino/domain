@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文アイテムとしてのCOA予約生成処理を仮予約時に移動
+
 ### Deprecated
 
 ### Removed
