@@ -8,17 +8,11 @@ import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-import * as AccountPaymentService from './payment/account';
 import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
 import * as PaymentCardPaymentService from './payment/paymentCard';
 
 import * as factory from '../factory';
-
-/**
- * 口座決済
- */
-export import account = AccountPaymentService;
 
 /**
  * 汎用決済
@@ -88,8 +82,6 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
         if (authorizeActionsWithChevre.length > 0) {
             await ChevrePaymentService.voidPayment(params)(repos);
         }
-
-        await AccountPaymentService.voidTransaction(params)(repos);
     };
 }
 
