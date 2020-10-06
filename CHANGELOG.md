@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 注文アイテムとしてのCOA予約生成処理を仮予約時に移動
 - 注文アイテムとしてのCOA予約を最適化
+- 予約オファー承認アクションを最適化
 
 ### Deprecated
 

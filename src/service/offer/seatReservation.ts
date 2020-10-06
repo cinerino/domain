@@ -225,13 +225,6 @@ export function create(params: {
                     requestBody = startParams;
                     responseBody = await reserveService.start(startParams);
 
-                    // requestBody = {
-                    //     id: reserveTransaction.id,
-                    //     object: params.object
-                    // };
-
-                    // responseBody = await reserveService.addReservations(requestBody);
-
                     // 座席仮予約からオファー情報を生成する
                     acceptedOffers4result = responseBody2acceptedOffers4result({
                         responseBody: responseBody,
@@ -289,7 +282,6 @@ export function create(params: {
  * tttsのacceptedOfferパラメータ(座席指定なし)に対して
  * 座席指定情報を付加(座席の自動選択)
  * addditionalTicketTextを付加
- * additionalProperty(余分確保分調整のため)を付加
  * する
  */
 // tslint:disable-next-line:max-func-body-length
@@ -416,12 +408,6 @@ export function selectSeats(
                     ? ticketOffer.additionalProperty
                     : [],
                 { name: 'transaction', value: transactionId }
-                // ...(selectedSeatsForAdditionalStocks.length > 0)
-                //     ? [{
-                //         name: 'extraSeatNumbers',
-                //         value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.branchCode))
-                //     }]
-                //     : []
             ];
 
             const additionalTicketText = offer.itemOffered?.serviceOutput?.additionalTicketText;
@@ -463,39 +449,6 @@ export function selectSeats(
                     }
                 }
             });
-
-            // selectedSeatsForAdditionalStocks.forEach((s) => {
-            //     const additionalProperty4extra: factory.propertyValue.IPropertyValue<string>[] = [
-            //         ...(Array.isArray(ticketOffer.additionalProperty))
-            //             ? ticketOffer.additionalProperty
-            //             : [],
-            //         { name: 'extra', value: '1' },
-            //         { name: 'transaction', value: transactionId }
-            //     ];
-
-            //     acceptedOffersWithoutDetail.push({
-            //         additionalProperty: offer.additionalProperty,
-            //         id: ticketOffer.id,
-            //         itemOffered: {
-            //             serviceOutput: {
-            //                 typeOf: factory.chevre.reservationType.EventReservation,
-            //                 additionalTicketText: additionalTicketText,
-            //                 reservedTicket: {
-            //                     typeOf: 'Ticket',
-            //                     ticketedSeat: {
-            //                         seatSection: sectionOffer.branchCode,
-            //                         seatNumber: s.branchCode,
-            //                         seatRow: '',
-            //                         seatingType: s.seatingType,
-            //                         typeOf: s.typeOf
-            //                     }
-            //                 },
-            //                 additionalProperty: additionalProperty4extra
-            //             }
-
-            //         }
-            //     });
-            // });
         }
 
         return acceptedOffersWithoutDetail;

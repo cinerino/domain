@@ -46,6 +46,39 @@ export type IAcceptedOfferWithoutDetail =
         };
     };
 
+export function createAuthorizeSeatReservationActionAttributes(params: {
+    acceptedOffers: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.COA>[];
+    event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
+    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
+}): factory.action.authorize.offer.seatReservation.IAttributes<WebAPIIdentifier.COA> {
+    const transaction = params.transaction;
+
+    return {
+        project: transaction.project,
+        typeOf: factory.actionType.AuthorizeAction,
+        object: {
+            typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
+            acceptedOffer: params.acceptedOffers,
+            event: params.event,
+            ...{ offers: params.acceptedOffers } // 互換性維持のため
+        },
+        agent: {
+            project: transaction.seller.project,
+            id: transaction.seller.id,
+            typeOf: transaction.seller.typeOf,
+            name: transaction.seller.name
+        },
+        recipient: {
+            typeOf: transaction.agent.typeOf,
+            id: transaction.agent.id,
+            ...(transaction.agent.identifier !== undefined) ? { identifier: transaction.agent.identifier } : undefined,
+            ...(transaction.agent.memberOf !== undefined) ? { memberOf: transaction.agent.memberOf } : undefined
+        },
+        purpose: { typeOf: transaction.typeOf, id: transaction.id },
+        instrument: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
+    };
+}
+
 export async function createAcceptedOffersWithoutDetails(params: {
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
     coaInfo: factory.event.screeningEvent.ICOAInfo;

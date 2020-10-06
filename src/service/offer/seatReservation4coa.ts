@@ -11,6 +11,7 @@ import { handleCOAReserveTemporarilyError } from '../../errorHandler';
 
 import {
     createAcceptedOffersWithoutDetails,
+    createAuthorizeSeatReservationActionAttributes,
     createUpdTmpReserveSeatArgs,
     IAcceptedOfferWithoutDetail,
     offers2resultPrice,
@@ -99,23 +100,11 @@ export function create(params: {
         );
 
         // 承認アクションを開始
-        const actionAttributes: factory.action.authorize.offer.seatReservation.IAttributes<WebAPIIdentifier.COA> = {
-            project: transaction.project,
-            typeOf: factory.actionType.AuthorizeAction,
-            object: {
-                typeOf: factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation,
-                acceptedOffer: acceptedOffer,
-                event: screeningEvent,
-                ...{ offers: acceptedOffer } // 互換性維持のため
-            },
-            agent: transaction.seller,
-            recipient: transaction.agent,
-            purpose: { // purposeは取引
-                typeOf: transaction.typeOf,
-                id: transaction.id
-            },
-            instrument: { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.COA }
-        };
+        const actionAttributes = createAuthorizeSeatReservationActionAttributes({
+            acceptedOffers: acceptedOffer,
+            event: screeningEvent,
+            transaction: transaction
+        });
         const action = await repos.action.start(actionAttributes);
 
         // COA仮予約
@@ -272,35 +261,8 @@ export function changeOffers(params: {
             throw new factory.errors.Argument('Transaction', 'Action not found in the transaction');
         }
 
-        // アクション中のイベント識別子と座席リストが合っているかどうか確認
+        validate4changeOffer({ action, object: params.object });
         const authorizeAction = action;
-        // 完了ステータスのアクションのみ更新可能
-        if (authorizeAction.actionStatus !== factory.actionStatusType.CompletedActionStatus) {
-            throw new factory.errors.NotFound('authorizeAction');
-        }
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (authorizeAction.object.event === undefined) {
-            throw new factory.errors.NotFound('authorizeAction.object.event');
-        }
-
-        // イベントが一致しているかどうか
-        if (authorizeAction.object.event.id !== params.object.event.id) {
-            throw new factory.errors.Argument('Event', 'Event ID not matched.');
-        }
-
-        // 座席セクションと座席番号が一致しているかどうか
-        const acceptedOfferParams = (Array.isArray(params.object.acceptedOffer)) ? params.object.acceptedOffer : [];
-        const allSeatsExisted = authorizeAction.object.acceptedOffer.every((originalAcceptedOffer) => {
-            return acceptedOfferParams.some(
-                (o) => originalAcceptedOffer.seatSection === o.seatSection && originalAcceptedOffer.seatNumber === o.seatNumber
-            );
-        });
-        const allSeatsMatched = (acceptedOfferParams.length === authorizeAction.object.acceptedOffer.length) && allSeatsExisted;
-        if (!allSeatsMatched) {
-            throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
-        }
 
         const project = await repos.project.findById({ id: params.project.id });
 
@@ -314,10 +276,9 @@ export function changeOffers(params: {
         });
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = acceptedOfferParams.map((offer) => {
+        const acceptedOffersWithoutDetails: IAcceptedOfferWithoutDetail[] = params.object.acceptedOffer.map((offer) => {
             const originalOffer = authorizeAction.object.acceptedOffer.find((o) => {
-                return o.seatSection === offer.seatSection
-                    && o.seatNumber === offer.seatNumber;
+                return o.seatSection === offer.seatSection && o.seatNumber === offer.seatNumber;
             });
 
             if (originalOffer === undefined) {
@@ -395,4 +356,39 @@ export function changeOffers(params: {
                 return doc.toObject();
             });
     };
+}
+
+function validate4changeOffer(params: {
+    action: factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.COA>;
+    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<WebAPIIdentifier.COA>;
+}) {
+    // アクション中のイベント識別子と座席リストが合っているかどうか確認
+    const authorizeAction = params.action;
+    // 完了ステータスのアクションのみ更新可能
+    if (authorizeAction.actionStatus !== factory.actionStatusType.CompletedActionStatus) {
+        throw new factory.errors.NotFound('authorizeAction');
+    }
+
+    // tslint:disable-next-line:no-single-line-block-comment
+    /* istanbul ignore if */
+    if (authorizeAction.object.event === undefined) {
+        throw new factory.errors.NotFound('authorizeAction.object.event');
+    }
+
+    // イベントが一致しているかどうか
+    if (authorizeAction.object.event.id !== params.object.event.id) {
+        throw new factory.errors.Argument('Event', 'Event ID not matched.');
+    }
+
+    // 座席セクションと座席番号が一致しているかどうか
+    const acceptedOfferParams = (Array.isArray(params.object.acceptedOffer)) ? params.object.acceptedOffer : [];
+    const allSeatsExisted = authorizeAction.object.acceptedOffer.every((originalAcceptedOffer) => {
+        return acceptedOfferParams.some(
+            (o) => originalAcceptedOffer.seatSection === o.seatSection && originalAcceptedOffer.seatNumber === o.seatNumber
+        );
+    });
+    const allSeatsMatched = (acceptedOfferParams.length === authorizeAction.object.acceptedOffer.length) && allSeatsExisted;
+    if (!allSeatsMatched) {
+        throw new factory.errors.Argument('offers', 'seatSection or seatNumber not matched.');
+    }
 }

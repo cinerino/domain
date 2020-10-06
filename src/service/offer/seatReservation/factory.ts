@@ -15,6 +15,8 @@ export function createReserveTransactionStartParams(params: {
     transaction: factory.transaction.ITransaction<any>;
     transactionNumber: string;
 }): factory.chevre.transaction.reserve.IStartParamsWithoutDetail {
+    const informReservationParamsFromObject = params.object?.onReservationStatusChanged?.informReservation;
+
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: chevre.factory.transactionType.Reserve,
@@ -36,12 +38,8 @@ export function createReserveTransactionStartParams(params: {
         object: {
             ...params.object,
             onReservationStatusChanged: {
-                informReservation: (params.object !== undefined
-                    && params.object !== null
-                    && params.object.onReservationStatusChanged !== undefined
-                    && params.object.onReservationStatusChanged !== null
-                    && Array.isArray(params.object.onReservationStatusChanged.informReservation))
-                    ? params.object.onReservationStatusChanged.informReservation
+                informReservation: (Array.isArray(informReservationParamsFromObject))
+                    ? informReservationParamsFromObject
                     : []
             }
         },
@@ -106,13 +104,14 @@ export function createAuthorizeSeatReservationActionAttributes(params: {
             project: transaction.seller.project,
             id: transaction.seller.id,
             typeOf: transaction.seller.typeOf,
-            name: transaction.seller.name,
-            location: transaction.seller.location,
-            telephone: transaction.seller.telephone,
-            url: transaction.seller.url,
-            image: transaction.seller.image
+            name: transaction.seller.name
         },
-        recipient: transaction.agent,
+        recipient: {
+            typeOf: transaction.agent.typeOf,
+            id: transaction.agent.id,
+            ...(transaction.agent.identifier !== undefined) ? { identifier: transaction.agent.identifier } : undefined,
+            ...(transaction.agent.memberOf !== undefined) ? { memberOf: transaction.agent.memberOf } : undefined
+        },
         purpose: { typeOf: transaction.typeOf, id: transaction.id },
         instrument: offeredThrough
     };
@@ -183,17 +182,17 @@ export function responseBody2acceptedOffers4result(params: {
     if (Array.isArray(params.responseBody.object.reservations)) {
         // tslint:disable-next-line:max-func-body-length
         acceptedOffers4result = params.responseBody.object.reservations
-            .filter((itemOffered) => {
-                const r = itemOffered;
-                // 余分確保分を除く(ttts対応)
-                let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                if (Array.isArray(r.additionalProperty)) {
-                    extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                }
+            // .filter((itemOffered) => {
+            //     const r = itemOffered;
+            //     // 余分確保分を除く(ttts対応)
+            //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            //     if (Array.isArray(r.additionalProperty)) {
+            //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            //     }
 
-                return extraProperty === undefined
-                    || extraProperty.value !== '1';
-            })
+            //     return extraProperty === undefined
+            //         || extraProperty.value !== '1';
+            // })
             // tslint:disable-next-line:max-func-body-length
             .map((itemOffered) => {
                 const reservationFor: IReservationFor = {
