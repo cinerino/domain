@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- タスクリポジトリにsaveManyを実装
+
 ### Changed
 
 ### Deprecated
