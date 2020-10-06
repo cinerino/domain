@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v10.0.0 - 2020-10-06
+
+### Changed
+
 - 注文アイテムとしてのCOA予約生成処理を仮予約時に移動
 - 注文アイテムとしてのCOA予約を最適化
 - 予約オファー承認アクションを最適化
@@ -20,10 +32,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 口座入金サービスを削除
 - 口座決済サービスを削除
-
-### Fixed
-
-### Security
 
 ## v9.4.1 - 2020-10-01
 
