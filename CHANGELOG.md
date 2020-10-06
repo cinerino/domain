@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- タスクリポジトリにsaveManyを実装
-
 ### Changed
 
 ### Deprecated
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.1.0 - 2020-10-06
+
+### Added
+
+- タスクリポジトリにsaveManyを実装
 
 ## v10.0.0 - 2020-10-06
 
