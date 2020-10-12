@@ -323,7 +323,7 @@ export function voidTransaction(
                     .then((actions) => actions
                         // tslint:disable-next-line:no-suspicious-comment
                         // TODO Chevre決済カードサービスに対して動的にコントロール
-                        .filter((a) => a.object.paymentMethod === factory.paymentMethodType.PaymentCard)
+                        .filter((a) => a.object.paymentMethod === 'PaymentCard')
                     );
         }
 

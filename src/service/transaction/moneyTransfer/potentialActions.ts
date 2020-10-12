@@ -9,7 +9,7 @@ function createMoneyTransferActions(params: {
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             // tslint:disable-next-line:no-suspicious-comment
             // TODO Chevre決済カードサービスに対して動的にコントロール
-            .filter((a) => a.result?.paymentMethod === factory.paymentMethodType.PaymentCard);
+            .filter((a) => a.result?.paymentMethod === 'PaymentCard');
 
     return authorizePaymentCardActions.map((a) => {
         const actionResult = <factory.action.authorize.paymentMethod.any.IResult>a.result;
