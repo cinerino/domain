@@ -358,7 +358,7 @@ function createConfirmationNumber(params: {
             url = params.result.order.url(params.order);
         }
 
-        const { paymentNo, confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({
+        const { confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({
             confirmationNumber: confirmationNumber,
             order: params.order
         });
@@ -368,7 +368,6 @@ function createConfirmationNumber(params: {
         /* istanbul ignore if */
         identifier = [
             ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
-            { name: 'paymentNo', value: paymentNo },
             { name: 'confirmationNumber', value: confirmationNumber4identifier },
             { name: 'confirmationPass', value: confirmationPass }
         ];
@@ -377,19 +376,10 @@ function createConfirmationNumber(params: {
     };
 }
 
-// export const PAYMENT_NO_MIN_LENGTH = 6;
 export function createConfirmationNumber4identifier(params: {
     confirmationNumber: string;
     order: factory.order.IOrder;
 }) {
-    const confirmationNumber = params.confirmationNumber;
-
-    // 6桁固定という使用の場合はこちら
-    // const paymentNo = (confirmationNumber.length < PAYMENT_NO_MIN_LENGTH)
-    //     ? `000000${confirmationNumber}`.slice(-PAYMENT_NO_MIN_LENGTH)
-    //     : confirmationNumber;
-    const paymentNo: string = String(confirmationNumber);
-
     let eventStartDateStr = moment(params.order.orderDate)
         .tz('Asia/Tokyo')
         .format('YYYYMMDD');
@@ -403,14 +393,14 @@ export function createConfirmationNumber4identifier(params: {
                 .format('YYYYMMDD');
         }
     }
-    const confirmationNumber4identifier = `${eventStartDateStr}${paymentNo}`;
+    const confirmationNumber4identifier = `${eventStartDateStr}${params.confirmationNumber}`;
     const telephone = params.order.customer?.telephone;
     const confirmationPass = (typeof telephone === 'string')
         // tslint:disable-next-line:no-magic-numbers
         ? telephone.slice(-4)
         : '9999';
 
-    return { paymentNo, confirmationNumber4identifier, confirmationPass };
+    return { confirmationNumber4identifier, confirmationPass };
 }
 
 /**
