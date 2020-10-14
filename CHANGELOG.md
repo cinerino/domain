@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- ttts専用paymentNoをorder.identifierから削除
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.2.1 - 2020-10-14
+
+### Changed
+
+- ttts専用paymentNoをorder.identifierから削除
 
 ## v10.2.0 - 2020-10-12
 
