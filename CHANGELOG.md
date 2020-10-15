@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- order.identifier.paymentNoにconfirmationNumberを設定
+
 ### Deprecated
 
 ### Removed
