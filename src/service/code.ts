@@ -16,7 +16,7 @@ export function publish(params: {
     project: factory.project.IProject;
     agent: factory.action.IParticipant;
     recipient: factory.action.IParticipant;
-    object: IData;
+    object: IData[];
     purpose: any;
     validFrom: Date;
     /**
@@ -27,7 +27,7 @@ export function publish(params: {
     return async (repos: {
         action: ActionRepo;
         code: CodeRepo;
-    }): Promise<factory.authorization.IAuthorization> => {
+    }): Promise<factory.authorization.IAuthorization[]> => {
         const actionAttributes: factory.action.authorize.IAttributes<any, any> = {
             project: params.project,
             typeOf: factory.actionType.AuthorizeAction,
@@ -38,15 +38,17 @@ export function publish(params: {
         };
         const action = await repos.action.start(actionAttributes);
 
-        let authorization: factory.authorization.IAuthorization;
+        let authorizations: factory.authorization.IAuthorization[];
 
         try {
-            authorization = await repos.code.publish({
-                project: params.project,
-                data: params.object,
-                validFrom: params.validFrom,
-                expiresInSeconds: Number(params.expiresInSeconds)
-            });
+            authorizations = await repos.code.publish(params.object.map((o) => {
+                return {
+                    project: params.project,
+                    data: o,
+                    validFrom: params.validFrom,
+                    expiresInSeconds: Number(params.expiresInSeconds)
+                };
+            }));
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -64,10 +66,10 @@ export function publish(params: {
             throw error;
         }
 
-        const result: factory.authorization.IAuthorization = authorization;
+        const result: factory.authorization.IAuthorization[] = authorizations;
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
 
-        return authorization;
+        return authorizations;
     };
 }
 
@@ -75,6 +77,7 @@ export function publish(params: {
  * コードをトークンに変換する
  */
 export function getToken(params: {
+    project: factory.project.IProject;
     code: ICode;
     secret: string;
     issuer: string;
@@ -83,7 +86,7 @@ export function getToken(params: {
     return async (repos: {
         code: CodeRepo;
     }): Promise<IToken> => {
-        const data = await repos.code.findOne({ code: params.code });
+        const data = await repos.code.findOne({ project: params.project, code: params.code });
 
         return new Promise<IToken>((resolve, reject) => {
             // 所有権を暗号化する

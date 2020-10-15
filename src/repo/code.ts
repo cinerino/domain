@@ -155,25 +155,36 @@ export class MongoRepository {
         data: IData;
         validFrom: Date;
         expiresInSeconds: number;
-    }): Promise<factory.authorization.IAuthorization> {
-        const code = uuid.v4();
+    }[]): Promise<factory.authorization.IAuthorization[]> {
+        const saveParams = params.map((p) => {
+            const code = uuid.v4();
 
-        return this.save({
-            project: params.project,
-            code: code,
-            data: params.data,
-            validFrom: params.validFrom,
-            expiresInSeconds: params.expiresInSeconds
+            return {
+                project: p.project,
+                code: code,
+                data: p.data,
+                validFrom: p.validFrom,
+                expiresInSeconds: p.expiresInSeconds
+            };
         });
+
+        return this.save(saveParams);
     }
 
     /**
      * コードでデータを検索する
      */
-    public async findOne(params: { code: ICode }): Promise<IData> {
+    public async findOne(params: {
+        project: factory.project.IProject;
+        code: ICode;
+    }): Promise<IData> {
         const now = new Date();
 
         const doc = await this.authorizationModel.findOne({
+            'project.id': {
+                $exists: true,
+                $eq: params.project.id
+            },
             code: {
                 $exists: true,
                 $eq: params.code
@@ -242,18 +253,31 @@ export class MongoRepository {
         data: IData;
         validFrom: Date;
         expiresInSeconds: number;
-    }): Promise<factory.authorization.IAuthorization> {
-        const validUntil = moment(params.validFrom)
-            .add(params.expiresInSeconds, 'seconds')
-            .toDate();
+    }[]): Promise<factory.authorization.IAuthorization[]> {
+        if (params.length > 0) {
+            const docs = params.map((p) => {
+                const validUntil = moment(p.validFrom)
+                    .add(p.expiresInSeconds, 'seconds')
+                    .toDate();
 
-        return this.authorizationModel.create({
-            project: params.project,
-            typeOf: 'Authorization',
-            code: params.code,
-            object: params.data,
-            validFrom: params.validFrom,
-            validUntil: validUntil
-        });
+                return {
+                    project: p.project,
+                    typeOf: 'Authorization',
+                    code: p.code,
+                    object: p.data,
+                    validFrom: p.validFrom,
+                    validUntil: validUntil
+                };
+            });
+            const result = <any>await this.authorizationModel.insertMany(docs, { ordered: false, rawResult: true });
+
+            if (result.insertedCount !== docs.length) {
+                throw new factory.errors.ServiceUnavailable('all codes not saved');
+            }
+
+            return result.ops;
+        } else {
+            return [];
+        }
     }
 }
