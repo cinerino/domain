@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- コード発行時にexpiresInSecondsを明示的に指定できるように調整
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.3.0 - 2020-10-15
+
+### Changed
+
+- コード発行時にexpiresInSecondsを明示的に指定できるように調整
 
 ## v10.2.2 - 2020-10-15
 
