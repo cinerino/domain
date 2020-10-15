@@ -368,6 +368,7 @@ function createConfirmationNumber(params: {
         /* istanbul ignore if */
         identifier = [
             ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
+            { name: 'paymentNo', value: confirmationNumber },
             { name: 'confirmationNumber', value: confirmationNumber4identifier },
             { name: 'confirmationPass', value: confirmationPass }
         ];
