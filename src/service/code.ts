@@ -6,9 +6,6 @@ import * as jwt from 'jsonwebtoken';
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { ICode, IData, MongoRepository as CodeRepo } from '../repo/code';
-import { MongoRepository as ProjectRepo } from '../repo/project';
-
-const DEFAULT_CODE_EXPIRES_IN_SECONDS = 600;
 
 export type IToken = string;
 
@@ -22,17 +19,15 @@ export function publish(params: {
     object: IData;
     purpose: any;
     validFrom: Date;
+    /**
+     * コード有効期間(秒)
+     */
+    expiresInSeconds: number;
 }) {
     return async (repos: {
         action: ActionRepo;
         code: CodeRepo;
-        project: ProjectRepo;
     }): Promise<factory.authorization.IAuthorization> => {
-        const project = await repos.project.findById({ id: params.project.id });
-        const expiresInSeconds = (project.settings !== undefined && typeof project.settings.codeExpiresInSeconds === 'number')
-            ? project.settings.codeExpiresInSeconds
-            : DEFAULT_CODE_EXPIRES_IN_SECONDS;
-
         const actionAttributes: factory.action.authorize.IAttributes<any, any> = {
             project: params.project,
             typeOf: factory.actionType.AuthorizeAction,
@@ -50,7 +45,7 @@ export function publish(params: {
                 project: params.project,
                 data: params.object,
                 validFrom: params.validFrom,
-                expiresInSeconds: expiresInSeconds
+                expiresInSeconds: Number(params.expiresInSeconds)
             });
         } catch (error) {
             // actionにエラー結果を追加
