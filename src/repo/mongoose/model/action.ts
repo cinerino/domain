@@ -280,6 +280,26 @@ schema.index(
 );
 
 schema.index(
+    { 'result.code': 1, startDate: -1 },
+    {
+        name: 'searchByResultCode',
+        partialFilterExpression: {
+            'result.code': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'result.orderNumber': 1, startDate: -1 },
+    {
+        name: 'searchByResultOrderNumber',
+        partialFilterExpression: {
+            'result.orderNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'fromLocation.typeOf': 1, startDate: -1 },
     {
         name: 'searchByFromLocationTypeOf',
