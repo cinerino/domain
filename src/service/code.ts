@@ -117,18 +117,23 @@ export function verifyToken<T>(params: {
     issuer: string | string[];
 }) {
     return async (repos: {
-        action: ActionRepo;
+        action?: ActionRepo;
     }): Promise<T> => {
-        const actionAttributes: factory.action.check.token.IAttributes = {
-            project: params.project,
-            typeOf: factory.actionType.CheckAction,
-            agent: params.agent,
-            object: {
-                token: params.token
-            }
-        };
-        const action = await repos.action.start(actionAttributes);
         let result: T;
+        let action: factory.action.check.token.IAction | undefined;
+
+        if (repos.action !== undefined) {
+            const actionAttributes: factory.action.check.token.IAttributes = {
+                project: params.project,
+                typeOf: factory.actionType.CheckAction,
+                agent: params.agent,
+                object: {
+                    token: params.token
+                }
+            };
+            action = await repos.action.start(actionAttributes);
+        }
+
         try {
             result = await new Promise<T>((resolve, reject) => {
                 jwt.verify(
@@ -146,12 +151,14 @@ export function verifyToken<T>(params: {
                     });
             });
         } catch (error) {
-            // actionにエラー結果を追加
-            try {
-                const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: actionAttributes.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
+            if (repos.action !== undefined && action !== undefined) {
+                // actionにエラー結果を追加
+                try {
+                    const actionError = { ...error, message: error.message, name: error.name };
+                    await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+                } catch (__) {
+                    // 失敗したら仕方ない
+                }
             }
 
             // JWTエラーをハンドリング
@@ -161,7 +168,10 @@ export function verifyToken<T>(params: {
 
             throw error;
         }
-        await repos.action.complete({ typeOf: actionAttributes.typeOf, id: action.id, result: result });
+
+        if (repos.action !== undefined && action !== undefined) {
+            await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+        }
 
         return result;
     };
