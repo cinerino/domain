@@ -10,11 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- コード発行を複数objectに対応
-- コードのトークン化の際にプロジェクト指定を必須に変更
-- アクション検索条件拡張
-- トークン検証をアクションリポジトリへの連動なしでも実行できるように調整
-
 ### Deprecated
 
 ### Removed
@@ -22,6 +17,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.4.0 - 2020-10-21
+
+### Changed
+
+- コード発行を複数objectに対応
+- コードのトークン化の際にプロジェクト指定を必須に変更
+- アクション検索条件拡張
+- トークン検証をアクションリポジトリへの連動なしでも実行できるように調整
 
 ## v10.3.0 - 2020-10-15
 
