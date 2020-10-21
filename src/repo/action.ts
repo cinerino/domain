@@ -242,6 +242,16 @@ export class MongoRepository {
             }
         }
 
+        const resultCodeIn = (<any>params).result?.code?.$in;
+        if (Array.isArray(resultCodeIn)) {
+            andConditions.push({
+                'result.code': {
+                    $exists: true,
+                    $in: resultCodeIn
+                }
+            });
+        }
+
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (params.typeOf !== undefined) {
