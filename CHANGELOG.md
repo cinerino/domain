@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- COAでの予約処理において、ムビチケあるいはMGを利用した予約かどうかの判定を、mvtkAppPriceからmvtkNumに変更
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.4.1 - 2020-10-22
+
+### Changed
+
+- COAでの予約処理において、ムビチケあるいはMGを利用した予約かどうかの判定を、mvtkAppPriceからmvtkNumに変更
 
 ## v10.4.0 - 2020-10-21
 
