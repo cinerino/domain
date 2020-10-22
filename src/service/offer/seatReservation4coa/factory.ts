@@ -122,7 +122,7 @@ export async function createAcceptedOffersWithoutDetails(params: {
     });
 }
 
-// tslint:disable-next-line:max-func-body-length
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 async function offer2availableSalesTicket(params: {
     project: factory.project.IProject;
     offers: IAcceptedOfferWithoutDetail[];
@@ -147,6 +147,8 @@ async function offer2availableSalesTicket(params: {
         },
         { timeout: COA_TIMEOUT }
     );
+
+    const isMvtkOrMG = typeof offer.ticketInfo.mvtkNum === 'string' && offer.ticketInfo.mvtkNum.length > 0;
 
     // ポイント消費鑑賞券の場合
     if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
@@ -238,7 +240,7 @@ async function offer2availableSalesTicket(params: {
         if (availableSalesTicket === undefined) {
             throw new factory.errors.NotFound(`offers.${offerIndex}`, `ticketCode ${offer.ticketInfo.ticketCode} not found.`);
         }
-    } else if (offer.ticketInfo.mvtkAppPrice > 0) {
+    } else if (isMvtkOrMG) {
         // ムビチケの場合、ムビチケ情報をCOA券種に変換
         try {
             const kbnMgtk = offer.ticketInfo.kbnMgtk;
@@ -401,9 +403,11 @@ function availableSalesTicket2offerWithDetails(params: {
             unitPriceSpec.referenceQuantity.value = 1;
     }
 
+    const isMvtkOrMG = typeof offer.ticketInfo.mvtkNum === 'string' && offer.ticketInfo.mvtkNum.length > 0;
+
     // tslint:disable-next-line:max-line-length
     let movieTicketTypeChargePriceSpec: factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification> | undefined;
-    if (offer.ticketInfo.mvtkAppPrice > 0) {
+    if (isMvtkOrMG) {
         const kbnMgtk = offer.ticketInfo.kbnMgtk;
         let availablePaymentMethod: string = factory.chevre.paymentMethodType.MovieTicket;
         if (typeof kbnMgtk === 'string' && kbnMgtk === 'MG') {
@@ -468,13 +472,13 @@ function availableSalesTicket2offerWithDetails(params: {
 
         usePoint: (coaPointTicket !== undefined) ? coaPointTicket.usePoint : 0,
 
-        mvtkAppPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkAppPrice : 0,
-        kbnEisyahousiki: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.kbnEisyahousiki : '00',
-        mvtkNum: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkNum : '',
-        mvtkKbnDenshiken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnDenshiken : '00',
-        mvtkKbnMaeuriken: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnMaeuriken : '00',
-        mvtkKbnKensyu: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkKbnKensyu : '00',
-        mvtkSalesPrice: (offer.ticketInfo.mvtkAppPrice > 0) ? offer.ticketInfo.mvtkSalesPrice : 0,
+        mvtkAppPrice: (isMvtkOrMG) ? offer.ticketInfo.mvtkAppPrice : 0,
+        kbnEisyahousiki: (isMvtkOrMG) ? offer.ticketInfo.kbnEisyahousiki : '00',
+        mvtkNum: (isMvtkOrMG) ? offer.ticketInfo.mvtkNum : '',
+        mvtkKbnDenshiken: (isMvtkOrMG) ? offer.ticketInfo.mvtkKbnDenshiken : '00',
+        mvtkKbnMaeuriken: (isMvtkOrMG) ? offer.ticketInfo.mvtkKbnMaeuriken : '00',
+        mvtkKbnKensyu: (isMvtkOrMG) ? offer.ticketInfo.mvtkKbnKensyu : '00',
+        mvtkSalesPrice: (isMvtkOrMG) ? offer.ticketInfo.mvtkSalesPrice : 0,
         kbnMgtk: (typeof offer.ticketInfo.kbnMgtk === 'string') ? offer.ticketInfo.kbnMgtk : ''
     };
 

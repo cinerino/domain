@@ -350,9 +350,9 @@ describe('action.authorize.seatReservation.create()', () => {
             seatNumber: 'seatNumber',
             ticketInfo: {
                 ticketCode: 'ticketCode',
-                mvtkAppPrice: 1234,
+                mvtkAppPrice: 0,
                 kbnEisyahousiki: '',
-                mvtkNum: '',
+                mvtkNum: '12345',
                 mvtkKbnDenshiken: '',
                 mvtkKbnMaeuriken: '',
                 mvtkKbnKensyu: '',
@@ -462,8 +462,9 @@ describe('action.authorize.seatReservation.create()', () => {
             ticketInfo: {
                 ticketCode: 'ticketCode',
                 addGlasses: 100,
-                mvtkAppPrice: 800,
-                mvtkSalesPrice: 1000
+                mvtkAppPrice: 0,
+                mvtkSalesPrice: 1000,
+                mvtkNum: '12345'
             }
         }];
         const salesTickets: any[] = [];
@@ -667,7 +668,8 @@ describe('action.authorize.seatReservation.create()', () => {
             seatNumber: 'seatNumber',
             ticketInfo: {
                 ticketCode: 'invalidTicketCode',
-                mvtkAppPrice: 123
+                mvtkAppPrice: 0,
+                mvtkNum: '12345'
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
@@ -765,7 +767,8 @@ describe('action.authorize.seatReservation.create()', () => {
             seatNumber: 'seatNumber',
             ticketInfo: {
                 ticketCode: 'invalidTicketCode',
-                mvtkAppPrice: 123
+                mvtkAppPrice: 0,
+                mvtkNum: '12345'
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
@@ -860,7 +863,8 @@ describe('action.authorize.seatReservation.create()', () => {
             seatNumber: 'seatNumber',
             ticketInfo: {
                 ticketCode: 'invalidTicketCode',
-                mvtkAppPrice: 123
+                mvtkAppPrice: 0,
+                mvtkNum: '12345'
             }
         }];
         const salesTickets = [{ ticketCode: 'ticketCode' }];
