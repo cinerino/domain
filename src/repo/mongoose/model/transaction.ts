@@ -174,6 +174,15 @@ schema.index(
     }
 );
 schema.index(
+    { 'result.order.confirmationNumber': 1, startDate: -1 },
+    {
+        name: 'searchByResultOrderConfirmationNumber',
+        partialFilterExpression: {
+            'result.order.confirmationNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'result.order.orderNumber': 1, startDate: -1 },
     {
         name: 'searchByResultOrderNumberAndStartDate',

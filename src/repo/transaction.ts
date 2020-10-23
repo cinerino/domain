@@ -231,6 +231,18 @@ export class MongoRepository {
                         }
                     }
                 }
+
+                const resultOrderConfirmationNumberEq = (<any>params).result?.order?.confirmationNumber?.$eq;
+                if (typeof resultOrderConfirmationNumberEq === 'string') {
+                    andConditions.push({
+                        'result.order.confirmationNumber': {
+                            $exists: true,
+                            $eq: resultOrderConfirmationNumberEq
+                        }
+                    });
+
+                }
+
                 break;
 
             case factory.transactionType.ReturnOrder:
