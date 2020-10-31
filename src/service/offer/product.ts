@@ -57,7 +57,7 @@ export function search(params: {
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const product = await productService.findById({ id: params.itemOffered.id });
+        const product = <chevre.factory.product.IProduct>await productService.findById({ id: params.itemOffered.id });
 
         // 販売者指定の場合、検証
         if (typeof params.seller?.id === 'string') {
@@ -154,7 +154,7 @@ export function authorize(params: {
             auth: chevreAuthClient
         });
 
-        const product = await productService.findById({
+        const product = <chevre.factory.product.IProduct>await productService.findById({
             id: String(params.object[0]?.itemOffered?.id)
         });
         const availableOffers = await search({

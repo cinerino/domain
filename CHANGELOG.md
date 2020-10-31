@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 外部決済サービス認証情報をプロダクト検索から取得するように調整
+
 ### Deprecated
 
 ### Removed

@@ -142,6 +142,7 @@ export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
  * 注文取引を確定する
  */
 export function confirm(params: IConfirmParams) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -178,11 +179,20 @@ export function confirm(params: IConfirmParams) {
         const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
         // プロジェクトの対応決済サービスを確認するためにChevreプロジェクトを検索
-        const projectService = new chevre.service.Project({
+        const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const chevreProject = await projectService.findById({ id: transaction.project.id });
+        const searchPaymentServicesResult = await productService.search({
+            project: { id: { $eq: transaction.project.id } },
+            typeOf: {
+                $in: [
+                    chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
+                    chevre.factory.service.paymentService.PaymentServiceType.MovieTicket
+                ]
+            }
+        });
+        const paymentServices = <chevre.factory.service.paymentService.IService[]>searchPaymentServicesResult.data;
 
         // 利用可能な口座区分を検索
         const categoryCodeService = new chevre.service.CategoryCode({
@@ -201,7 +211,7 @@ export function confirm(params: IConfirmParams) {
             ...params,
             project: project,
             transaction: transaction,
-            paymentServices: chevreProject.settings?.paymentServices,
+            paymentServices: paymentServices,
             accountTypes: searchAccountTypesResult.data
         })(repos);
 
