@@ -9,7 +9,7 @@ import * as chevre from '../chevre';
 
 import * as factory from '../factory';
 
-import { handleChevreError, handlePecorinoError } from '../errorHandler';
+import { handlePecorinoError } from '../errorHandler';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
@@ -209,52 +209,6 @@ export function searchMoneyTransferActions(params: {
         }
 
         return actions;
-    };
-}
-
-/**
- * 所有権なしにポイント口座を開設する
- */
-export function openWithoutOwnershipInfo(params: {
-    project: factory.project.IProject;
-    name: string;
-    accountType: string;
-}) {
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        const accountService = new pecorinoapi.service.Account({
-            endpoint: credentials.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-
-        let account: factory.pecorino.account.IAccount;
-        try {
-            // 口座番号を発行
-            const publishIdentifierResult = await serviceOutputIdentifierService.publish({
-                project: { id: project.id }
-            });
-
-            account = await accountService.open({
-                project: { typeOf: project.typeOf, id: project.id },
-                accountType: params.accountType,
-                accountNumber: publishIdentifierResult.identifier,
-                name: params.name
-            });
-        } catch (error) {
-            error = handleChevreError(error);
-            error = handlePecorinoError(error);
-            throw error;
-        }
-
-        return account;
     };
 }
 
