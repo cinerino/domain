@@ -322,14 +322,23 @@ async function getPaymentServiceType(params: {
     paymentMethodType: string;
 }): Promise<chevre.factory.service.paymentService.PaymentServiceType | undefined> {
     // プロジェクトの対応決済サービスを確認
-    const projectService = new chevre.service.Project({
+    const productService = new chevre.service.Product({
         endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
-    const chevreProject = await projectService.findById({ id: params.project.id });
-    const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
-        return s.serviceOutput?.typeOf === params.paymentMethodType;
+    const searchPaymentServicesResult = await productService.search({
+        limit: 1,
+        project: { id: { $eq: params.project.id } },
+        typeOf: {
+            $in: [
+                chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
+                chevre.factory.service.paymentService.PaymentServiceType.MovieTicket
+            ]
+        },
+        serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
     });
+    const paymentServiceSetting = <chevre.factory.service.paymentService.IService | undefined>
+        searchPaymentServicesResult.data.shift();
     // if (paymentServiceSetting === undefined) {
     //     throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
     // }
@@ -347,15 +356,18 @@ export async function getCreditCardPaymentServiceChannel(params: {
     project: { id: string };
     paymentMethodType: string;
 }): Promise<ICreditCardPaymentServiceCredentials> {
-    const projectService = new chevre.service.Project({
+    const productService = new chevre.service.Product({
         endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
-    const chevreProject = await projectService.findById({ id: params.project.id });
-    const paymentServiceSetting = chevreProject.settings?.paymentServices?.find((s) => {
-        return s.typeOf === chevre.factory.service.paymentService.PaymentServiceType.CreditCard
-            && s.serviceOutput?.typeOf === params.paymentMethodType;
+    const searchPaymentServicesResult = await productService.search({
+        limit: 1,
+        project: { id: { $eq: params.project.id } },
+        typeOf: { $eq: chevre.factory.service.paymentService.PaymentServiceType.CreditCard },
+        serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
     });
+    const paymentServiceSetting = <chevre.factory.service.paymentService.IService | undefined>
+        searchPaymentServicesResult.data.shift();
 
     const availableChannel = paymentServiceSetting?.availableChannel;
     if (typeof availableChannel?.serviceUrl !== 'string') {

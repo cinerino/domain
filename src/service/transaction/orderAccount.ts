@@ -79,7 +79,8 @@ export function orderAccount(params: {
             project: { id: { $eq: project.id } },
             typeOf: { $eq: chevre.factory.product.ProductType.Account }
         });
-        const accountProduct = searchProductsResult.data.find((p) => p.serviceOutput?.amount?.currency === params.accountType);
+        const accountProduct = (<chevre.factory.product.IProduct[]>searchProductsResult.data)
+            .find((p) => p.serviceOutput?.amount?.currency === params.accountType);
         if (accountProduct === undefined) {
             throw new factory.errors.NotFound(`${params.accountType} Account Product`);
         }

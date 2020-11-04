@@ -9,7 +9,7 @@ import * as chevre from '../chevre';
 
 import * as factory from '../factory';
 
-import { handleChevreError, handlePecorinoError } from '../errorHandler';
+import { handlePecorinoError } from '../errorHandler';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
@@ -213,52 +213,6 @@ export function searchMoneyTransferActions(params: {
 }
 
 /**
- * 所有権なしにポイント口座を開設する
- */
-export function openWithoutOwnershipInfo(params: {
-    project: factory.project.IProject;
-    name: string;
-    accountType: string;
-}) {
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
-        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
-        const accountService = new pecorinoapi.service.Account({
-            endpoint: credentials.pecorino.endpoint,
-            auth: pecorinoAuthClient
-        });
-
-        let account: factory.pecorino.account.IAccount;
-        try {
-            // 口座番号を発行
-            const publishIdentifierResult = await serviceOutputIdentifierService.publish({
-                project: { id: project.id }
-            });
-
-            account = await accountService.open({
-                project: { typeOf: project.typeOf, id: project.id },
-                accountType: params.accountType,
-                accountNumber: publishIdentifierResult.identifier,
-                name: params.name
-            });
-        } catch (error) {
-            error = handleChevreError(error);
-            error = handlePecorinoError(error);
-            throw error;
-        }
-
-        return account;
-    };
-}
-
-/**
  * 所有口座を検索
  * 指定した口座タイプの所有口座を検索する
  * 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件は以下の通り
@@ -285,7 +239,8 @@ export function findAccount(params: {
             project: { id: { $eq: params.project.id } },
             typeOf: { $eq: chevre.factory.product.ProductType.Account }
         });
-        const accountProduct = searchProductsResult.data.find((p) => p.serviceOutput?.amount?.currency === params.accountType);
+        const accountProduct = (<chevre.factory.product.IProduct[]>searchProductsResult.data)
+            .find((p) => p.serviceOutput?.amount?.currency === params.accountType);
         if (accountProduct === undefined) {
             throw new factory.errors.NotFound(`${params.accountType} Account Product`);
         }

@@ -73,7 +73,7 @@ export function createOrderTask(params: {
             auth: chevreAuthClient
         });
 
-        const product = await productService.findById({ id: params.object.itemOffered.id });
+        const product = <chevre.factory.product.IProduct>await productService.findById({ id: params.object.itemOffered.id });
         const offers = await OfferService.product.search({
             project: { id: project.id },
             itemOffered: { id: String(product.id) },
