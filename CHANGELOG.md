@@ -10,20 +10,26 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v10.6.0 - 2020-11-04
+
+### Changed
+
 - 外部決済サービス認証情報をプロダクト検索から取得するように調整
 - update @chevre/api-nodejs-client
 - update @motionpicture/gmo-service
 - update @pecorino/api-nodejs-client
 
-### Deprecated
-
 ### Removed
 
 - 管理者としての口座開設サービスを削除
-
-### Fixed
-
-### Security
 
 ## v10.5.0 - 2020-10-23
 
