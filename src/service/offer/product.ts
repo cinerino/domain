@@ -149,7 +149,7 @@ export function authorize(params: {
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const serviceOutputIdentifierService = new chevre.service.ServiceOutputIdentifier({
+        const serviceOutputService = new chevre.service.ServiceOutput({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -178,7 +178,7 @@ export function authorize(params: {
         })(repos);
 
         acceptedOffer = await createServiceOutputIdentifier({ acceptedOffer, product })({
-            serviceOutputIdentifierService
+            serviceOutputService
         });
 
         let requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
@@ -460,14 +460,15 @@ function createServiceOutputIdentifier(params: {
     product: factory.chevre.product.IProduct;
 }) {
     return async (repos: {
-        serviceOutputIdentifierService: chevre.service.ServiceOutputIdentifier;
+        serviceOutputService: chevre.service.ServiceOutput;
     }): Promise<factory.action.authorize.offer.product.IObject> => {
-        // 識別子を発行
-        return Promise.all(params.acceptedOffer.map(async (o) => {
-            const { identifier } = await repos.serviceOutputIdentifierService.publish({
-                project: { id: params.product.project.id }
-            });
+        const publishParams = params.acceptedOffer.map(() => {
+            return { project: { id: params.product.project.id } };
+        });
+        const publishIdentifierResult = await repos.serviceOutputService.publishIdentifier(publishParams);
 
+        // 識別子を発行
+        return Promise.all(params.acceptedOffer.map(async (o, key) => {
             return {
                 ...o,
                 itemOffered: {
@@ -476,7 +477,7 @@ function createServiceOutputIdentifier(params: {
                         ...o.itemOffered?.serviceOutput,
                         project: params.product.project,
                         typeOf: String(params.product.serviceOutput?.typeOf),
-                        identifier: identifier
+                        identifier: publishIdentifierResult[key].identifier
                     }
                 }
             };
