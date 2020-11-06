@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v10.6.1 - 2020-11-06
+
+### Changed
+
+- update @pecorino/api-nodejs-client
+- update @cinerino/factory
+
 ## v10.6.0 - 2020-11-04
 
 ### Changed
