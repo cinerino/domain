@@ -8,6 +8,7 @@ export function creatPayTransactionStartParams(params: {
     paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
     transactionNumber: string;
+    confirmationNumber?: string;
 }): chevre.factory.transaction.pay.IStartParamsWithoutDetail {
     const expires = moment(params.transaction.expires)
         .add(1, 'month')
@@ -44,7 +45,10 @@ export function creatPayTransactionStartParams(params: {
                 ...(typeof params.object.description === 'string') ? { description: params.object.description } : undefined
             }
         },
-        expires: expires
+        expires: expires,
+        ...(typeof params.confirmationNumber === 'string')
+            ? { purpose: { confirmationNumber: params.confirmationNumber } }
+            : undefined
     };
 }
 

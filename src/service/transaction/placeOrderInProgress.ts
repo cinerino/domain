@@ -148,7 +148,7 @@ export function confirm(params: IConfirmParams) {
         project: ProjectRepo;
         transaction: TransactionRepo;
         orderNumber: OrderNumberRepo;
-        confirmationNumber?: ConfirmationNumberRepo;
+        confirmationNumber: ConfirmationNumberRepo;
     }) => {
         let transaction = await repos.transaction.findById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -259,7 +259,7 @@ function createResult(params: IConfirmParams & {
 }) {
     return async (repos: {
         orderNumber: OrderNumberRepo;
-        confirmationNumber?: ConfirmationNumberRepo;
+        confirmationNumber: ConfirmationNumberRepo;
     }): Promise<factory.transaction.placeOrder.IResult> => {
         const project = params.project;
         const transaction = params.transaction;
@@ -333,29 +333,23 @@ function createConfirmationNumber(params: {
     };
 }) {
     return async (repos: {
-        confirmationNumber?: ConfirmationNumberRepo;
+        confirmationNumber: ConfirmationNumberRepo;
     }) => {
         let confirmationNumber = '0';
         let url = '';
         let identifier: factory.order.IIdentifier = [];
 
         // 確認番号を発行
-        if (repos.confirmationNumber !== undefined) {
-            confirmationNumber = (await repos.confirmationNumber.publish({
-                orderDate: params.result.order.orderDate
-            })).toString();
-        }
+        confirmationNumber = (await repos.confirmationNumber.publish({
+            orderDate: params.result.order.orderDate
+        })).toString();
 
         // 確認番号の指定があれば上書き
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (typeof params.result.order.confirmationNumber === 'string') {
-            confirmationNumber = params.result.order.confirmationNumber;
-        } else /* istanbul ignore next */ if (typeof params.result.order.confirmationNumber === 'function') {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            confirmationNumber = params.result.order.confirmationNumber(params.order);
-        }
+        // if (typeof params.result.order.confirmationNumber === 'string') {
+        //     confirmationNumber = params.result.order.confirmationNumber;
+        // } else if (typeof params.result.order.confirmationNumber === 'function') {
+        //     confirmationNumber = params.result.order.confirmationNumber(params.order);
+        // }
 
         // URLの指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment

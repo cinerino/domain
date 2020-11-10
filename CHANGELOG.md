@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 注文取引確定時の確認番号カスタム指定を削除
+
 ### Fixed
 
 ### Security
