@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - update @chevre/api-nodejs-client
 - 注文取引に保管された確認番号を注文へ反映するように調整
+- MovieTicket系統決済取引開始時に、注文確認番号を連携するように調整
 
 ### Deprecated
 
