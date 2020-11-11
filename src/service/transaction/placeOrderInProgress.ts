@@ -273,7 +273,7 @@ export function publishConfirmationNumberIfNotExist(params: {
         });
 
         // すでに発行済であれば何もしない
-        if (typeof (<any>transaction.object).confirmationNumber === 'string') {
+        if (typeof transaction.object.confirmationNumber === 'string') {
             return;
         }
 
@@ -338,6 +338,7 @@ function createResult(params: IConfirmParams & {
         // 確認番号を発行
         const { confirmationNumber, identifier, url } = await createConfirmationNumber({
             order: order,
+            transaction: transaction,
             result: params.result
         })(repos);
 
@@ -371,6 +372,7 @@ function searchAuthorizeActions(params: IConfirmParams) {
 
 function createConfirmationNumber(params: {
     order: factory.order.IOrder;
+    transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     result: {
         order: IResultOrderParams;
     };
@@ -378,14 +380,16 @@ function createConfirmationNumber(params: {
     return async (repos: {
         confirmationNumber: ConfirmationNumberRepo;
     }) => {
-        let confirmationNumber = '0';
+        let confirmationNumber: string | undefined = params.transaction.object.confirmationNumber;
         let url = '';
         let identifier: factory.order.IIdentifier = [];
 
-        // 確認番号を発行
-        confirmationNumber = (await repos.confirmationNumber.publish({
-            orderDate: params.result.order.orderDate
-        })).toString();
+        // 取引に確認番号が保管されていなければ、確認番号を発行
+        if (typeof confirmationNumber !== 'string') {
+            confirmationNumber = (await repos.confirmationNumber.publish({
+                orderDate: params.result.order.orderDate
+            })).toString();
+        }
 
         // 確認番号の指定があれば上書き
         // if (typeof params.result.order.confirmationNumber === 'string') {

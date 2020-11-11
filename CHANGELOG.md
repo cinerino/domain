@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - update @chevre/api-nodejs-client
+- 注文取引に保管された確認番号を注文へ反映するように調整
 
 ### Deprecated
 

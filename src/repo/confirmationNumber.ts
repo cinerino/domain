@@ -26,7 +26,7 @@ export class RedisRepository {
         orderDate: Date;
     }): Promise<number> {
         return new Promise<number>((resolve, reject) => {
-            // データ保管期間はとりあえず一か月(これで十分かどうかはプロジェクト毎に検討すること)
+            // データ保管期間はとりあえず一か月
             const TTL = moment(params.orderDate)
                 .add(1, 'month')
                 .diff(moment(params.orderDate), 'seconds');
