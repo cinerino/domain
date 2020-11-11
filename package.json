@@ -9,8 +9,8 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "^3.45.1",
-    "@cinerino/factory": "^9.26.3",
+    "@chevre/api-nodejs-client": "3.45.2",
+    "@cinerino/factory": "9.26.4",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.0.0",
     "@pecorino/api-nodejs-client": "^5.4.1",

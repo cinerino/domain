@@ -47,7 +47,7 @@ export function creatPayTransactionStartParams(params: {
         },
         expires: expires,
         ...(typeof params.confirmationNumber === 'string')
-            ? { purpose: { confirmationNumber: params.confirmationNumber } }
+            ? { purpose: { typeOf: 'Order', confirmationNumber: params.confirmationNumber } }
             : undefined
     };
 }
