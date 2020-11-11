@@ -251,6 +251,49 @@ export function confirm(params: IConfirmParams) {
     };
 }
 
+/**
+ * 未発行であれば、注文の確認番号を発行して取引に補完する
+ */
+export function publishConfirmationNumberIfNotExist(params: {
+    /**
+     * 取引ID
+     */
+    id: string;
+    object: {
+        orderDate: Date;
+    };
+}) {
+    return async (repos: {
+        transaction: TransactionRepo;
+        confirmationNumber: ConfirmationNumberRepo;
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
+
+        // すでに発行済であれば何もしない
+        if (typeof (<any>transaction.object).confirmationNumber === 'string') {
+            return;
+        }
+
+        // 確認番号を発行
+        const confirmationNumber = (await repos.confirmationNumber.publish({
+            orderDate: params.object.orderDate
+        })).toString();
+
+        // 取引に存在しなければ保管
+        await repos.transaction.transactionModel.findOneAndUpdate(
+            {
+                _id: transaction.id,
+                'object.confirmationNumber': { $exists: false }
+            },
+            { 'object.confirmationNumber': confirmationNumber }
+        )
+            .exec();
+    };
+}
+
 function createResult(params: IConfirmParams & {
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;

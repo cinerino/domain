@@ -192,6 +192,15 @@ schema.index(
     }
 );
 schema.index(
+    { 'object.confirmationNumber': 1, startDate: -1 },
+    {
+        name: 'searchByObjectConfirmationNumber',
+        partialFilterExpression: {
+            'object.confirmationNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'object.order.orderNumber': 1, startDate: -1 },
     {
         name: 'searchByObjectOrderNumberAndStartDate',

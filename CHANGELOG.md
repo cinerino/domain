@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 注文取引に確認番号を保管するサービスを追加
+
 ### Changed
 
 - update @chevre/api-nodejs-client
