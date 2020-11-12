@@ -13,6 +13,8 @@ export function creatPayTransactionStartParams(params: {
         .add(1, 'month')
         .toDate(); // 余裕を持って
 
+    const confirmationNumber = (<factory.transaction.placeOrder.ITransaction>params.transaction).object.confirmationNumber;
+
     return {
         project: { id: params.transaction.project.id, typeOf: chevre.factory.organizationType.Project },
         typeOf: chevre.factory.transactionType.Pay,
@@ -44,7 +46,15 @@ export function creatPayTransactionStartParams(params: {
                 ...(typeof params.object.description === 'string') ? { description: params.object.description } : undefined
             }
         },
-        expires: expires
+        expires: expires,
+        ...(typeof confirmationNumber === 'string')
+            ? {
+                purpose: {
+                    typeOf: 'Order',
+                    confirmationNumber: confirmationNumber
+                }
+            }
+            : undefined
     };
 }
 

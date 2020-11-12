@@ -68,6 +68,30 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        const objectPaymentMethodEq = params.object?.paymentMethod?.$eq;
+        if (typeof objectPaymentMethodEq === 'string') {
+            andConditions.push({
+                'object.paymentMethod': {
+                    $exists: true,
+                    $eq: objectPaymentMethodEq
+                }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        const objectPaymentMethodIdEq = params.object?.paymentMethodId?.$eq;
+        if (typeof objectPaymentMethodIdEq === 'string') {
+            andConditions.push({
+                'object.paymentMethodId': {
+                    $exists: true,
+                    $eq: objectPaymentMethodIdEq
+                }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (params.object !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
