@@ -1,3 +1,5 @@
+import * as moment from 'moment-timezone';
+
 import * as factory from '../../../factory';
 
 import { createMoneyTransferAcceptedOffers, createProductItems, createReservationAcceptedOffers } from './result/acceptedOffers';
@@ -126,4 +128,31 @@ function createPaymentMethods(params: {
         .reduce((a, b) => a + (<IAuthorizeAnyPaymentResult>b.result).amount, 0);
 
     return { paymentMethods, price };
+}
+
+export function createConfirmationNumber4identifier(params: {
+    confirmationNumber: string;
+    order: factory.order.IOrder;
+}) {
+    let eventStartDateStr = moment(params.order.orderDate)
+        .tz('Asia/Tokyo')
+        .format('YYYYMMDD');
+    if (Array.isArray(params.order.acceptedOffers) && params.order.acceptedOffers.length > 0) {
+        const firstAcceptedOffer = params.order.acceptedOffers[0];
+        const itemOffered = <factory.order.IReservation>firstAcceptedOffer.itemOffered;
+        if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
+            const event = itemOffered.reservationFor;
+            eventStartDateStr = moment(event.startDate)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD');
+        }
+    }
+    const confirmationNumber4identifier = `${eventStartDateStr}${params.confirmationNumber}`;
+    const telephone = params.order.customer?.telephone;
+    const confirmationPass = (typeof telephone === 'string')
+        // tslint:disable-next-line:no-magic-numbers
+        ? telephone.slice(-4)
+        : '9999';
+
+    return { confirmationNumber4identifier, confirmationPass };
 }

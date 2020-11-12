@@ -1,8 +1,6 @@
 /**
  * 進行中注文取引サービス
  */
-import * as moment from 'moment';
-
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -16,7 +14,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createAttributes } from './placeOrderInProgress/factory';
 import { createPotentialActions } from './placeOrderInProgress/potentialActions';
-import { createOrder } from './placeOrderInProgress/result';
+import { createConfirmationNumber4identifier, createOrder } from './placeOrderInProgress/result';
 import {
     validateEventOffers,
     validateNumItems,
@@ -32,7 +30,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
 export type IStartOperation<T> = (repos: {
     project: ProjectRepo;
     transaction: TransactionRepo;
@@ -85,24 +82,13 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 function createInformOrderParams(params: IStartParams & {
     project: factory.project.IProject;
 }): factory.transaction.placeOrder.IInformOrderParams[] {
-    const informOrderParams: factory.transaction.placeOrder.IInformOrderParams[] = [];
+    const informOrderParamsByProject = params.project.settings?.onOrderStatusChanged?.informOrder;
+    const informOrderParamsByCustomer = params.object?.onOrderStatusChanged?.informOrder;
 
-    const project = params.project;
-
-    if (project.settings !== undefined
-        && project.settings !== null
-        && project.settings.onOrderStatusChanged !== undefined
-        && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
-        informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
-    }
-
-    if (params.object !== undefined
-        && params.object.onOrderStatusChanged !== undefined
-        && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
-        informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
-    }
-
-    return informOrderParams;
+    return [
+        ...(Array.isArray(informOrderParamsByProject)) ? informOrderParamsByProject : [],
+        ...(Array.isArray(informOrderParamsByCustomer)) ? informOrderParamsByCustomer : []
+    ];
 }
 
 export type IConfirmationNumberGenerator = (order: factory.order.IOrder) => string;
@@ -114,10 +100,6 @@ export type IResultOrderParams = factory.transaction.placeOrder.IResultOrderPara
      * 注文日時
      */
     orderDate: Date;
-    /**
-     * 確認番号のカスタム指定
-     */
-    confirmationNumber?: string | IConfirmationNumberGenerator;
     /**
      * 注文確認URLのカスタム指定
      */
@@ -137,6 +119,8 @@ export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
         order: IResultOrderParams;
     };
 };
+
+const MONGO_DUPLICATE_KEY_ERROR_CODE = 11000;
 
 /**
  * 注文取引を確定する
@@ -164,10 +148,8 @@ export function confirm(params: IConfirmParams) {
             throw new factory.errors.Argument('transactionId', 'Transaction already canceled');
         }
 
-        if (params.agent !== undefined && typeof params.agent.id === 'string') {
-            if (transaction.agent.id !== params.agent.id) {
-                throw new factory.errors.Forbidden('Transaction not yours');
-            }
+        if (typeof params.agent?.id === 'string' && transaction.agent.id !== params.agent.id) {
+            throw new factory.errors.Forbidden('Transaction not yours');
         }
 
         const project = await repos.project.findById({ id: transaction.project.id });
@@ -235,11 +217,8 @@ export function confirm(params: IConfirmParams) {
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
-                // name: 'MongoError',
                 // message: 'E11000 duplicate key error collection: prodttts.transactions index:result.order.orderNumber_1 dup key:...',
-                // code: 11000,
-                // tslint:disable-next-line:no-magic-numbers
-                if (error.code === 11000) {
+                if (error.code === MONGO_DUPLICATE_KEY_ERROR_CODE) {
                     throw new factory.errors.AlreadyInUse('transaction', ['result.order.orderNumber']);
                 }
             }
@@ -379,8 +358,12 @@ function createConfirmationNumber(params: {
 }) {
     return async (repos: {
         confirmationNumber: ConfirmationNumberRepo;
-    }) => {
-        let confirmationNumber: string | undefined = params.transaction.object.confirmationNumber;
+    }): Promise<{
+        confirmationNumber: string;
+        url: string;
+        identifier: factory.order.IIdentifier;
+    }> => {
+        let confirmationNumber = params.transaction.object.confirmationNumber;
         let url = '';
         let identifier: factory.order.IIdentifier = [];
 
@@ -390,13 +373,6 @@ function createConfirmationNumber(params: {
                 orderDate: params.result.order.orderDate
             })).toString();
         }
-
-        // 確認番号の指定があれば上書き
-        // if (typeof params.result.order.confirmationNumber === 'string') {
-        //     confirmationNumber = params.result.order.confirmationNumber;
-        // } else if (typeof params.result.order.confirmationNumber === 'function') {
-        //     confirmationNumber = params.result.order.confirmationNumber(params.order);
-        // }
 
         // URLの指定があれば上書き
         // tslint:disable-next-line:no-single-line-block-comment
@@ -415,8 +391,6 @@ function createConfirmationNumber(params: {
         });
 
         // 識別子の指定があれば上書き
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
         identifier = [
             ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
             { name: 'paymentNo', value: confirmationNumber },
@@ -426,33 +400,6 @@ function createConfirmationNumber(params: {
 
         return { confirmationNumber, url, identifier };
     };
-}
-
-export function createConfirmationNumber4identifier(params: {
-    confirmationNumber: string;
-    order: factory.order.IOrder;
-}) {
-    let eventStartDateStr = moment(params.order.orderDate)
-        .tz('Asia/Tokyo')
-        .format('YYYYMMDD');
-    if (Array.isArray(params.order.acceptedOffers) && params.order.acceptedOffers.length > 0) {
-        const firstAcceptedOffer = params.order.acceptedOffers[0];
-        const itemOffered = <factory.order.IReservation>firstAcceptedOffer.itemOffered;
-        if (itemOffered.typeOf === factory.chevre.reservationType.EventReservation) {
-            const event = itemOffered.reservationFor;
-            eventStartDateStr = moment(event.startDate)
-                .tz('Asia/Tokyo')
-                .format('YYYYMMDD');
-        }
-    }
-    const confirmationNumber4identifier = `${eventStartDateStr}${params.confirmationNumber}`;
-    const telephone = params.order.customer?.telephone;
-    const confirmationPass = (typeof telephone === 'string')
-        // tslint:disable-next-line:no-magic-numbers
-        ? telephone.slice(-4)
-        : '9999';
-
-    return { confirmationNumber4identifier, confirmationPass };
 }
 
 /**
