@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- ペイメントカード決済処理をChevre決済取引に統合
+
 ### Deprecated
 
 ### Removed
