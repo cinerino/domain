@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v10.7.0 - 2020-11-12
+
+### Added
+
 - 注文取引に確認番号を保管するサービスを追加
 
 ### Changed
@@ -17,15 +31,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - MovieTicket系統決済取引開始時に、注文確認番号を連携するように調整
 - アクション検索条件拡張
 
-### Deprecated
-
 ### Removed
 
 - 注文取引確定時の確認番号カスタム指定を削除
-
-### Fixed
-
-### Security
 
 ## v10.6.2 - 2020-11-06
 
