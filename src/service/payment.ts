@@ -10,7 +10,6 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
-import * as PaymentCardPaymentService from './payment/paymentCard';
 
 import * as factory from '../factory';
 
@@ -23,11 +22,6 @@ export import any = AnyPaymentService;
  * Chevre決済
  */
 export import chevre = ChevrePaymentService;
-
-/**
- * 決済カード決済
- */
-export import paymentCard = PaymentCardPaymentService;
 
 /**
  * 決済

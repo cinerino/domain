@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v10.8.0 - 2020-11-13
+
+### Changed
+
+- ペイメントカード決済処理をChevre決済取引に統合
+
 ## v10.7.0 - 2020-11-12
 
 ### Added
