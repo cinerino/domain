@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- AccountプロダクトとPaymentCardプロダクトの挙動を統一
+
 ### Deprecated
 
 ### Removed

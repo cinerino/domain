@@ -111,6 +111,8 @@ function responseBody2resultAcceptedOffer(params: {
 
     if (Array.isArray(params.responseBody.object)) {
         acceptedOffers = params.responseBody.object.map((responseBodyObject) => {
+            const productTypeOf = responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf;
+
             const itemOffered: factory.order.IServiceOutput = {
                 ...responseBodyObject.itemOffered?.serviceOutput,
                 project: { typeOf: params.project.typeOf, id: params.project.id },
@@ -118,15 +120,15 @@ function responseBody2resultAcceptedOffer(params: {
                 // masked accessCode
                 ...(typeof responseBodyObject.itemOffered?.serviceOutput?.accessCode === 'string') ? { accessCode: 'xxx' } : undefined,
                 // メンバーシップの場合、属性保管
-                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf
-                    === factory.chevre.product.ProductType.MembershipService)
+                ...(productTypeOf === factory.chevre.product.ProductType.MembershipService)
                     ? {
                         membershipFor: responseBodyObject.itemOffered?.serviceOutput?.issuedThrough,
-                        hostingOrganization: responseBodyObject.itemOffered?.serviceOutput.issuedBy
+                        hostingOrganization: responseBodyObject.itemOffered?.serviceOutput?.issuedBy
                     }
                     : undefined,
                 // 口座の場合、属性保管
-                ...(responseBodyObject.itemOffered?.serviceOutput?.issuedThrough?.typeOf === factory.chevre.product.ProductType.Account)
+                ...(productTypeOf === factory.chevre.product.ProductType.Account
+                    || productTypeOf === factory.chevre.product.ProductType.PaymentCard)
                     ? {
                         accountNumber: responseBodyObject.itemOffered?.serviceOutput?.identifier,
                         accountType: responseBodyObject.itemOffered?.serviceOutput?.amount?.currency
