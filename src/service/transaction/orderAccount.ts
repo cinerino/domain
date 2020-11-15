@@ -259,6 +259,10 @@ function processAuthorizeProductOffer(params: {
                 serviceOutput: {
                     project: project,
                     typeOf: acceptedOffer.itemOffered.typeOf,
+                    accessCode: (typeof customer.telephone === 'string')
+                        // tslint:disable-next-line:no-magic-numbers
+                        ? customer.telephone.slice(-4)
+                        : '9999',
                     ...(typeof serviceOutputName === 'string') ? { name: serviceOutputName } : undefined
                     // additionalProperty: [
                     //     { name: 'sampleName', value: 'sampleValue' }
