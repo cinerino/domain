@@ -10,9 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- AccountプロダクトタイプをPaymentCardに統合
-- 口座注文時に、口座にアクセスコードを設定
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.9.0 - 2020-11-17
+
+### Changed
+
+- AccountプロダクトタイプをPaymentCardに統合
+- 口座注文時に、口座にアクセスコードを設定
 
 ## v10.8.0 - 2020-11-13
 
