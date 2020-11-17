@@ -77,7 +77,7 @@ export function orderAccount(params: {
         // プロダクト検索
         const searchProductsResult = await productService.search({
             project: { id: { $eq: project.id } },
-            typeOf: { $eq: chevre.factory.product.ProductType.Account }
+            typeOf: { $in: [chevre.factory.product.ProductType.PaymentCard] }
         });
         const accountProduct = (<chevre.factory.product.IProduct[]>searchProductsResult.data)
             .find((p) => p.serviceOutput?.amount?.currency === params.accountType);
@@ -259,6 +259,10 @@ function processAuthorizeProductOffer(params: {
                 serviceOutput: {
                     project: project,
                     typeOf: acceptedOffer.itemOffered.typeOf,
+                    accessCode: (typeof customer.telephone === 'string')
+                        // tslint:disable-next-line:no-magic-numbers
+                        ? customer.telephone.slice(-4)
+                        : '9999',
                     ...(typeof serviceOutputName === 'string') ? { name: serviceOutputName } : undefined
                     // additionalProperty: [
                     //     { name: 'sampleName', value: 'sampleValue' }
