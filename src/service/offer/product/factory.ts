@@ -4,9 +4,7 @@ import * as chevre from '../../../chevre';
 import * as factory from '../../../factory';
 
 export const availableProductTypes: string[] = [
-    chevre.factory.product.ProductType.Account,
     chevre.factory.product.ProductType.PaymentCard,
-    // chevre.factory.product.ProductType.PointCard,
     chevre.factory.product.ProductType.MembershipService
 ];
 
@@ -127,8 +125,7 @@ function responseBody2resultAcceptedOffer(params: {
                     }
                     : undefined,
                 // 口座の場合、属性保管
-                ...(productTypeOf === factory.chevre.product.ProductType.Account
-                    || productTypeOf === factory.chevre.product.ProductType.PaymentCard)
+                ...(productTypeOf === factory.chevre.product.ProductType.PaymentCard)
                     ? {
                         accountNumber: responseBodyObject.itemOffered?.serviceOutput?.identifier,
                         accountType: responseBodyObject.itemOffered?.serviceOutput?.amount?.currency

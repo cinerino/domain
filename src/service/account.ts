@@ -237,7 +237,7 @@ export function findAccount(params: {
 
         const searchProductsResult = await productService.search({
             project: { id: { $eq: params.project.id } },
-            typeOf: { $in: [chevre.factory.product.ProductType.Account, chevre.factory.product.ProductType.PaymentCard] }
+            typeOf: { $in: [chevre.factory.product.ProductType.PaymentCard] }
         });
         const accountProduct = (<chevre.factory.product.IProduct[]>searchProductsResult.data)
             .find((p) => p.serviceOutput?.amount?.currency === params.accountType);

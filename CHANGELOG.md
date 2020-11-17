@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- AccountプロダクトとPaymentCardプロダクトの挙動を統一
+- AccountプロダクトタイプをPaymentCardに統合
 - 口座注文時に、口座にアクセスコードを設定
 
 ### Deprecated

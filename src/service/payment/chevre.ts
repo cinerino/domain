@@ -46,17 +46,17 @@ export function authorize(params: {
     }) => {
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
-        let paymentServiceType = params.paymentServiceType;
+        const paymentServiceType = params.paymentServiceType;
 
-        if (paymentServiceType === chevre.factory.service.paymentService.PaymentServiceType.Account) {
-            // プロジェクトの対応決済サービスを確認(Account->PaymentCard移行のため)
-            const paymentMethodType = params.object.paymentMethod;
-            const paymentServiceTypeByPaymentMethodType
-                = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
-            if (typeof paymentServiceTypeByPaymentMethodType === 'string') {
-                paymentServiceType = paymentServiceTypeByPaymentMethodType;
-            }
-        }
+        // if (paymentServiceType === chevre.factory.service.paymentService.PaymentServiceType.Account) {
+        //     // プロジェクトの対応決済サービスを確認(Account->PaymentCard移行のため)
+        //     const paymentMethodType = params.object.paymentMethod;
+        //     const paymentServiceTypeByPaymentMethodType
+        //         = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
+        //     if (typeof paymentServiceTypeByPaymentMethodType === 'string') {
+        //         paymentServiceType = paymentServiceTypeByPaymentMethodType;
+        //     }
+        // }
 
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
@@ -338,7 +338,6 @@ async function getPaymentServiceType(params: {
         project: { id: { $eq: params.project.id } },
         typeOf: {
             $in: [
-                chevre.factory.service.paymentService.PaymentServiceType.Account,
                 chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
                 chevre.factory.service.paymentService.PaymentServiceType.MovieTicket,
                 chevre.factory.service.paymentService.PaymentServiceType.PaymentCard
