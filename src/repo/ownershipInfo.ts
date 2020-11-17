@@ -45,10 +45,6 @@ export class MongoRepository {
             }
         }
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        const typeOfGood = params.typeOfGood;
-
         const typeOfGoodIdentifierEq = params.typeOfGood?.identifier?.$eq;
         if (typeof typeOfGoodIdentifierEq === 'string') {
             andConditions.push({
@@ -69,72 +65,111 @@ export class MongoRepository {
             });
         }
 
-        if (typeOfGood !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (typeof typeOfGood.typeOf === 'string') {
+        const typeOfGoodIssuedThroughTypeOfEq = params.typeOfGood?.issuedThrough?.typeOf?.$eq;
+        if (typeof typeOfGoodIssuedThroughTypeOfEq === 'string') {
+            andConditions.push({
+                'typeOfGood.issuedThrough.typeOf': {
+                    $exists: true,
+                    $eq: typeOfGoodIssuedThroughTypeOfEq
+                }
+            });
+        }
+
+        const typeOfGoodTypeOf = params.typeOfGood?.typeOf;
+        if (typeof typeOfGoodTypeOf === 'string') {
+            andConditions.push({
+                'typeOfGood.typeOf': {
+                    $exists: true,
+                    $eq: typeOfGoodTypeOf
+                }
+            });
+        } else {
+            const typeOfGoodTypeOfEq = typeOfGoodTypeOf?.$eq;
+            if (typeof typeOfGoodTypeOfEq === 'string') {
                 andConditions.push({
                     'typeOfGood.typeOf': {
                         $exists: true,
-                        $eq: typeOfGood.typeOf
+                        $eq: typeOfGoodTypeOfEq
                     }
                 });
             }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (typeof typeOfGood.id === 'string') {
+            const typeOfGoodTypeOfIn = typeOfGoodTypeOf?.$in;
+            if (typeof typeOfGoodTypeOfEq === 'string') {
                 andConditions.push({
-                    'typeOfGood.id': {
+                    'typeOfGood.typeOf': {
                         $exists: true,
-                        $eq: typeOfGood.id
+                        $in: typeOfGoodTypeOfIn
                     }
                 });
             }
+        }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(typeOfGood.ids)) {
-                andConditions.push({
-                    'typeOfGood.id': {
-                        $exists: true,
-                        $in: typeOfGood.ids
-                    }
-                });
-            }
+        // 互換性維持対応
+        if (params.typeOfGood === undefined || params.typeOfGood === null) {
+            params.typeOfGood = {};
+        }
+        if (typeof (<any>params.typeOfGood).accountNumber === 'string') {
+            params.typeOfGood.accountNumber = { $eq: (<any>params.typeOfGood).accountNumber };
+        }
+        if (Array.isArray(typeof (<any>params.typeOfGood).accountNumbers)) {
+            params.typeOfGood.accountNumber = { $in: (<any>params.typeOfGood).accountNumbers };
+        }
+        if (typeof (<any>params.typeOfGood).id === 'string') {
+            params.typeOfGood.id = { $eq: (<any>params.typeOfGood).id };
+        }
+        if (Array.isArray(typeof (<any>params.typeOfGood).ids)) {
+            params.typeOfGood.id = { $in: (<any>params.typeOfGood).ids };
+        }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (typeof typeOfGood.accountType === 'string') {
-                andConditions.push({
-                    'typeOfGood.accountType': {
-                        $exists: true,
-                        $eq: typeOfGood.accountType
-                    }
-                });
-            }
+        const typeOfGoodAccountNumberEq = params.typeOfGood?.accountNumber?.$eq;
+        if (typeof typeOfGoodAccountNumberEq === 'string') {
+            andConditions.push({
+                'typeOfGood.accountNumber': {
+                    $exists: true,
+                    $eq: typeOfGoodAccountNumberEq
+                }
+            });
+        }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (typeof typeOfGood.accountNumber === 'string') {
-                andConditions.push({
-                    'typeOfGood.accountNumber': {
-                        $exists: true,
-                        $eq: typeOfGood.accountNumber
-                    }
-                });
-            }
+        const typeOfGoodAccountNumberIn = params.typeOfGood?.accountNumber?.$in;
+        if (Array.isArray(typeOfGoodAccountNumberIn)) {
+            andConditions.push({
+                'typeOfGood.accountNumber': {
+                    $exists: true,
+                    $in: typeOfGoodAccountNumberIn
+                }
+            });
+        }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(typeOfGood.accountNumbers)) {
-                andConditions.push({
-                    'typeOfGood.accountNumber': {
-                        $exists: true,
-                        $in: typeOfGood.accountNumbers
-                    }
-                });
-            }
+        const typeOfGoodIdEq = params.typeOfGood?.id?.$eq;
+        if (typeof typeOfGoodIdEq === 'string') {
+            andConditions.push({
+                'typeOfGood.id': {
+                    $exists: true,
+                    $eq: typeOfGoodIdEq
+                }
+            });
+        }
+
+        const typeOfGoodIdIn = params.typeOfGood?.id?.$in;
+        if (Array.isArray(typeOfGoodIdIn)) {
+            andConditions.push({
+                'typeOfGood.id': {
+                    $exists: true,
+                    $in: typeOfGoodIdIn
+                }
+            });
+        }
+
+        const typeOfGoodAccountType = params.typeOfGood?.accountType;
+        if (typeof typeOfGoodAccountType === 'string') {
+            andConditions.push({
+                'typeOfGood.accountType': {
+                    $exists: true,
+                    $eq: typeOfGoodAccountType
+                }
+            });
         }
 
         // tslint:disable-next-line:no-single-line-block-comment

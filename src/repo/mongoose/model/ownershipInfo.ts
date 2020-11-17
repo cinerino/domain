@@ -216,6 +216,16 @@ schema.index(
 );
 
 schema.index(
+    { 'typeOfGood.issuedThrough.typeOf': 1, ownedFrom: -1 },
+    {
+        name: 'searchByTypeOfGoodIssuedThroughTypeOf',
+        partialFilterExpression: {
+            'typeOfGood.issuedThrough.typeOf': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'typeOfGood.accountNumber': 1, ownedFrom: -1 },
     {
         name: 'searchByTypeOfGoodAccountNumber',
