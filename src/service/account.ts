@@ -45,11 +45,6 @@ export interface IClosingAccount {
 export function close(params: {
     project: factory.project.IProject;
     /**
-     * 口座種別
-     * 'Account'など
-     */
-    typeOf: string;
-    /**
      * 所有者を指定しなければ、問答無用に口座番号から口座を解約します
      */
     ownedBy?: {
@@ -62,27 +57,27 @@ export function close(params: {
         project: ProjectRepo;
     }) => {
         try {
-            let closingAccount: IClosingAccount = {
+            const now = new Date();
+
+            const closingAccount: IClosingAccount = {
                 accountNumber: params.accountNumber
             };
 
             // 所有者を指定された場合、口座所有権を確認
-            if (params.ownedBy !== undefined) {
+            const ownerId = params.ownedBy?.id;
+            if (typeof ownerId === 'string') {
                 const accountOwnershipInfos = await repos.ownershipInfo.search({
-                    typeOfGood: {
-                        typeOf: params.typeOf,
-                        accountNumber: { $eq: params.accountNumber }
-                    },
-                    ownedBy: params.ownedBy
+                    limit: 1,
+                    project: { id: { $eq: params.project.id } },
+                    typeOfGood: { accountNumber: { $eq: closingAccount.accountNumber } },
+                    ownedBy: { id: ownerId },
+                    ownedFrom: now,
+                    ownedThrough: now
                 });
                 const ownershipInfo = accountOwnershipInfos[0];
                 if (ownershipInfo === undefined) {
                     throw new factory.errors.NotFound('Account');
                 }
-
-                closingAccount = {
-                    accountNumber: (<factory.ownershipInfo.IAccount>ownershipInfo.typeOfGood).accountNumber
-                };
             }
 
             const accountService = new pecorinoapi.service.Account({
@@ -91,8 +86,7 @@ export function close(params: {
             });
             await accountService.close(closingAccount);
         } catch (error) {
-            error = handlePecorinoError(error);
-            throw error;
+            throw handlePecorinoError(error);
         }
     };
 }
@@ -201,8 +195,7 @@ export function searchMoneyTransferActions(params: {
             });
             actions = searchMoneyTransferActionsResult.data;
         } catch (error) {
-            error = handlePecorinoError(error);
-            throw error;
+            throw handlePecorinoError(error);
         }
 
         return actions;
@@ -234,7 +227,7 @@ export function findAccount(params: {
 
         const searchProductsResult = await productService.search({
             project: { id: { $eq: params.project.id } },
-            typeOf: { $in: [chevre.factory.product.ProductType.PaymentCard] }
+            typeOf: { $eq: chevre.factory.product.ProductType.PaymentCard }
         });
         const accountProduct = (<chevre.factory.product.IProduct[]>searchProductsResult.data)
             .find((p) => p.serviceOutput?.amount?.currency === params.accountType);
@@ -247,9 +240,7 @@ export function findAccount(params: {
             conditions: {
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
-                typeOfGood: {
-                    typeOf: <string>accountProduct.serviceOutput?.typeOf
-                },
+                typeOfGood: { typeOf: { $eq: <string>accountProduct.serviceOutput?.typeOf } },
                 ownedBy: { id: params.customer.id },
                 ownedFrom: params.now,
                 ownedThrough: params.now
