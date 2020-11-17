@@ -71,7 +71,7 @@ export function close(params: {
                 const accountOwnershipInfos = await repos.ownershipInfo.search({
                     typeOfGood: {
                         typeOf: params.typeOf,
-                        accountNumbers: [params.accountNumber]
+                        accountNumber: { $eq: params.accountNumber }
                     },
                     ownedBy: params.ownedBy
                 });
@@ -165,11 +165,7 @@ export function searchMoneyTransferActions(params: {
     ownedThrough?: Date;
     conditions: pecorinoapi.factory.action.transfer.moneyTransfer.ISearchConditions;
     typeOfGood: {
-        /**
-         * 口座種別
-         * 'Account'など
-         */
-        typeOf: string;
+        accountNumber: string;
     };
 }): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction[]> {
     return async (repos: {
@@ -182,8 +178,7 @@ export function searchMoneyTransferActions(params: {
         try {
             const ownershipInfos = await repos.ownershipInfo.search({
                 typeOfGood: {
-                    typeOf: params.typeOfGood.typeOf,
-                    accountNumber: params.conditions.accountNumber
+                    accountNumber: { $eq: params.typeOfGood.accountNumber }
                 },
                 ownedBy: params.ownedBy,
                 ownedFrom: params.ownedFrom,
@@ -200,6 +195,8 @@ export function searchMoneyTransferActions(params: {
             });
             const searchMoneyTransferActionsResult = await accountService.searchMoneyTransferActions({
                 ...params.conditions,
+                // 口座番号条件は上書き
+                accountNumber: params.typeOfGood.accountNumber,
                 project: { id: { $eq: project.id } }
             });
             actions = searchMoneyTransferActionsResult.data;
