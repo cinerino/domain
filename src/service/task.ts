@@ -74,6 +74,7 @@ export function execute(task: factory.task.ITask<factory.taskName>): IOperation<
             };
             await taskRepo.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
         } catch (error) {
+            debug('service.task.execute:', error);
             if (typeof error !== 'object') {
                 error = { message: String(error) };
             }

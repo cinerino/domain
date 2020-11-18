@@ -95,7 +95,7 @@ export class MongoRepository {
             }
 
             const typeOfGoodTypeOfIn = typeOfGoodTypeOf?.$in;
-            if (typeof typeOfGoodTypeOfEq === 'string') {
+            if (Array.isArray(typeOfGoodTypeOfIn)) {
                 andConditions.push({
                     'typeOfGood.typeOf': {
                         $exists: true,
@@ -112,13 +112,13 @@ export class MongoRepository {
         if (typeof (<any>params.typeOfGood).accountNumber === 'string') {
             params.typeOfGood.accountNumber = { $eq: (<any>params.typeOfGood).accountNumber };
         }
-        if (Array.isArray(typeof (<any>params.typeOfGood).accountNumbers)) {
+        if (Array.isArray((<any>params.typeOfGood).accountNumbers)) {
             params.typeOfGood.accountNumber = { $in: (<any>params.typeOfGood).accountNumbers };
         }
         if (typeof (<any>params.typeOfGood).id === 'string') {
             params.typeOfGood.id = { $eq: (<any>params.typeOfGood).id };
         }
-        if (Array.isArray(typeof (<any>params.typeOfGood).ids)) {
+        if (Array.isArray((<any>params.typeOfGood).ids)) {
             params.typeOfGood.id = { $in: (<any>params.typeOfGood).ids };
         }
 
@@ -174,7 +174,7 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.ids !== undefined) {
+        if (Array.isArray(params.ids)) {
             andConditions.push({
                 _id: { $in: params.ids }
             });

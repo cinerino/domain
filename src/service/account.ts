@@ -238,6 +238,7 @@ export function findAccount(params: {
         let accountOwnershipInfos = await search({
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             conditions: {
+                // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
                 typeOfGood: { typeOf: { $eq: <string>accountProduct.serviceOutput?.typeOf } },
