@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 返品ポリシーのmerchantReturnDaysを注文返品取引に適用
+- update @chevre/api-nodejs-client
 
 ### Deprecated
 

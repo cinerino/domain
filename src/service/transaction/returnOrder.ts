@@ -182,7 +182,7 @@ function findApplicableReturnPolicy(params: {
     if (params.reason === factory.transaction.returnOrder.Reason.Seller) {
         // 販売者都合の場合、手数料なしの無制限返品ポリシーを適用
         return {
-            // typeOf: 'MerchantReturnPolicy',
+            typeOf: 'MerchantReturnPolicy',
             refundType: factory.chevre.merchantReturnPolicy.RefundTypeEnumeration.FullRefund
         };
     }
