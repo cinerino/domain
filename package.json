@@ -9,8 +9,8 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "3.45.4",
-    "@cinerino/factory": "9.29.1",
+    "@chevre/api-nodejs-client": "3.53.0",
+    "@cinerino/factory": "9.29.4",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.0.0",
     "@pecorino/api-nodejs-client": "^5.4.1",
@@ -114,5 +114,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build && npm test && npm run doc"
   },
-  "version": "10.10.3"
+  "version": "10.11.0"
 }

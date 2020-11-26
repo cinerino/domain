@@ -370,7 +370,7 @@ export function validateAcceptedOffers(params: {
 
         const project: factory.chevre.project.IProject = { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id };
         const issuedBy: factory.chevre.organization.IOrganization = {
-            project: project,
+            // project: project,
             id: params.seller.id,
             name: params.seller.name,
             typeOf: params.seller.typeOf

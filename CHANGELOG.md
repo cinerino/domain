@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v10.11.0 - 2020-11-26
+
+### Changed
+
+- 返品ポリシーのmerchantReturnDaysを注文返品取引に適用
+- update @chevre/api-nodejs-client
+
 ## v10.10.3 - 2020-11-18
 
 ### Changed

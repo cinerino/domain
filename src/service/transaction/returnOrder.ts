@@ -39,11 +39,10 @@ export type ITaskAndTransactionOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export type WebAPIIdentifier = factory.service.webAPI.Identifier;
-
 /**
  * 注文返品取引開始
  */
+// tslint:disable-next-line:max-func-body-length
 export function start(
     params: factory.transaction.returnOrder.IStartParamsWithoutDetail
 ): IStartOperation<factory.transaction.returnOrder.ITransaction> {
@@ -54,6 +53,8 @@ export function start(
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
+        const now = new Date();
+
         const project = await repos.project.findById({ id: params.project.id });
 
         const sellerService = new chevre.service.Seller({
@@ -78,7 +79,9 @@ export function start(
 
         await validateOrder({ orders })(repos);
 
-        checkReturnPolicy({
+        const appliedReturnPolicy = findApplicableReturnPolicy({
+            orders,
+            returningDate: now,
             reason: params.object.reason,
             seller: seller
         });
@@ -88,11 +91,17 @@ export function start(
             project: project
         });
 
+        let cancellationFee = 0;
+        // 返品ポリシーに返品手数料が定義されていれば、params.object.cancellationFeeを適用する
+        if (appliedReturnPolicy.returnFees !== undefined) {
+            cancellationFee = params.object.cancellationFee;
+        }
+
         const transactionObject: factory.transaction.returnOrder.IObject = {
             order: orders.map((o) => {
                 return { orderNumber: o.orderNumber };
             }),
-            cancellationFee: params.object.cancellationFee,
+            cancellationFee,
             reason: params.object.reason,
             onOrderStatusChanged: {
                 informOrder: informOrderParams
@@ -164,21 +173,58 @@ function validateOrder(params: {
 /**
  * 販売者の返品ポリシーを確認する
  */
-function checkReturnPolicy(
-    params: {
-        reason: factory.transaction.returnOrder.Reason;
-        seller: factory.seller.ISeller;
-    }) {
+function findApplicableReturnPolicy(params: {
+    orders: factory.order.IOrder[];
+    returningDate: Date;
+    reason: factory.transaction.returnOrder.Reason;
+    seller: factory.seller.ISeller;
+}): factory.chevre.merchantReturnPolicy.IMerchantReturnPolicy {
+    if (params.reason === factory.transaction.returnOrder.Reason.Seller) {
+        // 販売者都合の場合、手数料なしの無制限返品ポリシーを適用
+        return {
+            typeOf: 'MerchantReturnPolicy',
+            refundType: factory.chevre.merchantReturnPolicy.RefundTypeEnumeration.FullRefund
+        };
+    }
+
     let returnPolicies = params.seller.hasMerchantReturnPolicy;
     if (!Array.isArray(returnPolicies)) {
         returnPolicies = [];
     }
 
+    const returningDate = moment(params.returningDate);
+
+    const applicalbleReturnPolicies: factory.chevre.organization.IHasMerchantReturnPolicy = [];
     if (params.reason === factory.transaction.returnOrder.Reason.Customer) {
-        if (returnPolicies.length === 0) {
-            throw new factory.errors.Argument('Seller', 'has no return policy');
-        }
+        returnPolicies.forEach((returnPolicy) => {
+            const merchantReturnDays = returnPolicy.merchantReturnDays;
+            if (typeof merchantReturnDays === 'number') {
+                // 返品適用日数を確認する
+                const everyOrderApplicable = params.orders.every((order) => {
+                    const mustBeReturnedUntil = moment(order.orderDate)
+                        .add(merchantReturnDays, 'days');
+
+                    return mustBeReturnedUntil.isSameOrAfter(returningDate);
+
+                });
+
+                // 全注文について日数の確認ができれば適用
+                if (everyOrderApplicable) {
+                    applicalbleReturnPolicies.push(returnPolicy);
+                }
+            } else {
+                // 日数制限なし
+                applicalbleReturnPolicies.push(returnPolicy);
+            }
+
+        });
     }
+
+    if (applicalbleReturnPolicies.length === 0) {
+        throw new factory.errors.Argument('Seller', 'has no applicable return policies');
+    }
+
+    return applicalbleReturnPolicies[0];
 }
 
 function createInformOrderParams(
