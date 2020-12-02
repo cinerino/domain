@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文に最低限の勘定科目情報を追加
+
 ### Deprecated
 
 ### Removed
