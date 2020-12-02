@@ -618,18 +618,13 @@ export function validateAcceptedOffers(params: {
                             endpoint: credentials.chevre.endpoint,
                             auth: chevreAuthClient
                         });
-                        const movieTheater = await sellerService.findById({ id: params.seller.id });
-                        if (movieTheater.paymentAccepted === undefined) {
-                            throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
-                        }
-                        const movieTicketPaymentAccepted =
-                            movieTheater.paymentAccepted.find((a) => a.paymentMethodType === movieTicket.typeOf);
-                        if (movieTicketPaymentAccepted === undefined) {
-                            throw new factory.errors.Argument('transactionId', 'Movie Ticket payment not accepted');
+                        const seller = await sellerService.findById({ id: params.seller.id });
+                        const paymentAccepted = seller.paymentAccepted?.some((a) => a.paymentMethodType === movieTicket.typeOf);
+                        if (paymentAccepted !== true) {
+                            throw new factory.errors.Argument('transactionId', 'payment not accepted');
                         }
 
                         // ムビチケ認証
-
                         const payService = new chevre.service.transaction.Pay({
                             endpoint: credentials.chevre.endpoint,
                             auth: chevreAuthClient

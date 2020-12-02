@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v10.13.0 - 2020-12-02
+
+### Changed
+
+- 注文に最低限の勘定科目情報を追加
+
 ## v10.12.0 - 2020-12-02
 
 ### Changed
