@@ -23,7 +23,6 @@ async function main() {
             .toDate(),
         agent: customer,
         seller: {
-            typeOf: seller.typeOf,
             id: seller.id
         },
         object: {}

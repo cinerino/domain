@@ -59,7 +59,6 @@ async function main() {
         name: 'サンプル口座名義',
         accountType: 'Point',
         seller: {
-            typeOf: domain.factory.organizationType.MovieTheater,
             id: '59d20831e53ebc2b4e774466'
         }
     })({
