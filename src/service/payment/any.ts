@@ -1,8 +1,6 @@
 /**
  * 汎用決済承認アクションサービス
  */
-import * as createDebug from 'debug';
-
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -12,8 +10,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
-
-const debug = createDebug('cinerino-domain:service');
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -81,16 +77,12 @@ export function authorize(params: {
             });
             const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
-            if (seller.paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
-            }
-            const paymentAccepted = <factory.seller.IPaymentAccepted>
-                seller.paymentAccepted.find((a) => a.paymentMethodType === paymentMethodType);
-            if (paymentAccepted === undefined) {
-                throw new factory.errors.Argument('transaction', `${paymentMethodType} payment not accepted`);
+            // 外部決済連携はしないので、販売者の対応決済方法かどうかのみ確認する
+            const paymentAccepted = seller.paymentAccepted?.some((a) => a.paymentMethodType === paymentMethodType);
+            if (paymentAccepted !== true) {
+                throw new factory.errors.Argument('transaction', `payment not accepted`);
             }
         } catch (error) {
-            debug(error);
             // actionにエラー結果を追加
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
@@ -103,7 +95,6 @@ export function authorize(params: {
         }
 
         // アクションを完了
-        debug('ending authorize action...');
         const result: factory.action.authorize.paymentMethod.any.IResult = {
             accountId: '',
             amount: params.object.amount,
