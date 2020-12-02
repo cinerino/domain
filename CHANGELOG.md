@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- プロジェクト設定からcodeExpiresInSecondsを削除
+- 注文取引開始パラメータからseller.typeOfを削除
+- update @chevre/factory
+
 ### Deprecated
 
 ### Removed

@@ -60,7 +60,6 @@ async function main() {
             // url?: string;
         },
         seller: {
-            typeOf: domain.factory.organizationType.MovieTheater,
             id: '59d20831e53ebc2b4e774466'
         },
         object: {

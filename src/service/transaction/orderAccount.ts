@@ -126,7 +126,7 @@ export function orderAccount(params: {
                 .add(5, 'minutes')
                 .toDate(),
             agent: customer,
-            seller: { typeOf: seller.typeOf, id: String(seller.id) },
+            seller: { id: String(seller.id) },
             object: {}
         })(repos);
 

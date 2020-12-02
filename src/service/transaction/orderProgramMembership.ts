@@ -80,7 +80,7 @@ export function orderProgramMembership(
                     // paramsにadditionalPropertyの指定があれば反映する
                     ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : []
                 },
-                seller: { typeOf: seller.typeOf, id: String(seller.id) },
+                seller: { id: String(seller.id) },
                 object: {}
             })(repos);
 
