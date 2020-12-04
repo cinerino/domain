@@ -10,9 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 予約取引中止前に取引の存在確認処理を追加
-- サービス登録取引中止前に取引の存在確認処理を追加
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.13.1 - 2020-12-04
+
+### Changed
+
+- 予約取引中止前に取引の存在確認処理を追加
+- サービス登録取引中止前に取引の存在確認処理を追加
 
 ## v10.13.0 - 2020-12-02
 
