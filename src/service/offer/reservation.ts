@@ -138,14 +138,28 @@ async function processVoidTransaction4chevre(params: {
     action: factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.Chevre>;
     project: factory.project.IProject;
 }) {
-    // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
-    const reserveService = new chevre.service.transaction.Reserve({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
-    });
+    const transactionNumber = params.action.object.pendingTransaction?.transactionNumber;
+    if (typeof transactionNumber === 'string') {
+        // 取引が存在すれば中止
+        const transactionService = new chevre.service.Transaction({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
 
-    if (typeof params.action.object.pendingTransaction?.transactionNumber === 'string') {
-        // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
-        await reserveService.cancel({ transactionNumber: params.action.object.pendingTransaction.transactionNumber });
+        const { data } = await transactionService.search({
+            limit: 1,
+            project: { ids: [params.project.id] },
+            typeOf: chevre.factory.transactionType.Reserve,
+            transactionNumber: { $eq: transactionNumber }
+        });
+        if (data.length > 0) {
+            // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
+            const reserveService = new chevre.service.transaction.Reserve({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            await reserveService.cancel({ transactionNumber: transactionNumber });
+        }
     }
 }
