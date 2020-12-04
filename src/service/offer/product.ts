@@ -338,13 +338,28 @@ async function processVoidRegisterServiceTransaction(params: {
     action: factory.action.authorize.offer.product.IAction;
     project: factory.project.IProject;
 }) {
-    const registerService = new chevre.service.transaction.RegisterService({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
-    });
+    const transactionNumber = params.action.instrument?.transactionNumber;
+    if (typeof transactionNumber === 'string') {
+        // 取引が存在すれば中止
+        const transactionService = new chevre.service.Transaction({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
 
-    if (typeof params.action.instrument?.transactionNumber === 'string') {
-        await registerService.cancel({ transactionNumber: params.action.instrument.transactionNumber });
+        const { data } = await transactionService.search({
+            limit: 1,
+            project: { ids: [params.project.id] },
+            typeOf: chevre.factory.transactionType.RegisterService,
+            transactionNumber: { $eq: transactionNumber }
+        });
+        if (data.length > 0) {
+            const registerService = new chevre.service.transaction.RegisterService({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            await registerService.cancel({ transactionNumber: transactionNumber });
+        }
     }
 }
 
