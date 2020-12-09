@@ -52,8 +52,6 @@ export function orderProgramMembership(
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
-        const orderDate = new Date();
-
         const project = await repos.project.findById({ id: params.project.id });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
@@ -89,7 +87,6 @@ export function orderProgramMembership(
 
             // 取引ID上で注文プロセス
             await processPlaceOrder({
-                orderDate,
                 acceptedOffer: acceptedOffer,
                 customer: customer,
                 potentialActions: params.potentialActions,
@@ -125,7 +122,6 @@ export function orderProgramMembership(
  */
 function processPlaceOrder(params: {
     project: { id: string };
-    orderDate: Date;
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     acceptedOffer: factory.task.orderProgramMembership.IAcceptedOffer;
@@ -157,7 +153,7 @@ function processPlaceOrder(params: {
         // 注文番号を先に発行
         const orderNumber = await TransactionService.placeOrderInProgress.publishOrderNumberIfNotExist({
             id: transaction.id,
-            object: { orderDate: params.orderDate }
+            object: { orderDate: new Date() }
         })(repos);
 
         // メンバーシップオファー承認
@@ -200,7 +196,7 @@ function processPlaceOrder(params: {
             id: transaction.id,
             agent: { id: customer.id },
             result: {
-                order: { orderDate: params.orderDate }
+                order: { orderDate: new Date() }
             },
             potentialActions: params.potentialActions
         })(repos);
