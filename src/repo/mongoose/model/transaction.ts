@@ -201,6 +201,15 @@ schema.index(
     }
 );
 schema.index(
+    { 'object.orderNumber': 1, startDate: -1 },
+    {
+        name: 'searchByObjectOrderNumber',
+        partialFilterExpression: {
+            'object.orderNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
     { 'object.order.orderNumber': 1, startDate: -1 },
     {
         name: 'searchByObjectOrderNumberAndStartDate',

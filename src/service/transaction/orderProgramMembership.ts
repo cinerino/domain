@@ -16,6 +16,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { findAccount } from '../account';
 import { findCreditCard } from '../customer';
+import { createPointAwardIdentifier } from '../delivery';
 import * as OfferService from '../offer';
 import * as ChevrePaymentService from '../payment/chevre';
 import * as TransactionService from '../transaction';
@@ -51,6 +52,8 @@ export function orderProgramMembership(
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
+        const orderDate = new Date();
+
         const project = await repos.project.findById({ id: params.project.id });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
@@ -86,6 +89,7 @@ export function orderProgramMembership(
 
             // 取引ID上で注文プロセス
             await processPlaceOrder({
+                orderDate,
                 acceptedOffer: acceptedOffer,
                 customer: customer,
                 potentialActions: params.potentialActions,
@@ -121,6 +125,7 @@ export function orderProgramMembership(
  */
 function processPlaceOrder(params: {
     project: { id: string };
+    orderDate: Date;
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     acceptedOffer: factory.task.orderProgramMembership.IAcceptedOffer;
@@ -149,10 +154,17 @@ function processPlaceOrder(params: {
             throw new Error('acceptedOffer.itemOffered.membershipFor.id undefined');
         }
 
+        // 注文番号を先に発行
+        const orderNumber = await TransactionService.placeOrderInProgress.publishOrderNumberIfNotExist({
+            id: transaction.id,
+            object: { orderDate: params.orderDate }
+        })(repos);
+
         // メンバーシップオファー承認
         let authorizeProductOfferAction: factory.action.authorize.offer.product.IAction;
         authorizeProductOfferAction = await processAuthorizeProductOffer({
             project: { id: project.id },
+            orderNumber,
             customer: customer,
             transaction: transaction,
             acceptedOffer: acceptedOffer,
@@ -188,7 +200,7 @@ function processPlaceOrder(params: {
             id: transaction.id,
             agent: { id: customer.id },
             result: {
-                order: { orderDate: new Date() }
+                order: { orderDate: params.orderDate }
             },
             potentialActions: params.potentialActions
         })(repos);
@@ -197,6 +209,7 @@ function processPlaceOrder(params: {
 
 function processAuthorizeProductOffer(params: {
     project: { id: string };
+    orderNumber: string;
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     acceptedOffer: factory.task.orderProgramMembership.IAcceptedOffer;
@@ -244,16 +257,22 @@ function processAuthorizeProductOffer(params: {
                 accountType: pointAwardAccountType
             })(repos);
 
+            const identifier = createPointAwardIdentifier({
+                project: params.project,
+                purpose: { orderNumber: params.orderNumber },
+                toLocation: { accountNumber: toAccount.accountNumber }
+            });
+
             pointAward = {
                 typeOf: 'MoneyTransfer',
                 toLocation: { identifier: toAccount.accountNumber },
-                ...{
-                    recipient: {
-                        id: customer.id,
-                        name: `${customer.givenName} ${customer.familyName}`,
-                        typeOf: customer.typeOf
-                    }
-                }
+                recipient: {
+                    id: customer.id,
+                    name: `${customer.givenName} ${customer.familyName}`,
+                    typeOf: customer.typeOf
+                },
+                // ポイント特典識別子を指定(ユニークネスを保証するため)
+                purpose: { identifier }
             };
         }
 

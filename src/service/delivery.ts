@@ -300,13 +300,11 @@ function createGivePointAwardStartParams(
                 : ''
     };
 
-    const identifier: string = util.format(
-        '%s:%s:%s:%s',
-        params.project.id,
-        'givePointAward',
-        params.purpose.orderNumber,
-        params.object.toLocation.accountNumber
-    );
+    const identifier = createPointAwardIdentifier({
+        project: params.project,
+        purpose: params.purpose,
+        toLocation: { accountNumber: params.object.toLocation.accountNumber }
+    });
 
     return {
         // ユニークネスを保証するために識別子を指定する
@@ -339,6 +337,20 @@ function createGivePointAwardStartParams(
             }
         }
     };
+}
+
+export function createPointAwardIdentifier(params: {
+    project: { id: string };
+    purpose: { orderNumber: string };
+    toLocation: { accountNumber: string };
+}): string {
+    return util.format(
+        '%s:%s:%s:%s',
+        params.project.id,
+        'givePointAward',
+        params.purpose.orderNumber,
+        params.toLocation.accountNumber
+    );
 }
 
 /**
