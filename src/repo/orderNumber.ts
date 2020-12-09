@@ -1,5 +1,4 @@
 import * as cdigit from 'cdigit';
-import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 import * as redis from 'redis';
 import * as util from 'util';
@@ -8,8 +7,6 @@ import * as util from 'util';
 const fpe = require('node-fpe');
 
 import * as factory from '../factory';
-
-const debug = createDebug('cinerino-domain:repository');
 
 /**
  * 注文番号リポジトリ
@@ -45,7 +42,6 @@ export class RedisRepository {
             const TTL = moment(params.orderDate)
                 .add(1, 'minute') // ミリ秒でカウントしていくので、注文日時後1分で十分
                 .diff(now, 'seconds');
-            debug(`TTL:${TTL} seconds`);
             const key = util.format(
                 '%s:%s:%s',
                 RedisRepository.REDIS_KEY_PREFIX,
@@ -54,10 +50,9 @@ export class RedisRepository {
             );
 
             this.redisClient.multi()
-                .incr(key, debug)
+                .incr(key)
                 .expire(key, TTL)
                 .exec((err, results) => {
-                    debug('results:', results);
                     // tslint:disable-next-line:no-single-line-block-comment
                     /* istanbul ignore if: please write tests */
                     if (err instanceof Error) {
@@ -68,9 +63,9 @@ export class RedisRepository {
                         if (Number.isInteger(results[0])) {
                             let orderNumber = timestamp;
                             const no: number = results[0];
-                            debug('no incremented.', no);
 
-                            orderNumber = `${orderNumber}${(`${no}`).slice(-1)}`; // ミリ秒あたり10件以内の注文想定
+                            // orderNumber = `${orderNumber}${(`${no}`).slice(-1)}`; // ミリ秒あたり10件以内の注文想定
+                            orderNumber = `${orderNumber}${no}`;
 
                             // checkdigit
                             const cd = cdigit.luhn.compute(orderNumber);
@@ -78,7 +73,6 @@ export class RedisRepository {
                             const cipher = fpe({ password: cd });
                             orderNumber = cipher.encrypt(orderNumber);
 
-                            debug('publishing orderNumber from', projectPrefix, timestamp, no, cd);
                             orderNumber = `${projectPrefix}${cd}${orderNumber}`;
                             orderNumber = `${[
                                 // tslint:disable-next-line:no-magic-numbers
