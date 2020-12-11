@@ -10,11 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- ポイント特典付与の際に、Pecorino取引に対して識別子を指定するように調整
-- 注文番号の拡張性強化
-- 注文取引に対して任意のタイミングで注文番号を発行できるように調整
-- $setOnInsertを使用したクエリに対して{new: true}をセット
-
 ### Deprecated
 
 ### Removed
@@ -22,6 +17,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v10.14.0 - 2020-12-11
+
+### Changed
+
+- ポイント特典付与の際に、Pecorino取引に対して識別子を指定するように調整
+- 注文番号の拡張性強化
+- 注文取引に対して任意のタイミングで注文番号を発行できるように調整
+- $setOnInsertを使用したクエリに対して{new: true}をセット
 
 ## v10.13.1 - 2020-12-04
 
