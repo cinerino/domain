@@ -10,6 +10,7 @@ export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.
  * 注文を生成する
  */
 export function createOrder(params: {
+    orderNumber: string;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderDate: Date;
     orderStatus: factory.orderStatus;
@@ -46,7 +47,7 @@ export function createOrder(params: {
         paymentMethods: paymentMethods,
         discounts: discounts,
         confirmationNumber: '',
-        orderNumber: '',
+        orderNumber: params.orderNumber,
         acceptedOffers: acceptedOffers,
         url: '',
         orderStatus: params.orderStatus,

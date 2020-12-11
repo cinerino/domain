@@ -189,9 +189,15 @@ export function confirm(params: IConfirmParams) {
         // 取引に対する全ての承認アクションをマージ
         transaction.object.authorizeActions = await searchAuthorizeActions(params)(repos);
 
+        // 注文番号を発行
+        const orderNumber = await publishOrderNumberIfNotExist({
+            id: transaction.id,
+            object: { orderDate: params.result.order.orderDate }
+        })(repos);
+
         const result = await createResult({
             ...params,
-            project: project,
+            orderNumber,
             transaction: transaction,
             paymentServices: paymentServices,
             accountTypes: searchAccountTypesResult.data
@@ -273,17 +279,68 @@ export function publishConfirmationNumberIfNotExist(params: {
     };
 }
 
+/**
+ * 未発行であれば、注文番号を発行して取引に補完する
+ */
+export function publishOrderNumberIfNotExist(params: {
+    /**
+     * 取引ID
+     */
+    id: string;
+    object: {
+        orderDate: Date;
+    };
+}) {
+    return async (repos: {
+        transaction: TransactionRepo;
+        orderNumber: OrderNumberRepo;
+    }): Promise<string> => {
+        let transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
+
+        // すでに発行済であれば何もしない
+        if (typeof transaction.object.orderNumber === 'string') {
+            return transaction.object.orderNumber;
+        }
+
+        // 注文番号を発行
+        const orderNumber = await repos.orderNumber.publishByTimestamp({
+            project: { id: transaction.project.id },
+            orderDate: params.object.orderDate
+        });
+
+        // 取引に存在しなければ保管
+        await repos.transaction.transactionModel.findOneAndUpdate(
+            {
+                _id: transaction.id,
+                'object.orderNumber': { $exists: false }
+            },
+            { 'object.orderNumber': orderNumber },
+            { new: true }
+        )
+            .exec();
+
+        // 注文番号を取引から再取得
+        transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
+
+        return <string>transaction.object.orderNumber;
+    };
+}
+
 function createResult(params: IConfirmParams & {
-    project: factory.project.IProject;
+    orderNumber: string;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     paymentServices?: factory.chevre.service.paymentService.IService[];
     accountTypes?: factory.chevre.categoryCode.ICategoryCode[];
 }) {
     return async (repos: {
-        orderNumber: OrderNumberRepo;
         confirmationNumber: ConfirmationNumberRepo;
     }): Promise<factory.transaction.placeOrder.IResult> => {
-        const project = params.project;
         const transaction = params.transaction;
 
         // 取引の確定条件が全て整っているかどうか確認
@@ -291,6 +348,7 @@ function createResult(params: IConfirmParams & {
 
         // 注文作成
         const order = createOrder({
+            orderNumber: params.orderNumber,
             transaction: transaction,
             orderDate: params.result.order.orderDate,
             orderStatus: factory.orderStatus.OrderProcessing,
@@ -306,12 +364,6 @@ function createResult(params: IConfirmParams & {
         validateNumItems({
             order: order,
             result: params.result
-        });
-
-        // 注文番号を発行
-        order.orderNumber = await repos.orderNumber.publishByTimestamp({
-            project: { id: project.id },
-            orderDate: params.result.order.orderDate
         });
 
         // 確認番号を発行

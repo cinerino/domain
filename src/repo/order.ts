@@ -609,7 +609,7 @@ export class MongoRepository {
         await this.orderModel.findOneAndUpdate(
             { orderNumber: order.orderNumber },
             { $setOnInsert: order },
-            { upsert: true }
+            { new: true, upsert: true }
         )
             .exec();
     }

@@ -9,11 +9,11 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "3.55.0",
-    "@cinerino/factory": "9.30.0",
+    "@chevre/api-nodejs-client": "3.55.1",
+    "@cinerino/factory": "9.31.0",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.0.0",
-    "@pecorino/api-nodejs-client": "^5.4.1",
+    "@pecorino/api-nodejs-client": "5.5.1",
     "@sendgrid/mail": "^6.4.0",
     "@waiter/domain": "^3.0.0",
     "JSONStream": "^1.3.5",
@@ -114,5 +114,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build && npm test && npm run doc"
   },
-  "version": "10.13.1"
+  "version": "10.14.0"
 }

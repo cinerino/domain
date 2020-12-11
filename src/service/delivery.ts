@@ -6,8 +6,8 @@
  * ポイントインセンティブで言えば、口座に振り込まれること
  * などが配送処理として考えられます。
  */
-import * as createDebug from 'debug';
 import * as moment from 'moment';
+import * as util from 'util';
 
 import { credentials } from '../credentials';
 
@@ -25,8 +25,6 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import { createOwnershipInfosFromOrder } from './delivery/factory';
 import { processUnlock } from './offer/product';
-
-const debug = createDebug('cinerino-domain:service');
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -257,58 +255,13 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 auth: chevreAuthClient
             });
 
-            const agent = {
-                typeOf: params.agent.typeOf,
-                id: params.agent.id,
-                name: (typeof params.agent.name === 'string')
-                    ? params.agent.name
-                    : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
-                url: params.agent.url
-            };
-
-            await moneyTransferService.start({
-                transactionNumber: transactionNumber,
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: chevre.factory.transactionType.MoneyTransfer,
-                agent: agent,
-                expires: moment()
-                    .add(1, 'minutes')
-                    .toDate(),
-                recipient: {
-                    typeOf: params.recipient.typeOf,
-                    id: params.recipient.id,
-                    name: (typeof params.recipient.name === 'string')
-                        ? params.recipient.name
-                        : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
-                            ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
-                            : ''
-                },
-                object: {
-                    amount: {
-                        typeOf: 'MonetaryAmount',
-                        currency: params.object.toLocation.accountType,
-                        value: params.object.amount
-                    },
-                    description: (typeof params.object.description === 'string')
-                        ? params.object.description
-                        : params.purpose.typeOf,
-                    fromLocation: agent,
-                    toLocation: {
-                        typeOf: params.object.toLocation.typeOf,
-                        identifier: params.object.toLocation.accountNumber
-                    },
-                    pendingTransaction: {
-                        typeOf: factory.pecorino.transactionType.Deposit,
-                        id: '' // 空でok
-                    }
-                }
-            });
+            const startParams = createGivePointAwardStartParams(params, transactionNumber);
+            await moneyTransferService.start(startParams);
 
             await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
-                // tslint:disable-next-line:max-line-length no-single-line-block-comment
                 const actionError = { ...error, message: error.message, name: error.name };
                 await repos.action.giveUp({ typeOf: params.typeOf, id: action.id, error: actionError });
             } catch (__) {
@@ -319,10 +272,85 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.transfer.give.pointAward.IResult = {};
         await repos.action.complete({ typeOf: params.typeOf, id: action.id, result: actionResult });
     };
+}
+
+function createGivePointAwardStartParams(
+    params: factory.task.IData<factory.taskName.GivePointAward>,
+    transactionNumber: string
+): factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail {
+    const agent = {
+        typeOf: params.agent.typeOf,
+        id: params.agent.id,
+        name: (typeof params.agent.name === 'string')
+            ? params.agent.name
+            : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
+        url: params.agent.url
+    };
+
+    const recipient: factory.chevre.transaction.moneyTransfer.IRecipient = {
+        typeOf: params.recipient.typeOf,
+        id: params.recipient.id,
+        name: (typeof params.recipient.name === 'string')
+            ? params.recipient.name
+            : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
+                ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
+                : ''
+    };
+
+    const identifier = createPointAwardIdentifier({
+        project: params.project,
+        purpose: params.purpose,
+        toLocation: { accountNumber: params.object.toLocation.accountNumber }
+    });
+
+    return {
+        // ユニークネスを保証するために識別子を指定する
+        identifier: identifier,
+        transactionNumber: transactionNumber,
+        project: { typeOf: params.project.typeOf, id: params.project.id },
+        typeOf: chevre.factory.transactionType.MoneyTransfer,
+        agent: agent,
+        expires: moment()
+            .add(1, 'minutes')
+            .toDate(),
+        recipient: recipient,
+        object: {
+            amount: {
+                typeOf: 'MonetaryAmount',
+                currency: params.object.toLocation.accountType,
+                value: params.object.amount
+            },
+            description: (typeof params.object.description === 'string')
+                ? params.object.description
+                : params.purpose.typeOf,
+            fromLocation: agent,
+            toLocation: {
+                typeOf: params.object.toLocation.typeOf,
+                identifier: params.object.toLocation.accountNumber
+            },
+            pendingTransaction: {
+                typeOf: factory.pecorino.transactionType.Deposit,
+                id: '' // 空でok
+            }
+        }
+    };
+}
+
+export function createPointAwardIdentifier(params: {
+    project: { id: string };
+    purpose: { orderNumber: string };
+    toLocation: { accountNumber: string };
+}): string {
+    return util.format(
+        '%s:%s:%s:%s',
+        params.project.id,
+        'givePointAward',
+        params.purpose.orderNumber,
+        params.toLocation.accountNumber
+    );
 }
 
 /**
@@ -412,7 +440,6 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         }
 
         // アクション完了
-        debug('ending action...');
         const actionResult: factory.action.transfer.returnAction.pointAward.IResult = {
             pointTransaction: moneyTransferTransaction
         };

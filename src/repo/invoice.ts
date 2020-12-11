@@ -214,7 +214,7 @@ export class MongoRepository {
                 'referencesOrder.orderNumber': params.referencesOrder.orderNumber
             },
             { $setOnInsert: params },
-            { upsert: true }
+            { new: true, upsert: true }
         )
             .exec();
     }
