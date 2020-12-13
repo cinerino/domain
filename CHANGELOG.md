@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 所有権コレクションにユニークインデックスを追加
+- インボイスコレクションにユニークインデックスを追加
+
 ### Deprecated
 
 ### Removed

@@ -109,6 +109,18 @@ schema.index(
 );
 
 schema.index(
+    {
+        paymentMethod: 1,
+        paymentMethodId: 1,
+        'referencesOrder.orderNumber': 1
+    },
+    {
+        unique: true,
+        name: 'uniqueInvoice'
+    }
+);
+
+schema.index(
     { 'project.id': 1, createdAt: -1 },
     {
         name: 'searchByProjectId',

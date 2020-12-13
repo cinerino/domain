@@ -228,13 +228,13 @@ export class MongoRepository {
     /**
      * 所有権情報を保管する
      */
-    public async save(ownershipInfo: IOwnershipInfo): Promise<IOwnershipInfo> {
-        // 所有権ID発行
-        const id = uuid.v4();
+    // public async save(ownershipInfo: IOwnershipInfo): Promise<IOwnershipInfo> {
+    //     // 所有権ID発行
+    //     const id = uuid.v4();
 
-        return this.ownershipInfoModel.create({ ...ownershipInfo, _id: id })
-            .then((doc) => doc.toObject());
-    }
+    //     return this.ownershipInfoModel.create({ ...ownershipInfo, _id: id })
+    //         .then((doc) => doc.toObject());
+    // }
 
     /**
      * 所有権情報を保管する
