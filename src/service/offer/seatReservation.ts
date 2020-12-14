@@ -330,11 +330,8 @@ export function selectSeats(
             }
 
             let ticketTypeCategory = SeatingType.Normal;
-            if (Array.isArray(ticketOffer.additionalProperty)) {
-                const categoryProperty = ticketOffer.additionalProperty.find((p) => p.name === 'category');
-                if (categoryProperty !== undefined) {
-                    ticketTypeCategory = <SeatingType>categoryProperty.value;
-                }
+            if (typeof ticketOffer.category?.codeValue === 'string') {
+                ticketTypeCategory = <SeatingType>ticketOffer.category.codeValue;
             }
 
             // まず利用可能な座席は全座席
