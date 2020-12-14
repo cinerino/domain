@@ -17,6 +17,8 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createPotentialActions } from './returnOrder/potentialActions';
 
+import { MongoErrorCode } from '../../errorHandler';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -134,8 +136,7 @@ export function start(
                 // 同一取引に対して返品取引を作成しようとすると、MongoDBでE11000 duplicate key errorが発生する
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
-                // tslint:disable-next-line:no-magic-numbers
-                if (error.code === 11000) {
+                if (error.code === MongoErrorCode.DuplicateKey) {
                     throw new factory.errors.Argument('Order number', 'Already returned');
                 }
             }

@@ -3,6 +3,7 @@ import * as uuid from 'uuid';
 
 import { modelName } from './mongoose/model/ownershipInfo';
 
+import { MongoErrorCode } from '../errorHandler';
 import * as factory from '../factory';
 
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
@@ -228,35 +229,55 @@ export class MongoRepository {
     /**
      * 所有権情報を保管する
      */
-    // public async save(ownershipInfo: IOwnershipInfo): Promise<IOwnershipInfo> {
-    //     // 所有権ID発行
-    //     const id = uuid.v4();
-
-    //     return this.ownershipInfoModel.create({ ...ownershipInfo, _id: id })
-    //         .then((doc) => doc.toObject());
-    // }
-
-    /**
-     * 所有権情報を保管する
-     */
     public async saveByIdentifier(ownershipInfo: IOwnershipInfo): Promise<IOwnershipInfo> {
-        return this.ownershipInfoModel.findOneAndUpdate(
-            { identifier: ownershipInfo.identifier },
-            {
-                $set: ownershipInfo,
-                $setOnInsert: { _id: uuid.v4() } // 新規作成時は所有権ID発行
-            },
-            { new: true, upsert: true }
-        )
-            .exec()
-            .then((doc) => doc.toObject());
+        let doc: Document | undefined;
+        let duplicate = false;
+
+        try {
+            doc = await this.ownershipInfoModel.findOneAndUpdate(
+                { identifier: ownershipInfo.identifier },
+                {
+                    $set: ownershipInfo,
+                    $setOnInsert: { _id: uuid.v4() } // 新規作成時は所有権ID発行
+                },
+                { new: true, upsert: true }
+            )
+                .exec();
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                // すでに所有権が存在する場合ok
+                if (error.code === MongoErrorCode.DuplicateKey) {
+                    duplicate = true;
+                }
+            }
+
+            if (!duplicate) {
+                throw error;
+            }
+        }
+
+        if (duplicate) {
+            // 重複の場合、再度更新
+            doc = await this.ownershipInfoModel.findOneAndUpdate(
+                { identifier: ownershipInfo.identifier },
+                { $set: ownershipInfo },
+                { new: true }
+            )
+                .exec();
+        }
+
+        if (doc === undefined) {
+            throw new factory.errors.NotFound(this.ownershipInfoModel.modelName);
+        }
+
+        return doc.toObject();
     }
 
     public async findById(params: { id: string }): Promise<IOwnershipInfo> {
         const doc = await this.ownershipInfoModel.findById(params.id)
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('OwnershipInfo');
+            throw new factory.errors.NotFound(this.ownershipInfoModel.modelName);
         }
 
         return doc.toObject();

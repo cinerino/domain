@@ -22,6 +22,8 @@ import {
     validateWaiterPassport
 } from './placeOrderInProgress/validation';
 
+import { MongoErrorCode } from '../../errorHandler';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -119,8 +121,6 @@ export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
         order: IResultOrderParams;
     };
 };
-
-const MONGO_DUPLICATE_KEY_ERROR_CODE = 11000;
 
 /**
  * 注文取引を確定する
@@ -224,7 +224,7 @@ export function confirm(params: IConfirmParams) {
             if (error.name === 'MongoError') {
                 // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
                 // message: 'E11000 duplicate key error collection: prodttts.transactions index:result.order.orderNumber_1 dup key:...',
-                if (error.code === MONGO_DUPLICATE_KEY_ERROR_CODE) {
+                if (error.code === MongoErrorCode.DuplicateKey) {
                     throw new factory.errors.AlreadyInUse('transaction', ['result.order.orderNumber']);
                 }
             }

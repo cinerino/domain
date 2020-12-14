@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 所有権コレクションにユニークインデックスを追加
 - インボイスコレクションにユニークインデックスを追加
+- upsertを使用したクエリを実行した際の重複エラーハンドリングを追加
 
 ### Deprecated
 
