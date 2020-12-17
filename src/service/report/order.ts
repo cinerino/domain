@@ -189,10 +189,10 @@ export function createReport(params: ICreateReportActionAttributes) {
             let extension: string;
 
             switch (params.object.encodingFormat) {
-                case factory.encodingFormat.Application.json:
+                case factory.chevre.encodingFormat.Application.json:
                     extension = 'json';
                     break;
-                case factory.encodingFormat.Text.csv:
+                case factory.chevre.encodingFormat.Text.csv:
                     extension = 'csv';
                     break;
 
@@ -354,7 +354,7 @@ function onDownloaded(
  */
 export function stream(params: {
     conditions: factory.order.ISearchConditions;
-    format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    format?: factory.chevre.encodingFormat.Application | factory.chevre.encodingFormat.Text;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: { order: OrderRepo }): Promise<Stream> => {
@@ -362,7 +362,7 @@ export function stream(params: {
         let processor: Stream;
 
         switch (params.format) {
-            case factory.encodingFormat.Application.json:
+            case factory.chevre.encodingFormat.Application.json:
                 inputStream = inputStream.map((doc) => {
                     return doc.toObject();
                 });
@@ -371,7 +371,7 @@ export function stream(params: {
 
                 break;
 
-            case factory.encodingFormat.Text.csv:
+            case factory.chevre.encodingFormat.Text.csv:
                 inputStream = inputStream.map((doc) => {
                     return <any>JSON.stringify(order2report({
                         order: doc.toObject()

@@ -85,6 +85,15 @@ schema.index(
     { name: 'searchByUpdatedAt' }
 );
 
+// 識別子はユニークな前提
+schema.index(
+    { identifier: 1 },
+    {
+        unique: true,
+        name: 'uniqueIdentifier'
+    }
+);
+
 schema.index(
     { ownedFrom: -1 },
     { name: 'searchByOwnedFrom-v3' }

@@ -4,6 +4,8 @@ import { Connection, Model } from 'mongoose';
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/invoice';
 
+import { MongoErrorCode } from '../errorHandler';
+
 const debug = createDebug('cinerino-domain:repository');
 
 /**
@@ -207,16 +209,31 @@ export class MongoRepository {
      * なければ作成する
      */
     public async createIfNotExist(params: factory.invoice.IInvoice) {
-        await this.invoiceModel.findOneAndUpdate(
-            {
-                paymentMethod: params.paymentMethod,
-                paymentMethodId: params.paymentMethodId,
-                'referencesOrder.orderNumber': params.referencesOrder.orderNumber
-            },
-            { $setOnInsert: params },
-            { new: true, upsert: true }
-        )
-            .exec();
+        try {
+            await this.invoiceModel.findOneAndUpdate(
+                {
+                    paymentMethod: params.paymentMethod,
+                    paymentMethodId: params.paymentMethodId,
+                    'referencesOrder.orderNumber': params.referencesOrder.orderNumber
+                },
+                { $setOnInsert: params },
+                { new: true, upsert: true }
+            )
+                .exec();
+        } catch (error) {
+            let throwsError = true;
+
+            if (error.name === 'MongoError') {
+                // すでにインボイスが存在する場合ok
+                if (error.code === MongoErrorCode.DuplicateKey) {
+                    throwsError = false;
+                }
+            }
+
+            if (throwsError) {
+                throw error;
+            }
+        }
     }
 
     public async changePaymentStatus(params: {

@@ -5,6 +5,10 @@
 import { BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
 import { errors } from './factory';
 
+export enum MongoErrorCode {
+    DuplicateKey = 11000
+}
+
 /**
  * COA仮予約エラーハンドリング
  */

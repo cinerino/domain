@@ -3,6 +3,8 @@ import { Connection, Document, Model, QueryCursor } from 'mongoose';
 import * as factory from '../factory';
 import { modelName } from './mongoose/model/order';
 
+import { MongoErrorCode } from '../errorHandler';
+
 /**
  * 注文リポジトリ
  */
@@ -606,12 +608,27 @@ export class MongoRepository {
      * なければ作成する
      */
     public async createIfNotExist(order: factory.order.IOrder) {
-        await this.orderModel.findOneAndUpdate(
-            { orderNumber: order.orderNumber },
-            { $setOnInsert: order },
-            { new: true, upsert: true }
-        )
-            .exec();
+        try {
+            await this.orderModel.findOneAndUpdate(
+                { orderNumber: order.orderNumber },
+                { $setOnInsert: order },
+                { new: true, upsert: true }
+            )
+                .exec();
+        } catch (error) {
+            let throwsError = true;
+
+            if (error.name === 'MongoError') {
+                // すでにorderNumberが存在する場合ok
+                if (error.code === MongoErrorCode.DuplicateKey) {
+                    throwsError = false;
+                }
+            }
+
+            if (throwsError) {
+                throw error;
+            }
+        }
     }
 
     /**
