@@ -75,7 +75,7 @@ export interface ITransactionReport {
 /* istanbul ignore next */
 export function stream(params: {
     conditions: factory.transaction.ISearchConditions<factory.transactionType.PlaceOrder>;
-    format?: factory.encodingFormat.Application | factory.encodingFormat.Text;
+    format?: factory.chevre.encodingFormat.Application | factory.chevre.encodingFormat.Text;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: { transaction: TransactionRepo }): Promise<Stream> => {
@@ -89,7 +89,7 @@ export function stream(params: {
         let processor: Stream;
 
         switch (params.format) {
-            case factory.encodingFormat.Application.json:
+            case factory.chevre.encodingFormat.Application.json:
                 inputStream = inputStream.map((doc) => {
                     return doc.toObject();
                 });
@@ -98,7 +98,7 @@ export function stream(params: {
 
                 break;
 
-            case factory.encodingFormat.Text.csv:
+            case factory.chevre.encodingFormat.Text.csv:
                 inputStream = inputStream.map((doc) => {
                     return <any>JSON.stringify(transaction2report({
                         transaction: doc.toObject()
