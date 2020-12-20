@@ -91,7 +91,9 @@ export function start(
                 fromLocation: fromLocation,
                 toLocation: toLocation,
                 authorizeActions: [],
-                ...(typeof params.object.description === 'string') ? { description: params.object.description } : {}
+                ...(typeof params.object.description === 'string') ? { description: params.object.description } : undefined,
+                ...(typeof (<any>params.object).pendingTransaction?.identifier === 'string')
+                    ? { pendingTransaction: { identifier: (<any>params.object).pendingTransaction.identifier } } : undefined
             },
             expires: params.expires
         };
@@ -414,7 +416,11 @@ async function processMoneyTransferTransaction(params: {
                     typeOf: factory.pecorino.transactionType.Withdraw,
                     id: '' // 空でok
                 }
-            }
+            },
+            // ユニークネスを保証するために識別子を指定する
+            ...(typeof (<any>transaction.object).pendingTransaction?.identifier === 'string')
+                ? { identifier: (<any>transaction.object).pendingTransaction.identifier }
+                : undefined
         });
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
@@ -442,7 +448,11 @@ async function processMoneyTransferTransaction(params: {
                     typeOf: factory.pecorino.transactionType.Transfer,
                     id: '' // 空でok
                 }
-            }
+            },
+            // ユニークネスを保証するために識別子を指定する
+            ...(typeof (<any>transaction.object).pendingTransaction?.identifier === 'string')
+                ? { identifier: (<any>transaction.object).pendingTransaction.identifier }
+                : undefined
         });
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
@@ -470,7 +480,11 @@ async function processMoneyTransferTransaction(params: {
                     typeOf: factory.pecorino.transactionType.Deposit,
                     id: '' // 空でok
                 }
-            }
+            },
+            // ユニークネスを保証するために識別子を指定する
+            ...(typeof (<any>transaction.object).pendingTransaction?.identifier === 'string')
+                ? { identifier: (<any>transaction.object).pendingTransaction.identifier }
+                : undefined
         });
     } else {
         throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
