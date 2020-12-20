@@ -62,8 +62,8 @@ export function start(
 
         // 金額をfix
         const amount = params.object.amount;
-        if (typeof amount !== 'number') {
-            throw new factory.errors.ArgumentNull('amount');
+        if (typeof amount.value !== 'number') {
+            throw new factory.errors.ArgumentNull('amount.value');
         }
 
         // fromとtoをfix
@@ -125,10 +125,10 @@ function authorizePaymentCard(params: {
         transaction: TransactionRepo;
     }) => {
         const transaction = params.transaction;
-        const fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>transaction.object.fromLocation;
+        const fromLocation = transaction.object.fromLocation;
 
         if (typeof transaction.object.toLocation.typeOf === 'string') {
-            const toLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>transaction.object.toLocation;
+            const toLocation = transaction.object.toLocation;
 
             // 転送取引
             await processAuthorizePaymentCard({
@@ -139,8 +139,8 @@ function authorizePaymentCard(params: {
                     typeOf: factory.chevre.offerType.AggregateOffer,
                     itemOffered: {
                         typeOf: 'MonetaryAmount',
-                        value: transaction.object.amount,
-                        currency: <any>''
+                        value: transaction.object.amount.value,
+                        currency: transaction.object.amount.currency
                     },
                     fromLocation: fromLocation,
                     toLocation: toLocation,
@@ -331,7 +331,7 @@ function processAuthorizePaymentCard(params: {
         }
 
         const result: factory.action.authorize.offer.monetaryAmount.IResult = {
-            price: Number(params.object.itemOffered.value),
+            price: 0,
             priceCurrency: factory.priceCurrency.JPY,
             // requestBody: requestBody,
             responseBody: responseBody
@@ -375,8 +375,7 @@ async function processMoneyTransferTransaction(params: {
         ...(typeof params.recipient.url === 'string') ? { url: params.recipient.url } : undefined
     };
 
-    // const description = (typeof params.object.notes === 'string') ? params.object.notes : `for transaction ${transaction.id}`;
-    const description = `Transaction ${transaction.id}`;
+    const description = (typeof params.object.description === 'string') ? params.object.description : `${transaction.typeOf}:${transaction.id}`;
 
     // 最大1ヵ月のオーソリ
     const expires = moment()

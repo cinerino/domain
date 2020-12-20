@@ -193,16 +193,6 @@ export class MongoRepository {
                 if (params.seller !== undefined) {
                     // tslint:disable-next-line:no-single-line-block-comment
                     /* istanbul ignore else */
-                    if (params.seller.typeOf !== undefined) {
-                        andConditions.push({
-                            'seller.typeOf': {
-                                $exists: true,
-                                $eq: params.seller.typeOf
-                            }
-                        });
-                    }
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
                     if (Array.isArray(params.seller.ids)) {
                         andConditions.push({
                             'seller.id': {

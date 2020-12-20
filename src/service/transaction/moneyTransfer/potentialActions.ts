@@ -16,7 +16,7 @@ function createMoneyTransferActions(params: {
         const actionResult = <factory.action.authorize.offer.monetaryAmount.IResult>a.result;
         const pendingTransaction = a.object.pendingTransaction;
 
-        const fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>params.transaction.object.fromLocation;
+        const fromLocation = params.transaction.object.fromLocation;
 
         if (actionResult !== undefined && pendingTransaction !== undefined) {
             moneyTransferActions.push({

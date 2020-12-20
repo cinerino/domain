@@ -27,9 +27,10 @@ async function main() {
         },
         object: {
             clientUser: {},
-            amount: 10,
+            amount: { value: 10, currency: 'JPY' },
             fromLocation: { typeOf: 'PrepaidPaymentCard', identifier: '139485855034733' },
-            toLocation: { typeOf: 'PrepaidPaymentCard', identifier: '430458588634915' }
+            toLocation: { typeOf: 'PrepaidPaymentCard', identifier: '430458588634915' },
+            description: 'サンプル転送取引'
         },
         seller: { typeOf: 'Corporation', id: '59d20831e53ebc2b4e774466' },
     })({
