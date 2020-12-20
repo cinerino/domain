@@ -125,8 +125,6 @@ function authorizePaymentCard(params: {
         transaction: TransactionRepo;
     }) => {
         const transaction = params.transaction;
-        // const amount = transaction.object.amount;
-
         const fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>transaction.object.fromLocation;
 
         if (typeof transaction.object.toLocation.typeOf === 'string') {
@@ -137,35 +135,40 @@ function authorizePaymentCard(params: {
                 project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
                 agent: { id: transaction.agent.id },
                 object: {
-                    amount: transaction.object.amount,
-                    typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment,
-                    // typeOf: fromLocation.typeOf,
-                    paymentMethod: fromLocation.typeOf,
+                    project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                    typeOf: factory.chevre.offerType.AggregateOffer,
+                    itemOffered: {
+                        typeOf: 'MonetaryAmount',
+                        value: transaction.object.amount,
+                        currency: <any>''
+                    },
                     fromLocation: fromLocation,
                     toLocation: toLocation,
-                    ...{
-                        description: transaction.object.description
-                    }
+                    seller: transaction.seller,
+                    price: 0,
+                    priceCurrency: factory.priceCurrency.JPY,
+                    description: transaction.object.description
                 },
                 purpose: { typeOf: transaction.typeOf, id: transaction.id }
             })(repos);
         } else {
+            throw new factory.errors.NotImplemented('Withdraw transaction not implemented');
             // 出金取引
-            await processAuthorizePaymentCard({
-                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                agent: { id: transaction.agent.id },
-                object: {
-                    amount: transaction.object.amount,
-                    typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment,
-                    // typeOf: fromLocation.typeOf,
-                    paymentMethod: fromLocation.typeOf,
-                    fromLocation: fromLocation,
-                    ...{
-                        description: transaction.object.description
-                    }
-                },
-                purpose: { typeOf: transaction.typeOf, id: transaction.id }
-            })(repos);
+            // await processAuthorizePaymentCard({
+            //     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+            //     agent: { id: transaction.agent.id },
+            //     object: {
+            //         amount: transaction.object.amount,
+            //         typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment,
+            //         // typeOf: fromLocation.typeOf,
+            //         paymentMethod: fromLocation.typeOf,
+            //         fromLocation: fromLocation,
+            //         ...{
+            //             description: transaction.object.description
+            //         }
+            //     },
+            //     purpose: { typeOf: transaction.typeOf, id: transaction.id }
+            // })(repos);
         }
     };
 }
@@ -230,12 +233,13 @@ export type IAuthorizeOperation<T> = (repos: {
 function processAuthorizePaymentCard(params: {
     project: factory.project.IProject;
     agent: { id: string };
-    object: factory.action.authorize.paymentMethod.any.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.any.IPaymentCard;
+    object: factory.action.authorize.offer.monetaryAmount.IObject & {
+        fromLocation?: factory.action.transfer.moneyTransfer.IPaymentCard;
         currency?: string;
     };
-    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
-}): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
+    purpose: factory.action.authorize.offer.monetaryAmount.IPurpose;
+}): IAuthorizeOperation<factory.action.authorize.offer.monetaryAmount.IAction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -259,16 +263,29 @@ function processAuthorizePaymentCard(params: {
         }
 
         // 承認アクションを開始する
-        const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
+        const actionAttributes: factory.action.authorize.offer.monetaryAmount.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
             object: {
-                ...params.object,
-                ...(params.object.fromLocation !== undefined)
-                    ? { accountId: params.object.fromLocation.identifier }
-                    : {},
-                paymentMethod: <string>params.object?.fromLocation?.typeOf,
-                typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                typeOf: factory.chevre.offerType.Offer,
+                itemOffered: {
+                    typeOf: 'MonetaryAmount',
+                    currency: params.object.itemOffered.currency,
+                    value: params.object.itemOffered.value
+                },
+                seller: {
+                    ...transaction.seller,
+                    name: (typeof transaction.seller.name === 'string')
+                        ? transaction.seller.name
+                        : String(transaction.seller.name?.ja)
+                },
+                price: 0,
+                priceCurrency: factory.priceCurrency.JPY,
+                // typeOf: factory.actionType.MoneyTransfer,
+                // amount: params.object.amount,
+                toLocation: params.object.toLocation
+                // pendingTransaction: responseBody
             },
             agent: transaction.agent,
             recipient: recipient,
@@ -277,15 +294,28 @@ function processAuthorizePaymentCard(params: {
         const action = await repos.action.start(actionAttributes);
 
         // 口座取引開始
-        let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
+        let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
         try {
-            pendingTransaction = await processMoneyTransferTransaction({
+            responseBody = await processMoneyTransferTransaction({
                 project: project,
                 object: params.object,
                 recipient: recipient,
                 transaction: transaction
             });
+
+            // アクションにchevre取引情報を保管
+            await repos.action.actionModel.findByIdAndUpdate(
+                action.id,
+                {
+                    'object.itemOffered.currency': responseBody.object.amount.currency,
+                    'object.pendingTransaction': {
+                        typeOf: responseBody.typeOf,
+                        id: responseBody.id
+                    }
+                }
+            )
+                .exec();
         } catch (error) {
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment
@@ -300,46 +330,28 @@ function processAuthorizePaymentCard(params: {
             throw error;
         }
 
-        const actionResult: factory.action.authorize.paymentMethod.any.IResult = {
-            accountId: (params.object.fromLocation !== undefined)
-                ? params.object.fromLocation.identifier
-                : '',
-            amount: params.object.amount,
-            paymentMethod: <string>params.object.fromLocation?.typeOf,
-            paymentStatus: factory.paymentStatusType.PaymentDue,
-            paymentMethodId: pendingTransaction.id,
-            name: (typeof params.object.name === 'string')
-                ? params.object.name
-                : (params.object.fromLocation !== undefined)
-                    ? String(params.object.fromLocation.typeOf)
-                    : '',
-            additionalProperty: (Array.isArray(params.object.additionalProperty)) ? params.object.additionalProperty : [],
-            pendingTransaction: pendingTransaction,
-            totalPaymentDue: {
-                typeOf: 'MonetaryAmount',
-                currency: factory.priceCurrency.JPY,
-                value: params.object.amount
-            },
-            ...(params.object.fromLocation !== undefined) ? { fromLocation: params.object.fromLocation } : {},
-            ...(params.object.toLocation !== undefined) ? { toLocation: params.object.toLocation } : {},
-            typeOf: factory.action.authorize.paymentMethod.any.ResultType.Payment
+        const result: factory.action.authorize.offer.monetaryAmount.IResult = {
+            price: Number(params.object.itemOffered.value),
+            priceCurrency: factory.priceCurrency.JPY,
+            // requestBody: requestBody,
+            responseBody: responseBody
         };
 
-        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
+        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result });
     };
 }
 
 // tslint:disable-next-line:max-func-body-length
 async function processMoneyTransferTransaction(params: {
     project: factory.project.IProject;
-    object: factory.action.authorize.paymentMethod.any.IObject & {
-        fromLocation?: factory.action.authorize.paymentMethod.any.IPaymentCard;
+    object: factory.action.authorize.offer.monetaryAmount.IObject & {
+        fromLocation?: factory.action.transfer.moneyTransfer.IPaymentCard;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.paymentMethod.any.IPendingTransaction> {
-    let pendingTransaction: factory.action.authorize.paymentMethod.any.IPendingTransaction;
+}): Promise<factory.action.authorize.offer.monetaryAmount.IResponseBody> {
+    let pendingTransaction: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
     const transaction = params.transaction;
 
@@ -387,8 +399,8 @@ async function processMoneyTransferTransaction(params: {
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
-                    value: params.object.amount,
-                    currency: chevre.factory.priceCurrency.JPY
+                    value: params.object.itemOffered.value,
+                    currency: params.object.itemOffered.currency
                 },
                 description: description,
                 fromLocation: {
@@ -415,8 +427,8 @@ async function processMoneyTransferTransaction(params: {
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
-                    value: params.object.amount,
-                    currency: chevre.factory.priceCurrency.JPY
+                    value: params.object.itemOffered.value,
+                    currency: params.object.itemOffered.currency
                 },
                 description: description,
                 fromLocation: {
@@ -443,8 +455,8 @@ async function processMoneyTransferTransaction(params: {
             object: {
                 amount: {
                     typeOf: 'MonetaryAmount',
-                    value: params.object.amount,
-                    currency: chevre.factory.priceCurrency.JPY
+                    value: params.object.itemOffered.value,
+                    currency: params.object.itemOffered.currency
                 },
                 description: description,
                 fromLocation: {
@@ -604,9 +616,9 @@ export function exportTasksById(params: {
 
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                const voidPaymentTaskAttributes: factory.task.IAttributes<factory.taskName.VoidPayment> = {
+                const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
                     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                    name: factory.taskName.VoidPayment,
+                    name: factory.taskName.VoidMoneyTransfer,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,
@@ -618,7 +630,7 @@ export function exportTasksById(params: {
                     }
                 };
 
-                taskAttributes.push(voidPaymentTaskAttributes);
+                taskAttributes.push(voidMoneyTransferTaskAttributes);
 
                 break;
 

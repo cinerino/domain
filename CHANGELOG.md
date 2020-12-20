@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 通貨転送取引を再実装
+
 ### Deprecated
 
 ### Removed
