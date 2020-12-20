@@ -92,8 +92,8 @@ export function start(
                 toLocation: toLocation,
                 authorizeActions: [],
                 ...(typeof params.object.description === 'string') ? { description: params.object.description } : undefined,
-                ...(typeof (<any>params.object).pendingTransaction?.identifier === 'string')
-                    ? { pendingTransaction: { identifier: (<any>params.object).pendingTransaction.identifier } } : undefined
+                ...(typeof params.object.pendingTransaction?.identifier === 'string')
+                    ? { pendingTransaction: { identifier: params.object.pendingTransaction.identifier } } : undefined
             },
             expires: params.expires
         };
@@ -205,9 +205,9 @@ function fixToLocation(
         let toLocation: factory.transaction.moneyTransfer.IToLocation = params.object.toLocation;
 
         if (typeof toLocation.typeOf === 'string') {
-            toLocation = <any>{
+            toLocation = {
                 typeOf: params.object.toLocation.typeOf,
-                identifier: (<any>params.object.toLocation).identifier
+                identifier: params.object.toLocation.identifier
             };
         } else {
             toLocation = <any>{
@@ -343,7 +343,7 @@ function processAuthorizePaymentCard(params: {
     };
 }
 
-// tslint:disable-next-line:max-func-body-length
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 async function processMoneyTransferTransaction(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.monetaryAmount.IObject & {
@@ -367,12 +367,10 @@ async function processMoneyTransferTransaction(params: {
     const recipient = {
         typeOf: params.recipient.typeOf,
         id: params.recipient.id,
-        name: (typeof (<any>params.recipient).name === 'string')
-            ? (<any>params.recipient).name
-            : ((<any>params.recipient).name !== undefined
-                && (<any>params.recipient).name !== null
-                && typeof (<any>params.recipient).name.ja === 'string')
-                ? (<any>params.recipient).name.ja
+        name: (typeof params.recipient.name === 'string')
+            ? params.recipient.name
+            : (typeof params.recipient.name?.ja === 'string')
+                ? params.recipient.name.ja
                 : `${transaction.typeOf} Transaction ${transaction.id}`,
         ...(typeof params.recipient.url === 'string') ? { url: params.recipient.url } : undefined
     };
@@ -418,8 +416,9 @@ async function processMoneyTransferTransaction(params: {
                 }
             },
             // ユニークネスを保証するために識別子を指定する
-            ...(typeof (<any>transaction.object).pendingTransaction?.identifier === 'string')
-                ? { identifier: (<any>transaction.object).pendingTransaction.identifier }
+            ...(transaction.typeOf === factory.transactionType.MoneyTransfer
+                && typeof transaction.object.pendingTransaction?.identifier === 'string')
+                ? { identifier: transaction.object.pendingTransaction.identifier }
                 : undefined
         });
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
@@ -450,8 +449,9 @@ async function processMoneyTransferTransaction(params: {
                 }
             },
             // ユニークネスを保証するために識別子を指定する
-            ...(typeof (<any>transaction.object).pendingTransaction?.identifier === 'string')
-                ? { identifier: (<any>transaction.object).pendingTransaction.identifier }
+            ...(transaction.typeOf === factory.transactionType.MoneyTransfer
+                && typeof transaction.object.pendingTransaction?.identifier === 'string')
+                ? { identifier: transaction.object.pendingTransaction.identifier }
                 : undefined
         });
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
@@ -482,8 +482,9 @@ async function processMoneyTransferTransaction(params: {
                 }
             },
             // ユニークネスを保証するために識別子を指定する
-            ...(typeof (<any>transaction.object).pendingTransaction?.identifier === 'string')
-                ? { identifier: (<any>transaction.object).pendingTransaction.identifier }
+            ...(transaction.typeOf === factory.transactionType.MoneyTransfer
+                && typeof transaction.object.pendingTransaction?.identifier === 'string')
+                ? { identifier: transaction.object.pendingTransaction.identifier }
                 : undefined
         });
     } else {
