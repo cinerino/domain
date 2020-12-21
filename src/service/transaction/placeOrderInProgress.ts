@@ -448,7 +448,7 @@ function createConfirmationNumber(params: {
         identifier = [
             ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
             // 取引に指定があれば追加
-            ...(Array.isArray((<any>params.transaction.object).identifier)) ? (<any>params.transaction.object).identifier : [],
+            ...(Array.isArray(params.transaction.object.identifier)) ? params.transaction.object.identifier : [],
             { name: 'paymentNo', value: confirmationNumber },
             { name: 'confirmationNumber', value: confirmationNumber4identifier },
             { name: 'confirmationPass', value: confirmationPass }
@@ -558,9 +558,9 @@ export function publishAwardAccountNumberIfNotExist(params: {
         });
 
         // すでに発行済であれば何もしない
-        if (Array.isArray((<any>transaction.object).identifier)
-            && (<any[]>(<any>transaction.object).identifier).some((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)) {
-            return (<any[]>(<any>transaction.object).identifier).find((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)?.value;
+        const accountNumberValue = transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)?.value;
+        if (typeof accountNumberValue === 'string') {
+            return accountNumberValue;
         }
 
         // 注文番号を発行
@@ -592,6 +592,6 @@ export function publishAwardAccountNumberIfNotExist(params: {
             id: params.id
         });
 
-        return (<any[]>(<any>transaction.object).identifier).find((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)?.value;
+        return <string>transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)?.value;
     };
 }
