@@ -259,11 +259,11 @@ async function getToken(params: {
     expiresIn: number;
     data: any;
 }) {
-    return new Promise<string | undefined>((resolve, reject) => {
-        if (typeof credentials.hub.clientId !== 'string') {
-            return;
-        }
+    if (typeof credentials.hub.clientId !== 'string') {
+        return;
+    }
 
+    return new Promise<string | undefined>((resolve, reject) => {
         // 所有権を暗号化する
         jwt.sign(
             params.data,
