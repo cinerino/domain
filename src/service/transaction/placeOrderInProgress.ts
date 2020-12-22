@@ -1,6 +1,8 @@
 /**
  * 進行中注文取引サービス
  */
+import * as jwt from 'jsonwebtoken';
+
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -33,6 +35,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export const AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME = 'awardAccountNumber';
+export const TOKEN_EXPIRES_IN = 604800;
 
 export type IStartOperation<T> = (repos: {
     project: ProjectRepo;
@@ -205,12 +208,26 @@ export function confirm(params: IConfirmParams) {
             accountTypes: searchAccountTypesResult.data
         })(repos);
 
+        const order4token: factory.order.ISimpleOrder = {
+            project: result.order.project,
+            typeOf: result.order.typeOf,
+            seller: result.order.seller,
+            customer: result.order.customer,
+            confirmationNumber: result.order.confirmationNumber,
+            orderNumber: result.order.orderNumber,
+            price: result.order.price,
+            priceCurrency: result.order.priceCurrency,
+            orderDate: result.order.orderDate
+        };
+        const token = await getToken({ expiresIn: TOKEN_EXPIRES_IN, data: order4token });
+
         // ポストアクションを作成
         const potentialActions = await createPotentialActions({
-            transaction: transaction,
             order: result.order,
+            potentialActions: params.potentialActions,
             seller: seller,
-            potentialActions: params.potentialActions
+            transaction: transaction,
+            ...(typeof token === 'string') ? { token } : undefined
         });
 
         // ステータス変更
@@ -236,6 +253,35 @@ export function confirm(params: IConfirmParams) {
 
         return <factory.transaction.placeOrder.IResult>transaction.result;
     };
+}
+
+async function getToken(params: {
+    expiresIn: number;
+    data: any;
+}) {
+    return new Promise<string | undefined>((resolve, reject) => {
+        if (typeof credentials.hub.clientId !== 'string') {
+            return;
+        }
+
+        // 所有権を暗号化する
+        jwt.sign(
+            params.data,
+            credentials.jwt.secret,
+            {
+                audience: [credentials.hub.clientId],
+                issuer: credentials.jwt.issuer,
+                expiresIn: params.expiresIn
+            },
+            (err, encoded) => {
+                if (err instanceof Error) {
+                    reject(err);
+                } else {
+                    resolve(encoded);
+                }
+            }
+        );
+    });
 }
 
 /**

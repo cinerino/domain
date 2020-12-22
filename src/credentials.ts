@@ -32,5 +32,12 @@ export const credentials = {
     },
     sendGrid: {
         apiKey: process.env.SENDGRID_API_KEY
+    },
+    hub: {
+        clientId: <string>process.env.HUB_CLIENT_ID
+    },
+    jwt: {
+        secret: <string>process.env.TOKEN_SECRET,
+        issuer: <string>process.env.RESOURCE_SERVER_IDENTIFIER
     }
 };

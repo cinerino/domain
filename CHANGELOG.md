@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 通貨転送取引を再実装
 - 注文取引に対する特典口座番号を発行できるように調整
+- 注文作成後の通知に注文トークンを付加
 
 ### Deprecated
 
