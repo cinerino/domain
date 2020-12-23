@@ -200,6 +200,10 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
             );
         }
 
+        const transactionService = new chevre.service.Transaction({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
         const payService = new chevre.service.transaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
@@ -213,7 +217,19 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
 
             // 失敗するケースがあっても、残りが少なくとも処理されるようにエラーハンドリング
             try {
-                await payService.cancel({ transactionNumber: action.object.paymentMethodId });
+                // 取引が存在すれば中止
+                const transactionNumber = action.object.paymentMethodId;
+                if (typeof transactionNumber === 'string' && transactionNumber.length > 0) {
+                    const { data } = await transactionService.search({
+                        limit: 1,
+                        project: { ids: [action.project.id] },
+                        typeOf: chevre.factory.transactionType.Pay,
+                        transactionNumber: { $eq: transactionNumber }
+                    });
+                    if (data.length > 0) {
+                        await payService.cancel({ transactionNumber });
+                    }
+                }
 
                 await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
             } catch (error) {
