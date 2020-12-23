@@ -205,14 +205,23 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
             auth: chevreAuthClient
         });
 
+        const errors: any[] = [];
         for (const action of authorizeActions) {
             // 直列にゆっくり処理する場合↓
             // tslint:disable-next-line:no-magic-numbers
             // await new Promise((resolve) => setTimeout(() => { resolve(); }, 1000));
 
-            await payService.cancel({ transactionNumber: action.object.paymentMethodId });
+            // 失敗するケースがあっても、残りが少なくとも処理されるようにエラーハンドリング
+            try {
+                await payService.cancel({ transactionNumber: action.object.paymentMethodId });
 
-            await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+                await repos.action.cancel({ typeOf: action.typeOf, id: action.id });
+            } catch (error) {
+                errors.push(error);
+            }
+        }
+        if (errors.length > 0) {
+            throw errors[0];
         }
     };
 }
