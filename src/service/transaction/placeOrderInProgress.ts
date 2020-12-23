@@ -22,7 +22,7 @@ import {
     validateNumItems,
     validateTransaction
 } from './placeOrderInProgress/validation';
-import { IPassportValidator, validateWaiterPassport } from './validation';
+import { IPassportValidator as IWaiterPassportValidator, validateWaiterPassport } from './validation';
 
 import { MongoErrorCode } from '../../errorHandler';
 
@@ -42,6 +42,7 @@ export type IStartOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
+export type IPassportValidator = IWaiterPassportValidator;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
 };

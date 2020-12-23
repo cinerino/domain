@@ -14,7 +14,7 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createPotentialActions } from './moneyTransfer/potentialActions';
-import { IPassportValidator, validateWaiterPassport } from './validation';
+import { IPassportValidator as IWaiterPassportValidator, validateWaiterPassport } from './validation';
 
 import { handleChevreError } from '../../errorHandler';
 
@@ -43,6 +43,7 @@ export type IConfirmOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
+export type IPassportValidator = IWaiterPassportValidator;
 export type IStartParams = factory.transaction.moneyTransfer.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
 };
