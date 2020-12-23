@@ -34,8 +34,12 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-export const AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME = 'awardAccountNumber';
+export const AWARD_ACCOUNTS_IDENTIFIER_NAME = 'awardAccounts';
 export const TOKEN_EXPIRES_IN = 604800;
+
+export interface IAwardAccount {
+    typeOf: string; accountNumber: string;
+}
 
 export type IStartOperation<T> = (repos: {
     project: ProjectRepo;
@@ -594,39 +598,50 @@ export function publishAwardAccountNumberIfNotExist(params: {
      * 取引ID
      */
     id: string;
+    object: {
+        awardAccounts: { typeOf: string }[];
+    };
 }) {
     return async (repos: {
         transaction: TransactionRepo;
-    }): Promise<string> => {
+    }): Promise<IAwardAccount[]> => {
         let transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.id
         });
 
         // すでに発行済であれば何もしない
-        const accountNumberValue = transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)?.value;
-        if (typeof accountNumberValue === 'string') {
-            return accountNumberValue;
+        let accountsValue = transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNTS_IDENTIFIER_NAME)?.value;
+        if (typeof accountsValue === 'string') {
+            return JSON.parse(accountsValue);
         }
 
-        // 注文番号を発行
+        if (params.object.awardAccounts.length === 0) {
+            return [];
+        }
+
+        // 指定された口座種別数だけ、注文番号を発行
         const serviceOutputService = new chevre.service.ServiceOutput({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
 
-        const publishIdentifierResult = await serviceOutputService.publishIdentifier([
-            { project: { id: transaction.project.id } }
-        ]);
+        const publishIdentifierResult = await serviceOutputService.publishIdentifier(params.object.awardAccounts.map(() => {
+            return { project: { id: transaction.project.id } };
+        }));
+
+        const awardAccounts: IAwardAccount[] = params.object.awardAccounts.map((awardAccountParams, key) => {
+            return { typeOf: awardAccountParams.typeOf, accountNumber: publishIdentifierResult[key].identifier };
+        });
 
         // 取引に存在しなければ保管
         await repos.transaction.transactionModel.findOneAndUpdate(
             {
                 _id: transaction.id,
-                'object.identifier.name': { $ne: AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME }
+                'object.identifier.name': { $ne: AWARD_ACCOUNTS_IDENTIFIER_NAME }
             },
             {
-                $push: { 'object.identifier': { name: AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME, value: publishIdentifierResult[0].identifier } }
+                $push: { 'object.identifier': { name: AWARD_ACCOUNTS_IDENTIFIER_NAME, value: JSON.stringify(awardAccounts) } }
             },
             { new: true }
         )
@@ -638,6 +653,8 @@ export function publishAwardAccountNumberIfNotExist(params: {
             id: params.id
         });
 
-        return <string>transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNT_NUMBER_IDENTIFIER_NAME)?.value;
+        accountsValue = <string>transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNTS_IDENTIFIER_NAME)?.value;
+
+        return JSON.parse(accountsValue);
     };
 }
