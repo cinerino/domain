@@ -14,6 +14,7 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createPotentialActions } from './moneyTransfer/potentialActions';
+import { IPassportValidator, validateWaiterPassport } from './validation';
 
 import { handleChevreError } from '../../errorHandler';
 
@@ -42,13 +43,15 @@ export type IConfirmOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
+export type IStartParams = factory.transaction.moneyTransfer.IStartParamsWithoutDetail & {
+    passportValidator?: IPassportValidator;
+};
+
 /**
  * 取引開始
  * Chevre通貨転送サービスを利用して転送取引を開始する
  */
-export function start(
-    params: factory.transaction.moneyTransfer.IStartParamsWithoutDetail
-): IStartOperation<factory.transaction.moneyTransfer.ITransaction> {
+export function start(params: IStartParams): IStartOperation<factory.transaction.moneyTransfer.ITransaction> {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -59,6 +62,8 @@ export function start(
             auth: chevreAuthClient
         });
         const seller = await sellerService.findById({ id: params.seller.id });
+
+        const passport = await validateWaiterPassport(params);
 
         // 金額をfix
         const amount = params.object.amount;
@@ -91,6 +96,7 @@ export function start(
                 fromLocation: fromLocation,
                 toLocation: toLocation,
                 authorizeActions: [],
+                ...(passport !== undefined) ? { passport } : undefined,
                 ...(typeof params.object.description === 'string') ? { description: params.object.description } : undefined,
                 ...(typeof params.object.pendingTransaction?.identifier === 'string')
                     ? { pendingTransaction: { identifier: params.object.pendingTransaction.identifier } } : undefined

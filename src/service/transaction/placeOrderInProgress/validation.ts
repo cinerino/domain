@@ -1,7 +1,6 @@
 /**
  * 注文取引バリデーション
  */
-import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { format } from 'util';
 
@@ -9,11 +8,6 @@ import * as factory from '../../../factory';
 
 const debug = createDebug('cinerino-domain:service');
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult;
-
-export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
-export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
-    passportValidator?: IPassportValidator;
-};
 
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 export type IAuthorizeSeatReservationOfferResult =
@@ -28,31 +22,6 @@ export type IAuthorizeActionResultBySeller =
 
 export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
-
-export async function validateWaiterPassport(params: IStartParams): Promise<factory.waiter.passport.IPassport | undefined> {
-    let passport: factory.waiter.passport.IPassport | undefined;
-
-    // WAITER許可証トークンがあれば検証する
-    if (params.object.passport !== undefined) {
-        try {
-            passport = await waiter.service.passport.verify({
-                token: params.object.passport.token,
-                secret: params.object.passport.secret
-            });
-        } catch (error) {
-            throw new factory.errors.Argument('Passport Token', `Invalid token: ${error.message}`);
-        }
-
-        // 許可証バリデーション
-        if (typeof params.passportValidator === 'function') {
-            if (!params.passportValidator({ passport: passport })) {
-                throw new factory.errors.Argument('Passport Token', 'Invalid passport');
-            }
-        }
-    }
-
-    return passport;
-}
 
 /**
  * 取引が確定可能な状態かどうかをチェックする

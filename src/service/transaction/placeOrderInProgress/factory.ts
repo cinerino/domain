@@ -11,11 +11,11 @@ export function createAttributes(
 ): factory.transaction.placeOrder.IAttributes {
     const transactionObject: factory.transaction.placeOrder.IObject = {
         passportToken: (typeof params.object.passport?.token === 'string') ? params.object.passport.token : undefined,
-        passport: passport,
         authorizeActions: [],
         onOrderStatusChanged: {
             informOrder: informOrderParams
         },
+        ...(passport !== undefined) ? { passport } : undefined,
         ...((<any>params.object).clientUser !== undefined && (<any>params.object).clientUser !== null)
             ? { clientUser: (<any>params.object).clientUser }
             : undefined,
