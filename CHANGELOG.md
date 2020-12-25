@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- プロジェクトサービスを追加
+
 ### Changed
 
 - 通貨転送取引を再実装
