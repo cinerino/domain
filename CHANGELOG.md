@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文作成後の通知に注文トークンを付加
 - Chevre決済中止処理のエラーハンドリングを調整
 - Chevre予約の追加特性からpaymentSeatIndex,csvCode,transactionを削除
+- update @chevre/api-nodejs-client
+- update @cinerino/factory
 
 ### Deprecated
 
