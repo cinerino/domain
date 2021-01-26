@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v10.15.0 - 2021-01-26
+
+### Added
+
 - プロジェクトサービスを追加
 
 ### Changed
@@ -19,14 +33,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Chevre予約の追加特性からpaymentSeatIndex,csvCode,transactionを削除
 - update @chevre/api-nodejs-client
 - update @cinerino/factory
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v10.14.1 - 2020-12-17
 
