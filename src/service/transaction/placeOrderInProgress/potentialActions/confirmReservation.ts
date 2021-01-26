@@ -170,12 +170,12 @@ function createConfirmReservationActionObject(params: {
         transactionNumber: params.reserveTransaction.transactionNumber,
         object: {
             reservations: (Array.isArray(params.reserveTransaction.object.reservations))
-                ? params.reserveTransaction.object.reservations.map((r, index) => {
+                ? params.reserveTransaction.object.reservations.map((r) => {
                     // 購入者や販売者の情報を連携する
                     return {
                         id: r.id,
                         additionalProperty: [
-                            { name: 'paymentSeatIndex', value: index.toString() }
+                            // { name: 'paymentSeatIndex', value: index.toString() }
                         ],
                         reservedTicket: {
                             issuedBy: {
