@@ -18,6 +18,7 @@ export async function createPotentialActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     seller: factory.seller.ISeller;
+    token?: string;
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.transaction.placeOrder.IPotentialActions> {
     // 予約確定アクション

@@ -116,8 +116,8 @@ export function create(params: {
             params.object.acceptedOffer = await selectSeats(
                 project,
                 event,
-                params.object.acceptedOffer,
-                params.transaction.id
+                params.object.acceptedOffer
+                // params.transaction.id
             )();
         }
 
@@ -288,8 +288,8 @@ export function create(params: {
 export function selectSeats(
     __: factory.project.IProject,
     performance: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>,
-    acceptedOffer: IAcceptedOfferWithoutDetail4chevre[],
-    transactionId: string
+    acceptedOffer: IAcceptedOfferWithoutDetail4chevre[]
+    // transactionId: string
 ): ISelectSeatOperation<IAcceptedOfferWithoutDetail4chevre[]> {
     return async () => {
         const acceptedOffersWithoutDetail: IAcceptedOfferWithoutDetail4chevre[] = [];
@@ -401,10 +401,11 @@ export function selectSeats(
             unavailableSeatNumbers.push(...selectedSeatsForAdditionalStocks.map((s) => s.branchCode));
 
             const additionalProperty: factory.propertyValue.IPropertyValue<string>[] = [
-                ...(Array.isArray(ticketOffer.additionalProperty))
-                    ? ticketOffer.additionalProperty
-                    : [],
-                { name: 'transaction', value: transactionId }
+                // tttsで不要そうなので廃止
+                // ...(Array.isArray(ticketOffer.additionalProperty))
+                //     ? ticketOffer.additionalProperty
+                //     : [],
+                // { name: 'transaction', value: transactionId }
             ];
 
             const additionalTicketText = offer.itemOffered?.serviceOutput?.additionalTicketText;

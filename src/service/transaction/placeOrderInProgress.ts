@@ -1,6 +1,8 @@
 /**
  * 進行中注文取引サービス
  */
+import * as jwt from 'jsonwebtoken';
+
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
@@ -18,9 +20,9 @@ import { createConfirmationNumber4identifier, createOrder } from './placeOrderIn
 import {
     validateEventOffers,
     validateNumItems,
-    validateTransaction,
-    validateWaiterPassport
+    validateTransaction
 } from './placeOrderInProgress/validation';
+import { IPassportValidator as IWaiterPassportValidator, validateWaiterPassport } from './validation';
 
 import { MongoErrorCode } from '../../errorHandler';
 
@@ -32,12 +34,19 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+export const AWARD_ACCOUNTS_IDENTIFIER_NAME = 'awardAccounts';
+export const TOKEN_EXPIRES_IN = 604800;
+
+export interface IAwardAccount {
+    typeOf: string; accountNumber: string;
+}
+
 export type IStartOperation<T> = (repos: {
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
+export type IPassportValidator = IWaiterPassportValidator;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
 };
@@ -203,12 +212,26 @@ export function confirm(params: IConfirmParams) {
             accountTypes: searchAccountTypesResult.data
         })(repos);
 
+        const order4token: factory.order.ISimpleOrder = {
+            project: result.order.project,
+            typeOf: result.order.typeOf,
+            seller: result.order.seller,
+            customer: result.order.customer,
+            confirmationNumber: result.order.confirmationNumber,
+            orderNumber: result.order.orderNumber,
+            price: result.order.price,
+            priceCurrency: result.order.priceCurrency,
+            orderDate: result.order.orderDate
+        };
+        const token = await getToken({ expiresIn: TOKEN_EXPIRES_IN, data: order4token });
+
         // ポストアクションを作成
         const potentialActions = await createPotentialActions({
-            transaction: transaction,
             order: result.order,
+            potentialActions: params.potentialActions,
             seller: seller,
-            potentialActions: params.potentialActions
+            transaction: transaction,
+            ...(typeof token === 'string') ? { token } : undefined
         });
 
         // ステータス変更
@@ -234,6 +257,35 @@ export function confirm(params: IConfirmParams) {
 
         return <factory.transaction.placeOrder.IResult>transaction.result;
     };
+}
+
+async function getToken(params: {
+    expiresIn: number;
+    data: any;
+}) {
+    if (typeof credentials.hub.clientId !== 'string') {
+        return;
+    }
+
+    return new Promise<string | undefined>((resolve, reject) => {
+        // 所有権を暗号化する
+        jwt.sign(
+            params.data,
+            credentials.jwt.secret,
+            {
+                audience: [credentials.hub.clientId],
+                issuer: credentials.jwt.issuer,
+                expiresIn: params.expiresIn
+            },
+            (err, encoded) => {
+                if (err instanceof Error) {
+                    reject(err);
+                } else {
+                    resolve(encoded);
+                }
+            }
+        );
+    });
 }
 
 /**
@@ -445,6 +497,8 @@ function createConfirmationNumber(params: {
         // 識別子の指定があれば上書き
         identifier = [
             ...(Array.isArray(params.result.order.identifier)) ? params.result.order.identifier : [],
+            // 取引に指定があれば追加
+            ...(Array.isArray(params.transaction.object.identifier)) ? params.transaction.object.identifier : [],
             { name: 'paymentNo', value: confirmationNumber },
             { name: 'confirmationNumber', value: confirmationNumber4identifier },
             { name: 'confirmationPass', value: confirmationPass }
@@ -533,5 +587,74 @@ export function voidAward(params: {
             }
         )
             .exec();
+    };
+}
+
+/**
+ * 未発行であれば、注文に割り当てられるインセンティブ口座の識別子を発行する
+ */
+export function publishAwardAccountNumberIfNotExist(params: {
+    /**
+     * 取引ID
+     */
+    id: string;
+    object: {
+        awardAccounts: { typeOf: string }[];
+    };
+}) {
+    return async (repos: {
+        transaction: TransactionRepo;
+    }): Promise<IAwardAccount[]> => {
+        let transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
+
+        // すでに発行済であれば何もしない
+        let accountsValue = transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNTS_IDENTIFIER_NAME)?.value;
+        if (typeof accountsValue === 'string') {
+            return JSON.parse(accountsValue);
+        }
+
+        if (params.object.awardAccounts.length === 0) {
+            return [];
+        }
+
+        // 指定された口座種別数だけ、注文番号を発行
+        const serviceOutputService = new chevre.service.ServiceOutput({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const publishIdentifierResult = await serviceOutputService.publishIdentifier(params.object.awardAccounts.map(() => {
+            return { project: { id: transaction.project.id } };
+        }));
+
+        const awardAccounts: IAwardAccount[] = params.object.awardAccounts.map((awardAccountParams, key) => {
+            return { typeOf: awardAccountParams.typeOf, accountNumber: publishIdentifierResult[key].identifier };
+        });
+
+        // 取引に存在しなければ保管
+        await repos.transaction.transactionModel.findOneAndUpdate(
+            {
+                _id: transaction.id,
+                'object.identifier.name': { $ne: AWARD_ACCOUNTS_IDENTIFIER_NAME }
+            },
+            {
+                $push: { 'object.identifier': { name: AWARD_ACCOUNTS_IDENTIFIER_NAME, value: JSON.stringify(awardAccounts) } }
+            },
+            { new: true }
+        )
+            .exec();
+
+        // 取引から再取得
+        transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
+
+        accountsValue = <string>transaction.object.identifier?.find((i) => i.name === AWARD_ACCOUNTS_IDENTIFIER_NAME)?.value;
+
+        return JSON.parse(accountsValue);
     };
 }

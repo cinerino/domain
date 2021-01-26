@@ -1,48 +1,49 @@
 import * as factory from '../../../factory';
 
+export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.monetaryAmount.IAction;
+
 function createMoneyTransferActions(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
 }): factory.action.transfer.moneyTransfer.IAttributes[] {
-    // 通貨転送アクション属性作成
-    const authorizePaymentCardActions = <factory.action.authorize.paymentMethod.any.IAction[]>
-        params.transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO Chevre決済カードサービスに対して動的にコントロール
-            .filter((a) => a.result?.paymentMethod === 'PaymentCard');
+    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes[] = [];
 
-    return authorizePaymentCardActions.map((a) => {
-        const actionResult = <factory.action.authorize.paymentMethod.any.IResult>a.result;
+    const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.object.typeOf === 'Offer')
+        .filter((a) => a.object.itemOffered !== undefined && a.object.itemOffered.typeOf === 'MonetaryAmount');
 
-        if (actionResult.pendingTransaction === undefined) {
-            throw new factory.errors.NotFound('action.result.pendingTransaction');
+    authorizeMoneyTransferActions.forEach((a) => {
+        const actionResult = <factory.action.authorize.offer.monetaryAmount.IResult>a.result;
+        const pendingTransaction = a.object.pendingTransaction;
+
+        const fromLocation = params.transaction.object.fromLocation;
+
+        if (actionResult !== undefined && pendingTransaction !== undefined) {
+            moneyTransferActions.push({
+                project: params.transaction.project,
+                typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
+                object: {
+                    pendingTransaction: actionResult.responseBody
+                },
+                agent: params.transaction.agent,
+                recipient: a.recipient,
+                amount: {
+                    typeOf: 'MonetaryAmount',
+                    value: a.object.itemOffered.value,
+                    currency: a.object.itemOffered.currency
+                },
+                fromLocation: fromLocation,
+                toLocation: params.transaction.object.toLocation,
+                purpose: {
+                    typeOf: params.transaction.typeOf,
+                    id: params.transaction.id
+                },
+                ...(typeof a.object.description === 'string') ? { description: a.object.description } : {}
+            });
         }
-
-        const fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>params.transaction.object.fromLocation;
-
-        return {
-            project: params.transaction.project,
-            typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
-            result: {},
-            object: {
-                pendingTransaction: actionResult.pendingTransaction
-            },
-            agent: a.agent,
-            recipient: a.recipient,
-            amount: {
-                typeOf: 'MonetaryAmount',
-                value: Number(a.object.amount),
-                currency: factory.chevre.priceCurrency.JPY
-            },
-            fromLocation: fromLocation,
-            toLocation: params.transaction.object.toLocation,
-            purpose: {
-                typeOf: params.transaction.typeOf,
-                id: params.transaction.id
-            },
-            ...(typeof a.object.description === 'string') ? { description: a.object.description } : {}
-        };
     });
+
+    return moneyTransferActions;
 }
 
 /**

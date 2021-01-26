@@ -115,6 +115,7 @@ export function verifyToken<T>(params: {
     token: string;
     secret: string;
     issuer: string | string[];
+    audience?: string[];
 }) {
     return async (repos: {
         action?: ActionRepo;
@@ -140,7 +141,8 @@ export function verifyToken<T>(params: {
                     params.token,
                     params.secret,
                     {
-                        issuer: params.issuer
+                        issuer: params.issuer,
+                        ...(Array.isArray(params.audience)) ? { audience: params.audience } : undefined
                     },
                     (err, decoded: any) => {
                         if (err instanceof Error) {
