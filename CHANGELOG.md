@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文から予約への決済方法の連携に関して、決済方法区分コードがOthersの場合、名称を取り込むように調整
+
 ### Deprecated
 
 ### Removed
