@@ -146,7 +146,9 @@ function createConfirmReservationActionObject(params: {
 
     const order = params.order;
     const customer = order.customer;
-    const paymentMethodNames = order.paymentMethods.map((p) => String(p.name))
+    const paymentMethodNames = order.paymentMethods.map((p) => {
+        return (p.typeOf === factory.paymentMethodType.Others) ? String(p.name) : String(p.typeOf);
+    })
         .join(',');
 
     const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
