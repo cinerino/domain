@@ -4,6 +4,7 @@
 import * as moment from 'moment';
 
 import { credentials } from '../../credentials';
+import { settings } from '../../settings';
 
 import * as chevre from '../../chevre';
 import * as factory from '../../factory';
@@ -228,27 +229,18 @@ function findApplicableReturnPolicy(params: {
     return applicalbleReturnPolicies[0];
 }
 
-function createInformOrderParams(
-    params: factory.transaction.returnOrder.IStartParamsWithoutDetail
-): factory.transaction.returnOrder.IInformOrderParams[] {
-    const project = params.project;
+function createInformOrderParams(params: factory.transaction.returnOrder.IStartParamsWithoutDetail & {
+    project: factory.project.IProject;
+}): factory.transaction.returnOrder.IInformOrderParams[] {
+    const informOrderParamsByGlobalSettings = settings.onOrderStatusChanged?.informOrder;
+    const informOrderParamsByProject = params.project.settings?.onOrderStatusChanged?.informOrder;
+    const informOrderParamsByTransaction = params.object?.onOrderStatusChanged?.informOrder;
 
-    const informOrderParams: factory.transaction.returnOrder.IInformOrderParams[] = [];
-
-    if (project.settings !== undefined
-        && project.settings !== null
-        && project.settings.onOrderStatusChanged !== undefined
-        && Array.isArray(project.settings.onOrderStatusChanged.informOrder)) {
-        informOrderParams.push(...project.settings.onOrderStatusChanged.informOrder);
-    }
-
-    if (params.object !== undefined
-        && params.object.onOrderStatusChanged !== undefined
-        && Array.isArray(params.object.onOrderStatusChanged.informOrder)) {
-        informOrderParams.push(...params.object.onOrderStatusChanged.informOrder);
-    }
-
-    return informOrderParams;
+    return [
+        ...(Array.isArray(informOrderParamsByGlobalSettings)) ? informOrderParamsByGlobalSettings : [],
+        ...(Array.isArray(informOrderParamsByProject)) ? informOrderParamsByProject : [],
+        ...(Array.isArray(informOrderParamsByTransaction)) ? informOrderParamsByTransaction : []
+    ];
 }
 
 /**

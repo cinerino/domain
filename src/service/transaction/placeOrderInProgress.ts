@@ -4,6 +4,7 @@
 import * as jwt from 'jsonwebtoken';
 
 import { credentials } from '../../credentials';
+import { settings } from '../../settings';
 
 import * as chevre from '../../chevre';
 import * as factory from '../../factory';
@@ -93,12 +94,14 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 function createInformOrderParams(params: IStartParams & {
     project: factory.project.IProject;
 }): factory.transaction.placeOrder.IInformOrderParams[] {
+    const informOrderParamsByGlobalSettings = settings.onOrderStatusChanged?.informOrder;
     const informOrderParamsByProject = params.project.settings?.onOrderStatusChanged?.informOrder;
-    const informOrderParamsByCustomer = params.object?.onOrderStatusChanged?.informOrder;
+    const informOrderParamsByTransaction = params.object?.onOrderStatusChanged?.informOrder;
 
     return [
+        ...(Array.isArray(informOrderParamsByGlobalSettings)) ? informOrderParamsByGlobalSettings : [],
         ...(Array.isArray(informOrderParamsByProject)) ? informOrderParamsByProject : [],
-        ...(Array.isArray(informOrderParamsByCustomer)) ? informOrderParamsByCustomer : []
+        ...(Array.isArray(informOrderParamsByTransaction)) ? informOrderParamsByTransaction : []
     ];
 }
 
