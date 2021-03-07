@@ -50,6 +50,7 @@ export type IStartOperation<T> = (repos: {
 export type IPassportValidator = IWaiterPassportValidator;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
+    broker?: factory.order.IBroker;
 };
 
 /**
@@ -74,7 +75,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         const informOrderParams = createInformOrderParams({ ...params, project: project });
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
-        const transactionAttributes = createAttributes(params, passport, informOrderParams, seller);
+        const transactionAttributes = createAttributes(params, passport, informOrderParams, seller, params.broker);
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {

@@ -7,7 +7,8 @@ export function createAttributes(
     params: IStartParams,
     passport: factory.waiter.passport.IPassport | undefined,
     informOrderParams: factory.transaction.placeOrder.IInformOrderParams[],
-    seller: factory.seller.ISeller
+    seller: factory.seller.ISeller,
+    broker?: factory.order.IBroker
 ): factory.transaction.placeOrder.IAttributes {
     const transactionObject: factory.transaction.placeOrder.IObject = {
         passportToken: (typeof params.object.passport?.token === 'string') ? params.object.passport.token : undefined,
@@ -19,7 +20,8 @@ export function createAttributes(
         ...((<any>params.object).clientUser !== undefined && (<any>params.object).clientUser !== null)
             ? { clientUser: (<any>params.object).clientUser }
             : undefined,
-        ...(typeof params.object?.name === 'string') ? { name: params.object?.name } : undefined
+        ...(typeof params.object?.name === 'string') ? { name: params.object?.name } : undefined,
+        ...(typeof broker?.typeOf === 'string') ? { broker: broker } : undefined
     };
 
     // 取引ファクトリーで新しい進行中取引オブジェクトを作成

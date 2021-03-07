@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 - グローバル設定に注文変更時通知設定を追加
+- 注文にbrokerを追加
 
 ### Changed
 

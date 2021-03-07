@@ -54,6 +54,7 @@ const discountSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        broker: mongoose.SchemaTypes.Mixed,
         project: mongoose.SchemaTypes.Mixed,
         typeOf: {
             type: String,

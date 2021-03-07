@@ -37,6 +37,9 @@ export function createOrder(params: {
     const name: string | undefined =
         (typeof params.transaction.object.name === 'string') ? params.transaction.object.name : undefined;
 
+    const broker: factory.order.IBroker | undefined =
+        (typeof params.transaction.object.broker?.typeOf === 'string') ? params.transaction.object.broker : undefined;
+
     return {
         project: params.transaction.project,
         typeOf: factory.order.OrderType.Order,
@@ -54,7 +57,8 @@ export function createOrder(params: {
         orderDate: params.orderDate,
         identifier: [],
         isGift: params.isGift,
-        ...(typeof name === 'string') ? { name } : undefined
+        ...(typeof name === 'string') ? { name } : undefined,
+        ...(typeof broker?.typeOf === 'string') ? { broker } : undefined
     };
 }
 
