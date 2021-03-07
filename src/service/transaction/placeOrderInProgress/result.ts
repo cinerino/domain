@@ -83,18 +83,18 @@ function createSeller(params: {
 function createCustomer(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): factory.order.ICustomer {
-    // 購入者を識別する情報をまとめる
     const profile = params.transaction.agent;
+    const customerByTransaction = params.transaction.object.customer;
 
     return {
         ...profile,
         identifier: (Array.isArray(profile.identifier)) ? profile.identifier : [],
-        name: (typeof profile.name === 'string')
-            ? profile.name
-            : `${profile.givenName} ${profile.familyName}`,
-        ...(typeof profile.url === 'string')
-            ? { url: profile.url }
-            : undefined
+        name: (typeof profile.name === 'string') ? profile.name : `${profile.givenName} ${profile.familyName}`,
+        ...(typeof profile.url === 'string') ? { url: profile.url } : undefined,
+        // transaction.object.customerが存在すれば適用する
+        // transaction.object.customerはstart時点でapiが自動的に指定、あるいは、その後クライアントから変更されるか
+        ...(typeof customerByTransaction?.typeOf === 'string') ? { typeOf: customerByTransaction.typeOf } : undefined,
+        ...(typeof customerByTransaction?.id === 'string') ? { id: customerByTransaction.id } : undefined
     };
 }
 

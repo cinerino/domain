@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - update @chevre/api-nodejs-client
 - update @cinerino/factory
 - プロジェクトメンバーの権限検索時にロールリストも返すように調整
+- 注文取引でcustomerを指定できるように調整
 
 ### Deprecated
 

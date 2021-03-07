@@ -21,7 +21,9 @@ export function createAttributes(
             ? { clientUser: (<any>params.object).clientUser }
             : undefined,
         ...(typeof params.object?.name === 'string') ? { name: params.object?.name } : undefined,
-        ...(typeof broker?.typeOf === 'string') ? { broker: broker } : undefined
+        ...(typeof broker?.typeOf === 'string') ? { broker: broker } : undefined,
+        ...(typeof params.object.customer?.typeOf === 'string') ? { customer: params.object.customer } : undefined
+
     };
 
     // 取引ファクトリーで新しい進行中取引オブジェクトを作成
