@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - update @cinerino/factory
 - プロジェクトメンバーの権限検索時にロールリストも返すように調整
 - 注文取引でcustomerを指定できるように調整
+- Chevre返金時にpurposeを返品アクションに指定するように調整
 
 ### Deprecated
 
