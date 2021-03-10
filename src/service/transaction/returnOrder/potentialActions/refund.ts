@@ -14,6 +14,8 @@ async function createRefundPotentialActions(params: {
     const order = params.order;
 
     const informOrderActionsOnRefund: factory.action.interact.inform.IAttributes<any, any>[] = [];
+    const sendEmailMessageOnRefund: factory.action.transfer.send.message.email.IAttributes[] = [];
+
     // Eメールカスタマイズの指定を確認
     let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
 
@@ -55,39 +57,41 @@ async function createRefundPotentialActions(params: {
         }
     }
 
-    const emailMessage = await emailMessageBuilder.createRefundMessage({
-        order,
-        paymentMethods: [params.paymentMethod],
-        email: emailCustomization
-    });
-    const sendEmailMessageActionAttributes: factory.action.transfer.send.message.email.IAttributes = {
-        project: transaction.project,
-        typeOf: factory.actionType.SendAction,
-        object: emailMessage,
-        agent: {
-            project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-            typeOf: order.seller.typeOf,
-            id: order.seller.id,
-            name: order.seller.name,
-            url: order.seller.url
-        },
-        recipient: order.customer,
-        potentialActions: {},
-        purpose: {
-            typeOf: order.typeOf,
-            seller: order.seller,
-            customer: order.customer,
-            confirmationNumber: order.confirmationNumber,
-            orderNumber: order.orderNumber,
-            price: order.price,
-            priceCurrency: order.priceCurrency,
-            orderDate: order.orderDate
-        }
-    };
+    if (emailCustomization !== undefined && emailCustomization !== null) {
+        const emailMessage = await emailMessageBuilder.createRefundMessage({
+            order,
+            paymentMethods: [params.paymentMethod],
+            email: emailCustomization
+        });
+        sendEmailMessageOnRefund.push({
+            project: transaction.project,
+            typeOf: factory.actionType.SendAction,
+            object: emailMessage,
+            agent: {
+                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                typeOf: order.seller.typeOf,
+                id: order.seller.id,
+                name: order.seller.name,
+                url: order.seller.url
+            },
+            recipient: order.customer,
+            potentialActions: {},
+            purpose: {
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            }
+        });
+    }
 
     return {
         informOrder: informOrderActionsOnRefund,
-        sendEmailMessage: [sendEmailMessageActionAttributes]
+        sendEmailMessage: sendEmailMessageOnRefund
     };
 }
 

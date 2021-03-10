@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文取引でcustomerを指定できるように調整
 - Chevre返金時にpurposeを返品アクションに指定するように調整
 - Chevreエラーハンドリング強化
+- 返金後メール送信を指定されなければ実行しないように調整
 
 ### Deprecated
 
