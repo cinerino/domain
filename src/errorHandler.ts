@@ -2,7 +2,7 @@
  * エラーハンドラー
  * 外部サービスと連携している場合に、サービス(API)のエラーを本ドメインのエラーに変換する責任を担います。
  */
-import { BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
+import { BAD_REQUEST, CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
 import { errors } from './factory';
 
 export enum MongoErrorCode {
@@ -62,6 +62,13 @@ export function handleChevreError(error: any) {
                 break;
             case NOT_FOUND: // 404
                 handledError = new errors.NotFound(message);
+                break;
+            case CONFLICT: // 409
+                handledError = new errors.AlreadyInUse(
+                    (typeof error.entityName === 'string' && error.entityName.length > 0) ? error.entityName : 'ChevreArgument',
+                    (Array.isArray(error.fieldNames)) ? error.fieldNames : [],
+                    message
+                );
                 break;
             case TOO_MANY_REQUESTS: // 429
                 handledError = new errors.RateLimitExceeded(message);
