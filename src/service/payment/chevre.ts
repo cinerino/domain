@@ -129,11 +129,7 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
             for (const paymentMethod of params.object) {
                 await payService.confirm({
                     transactionNumber: paymentMethod.paymentMethod.paymentMethodId,
-                    potentialActions: {
-                        pay: {
-                            purpose: params.purpose
-                        }
-                    }
+                    potentialActions: { pay: { purpose: params.purpose } }
                 });
 
                 await repos.invoice.changePaymentStatus({
@@ -243,6 +239,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
 }
 
 export function refund(params: factory.task.IData<factory.taskName.Refund>) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
@@ -317,7 +314,30 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
                     .toDate()
             });
 
-            await refundService.confirm({ transactionNumber });
+            const refundPurpose: factory.action.transfer.returnAction.order.IAttributes = {
+                project: order.project,
+                typeOf: <factory.actionType.ReturnAction>factory.actionType.ReturnAction,
+                object: {
+                    project: order.project,
+                    typeOf: order.typeOf,
+                    seller: order.seller,
+                    customer: order.customer,
+                    confirmationNumber: order.confirmationNumber,
+                    orderNumber: order.orderNumber,
+                    price: order.price,
+                    priceCurrency: order.priceCurrency,
+                    orderDate: order.orderDate
+                },
+                agent: refundTransaction.agent,
+                recipient: {
+                    ...order.seller,
+                    project: { typeOf: order.project.typeOf, id: order.project.id }
+                }
+            };
+            await refundService.confirm({
+                transactionNumber,
+                potentialActions: { refund: { purpose: refundPurpose } }
+            });
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };

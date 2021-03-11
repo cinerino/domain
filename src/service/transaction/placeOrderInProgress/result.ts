@@ -37,6 +37,9 @@ export function createOrder(params: {
     const name: string | undefined =
         (typeof params.transaction.object.name === 'string') ? params.transaction.object.name : undefined;
 
+    const broker: factory.order.IBroker | undefined =
+        (typeof params.transaction.object.broker?.typeOf === 'string') ? params.transaction.object.broker : undefined;
+
     return {
         project: params.transaction.project,
         typeOf: factory.order.OrderType.Order,
@@ -54,7 +57,8 @@ export function createOrder(params: {
         orderDate: params.orderDate,
         identifier: [],
         isGift: params.isGift,
-        ...(typeof name === 'string') ? { name } : undefined
+        ...(typeof name === 'string') ? { name } : undefined,
+        ...(typeof broker?.typeOf === 'string') ? { broker } : undefined
     };
 }
 
@@ -79,18 +83,18 @@ function createSeller(params: {
 function createCustomer(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): factory.order.ICustomer {
-    // 購入者を識別する情報をまとめる
     const profile = params.transaction.agent;
+    const customerByTransaction = params.transaction.object.customer;
 
     return {
         ...profile,
         identifier: (Array.isArray(profile.identifier)) ? profile.identifier : [],
-        name: (typeof profile.name === 'string')
-            ? profile.name
-            : `${profile.givenName} ${profile.familyName}`,
-        ...(typeof profile.url === 'string')
-            ? { url: profile.url }
-            : undefined
+        name: (typeof profile.name === 'string') ? profile.name : `${profile.givenName} ${profile.familyName}`,
+        ...(typeof profile.url === 'string') ? { url: profile.url } : undefined,
+        // transaction.object.customerが存在すれば適用する
+        // transaction.object.customerはstart時点でapiが自動的に指定、あるいは、その後クライアントから変更されるか
+        ...(typeof customerByTransaction?.typeOf === 'string') ? { typeOf: customerByTransaction.typeOf } : undefined,
+        ...(typeof customerByTransaction?.id === 'string') ? { id: customerByTransaction.id } : undefined
     };
 }
 

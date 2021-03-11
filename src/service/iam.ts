@@ -16,7 +16,10 @@ export function searchPermissions(params: {
     return async (repos: {
         member: MemberRepo;
         role: RoleRepo;
-    }): Promise<IPermission[]> => {
+    }): Promise<{
+        roleNames: string[];
+        permissions: IPermission[];
+    }> => {
         let permissions: IPermission[] = [];
 
         // プロジェクトメンバーを検索
@@ -39,6 +42,6 @@ export function searchPermissions(params: {
         );
         permissions = [...new Set(permissions)];
 
-        return permissions;
+        return { roleNames, permissions };
     };
 }

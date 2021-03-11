@@ -4,6 +4,7 @@
 import * as jwt from 'jsonwebtoken';
 
 import { credentials } from '../../credentials';
+import { settings } from '../../settings';
 
 import * as chevre from '../../chevre';
 import * as factory from '../../factory';
@@ -49,6 +50,7 @@ export type IStartOperation<T> = (repos: {
 export type IPassportValidator = IWaiterPassportValidator;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
+    broker?: factory.order.IBroker;
 };
 
 /**
@@ -73,7 +75,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         const informOrderParams = createInformOrderParams({ ...params, project: project });
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
-        const transactionAttributes = createAttributes(params, passport, informOrderParams, seller);
+        const transactionAttributes = createAttributes(params, passport, informOrderParams, seller, params.broker);
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
@@ -93,12 +95,14 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 function createInformOrderParams(params: IStartParams & {
     project: factory.project.IProject;
 }): factory.transaction.placeOrder.IInformOrderParams[] {
+    const informOrderParamsByGlobalSettings = settings.onOrderStatusChanged?.informOrder;
     const informOrderParamsByProject = params.project.settings?.onOrderStatusChanged?.informOrder;
-    const informOrderParamsByCustomer = params.object?.onOrderStatusChanged?.informOrder;
+    const informOrderParamsByTransaction = params.object?.onOrderStatusChanged?.informOrder;
 
     return [
+        ...(Array.isArray(informOrderParamsByGlobalSettings)) ? informOrderParamsByGlobalSettings : [],
         ...(Array.isArray(informOrderParamsByProject)) ? informOrderParamsByProject : [],
-        ...(Array.isArray(informOrderParamsByCustomer)) ? informOrderParamsByCustomer : []
+        ...(Array.isArray(informOrderParamsByTransaction)) ? informOrderParamsByTransaction : []
     ];
 }
 
