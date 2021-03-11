@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v10.16.0 - 2021-03-11
+
+### Added
+
 - グローバル設定に注文変更時通知設定を追加
 - 注文にbrokerを追加
 
@@ -20,14 +34,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Chevre返金時にpurposeを返品アクションに指定するように調整
 - Chevreエラーハンドリング強化
 - 返金後メール送信を指定されなければ実行しないように調整
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v10.15.1 - 2021-02-11
 
