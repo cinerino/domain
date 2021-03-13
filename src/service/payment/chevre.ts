@@ -247,6 +247,8 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
+        const project = await repos.project.findById({ id: params.project.id });
+
         const transactionNumberService = new chevre.service.TransactionNumber({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
@@ -287,9 +289,16 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         let refundTransaction: chevre.factory.transaction.refund.ITransaction | undefined;
 
         try {
-            const refundFee: number = (typeof returnOrderTransaction.object.cancellationFee === 'number')
-                ? returnOrderTransaction.object.cancellationFee
-                : 0;
+            const returnPolicy = returnOrderTransaction.object.returnPolicy;
+            let refundFee: number = 0;
+            // 返品ポリシーに返品手数料が定義されていれば、プロジェクト設定から適用する
+            if (typeof returnPolicy?.returnFees === 'string') {
+                const returnFeeByProject = project.settings?.returnFee;
+                if (typeof returnFeeByProject !== 'number') {
+                    throw new factory.errors.NotFound('project.settings.returnFee');
+                }
+                refundFee = returnFeeByProject;
+            }
 
             // no op
             refundTransaction = await refundService.start({

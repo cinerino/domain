@@ -94,17 +94,12 @@ export function start(
             project: project
         });
 
-        let cancellationFee = 0;
-        // 返品ポリシーに返品手数料が定義されていれば、params.object.cancellationFeeを適用する
-        if (appliedReturnPolicy.returnFees !== undefined) {
-            cancellationFee = params.object.cancellationFee;
-        }
-
         const transactionObject: factory.transaction.returnOrder.IObject = {
             order: orders.map((o) => {
                 return { orderNumber: o.orderNumber };
             }),
-            cancellationFee,
+            // cancellationFee,
+            returnPolicy: appliedReturnPolicy,
             reason: params.object.reason,
             onOrderStatusChanged: {
                 informOrder: informOrderParams

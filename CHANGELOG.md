@@ -34,6 +34,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Chevre返金時にpurposeを返品アクションに指定するように調整
 - Chevreエラーハンドリング強化
 - 返金後メール送信を指定されなければ実行しないように調整
+- 返金後の注文通知アクション指定を廃止
+- プロジェクトに返品手数料設定を追加
 
 ## v10.15.1 - 2021-02-11
 
