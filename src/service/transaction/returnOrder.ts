@@ -89,6 +89,16 @@ export function start(
             seller: seller
         });
 
+        // let refundFee: number = 0;
+        // 返品ポリシーに返品手数料が定義されていれば、プロジェクト設定が必須
+        if (typeof appliedReturnPolicy?.returnFees === 'string') {
+            const returnFeeByProject = project.settings?.returnFee;
+            if (typeof returnFeeByProject !== 'number') {
+                throw new factory.errors.NotFound('project.settings.returnFee');
+            }
+            // refundFee = returnFeeByProject;
+        }
+
         const informOrderParams = createInformOrderParams({
             ...params,
             project: project
