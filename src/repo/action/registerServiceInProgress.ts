@@ -73,7 +73,7 @@ export class RedisRepository {
     }
 
     public async getHolder(progressKey: IProgressKey) {
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<string | null>((resolve, reject) => {
             const key = `${RedisRepository.KEY_PREFIX}:${progressKey.agent.id}:${progressKey.product.id}`;
             this.redisClient.get(key, (err, res) => {
                 // tslint:disable-next-line:no-single-line-block-comment

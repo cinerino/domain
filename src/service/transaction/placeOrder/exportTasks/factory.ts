@@ -1,5 +1,7 @@
 import * as factory from '../../../../factory';
 
+import { settings } from '../../../../settings';
+
 /**
  * 取引のタスクを作成する
  */
@@ -15,11 +17,9 @@ export function createTasks(params: {
     const transaction = params.transaction;
     const taskRunsAt = params.runsAt;
 
-    const transactionWebhooks = (typeof project.settings?.transactionWebhookUrl === 'string')
-        ? project.settings.transactionWebhookUrl.split(',')
-        : [];
+    const transactionWebhookUrls = (Array.isArray(settings.transactionWebhookUrls)) ? settings.transactionWebhookUrls : [];
     const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook>[] =
-        transactionWebhooks.map((webhookUrl) => {
+        transactionWebhookUrls.map((webhookUrl) => {
             return {
                 project: { typeOf: params.project.typeOf, id: params.project.id },
                 name: factory.taskName.TriggerWebhook,

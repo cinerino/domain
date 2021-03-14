@@ -37,6 +37,7 @@ npm install @cinerino/domain
 | `DEBUG`                            | false    | cinerino-domain:* | Debug                          |
 | `GOOGLE_API_KEY`                   | true     |                   | Google API Key                 |
 | `INFORM_ORDER_URL`                 | false    |                   | Inform Order URLs              |
+| `INFORM_TRANSACTION_URL`           | false    |                   | Inform Transaction URLs        |
 | `LINE_NOTIFY_URL`                  | true     |                   | LINE Notify URL                |
 | `LINE_NOTIFY_ACCESS_TOKEN`         | true     |                   | LINE Notify access token       |
 | `PECORINO_AUTHORIZE_SERVER_DOMAIN` | true     |                   | Pecorino credentials           |

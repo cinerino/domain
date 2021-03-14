@@ -9,26 +9,26 @@ export async function createInformOrderActionsOnReturn(params: {
     const order = transaction.object.order;
 
     const informOrderActionsOnReturn: factory.action.interact.inform.IAttributes<any, any>[] = [];
-    const informOrder = params.returnOrderActionParams?.potentialActions?.informOrder;
-    if (Array.isArray(informOrder)) {
-        informOrder.forEach((a) => {
-            if (typeof a.recipient?.url === 'string') {
-                informOrderActionsOnReturn.push({
-                    agent: transaction.seller,
-                    object: order,
-                    project: transaction.project,
-                    // purpose: params.transaction,
-                    recipient: {
-                        id: transaction.agent.id,
-                        name: transaction.agent.name,
-                        typeOf: transaction.agent.typeOf,
-                        url: a.recipient.url
-                    },
-                    typeOf: factory.actionType.InformAction
-                });
-            }
-        });
-    }
+    // const informOrder = params.returnOrderActionParams?.potentialActions?.informOrder;
+    // if (Array.isArray(informOrder)) {
+    //     informOrder.forEach((a) => {
+    //         if (typeof a.recipient?.url === 'string') {
+    //             informOrderActionsOnReturn.push({
+    //                 agent: transaction.seller,
+    //                 object: order,
+    //                 project: transaction.project,
+    //                 // purpose: params.transaction,
+    //                 recipient: {
+    //                     id: transaction.agent.id,
+    //                     name: transaction.agent.name,
+    //                     typeOf: transaction.agent.typeOf,
+    //                     url: a.recipient.url
+    //                 },
+    //                 typeOf: factory.actionType.InformAction
+    //             });
+    //         }
+    //     });
+    // }
 
     // 取引に注文ステータス変更時イベントの指定があれば設定
     const informOrderByTransaction = transaction.object.onOrderStatusChanged?.informOrder;
