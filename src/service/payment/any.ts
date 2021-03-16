@@ -186,46 +186,9 @@ export function onRefund(
         project: ProjectRepo;
         task: TaskRepo;
     }) => {
-        const project = await repos.project.findById({ id: refundActionAttributes.project.id });
-
         const potentialActions = refundActionAttributes.potentialActions;
         const now = new Date();
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
-
-        // プロジェクトの通知設定を適用
-        const informOrderByProject = project.settings?.payment?.onRefunded?.informOrder;
-        if (Array.isArray(informOrderByProject)) {
-            if (order !== undefined) {
-                taskAttributes.push(...informOrderByProject.map(
-                    (informOrder): factory.task.IAttributes<factory.taskName.TriggerWebhook> => {
-                        return {
-                            project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
-                            name: factory.taskName.TriggerWebhook,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now,
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: {
-                                agent: {
-                                    typeOf: order.seller.typeOf,
-                                    name: order.seller.name,
-                                    id: order.seller.id,
-                                    project: { typeOf: factory.chevre.organizationType.Project, id: project.id }
-                                },
-                                object: order,
-                                project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
-                                recipient: {
-                                    id: '',
-                                    ...informOrder.recipient
-                                },
-                                typeOf: factory.actionType.InformAction
-                            }
-                        };
-                    })
-                );
-            }
-        }
 
         const sendEmailMessageByPotentialActions = potentialActions?.sendEmailMessage;
         if (Array.isArray(sendEmailMessageByPotentialActions)) {
