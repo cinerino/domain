@@ -65,7 +65,8 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
             // 注文ステータス変更
             order = await repos.order.changeStatus({
                 orderNumber: order.orderNumber,
-                orderStatus: factory.orderStatus.OrderDelivered
+                orderStatus: factory.orderStatus.OrderDelivered,
+                previousOrderStatus: factory.orderStatus.OrderProcessing
             });
 
             // 注文取引検索

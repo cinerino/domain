@@ -637,9 +637,13 @@ export class MongoRepository {
     public async changeStatus(params: {
         orderNumber: string;
         orderStatus: factory.orderStatus;
+        previousOrderStatus: factory.orderStatus;
     }): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOneAndUpdate(
-            { orderNumber: params.orderNumber },
+            {
+                orderNumber: params.orderNumber,
+                orderStatus: params.previousOrderStatus
+            },
             { orderStatus: params.orderStatus },
             {
                 new: true,
@@ -651,8 +655,23 @@ export class MongoRepository {
             }
         )
             .exec();
+
+        // NotFoundであれば状態確認
         if (doc === null) {
-            throw new factory.errors.NotFound('Order');
+            const order = await this.findByOrderNumber(params);
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
+            if (order.orderStatus === params.orderStatus) {
+                // すでに変更済の場合
+                return order;
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+            } else {
+                throw new factory.errors.Argument(
+                    'orderNumber',
+                    `Order ${order.orderNumber} already changed -> ${order.orderStatus}`
+                );
+            }
         }
 
         return doc.toObject();
@@ -667,7 +686,10 @@ export class MongoRepository {
         returner: factory.order.IReturner;
     }): Promise<factory.order.IOrder> {
         const doc = await this.orderModel.findOneAndUpdate(
-            { orderNumber: params.orderNumber },
+            {
+                orderNumber: params.orderNumber,
+                orderStatus: factory.orderStatus.OrderDelivered
+            },
             {
                 orderStatus: factory.orderStatus.OrderReturned,
                 dateReturned: params.dateReturned,
@@ -683,8 +705,23 @@ export class MongoRepository {
             }
         )
             .exec();
+
+        // NotFoundであれば状態確認
         if (doc === null) {
-            throw new factory.errors.NotFound('Order');
+            const order = await this.findByOrderNumber(params);
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
+            if (order.orderStatus === factory.orderStatus.OrderReturned) {
+                // すでに変更済の場合
+                return order;
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next */
+            } else {
+                throw new factory.errors.Argument(
+                    'orderNumber',
+                    `Order ${order.orderNumber} already changed -> ${order.orderStatus}`
+                );
+            }
         }
 
         return doc.toObject();
@@ -704,7 +741,7 @@ export class MongoRepository {
         )
             .exec();
         if (doc === null) {
-            throw new factory.errors.NotFound('Order');
+            throw new factory.errors.NotFound(this.orderModel.modelName);
         }
 
         return doc.toObject();

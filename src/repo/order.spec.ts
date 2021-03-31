@@ -56,7 +56,10 @@ describe('changeStatus()', () => {
             .chain('exec')
             .resolves(new repository.orderModel());
 
-        const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus });
+        const result = await repository.changeStatus({
+            orderNumber: orderNumber, orderStatus: orderStatus,
+            previousOrderStatus: orderStatus
+        });
 
         assert.equal(typeof result, 'object');
         sandbox.verify();
@@ -73,8 +76,17 @@ describe('changeStatus()', () => {
             .once()
             .chain('exec')
             .resolves(null);
+        sandbox.mock(repository.orderModel)
+            .expects('findOne')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
-        const result = await repository.changeStatus({ orderNumber: orderNumber, orderStatus: orderStatus })
+        const result = await repository.changeStatus({
+            orderNumber: orderNumber,
+            orderStatus: orderStatus,
+            previousOrderStatus: orderStatus
+        })
             .catch((err) => err);
 
         assert(result instanceof domain.factory.errors.NotFound);
