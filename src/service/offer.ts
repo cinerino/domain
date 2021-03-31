@@ -366,12 +366,12 @@ export function searchEventTicketOffers(params: {
                 // Chevreで券種オファーを検索
                 offers = await eventService.searchTicketOffers({ id: params.event.id });
 
-                const specifiedStore = params.store;
-                if (specifiedStore !== undefined) {
+                const specifiedStoreId = params.store?.id;
+                if (typeof specifiedStoreId === 'string') {
                     // アプリケーションが利用可能なオファーに絞る
                     offers = offers.filter((o) => {
                         return Array.isArray(o.availableAtOrFrom)
-                            && o.availableAtOrFrom.some((availableApplication) => availableApplication.id === specifiedStore.id);
+                            && o.availableAtOrFrom.some((availableApplication) => availableApplication.id === specifiedStoreId);
                     });
                 }
 
@@ -390,6 +390,21 @@ export function searchEventTicketOffers(params: {
 
                     return isvalid;
                 });
+
+                // addOnsに対しても利用可能アプリケーション設定を適用
+                if (typeof specifiedStoreId === 'string') {
+                    for (const offer of offers) {
+                        if (Array.isArray(offer.addOn)) {
+                            // アプリケーションが利用可能なオファーに絞る
+                            offer.addOn = offer.addOn.filter((offer4addOn) => {
+                                return Array.isArray(offer4addOn.availableAtOrFrom)
+                                    && offer4addOn.availableAtOrFrom.some(
+                                        (availableApplication) => availableApplication.id === specifiedStoreId
+                                    );
+                            });
+                        }
+                    }
+                }
         }
 
         return offers;
