@@ -82,7 +82,9 @@ export function orderProgramMembership(
                     ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : []
                 },
                 seller: { id: String(seller.id) },
-                object: {}
+                object: {
+                    customer: { typeOf: customer.typeOf, id: customer.id }
+                }
             })(repos);
 
             // 取引ID上で注文プロセス

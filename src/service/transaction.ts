@@ -33,6 +33,7 @@ export function updateAgent(params: {
         telephoneRegion?: string;
     };
 }): ITransactionOperation<factory.transaction.placeOrder.IAgent> {
+    // tslint:disable-next-line:cyclomatic-complexity
     return async (repos: { transaction: TransactionRepo }) => {
         let formattedTelephone: string;
         try {
@@ -71,10 +72,33 @@ export function updateAgent(params: {
             ...(typeof params.agent.url === 'string') ? { url: params.agent.url } : {}
         };
 
+        // 注文取引の場合、object.customerにも適用
+        let customer: factory.order.ICustomer | undefined;
+        if (transaction.typeOf === factory.transactionType.PlaceOrder) {
+            // いったんtransaction.object.customer?.typeOfは取引開始時にセットされている前提
+            if (typeof transaction.object.customer?.typeOf === 'string') {
+                customer = {
+                    typeOf: transaction.object.customer?.typeOf,
+                    id: transaction.object.customer?.id,
+                    ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : {},
+                    ...(typeof params.agent.age === 'string') ? { age: params.agent.age } : {},
+                    ...(typeof params.agent.address === 'string') ? { address: params.agent.address } : {},
+                    ...(typeof params.agent.email === 'string') ? { email: params.agent.email } : {},
+                    ...(typeof params.agent.familyName === 'string') ? { familyName: params.agent.familyName } : {},
+                    ...(typeof params.agent.gender === 'string') ? { gender: params.agent.gender } : {},
+                    ...(typeof params.agent.givenName === 'string') ? { givenName: params.agent.givenName } : {},
+                    ...(typeof params.agent.name === 'string') ? { name: params.agent.name } : {},
+                    ...(typeof formattedTelephone === 'string') ? { telephone: formattedTelephone } : {},
+                    ...(typeof params.agent.url === 'string') ? { url: params.agent.url } : {}
+                };
+            }
+        }
+
         await repos.transaction.updateAgent({
             typeOf: params.typeOf,
             id: params.id,
-            agent: newAgent
+            agent: newAgent,
+            ...(customer !== undefined) ? { object: { customer } } : undefined
         });
 
         return newAgent;

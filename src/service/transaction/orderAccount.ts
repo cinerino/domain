@@ -127,7 +127,9 @@ export function orderAccount(params: {
                 .toDate(),
             agent: customer,
             seller: { id: String(seller.id) },
-            object: {}
+            object: {
+                customer: { typeOf: customer.typeOf, id: customer.id }
+            }
         })(repos);
 
         // 取引ID上で注文プロセス

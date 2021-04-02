@@ -325,6 +325,9 @@ export class MongoRepository {
         typeOf: T;
         id: string;
         agent: factory.transaction.placeOrder.IAgent;
+        object?: {
+            customer?: factory.order.ICustomer;
+        };
     }): Promise<void> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
@@ -338,15 +341,16 @@ export class MongoRepository {
                     ...(Array.isArray(params.agent.additionalProperty))
                         ? { 'agent.additionalProperty': params.agent.additionalProperty }
                         : {},
-                    ...(typeof params.agent.age === 'string') ? { 'agent.age': params.agent.age } : {},
-                    ...(typeof params.agent.address === 'string') ? { 'agent.address': params.agent.address } : {},
-                    ...(typeof params.agent.email === 'string') ? { 'agent.email': params.agent.email } : {},
-                    ...(typeof params.agent.familyName === 'string') ? { 'agent.familyName': params.agent.familyName } : {},
-                    ...(typeof params.agent.gender === 'string') ? { 'agent.gender': params.agent.gender } : {},
-                    ...(typeof params.agent.givenName === 'string') ? { 'agent.givenName': params.agent.givenName } : {},
-                    ...(typeof params.agent.name === 'string') ? { 'agent.name': params.agent.name } : {},
-                    ...(typeof params.agent.telephone === 'string') ? { 'agent.telephone': params.agent.telephone } : {},
-                    ...(typeof params.agent.url === 'string') ? { 'agent.url': params.agent.url } : {}
+                    ...(typeof params.agent.age === 'string') ? { 'agent.age': params.agent.age } : undefined,
+                    ...(typeof params.agent.address === 'string') ? { 'agent.address': params.agent.address } : undefined,
+                    ...(typeof params.agent.email === 'string') ? { 'agent.email': params.agent.email } : undefined,
+                    ...(typeof params.agent.familyName === 'string') ? { 'agent.familyName': params.agent.familyName } : undefined,
+                    ...(typeof params.agent.gender === 'string') ? { 'agent.gender': params.agent.gender } : undefined,
+                    ...(typeof params.agent.givenName === 'string') ? { 'agent.givenName': params.agent.givenName } : undefined,
+                    ...(typeof params.agent.name === 'string') ? { 'agent.name': params.agent.name } : undefined,
+                    ...(typeof params.agent.telephone === 'string') ? { 'agent.telephone': params.agent.telephone } : undefined,
+                    ...(typeof params.agent.url === 'string') ? { 'agent.url': params.agent.url } : undefined,
+                    ...(typeof params.object?.customer?.typeOf === 'string') ? { 'object.customer': params.object.customer } : undefined
                 }
                 // $addToSet: {
                 //     ...(Array.isArray(params.agent.additionalProperty))
