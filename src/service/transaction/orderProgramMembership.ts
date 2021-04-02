@@ -83,7 +83,13 @@ export function orderProgramMembership(
                 },
                 seller: { id: String(seller.id) },
                 object: {
-                    customer: { typeOf: customer.typeOf, id: customer.id }
+                    customer: {
+                        typeOf: customer.typeOf,
+                        id: customer.id,
+                        ...(Array.isArray(customer.identifier)) ? { identifier: customer.identifier } : undefined,
+                        ...(typeof customer.memberOf?.typeOf === 'string') ? { memberOf: customer.memberOf } : undefined
+
+                    }
                 }
             })(repos);
 
