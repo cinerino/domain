@@ -80,6 +80,12 @@ export function updateAgent(params: {
                 customer = {
                     typeOf: transaction.object.customer?.typeOf,
                     id: transaction.object.customer?.id,
+                    ...(Array.isArray(transaction.object.customer.identifier))
+                        ? { identifier: transaction.object.customer.identifier }
+                        : undefined,
+                    ...(typeof transaction.object.customer.memberOf?.typeOf === 'string')
+                        ? { memberOf: transaction.object.customer.memberOf }
+                        : undefined,
                     ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : {},
                     ...(typeof params.agent.age === 'string') ? { age: params.agent.age } : {},
                     ...(typeof params.agent.address === 'string') ? { address: params.agent.address } : {},
