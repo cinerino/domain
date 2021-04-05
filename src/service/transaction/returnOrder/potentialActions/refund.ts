@@ -33,27 +33,6 @@ async function createRefundPotentialActions(params: {
             if (assignedRefundCreditCardAction?.potentialActions?.sendEmailMessage?.object !== undefined) {
                 emailCustomization = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object;
             }
-
-            // const informOrderOnRefundParams = assignedRefundCreditCardAction?.potentialActions?.informOrder;
-            // if (Array.isArray(informOrderOnRefundParams)) {
-            //     informOrderOnRefundParams.forEach((informOrderParams) => {
-            //         if (typeof informOrderParams.recipient?.url === 'string') {
-            //             informOrderActionsOnRefund.push({
-            //                 agent: transaction.seller,
-            //                 object: order,
-            //                 project: transaction.project,
-            //                 // purpose: params.transaction,
-            //                 recipient: {
-            //                     id: transaction.agent.id,
-            //                     name: transaction.agent.name,
-            //                     typeOf: transaction.agent.typeOf,
-            //                     url: informOrderParams.recipient.url
-            //                 },
-            //                 typeOf: factory.actionType.InformAction
-            //             });
-            //         }
-            //     });
-            // }
         }
     }
 

@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - オファーのアドオンに対しても利用可能アプリケーション設定を適用
 - 注文ステータス変更の冪等性担保
 - 注文取引のカスタマー情報をobject.customerにセットするように調整
+- order.customerをtransaction.object.customerから生成するように調整
 
 ### Deprecated
 

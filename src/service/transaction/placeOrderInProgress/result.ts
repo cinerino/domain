@@ -83,18 +83,33 @@ function createSeller(params: {
 function createCustomer(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): factory.order.ICustomer {
-    const profile = params.transaction.agent;
+    // const profile = params.transaction.agent;
+    // const customerByTransaction = params.transaction.object.customer;
+
+    // return {
+    //     ...profile,
+    //     identifier: (Array.isArray(profile.identifier)) ? profile.identifier : [],
+    //     name: (typeof profile.name === 'string') ? profile.name : `${profile.givenName} ${profile.familyName}`,
+    //     ...(typeof profile.url === 'string') ? { url: profile.url } : undefined,
+    //     // transaction.object.customerが存在すれば適用する
+    //     // transaction.object.customerはstart時点でapiが自動的に指定、あるいは、その後クライアントから変更されるか
+    //     ...(typeof customerByTransaction?.typeOf === 'string') ? { typeOf: customerByTransaction.typeOf } : undefined,
+    //     ...(typeof customerByTransaction?.id === 'string') ? { id: customerByTransaction.id } : undefined
+    // };
+
+    // transaction.object.customerはstart時点でapiが自動的に指定、あるいは、その後クライアントから変更されるか
     const customerByTransaction = params.transaction.object.customer;
+    if (typeof customerByTransaction?.id !== 'string') {
+        throw new factory.errors.Argument('transaction', 'object.customer.id undefined');
+    }
+    if (typeof customerByTransaction?.typeOf !== 'string') {
+        throw new factory.errors.Argument('transaction', 'object.customer.typeOf undefined');
+    }
 
     return {
-        ...profile,
-        identifier: (Array.isArray(profile.identifier)) ? profile.identifier : [],
-        name: (typeof profile.name === 'string') ? profile.name : `${profile.givenName} ${profile.familyName}`,
-        ...(typeof profile.url === 'string') ? { url: profile.url } : undefined,
-        // transaction.object.customerが存在すれば適用する
-        // transaction.object.customerはstart時点でapiが自動的に指定、あるいは、その後クライアントから変更されるか
-        ...(typeof customerByTransaction?.typeOf === 'string') ? { typeOf: customerByTransaction.typeOf } : undefined,
-        ...(typeof customerByTransaction?.id === 'string') ? { id: customerByTransaction.id } : undefined
+        ...customerByTransaction,
+        identifier: (Array.isArray(customerByTransaction.identifier)) ? customerByTransaction.identifier : [],
+        name: (typeof customerByTransaction.name === 'string') ? customerByTransaction.name : `${customerByTransaction.givenName} ${customerByTransaction.familyName}`
     };
 }
 

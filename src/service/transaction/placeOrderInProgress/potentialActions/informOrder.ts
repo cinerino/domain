@@ -8,33 +8,6 @@ export async function createInformOrderOnPlacedActions(params: {
 }): Promise<factory.action.interact.inform.IAttributes<any, any>[]> {
     const informOrderActionsOnPlaceOrder: factory.action.interact.inform.IAttributes<any, any>[] = [];
 
-    // const potentialActionsParams = params.potentialActions?.order?.potentialActions?.informOrder;
-    // if (Array.isArray(potentialActionsParams)) {
-    //     potentialActionsParams.forEach((a) => {
-    //         if (a.recipient !== undefined) {
-    //             if (typeof a.recipient.url === 'string') {
-    //                 informOrderActionsOnPlaceOrder.push({
-    //                     agent: params.transaction.seller,
-    //                     object: {
-    //                         ...params.order,
-    //                         // 注文トークンを情報付加
-    //                         ...(typeof params.token === 'string') ? { token: params.token } : undefined
-    //                     },
-    //                     project: params.transaction.project,
-    //                     // purpose: params.transaction,
-    //                     recipient: {
-    //                         id: params.transaction.agent.id,
-    //                         name: params.transaction.agent.name,
-    //                         typeOf: params.transaction.agent.typeOf,
-    //                         url: a.recipient.url
-    //                     },
-    //                     typeOf: factory.actionType.InformAction
-    //                 });
-    //             }
-    //         }
-    //     });
-    // }
-
     // 取引に注文ステータス変更時イベントの指定があれば設定
     const onOrderStatusChangedParams = params.transaction.object?.onOrderStatusChanged?.informOrder;
     if (Array.isArray(onOrderStatusChangedParams)) {
@@ -73,29 +46,6 @@ export async function createInformOrderOnSentActions(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
 }): Promise<factory.action.interact.inform.IAttributes<any, any>[]> {
     const informOrderActionsOnSentOrder: factory.action.interact.inform.IAttributes<any, any>[] = [];
-
-    // const potentialActionsParams = params.potentialActions?.order?.potentialActions?.sendOrder?.potentialActions?.informOrder;
-    // if (Array.isArray(potentialActionsParams)) {
-    //     potentialActionsParams.forEach((a) => {
-    //         if (a.recipient !== undefined) {
-    //             if (typeof a.recipient.url === 'string') {
-    //                 informOrderActionsOnSentOrder.push({
-    //                     agent: params.transaction.seller,
-    //                     object: params.order,
-    //                     project: params.transaction.project,
-    //                     // purpose: params.transaction,
-    //                     recipient: {
-    //                         id: params.transaction.agent.id,
-    //                         name: params.transaction.agent.name,
-    //                         typeOf: params.transaction.agent.typeOf,
-    //                         url: a.recipient.url
-    //                     },
-    //                     typeOf: factory.actionType.InformAction
-    //                 });
-    //             }
-    //         }
-    //     });
-    // }
 
     // 取引に注文ステータス変更時イベントの指定があれば設定
     const onOrderStatusChangedParams = params.transaction.object?.onOrderStatusChanged?.informOrder;
