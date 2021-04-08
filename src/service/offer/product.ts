@@ -8,11 +8,15 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
+import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleChevreError } from '../../errorHandler';
+
+import { createPointAwardIdentifier } from '../delivery';
+import { publishOrderNumberIfNotExist } from '../transaction/placeOrderInProgress';
 
 import {
     availableProductTypes,
@@ -31,6 +35,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    orderNumber: OrderNumberRepo;
     ownershipInfo: OwnershipInfoRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
@@ -128,6 +133,7 @@ export function authorize(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        orderNumber: OrderNumberRepo;
         ownershipInfo: OwnershipInfoRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
@@ -170,11 +176,18 @@ export function authorize(params: {
             now: now
         })(repos);
 
+        // ポイント特典の識別子に利用するため注文番号を先に発行
+        const orderNumber = await publishOrderNumberIfNotExist({
+            id: transaction.id,
+            object: { orderDate: new Date() }
+        })(repos);
+
         let acceptedOffer = await validateAcceptedOffers({
             object: params.object,
             product: product,
             availableOffers: availableOffers,
-            seller: transaction.seller
+            seller: transaction.seller,
+            orderNumber
         })(repos);
 
         acceptedOffer = await createServiceOutputIdentifier({ acceptedOffer, product })({
@@ -371,6 +384,7 @@ export function validateAcceptedOffers(params: {
     product: factory.chevre.product.IProduct;
     availableOffers: factory.chevre.event.screeningEvent.ITicketOffer[];
     seller: factory.seller.ISeller;
+    orderNumber: string;
 }) {
     return async (__: {
     }): Promise<factory.action.authorize.offer.product.IObject> => {
@@ -410,6 +424,24 @@ export function validateAcceptedOffers(params: {
                 throw new factory.errors.NotFound('Offer', `Offer ${offerWithoutDetail.id} not found`);
             }
 
+            // ポイント特典入金先の指定があれば入金識別子を発行
+            let pointAward: factory.chevre.product.IPointAward | undefined;
+            let pointAwardPurposeIdentifier: string | undefined;
+            const pointAwardToAccountNumber = offerWithoutDetail.itemOffered?.pointAward?.toLocation?.identifer;
+            if (typeof pointAwardToAccountNumber === 'string' && pointAwardToAccountNumber.length > 0) {
+                pointAwardPurposeIdentifier = createPointAwardIdentifier({
+                    project: project,
+                    purpose: { orderNumber: params.orderNumber },
+                    toLocation: { accountNumber: pointAwardToAccountNumber }
+                });
+
+                pointAward = {
+                    ...offerWithoutDetail.itemOffered?.pointAward,
+                    typeOf: 'MoneyTransfer',
+                    purpose: { identifier: pointAwardPurposeIdentifier }
+                };
+            }
+
             return {
                 ...offerWithoutDetail,
                 ...offer,
@@ -426,9 +458,7 @@ export function validateAcceptedOffers(params: {
                         // 発行者は販売者でいったん固定
                         issuedBy: issuedBy
                     },
-                    ...(offerWithoutDetail.itemOffered?.pointAward !== undefined)
-                        ? { pointAward: offerWithoutDetail.itemOffered?.pointAward }
-                        : undefined
+                    ...(pointAward !== undefined) ? { pointAward } : undefined
                 },
                 seller: { project: project, typeOf: params.seller.typeOf, id: params.seller.id, name: params.seller.name }
             };

@@ -17,8 +17,6 @@ async function main() {
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const invoiceRepo = new domain.repository.Invoice(mongoose.connection);
     const orderRepo = new domain.repository.Order(mongoose.connection);
-    const codeRepo = new domain.repository.Code(mongoose.connection);
-    const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
 
     let result;
 
@@ -51,12 +49,6 @@ async function main() {
     })
         .exec();
     console.log('orders deleted', result);
-
-    result = await ownershipInfoRepo.ownershipInfoModel.deleteMany({
-        ownedFrom: { $lt: startThrough }
-    })
-        .exec();
-    console.log('ownershipInfos deleted', result);
 
     // await mongoose.disconnect();
 }

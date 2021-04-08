@@ -236,6 +236,7 @@ function processAuthorizeProductOffer(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        orderNumber: OrderNumberRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
