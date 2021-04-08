@@ -307,17 +307,19 @@ export function selectSeats(
         const sectionOffer = screeningRoomSectionOffers[0];
 
         const seats = sectionOffer.containsPlace;
-        const unavailableSeats = seats.filter((s) => {
-            return Array.isArray(s.offers)
-                && s.offers.length > 0
-                && s.offers[0].availability === chevre.factory.itemAvailability.OutOfStock;
-        })
-            .map((s) => {
-                return {
-                    seatSection: sectionOffer.branchCode,
-                    seatNumber: s.branchCode
-                };
-            });
+        const unavailableSeats = (Array.isArray(seats))
+            ? seats.filter((s) => {
+                return Array.isArray(s.offers)
+                    && s.offers.length > 0
+                    && s.offers[0].availability === chevre.factory.itemAvailability.OutOfStock;
+            })
+                .map((s) => {
+                    return {
+                        seatSection: sectionOffer.branchCode,
+                        seatNumber: s.branchCode
+                    };
+                })
+            : [];
         const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
         debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
@@ -335,20 +337,24 @@ export function selectSeats(
             }
 
             // まず利用可能な座席は全座席
-            let availableSeats = sectionOffer.containsPlace.map((p) => {
-                return {
-                    typeOf: p.typeOf,
-                    branchCode: p.branchCode,
-                    seatingType: p.seatingType
-                };
-            });
-            let availableSeatsForAdditionalStocks = sectionOffer.containsPlace.map((p) => {
-                return {
-                    typeOf: p.typeOf,
-                    branchCode: p.branchCode,
-                    seatingType: p.seatingType
-                };
-            });
+            let availableSeats = (Array.isArray(sectionOffer.containsPlace))
+                ? sectionOffer.containsPlace.map((p) => {
+                    return {
+                        typeOf: p.typeOf,
+                        branchCode: p.branchCode,
+                        seatingType: p.seatingType
+                    };
+                })
+                : [];
+            let availableSeatsForAdditionalStocks = (Array.isArray(sectionOffer.containsPlace))
+                ? sectionOffer.containsPlace.map((p) => {
+                    return {
+                        typeOf: p.typeOf,
+                        branchCode: p.branchCode,
+                        seatingType: p.seatingType
+                    };
+                })
+                : [];
             debug(availableSeats.length, 'seats exist');
 
             // 未確保の座席に絞る
@@ -490,363 +496,367 @@ export function validateAcceptedOffers(params: {
         const acceptedOffersWithoutDetail = params.object.acceptedOffer;
 
         // 利用可能なチケットオファーであれば受け入れる
-        // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-        const acceptedOffers = await Promise.all(acceptedOffersWithoutDetail.map(async (offerWithoutDetail) => {
-            const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
-            if (offer === undefined) {
-                throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
-            }
-
-            // 座席指定であれば、座席タイプチャージを検索する
-            let seatPriceComponent: factory.chevre.place.seat.IPriceComponent[] | undefined;
-            let ticketedSeat = (<any>offerWithoutDetail).ticketedSeat; // 互換性維持対応
-            if (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null) {
-                if (offerWithoutDetail.itemOffered.serviceOutput !== undefined && offerWithoutDetail.itemOffered.serviceOutput !== null) {
-                    if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== undefined
-                        && offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== null) {
-                        if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat !== undefined
-                            && offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat !== null) {
-                            ticketedSeat = offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat;
-                        }
-                    }
+        const acceptedOffers = (Array.isArray(acceptedOffersWithoutDetail))
+            // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+            ? await Promise.all(acceptedOffersWithoutDetail.map(async (offerWithoutDetail) => {
+                const offer = availableTicketOffers.find((o) => o.id === offerWithoutDetail.id);
+                if (offer === undefined) {
+                    throw new factory.errors.NotFound('Ticket Offer', `Ticket Offer ${offerWithoutDetail.id} not found`);
                 }
 
-            }
-            if (ticketedSeat !== undefined && ticketedSeat !== null) {
-                const seatSection = ticketedSeat.seatSection;
-                const seatNumber = ticketedSeat.seatNumber;
-
-                const availableSeatSectionOffer = availableSeatOffers.find((o) => o.branchCode === seatSection);
-                if (availableSeatSectionOffer !== undefined) {
-                    if (Array.isArray(availableSeatSectionOffer.containsPlace)) {
-                        const availableSeat =
-                            availableSeatSectionOffer.containsPlace.find((o) => o.branchCode === seatNumber);
-                        if (availableSeat !== undefined) {
-                            if (Array.isArray(availableSeat.offers)) {
-                                if (availableSeat.offers[0] !== undefined) {
-                                    const availableSeatOffer = availableSeat.offers[0];
-                                    if (availableSeatOffer !== undefined) {
-                                        if (availableSeatOffer.priceSpecification !== undefined
-                                            && availableSeatOffer.priceSpecification !== null
-                                            && Array.isArray(availableSeatOffer.priceSpecification.priceComponent)) {
-                                            seatPriceComponent = availableSeatOffer.priceSpecification.priceComponent;
-                                        }
-                                    }
-                                }
+                // 座席指定であれば、座席タイプチャージを検索する
+                let seatPriceComponent: factory.chevre.place.seat.IPriceComponent[] | undefined;
+                let ticketedSeat = (<any>offerWithoutDetail).ticketedSeat; // 互換性維持対応
+                if (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null) {
+                    // tslint:disable-next-line:max-line-length
+                    if (offerWithoutDetail.itemOffered.serviceOutput !== undefined && offerWithoutDetail.itemOffered.serviceOutput !== null) {
+                        if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== undefined
+                            && offerWithoutDetail.itemOffered.serviceOutput.reservedTicket !== null) {
+                            if (offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat !== undefined
+                                && offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat !== null) {
+                                ticketedSeat = offerWithoutDetail.itemOffered.serviceOutput.reservedTicket.ticketedSeat;
                             }
                         }
                     }
+
                 }
-            }
+                if (ticketedSeat !== undefined && ticketedSeat !== null) {
+                    const seatSection = ticketedSeat.seatSection;
+                    const seatNumber = ticketedSeat.seatNumber;
 
-            const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
-                ...offerWithoutDetail,
-                ...offer,
-                itemOffered: {
-                    serviceType: offer.itemOffered.serviceType,
-                    serviceOutput: (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null)
-                        ? offerWithoutDetail.itemOffered.serviceOutput
-                        : undefined
-                },
-                addOn: (Array.isArray(offerWithoutDetail.addOn))
-                    ? offerWithoutDetail.addOn.map((a) => {
-                        return {
-                            project: params.project,
-                            typeOf: factory.chevre.offerType.Offer,
-                            id: a.id,
-                            priceCurrency: offer.priceCurrency
-                        };
-                    })
-                    : [],
-                priceSpecification: {
-                    // イベントオファーと座席オファーの価格要素をマージ
-                    ...offer.priceSpecification,
-                    priceComponent: [
-                        ...offer.priceSpecification.priceComponent,
-                        ...(Array.isArray(seatPriceComponent)) ? seatPriceComponent : []
-                    ]
-                },
-                // 追加属性をマージ
-                additionalProperty: [
-                    ...(Array.isArray(offerWithoutDetail.additionalProperty)) ? offerWithoutDetail.additionalProperty : [],
-                    ...(Array.isArray(offer.additionalProperty)) ? offer.additionalProperty : []
-                ]
-            };
-
-            const offers = params.event.offers;
-            if (offers === undefined) {
-                throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
-            }
-
-            let offeredThrough = offers.offeredThrough;
-            if (offeredThrough === undefined) {
-                offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
-            }
-
-            switch (offeredThrough.identifier) {
-                case factory.service.webAPI.Identifier.COA:
-                    let coaInfo: factory.event.screeningEvent.ICOAOffer;
-
-                    // 制限単位がn人単位(例えば夫婦割り)の場合、同一券種の数を確認
-                    // '001'の値は、区分マスター取得APIにて、"kubunCode": "011"を指定すると取得できる
-                    // if (availableSalesTicket.limitUnit === '001') {
-                    // }
-
-                    // tslint:disable-next-line:max-line-length
-                    const mvtkChargeSpec = <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification>>
-                        acceptedOffer.priceSpecification.priceComponent.find(
-                            (component) => component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification
-                        );
-
-                    // ムビチケオファーの場合
-                    if (mvtkChargeSpec !== undefined) {
-                        // ムビチケ情報指定が必須
-                        const movieTicket = offerWithoutDetail.paymentMethod;
-                        if (movieTicket === undefined) {
-                            throw new factory.errors.Argument('Offer', 'Movie Ticket not specified');
-                        }
-                        if (movieTicket.identifier === undefined) {
-                            throw new factory.errors.Argument('Offer', 'Movie Ticket identifier not specified');
-                        }
-                        if (movieTicket.accessCode === undefined) {
-                            throw new factory.errors.Argument('Offer', 'Movie Ticket accessCode not specified');
-                        }
-
-                        const sellerService = new chevre.service.Seller({
-                            endpoint: credentials.chevre.endpoint,
-                            auth: chevreAuthClient
-                        });
-                        const seller = await sellerService.findById({ id: params.seller.id });
-                        const paymentAccepted = seller.paymentAccepted?.some((a) => a.paymentMethodType === movieTicket.typeOf);
-                        if (paymentAccepted !== true) {
-                            throw new factory.errors.Argument('transactionId', 'payment not accepted');
-                        }
-
-                        // ムビチケ認証
-                        const payService = new chevre.service.transaction.Pay({
-                            endpoint: credentials.chevre.endpoint,
-                            auth: chevreAuthClient
-                        });
-                        const checkAction = await payService.check({
-                            project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
-                            typeOf: chevre.factory.actionType.CheckAction,
-                            agent: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
-                            object: [{
-                                typeOf: chevre.factory.service.paymentService.PaymentServiceType.MovieTicket,
-                                paymentMethod: {
-                                    typeOf: movieTicket.typeOf,
-                                    additionalProperty: [],
-                                    name: movieTicket.typeOf,
-                                    paymentMethodId: '' // 使用されないので空でよし
-                                },
-                                movieTickets: [{
-                                    project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-                                    typeOf: movieTicket.typeOf,
-                                    identifier: movieTicket.identifier,
-                                    accessCode: movieTicket.accessCode,
-                                    serviceType: '',
-                                    serviceOutput: {
-                                        reservationFor: { id: params.event.id, typeOf: params.event.typeOf },
-                                        reservedTicket: {
-                                            ticketedSeat: {
-                                                typeOf: chevre.factory.placeType.Seat,
-                                                // seatingType?: ISeatingType;
-                                                seatNumber: ticketedSeat.seatNumber,
-                                                seatRow: '',
-                                                seatSection: ticketedSeat.seatSection
+                    const availableSeatSectionOffer = availableSeatOffers.find((o) => o.branchCode === seatSection);
+                    if (availableSeatSectionOffer !== undefined) {
+                        if (Array.isArray(availableSeatSectionOffer.containsPlace)) {
+                            const availableSeat =
+                                availableSeatSectionOffer.containsPlace.find((o) => o.branchCode === seatNumber);
+                            if (availableSeat !== undefined) {
+                                if (Array.isArray(availableSeat.offers)) {
+                                    if (availableSeat.offers[0] !== undefined) {
+                                        const availableSeatOffer = availableSeat.offers[0];
+                                        if (availableSeatOffer !== undefined) {
+                                            if (availableSeatOffer.priceSpecification !== undefined
+                                                && availableSeatOffer.priceSpecification !== null
+                                                && Array.isArray(availableSeatOffer.priceSpecification.priceComponent)) {
+                                                seatPriceComponent = availableSeatOffer.priceSpecification.priceComponent;
                                             }
                                         }
                                     }
-                                }],
-                                seller: params.seller
-                            }]
-                        });
-                        const checkResult = checkAction.result;
-
-                        if (checkResult?.movieTickets.length === 0) {
-                            throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
-                        }
-                        if (checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut === null) {
-                            throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
-                        }
-                        if (checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo === null) {
-                            throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
-                        }
-
-                        const purchaseNumberInfo = checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0];
-                        const valieMovieTicketInfo = checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0];
-                        if (purchaseNumberInfo === undefined) {
-                            throw new factory.errors.Argument('Offer', 'purchaseNumberAuthResult.knyknrNoInfoOut[0] undefined');
-                        }
-                        if (valieMovieTicketInfo === undefined) {
-                            throw new factory.errors.Argument('Offer', 'purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0] undefined');
-                        }
-
-                        let eventCOAInfo: any;
-                        if (Array.isArray(params.event.additionalProperty)) {
-                            const coaInfoProperty = params.event.additionalProperty.find((p) => p.name === 'coaInfo');
-                            eventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
-                        }
-
-                        // ムビチケ認証結果を使ってCOA券種に変換
-                        let mvtkTicketCodeIn: COA.factory.master.IMvtkTicketcodeArgs;
-                        let availableSalesTicket: COA.factory.master.IMvtkTicketcodeResult;
-                        try {
-                            mvtkTicketCodeIn = {
-                                theaterCode: eventCOAInfo.theaterCode,
-                                kbnDenshiken: purchaseNumberInfo.dnshKmTyp,
-                                kbnMaeuriken: purchaseNumberInfo.znkkkytsknGkjknTyp,
-                                kbnKensyu: valieMovieTicketInfo.ykknshTyp,
-                                salesPrice: Number(valieMovieTicketInfo.knshknhmbiUnip),
-                                appPrice: Number(valieMovieTicketInfo.kijUnip),
-                                kbnEisyahousiki: valieMovieTicketInfo.eishhshkTyp,
-                                titleCode: eventCOAInfo.titleCode,
-                                titleBranchNum: eventCOAInfo.titleBranchNum,
-                                dateJouei: eventCOAInfo.dateJouei
-                            };
-                            availableSalesTicket = await masterService.mvtkTicketcode(mvtkTicketCodeIn);
-                        } catch (error) {
-                            // COAサービスエラーの場合ハンドリング
-                            if (error.name === 'COAServiceError') {
-                                // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
-                                // 500未満であればクライアントエラーとみなす
-                                // tslint:disable-next-line:no-single-line-block-comment
-                                /* istanbul ignore else */
-                                if (error.code < INTERNAL_SERVER_ERROR) {
-                                    throw new factory.errors.NotFound(
-                                        `Offers`,
-                                        `Movie Ticket ${movieTicket.identifier} unavailable`
-                                    );
                                 }
                             }
-
-                            throw error;
                         }
-
-                        // const offerWithDetails: factory.action.authorize.offer.seatReservation.IAcceptedOffer = {
-                        //     typeOf: 'Offer',
-                        //     price: offer.ticketInfo.mvtkSalesPrice + availableSalesTicket.addPrice,
-                        //     priceCurrency: factory.priceCurrency.JPY,
-                        //     seatNumber: offer.seatNumber,
-                        //     seatSection: offer.seatSection,
-                        //     ticketInfo: {
-                        //     }
-                        // };
-
-                        coaInfo = {
-                            ticketCode: availableSalesTicket.ticketCode,
-                            ticketName: availableSalesTicket.ticketName,
-                            ticketNameEng: availableSalesTicket.ticketNameEng,
-                            ticketNameKana: availableSalesTicket.ticketNameKana,
-                            stdPrice: 0,
-                            addPrice: availableSalesTicket.addPrice,
-                            disPrice: 0,
-                            salePrice: availableSalesTicket.addPrice,
-                            spseatAdd1: 0,
-                            spseatAdd2: 0,
-                            spseatKbn: '',
-                            addGlasses: 0, // まずメガネ代金なしでデータをセット
-                            mvtkAppPrice: mvtkTicketCodeIn.appPrice,
-                            ticketCount: 1,
-                            seatNum: ((<any>acceptedOffer).ticketedSeat !== undefined) ? (<any>acceptedOffer).ticketedSeat.seatNumber : '',
-                            kbnEisyahousiki: mvtkTicketCodeIn.kbnEisyahousiki,
-                            mvtkNum: movieTicket.identifier,
-                            mvtkKbnDenshiken: mvtkTicketCodeIn.kbnDenshiken,
-                            mvtkKbnMaeuriken: mvtkTicketCodeIn.kbnMaeuriken,
-                            mvtkKbnKensyu: mvtkTicketCodeIn.kbnKensyu,
-                            mvtkSalesPrice: mvtkTicketCodeIn.salesPrice,
-                            kbnMgtk: '',
-                            usePoint: 0
-                        };
-
-                        // ムビチケ情報が確定して初めて価格仕様が決定する
-                        acceptedOffer.priceSpecification.priceComponent = [
-                            {
-                                project: params.project,
-                                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
-                                price: 0,
-                                priceCurrency: factory.chevre.priceCurrency.JPY,
-                                valueAddedTaxIncluded: true,
-                                referenceQuantity: {
-                                    typeOf: 'QuantitativeValue',
-                                    unitCode: factory.chevre.unitCode.C62,
-                                    value: 1
-                                }
-                            },
-                            {
-                                project: params.project,
-                                typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
-                                price: 0,
-                                priceCurrency: factory.chevre.priceCurrency.JPY,
-                                valueAddedTaxIncluded: true,
-                                appliesToVideoFormat: '2D',
-                                appliesToMovieTicket: {
-                                    typeOf: factory.chevre.service.paymentService.PaymentServiceType.MovieTicket,
-                                    serviceType: mvtkTicketCodeIn.kbnKensyu,
-                                    serviceOutput: { typeOf: factory.chevre.paymentMethodType.MovieTicket }
-                                },
-                                ...{
-                                    // 互換性維持対応
-                                    appliesToMovieTicketType: mvtkTicketCodeIn.kbnKensyu
-                                }
-                            }
-                        ];
-
-                        // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
-                        // const includeGlasses = (offer.ticketInfo.addGlasses > 0);
-                        // if (includeGlasses) {
-                        //     offerWithDetails.ticketInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
-                        //     offerWithDetails.price += availableSalesTicket.addPriceGlasses;
-                        //     offerWithDetails.ticketInfo.salePrice += availableSalesTicket.addPriceGlasses;
-                        //     offerWithDetails.ticketInfo.addGlasses = availableSalesTicket.addPriceGlasses;
-                        // }
-                    } else {
-                        const coaInfoProperty = acceptedOffer.additionalProperty.find((p) => p.name === 'coaInfo');
-                        if (coaInfoProperty === undefined) {
-                            throw new factory.errors.NotFound('Offer coaInfo');
-                        }
-
-                        coaInfo = {
-                            ...JSON.parse(coaInfoProperty.value),
-                            disPrice: 0,
-                            addGlasses: 0,
-                            mvtkAppPrice: 0,
-                            ticketCount: 1,
-                            seatNum: ((<any>acceptedOffer).ticketedSeat !== undefined) ? (<any>acceptedOffer).ticketedSeat.seatNumber : '',
-                            kbnEisyahousiki: '00', // ムビチケを使用しない場合の初期値をセット
-                            mvtkNum: '', // ムビチケを使用しない場合の初期値をセット
-                            mvtkKbnDenshiken: '00', // ムビチケを使用しない場合の初期値をセット
-                            mvtkKbnMaeuriken: '00', // ムビチケを使用しない場合の初期値をセット
-                            mvtkKbnKensyu: '00', // ムビチケを使用しない場合の初期値をセット
-                            mvtkSalesPrice: 0, // ムビチケを使用しない場合の初期値をセット
-                            usePoint: 0
-                        };
-
-                        // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
-                        // const includeGlasses = (offer.ticketInfo.addGlasses > 0);
-                        // if (includeGlasses) {
-                        //     coaInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
-                        //     acceptedOffer.price += availableSalesTicket.addGlasses;
-                        //     coaInfo.salePrice += availableSalesTicket.addGlasses;
-                        //     coaInfo.addGlasses = availableSalesTicket.addGlasses;
-                        // }
                     }
+                }
 
-                    // coaInfoプロパティを上書きする
-                    acceptedOffer.additionalProperty = acceptedOffer.additionalProperty.filter((p) => p.name !== 'coaInfo');
-                    acceptedOffer.additionalProperty.push({
-                        name: 'coaInfo',
-                        value: JSON.stringify(coaInfo)
-                    });
+                // tslint:disable-next-line:max-line-length
+                const acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
+                    ...offerWithoutDetail,
+                    ...offer,
+                    itemOffered: {
+                        serviceType: offer.itemOffered.serviceType,
+                        serviceOutput: (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null)
+                            ? offerWithoutDetail.itemOffered.serviceOutput
+                            : undefined
+                    },
+                    addOn: (Array.isArray(offerWithoutDetail.addOn))
+                        ? offerWithoutDetail.addOn.map((a) => {
+                            return {
+                                project: params.project,
+                                typeOf: factory.chevre.offerType.Offer,
+                                id: a.id,
+                                priceCurrency: offer.priceCurrency
+                            };
+                        })
+                        : [],
+                    priceSpecification: {
+                        // イベントオファーと座席オファーの価格要素をマージ
+                        ...offer.priceSpecification,
+                        priceComponent: [
+                            ...offer.priceSpecification.priceComponent,
+                            ...(Array.isArray(seatPriceComponent)) ? seatPriceComponent : []
+                        ]
+                    },
+                    // 追加属性をマージ
+                    additionalProperty: [
+                        ...(Array.isArray(offerWithoutDetail.additionalProperty)) ? offerWithoutDetail.additionalProperty : [],
+                        ...(Array.isArray(offer.additionalProperty)) ? offer.additionalProperty : []
+                    ]
+                };
 
-                    break;
+                const offers = params.event.offers;
+                if (offers === undefined) {
+                    throw new factory.errors.NotFound('EventOffers', 'Event offers undefined');
+                }
 
-                default:
-                // no op
-            }
+                let offeredThrough = offers.offeredThrough;
+                if (offeredThrough === undefined) {
+                    offeredThrough = { typeOf: 'WebAPI', identifier: factory.service.webAPI.Identifier.Chevre };
+                }
 
-            return acceptedOffer;
-        }));
+                switch (offeredThrough.identifier) {
+                    case factory.service.webAPI.Identifier.COA:
+                        let coaInfo: factory.event.screeningEvent.ICOAOffer;
+
+                        // 制限単位がn人単位(例えば夫婦割り)の場合、同一券種の数を確認
+                        // '001'の値は、区分マスター取得APIにて、"kubunCode": "011"を指定すると取得できる
+                        // if (availableSalesTicket.limitUnit === '001') {
+                        // }
+
+                        // tslint:disable-next-line:max-line-length
+                        const mvtkChargeSpec = <factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification>>
+                            acceptedOffer.priceSpecification.priceComponent.find(
+                                (component) => component.typeOf === factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification
+                            );
+
+                        // ムビチケオファーの場合
+                        if (mvtkChargeSpec !== undefined) {
+                            // ムビチケ情報指定が必須
+                            const movieTicket = offerWithoutDetail.paymentMethod;
+                            if (movieTicket === undefined) {
+                                throw new factory.errors.Argument('Offer', 'Movie Ticket not specified');
+                            }
+                            if (movieTicket.identifier === undefined) {
+                                throw new factory.errors.Argument('Offer', 'Movie Ticket identifier not specified');
+                            }
+                            if (movieTicket.accessCode === undefined) {
+                                throw new factory.errors.Argument('Offer', 'Movie Ticket accessCode not specified');
+                            }
+
+                            const sellerService = new chevre.service.Seller({
+                                endpoint: credentials.chevre.endpoint,
+                                auth: chevreAuthClient
+                            });
+                            const seller = await sellerService.findById({ id: params.seller.id });
+                            const paymentAccepted = seller.paymentAccepted?.some((a) => a.paymentMethodType === movieTicket.typeOf);
+                            if (paymentAccepted !== true) {
+                                throw new factory.errors.Argument('transactionId', 'payment not accepted');
+                            }
+
+                            // ムビチケ認証
+                            const payService = new chevre.service.transaction.Pay({
+                                endpoint: credentials.chevre.endpoint,
+                                auth: chevreAuthClient
+                            });
+                            const checkAction = await payService.check({
+                                project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
+                                typeOf: chevre.factory.actionType.CheckAction,
+                                agent: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
+                                object: [{
+                                    typeOf: chevre.factory.service.paymentService.PaymentServiceType.MovieTicket,
+                                    paymentMethod: {
+                                        typeOf: movieTicket.typeOf,
+                                        additionalProperty: [],
+                                        name: movieTicket.typeOf,
+                                        paymentMethodId: '' // 使用されないので空でよし
+                                    },
+                                    movieTickets: [{
+                                        project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+                                        typeOf: movieTicket.typeOf,
+                                        identifier: movieTicket.identifier,
+                                        accessCode: movieTicket.accessCode,
+                                        serviceType: '',
+                                        serviceOutput: {
+                                            reservationFor: { id: params.event.id, typeOf: params.event.typeOf },
+                                            reservedTicket: {
+                                                ticketedSeat: {
+                                                    typeOf: chevre.factory.placeType.Seat,
+                                                    // seatingType?: ISeatingType;
+                                                    seatNumber: ticketedSeat.seatNumber,
+                                                    seatRow: '',
+                                                    seatSection: ticketedSeat.seatSection
+                                                }
+                                            }
+                                        }
+                                    }],
+                                    seller: params.seller
+                                }]
+                            });
+                            const checkResult = checkAction.result;
+
+                            if (checkResult?.movieTickets.length === 0) {
+                                throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
+                            }
+                            if (checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut === null) {
+                                throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
+                            }
+                            if (checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo === null) {
+                                throw new factory.errors.Argument('Offer', 'Available Movie Ticket not accepted');
+                            }
+
+                            const purchaseNumberInfo = checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0];
+                            const valieMovieTicketInfo = checkResult?.purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0];
+                            if (purchaseNumberInfo === undefined) {
+                                throw new factory.errors.Argument('Offer', 'purchaseNumberAuthResult.knyknrNoInfoOut[0] undefined');
+                            }
+                            if (valieMovieTicketInfo === undefined) {
+                                throw new factory.errors.Argument('Offer', 'purchaseNumberAuthResult.knyknrNoInfoOut[0].ykknInfo[0] undefined');
+                            }
+
+                            let eventCOAInfo: any;
+                            if (Array.isArray(params.event.additionalProperty)) {
+                                const coaInfoProperty = params.event.additionalProperty.find((p) => p.name === 'coaInfo');
+                                eventCOAInfo = (coaInfoProperty !== undefined) ? JSON.parse(coaInfoProperty.value) : undefined;
+                            }
+
+                            // ムビチケ認証結果を使ってCOA券種に変換
+                            let mvtkTicketCodeIn: COA.factory.master.IMvtkTicketcodeArgs;
+                            let availableSalesTicket: COA.factory.master.IMvtkTicketcodeResult;
+                            try {
+                                mvtkTicketCodeIn = {
+                                    theaterCode: eventCOAInfo.theaterCode,
+                                    kbnDenshiken: purchaseNumberInfo.dnshKmTyp,
+                                    kbnMaeuriken: purchaseNumberInfo.znkkkytsknGkjknTyp,
+                                    kbnKensyu: valieMovieTicketInfo.ykknshTyp,
+                                    salesPrice: Number(valieMovieTicketInfo.knshknhmbiUnip),
+                                    appPrice: Number(valieMovieTicketInfo.kijUnip),
+                                    kbnEisyahousiki: valieMovieTicketInfo.eishhshkTyp,
+                                    titleCode: eventCOAInfo.titleCode,
+                                    titleBranchNum: eventCOAInfo.titleBranchNum,
+                                    dateJouei: eventCOAInfo.dateJouei
+                                };
+                                availableSalesTicket = await masterService.mvtkTicketcode(mvtkTicketCodeIn);
+                            } catch (error) {
+                                // COAサービスエラーの場合ハンドリング
+                                if (error.name === 'COAServiceError') {
+                                    // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
+                                    // 500未満であればクライアントエラーとみなす
+                                    // tslint:disable-next-line:no-single-line-block-comment
+                                    /* istanbul ignore else */
+                                    if (error.code < INTERNAL_SERVER_ERROR) {
+                                        throw new factory.errors.NotFound(
+                                            `Offers`,
+                                            `Movie Ticket ${movieTicket.identifier} unavailable`
+                                        );
+                                    }
+                                }
+
+                                throw error;
+                            }
+
+                            // const offerWithDetails: factory.action.authorize.offer.seatReservation.IAcceptedOffer = {
+                            //     typeOf: 'Offer',
+                            //     price: offer.ticketInfo.mvtkSalesPrice + availableSalesTicket.addPrice,
+                            //     priceCurrency: factory.priceCurrency.JPY,
+                            //     seatNumber: offer.seatNumber,
+                            //     seatSection: offer.seatSection,
+                            //     ticketInfo: {
+                            //     }
+                            // };
+
+                            coaInfo = {
+                                ticketCode: availableSalesTicket.ticketCode,
+                                ticketName: availableSalesTicket.ticketName,
+                                ticketNameEng: availableSalesTicket.ticketNameEng,
+                                ticketNameKana: availableSalesTicket.ticketNameKana,
+                                stdPrice: 0,
+                                addPrice: availableSalesTicket.addPrice,
+                                disPrice: 0,
+                                salePrice: availableSalesTicket.addPrice,
+                                spseatAdd1: 0,
+                                spseatAdd2: 0,
+                                spseatKbn: '',
+                                addGlasses: 0, // まずメガネ代金なしでデータをセット
+                                mvtkAppPrice: mvtkTicketCodeIn.appPrice,
+                                ticketCount: 1,
+                                seatNum: ((<any>acceptedOffer).ticketedSeat !== undefined) ? (<any>acceptedOffer).ticketedSeat.seatNumber : '',
+                                kbnEisyahousiki: mvtkTicketCodeIn.kbnEisyahousiki,
+                                mvtkNum: movieTicket.identifier,
+                                mvtkKbnDenshiken: mvtkTicketCodeIn.kbnDenshiken,
+                                mvtkKbnMaeuriken: mvtkTicketCodeIn.kbnMaeuriken,
+                                mvtkKbnKensyu: mvtkTicketCodeIn.kbnKensyu,
+                                mvtkSalesPrice: mvtkTicketCodeIn.salesPrice,
+                                kbnMgtk: '',
+                                usePoint: 0
+                            };
+
+                            // ムビチケ情報が確定して初めて価格仕様が決定する
+                            acceptedOffer.priceSpecification.priceComponent = [
+                                {
+                                    project: params.project,
+                                    typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                    price: 0,
+                                    priceCurrency: factory.chevre.priceCurrency.JPY,
+                                    valueAddedTaxIncluded: true,
+                                    referenceQuantity: {
+                                        typeOf: 'QuantitativeValue',
+                                        unitCode: factory.chevre.unitCode.C62,
+                                        value: 1
+                                    }
+                                },
+                                {
+                                    project: params.project,
+                                    typeOf: factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification,
+                                    price: 0,
+                                    priceCurrency: factory.chevre.priceCurrency.JPY,
+                                    valueAddedTaxIncluded: true,
+                                    appliesToVideoFormat: '2D',
+                                    appliesToMovieTicket: {
+                                        typeOf: factory.chevre.service.paymentService.PaymentServiceType.MovieTicket,
+                                        serviceType: mvtkTicketCodeIn.kbnKensyu,
+                                        serviceOutput: { typeOf: factory.chevre.paymentMethodType.MovieTicket }
+                                    },
+                                    ...{
+                                        // 互換性維持対応
+                                        appliesToMovieTicketType: mvtkTicketCodeIn.kbnKensyu
+                                    }
+                                }
+                            ];
+
+                            // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
+                            // const includeGlasses = (offer.ticketInfo.addGlasses > 0);
+                            // if (includeGlasses) {
+                            //     offerWithDetails.ticketInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
+                            //     offerWithDetails.price += availableSalesTicket.addPriceGlasses;
+                            //     offerWithDetails.ticketInfo.salePrice += availableSalesTicket.addPriceGlasses;
+                            //     offerWithDetails.ticketInfo.addGlasses = availableSalesTicket.addPriceGlasses;
+                            // }
+                        } else {
+                            const coaInfoProperty = acceptedOffer.additionalProperty.find((p) => p.name === 'coaInfo');
+                            if (coaInfoProperty === undefined) {
+                                throw new factory.errors.NotFound('Offer coaInfo');
+                            }
+
+                            coaInfo = {
+                                ...JSON.parse(coaInfoProperty.value),
+                                disPrice: 0,
+                                addGlasses: 0,
+                                mvtkAppPrice: 0,
+                                ticketCount: 1,
+                                seatNum: ((<any>acceptedOffer).ticketedSeat !== undefined) ? (<any>acceptedOffer).ticketedSeat.seatNumber : '',
+                                kbnEisyahousiki: '00', // ムビチケを使用しない場合の初期値をセット
+                                mvtkNum: '', // ムビチケを使用しない場合の初期値をセット
+                                mvtkKbnDenshiken: '00', // ムビチケを使用しない場合の初期値をセット
+                                mvtkKbnMaeuriken: '00', // ムビチケを使用しない場合の初期値をセット
+                                mvtkKbnKensyu: '00', // ムビチケを使用しない場合の初期値をセット
+                                mvtkSalesPrice: 0, // ムビチケを使用しない場合の初期値をセット
+                                usePoint: 0
+                            };
+
+                            // メガネ代込みの要求の場合は、販売単価調整&メガネ代をセット
+                            // const includeGlasses = (offer.ticketInfo.addGlasses > 0);
+                            // if (includeGlasses) {
+                            //     coaInfo.ticketName = `${availableSalesTicket.ticketName}メガネ込み`;
+                            //     acceptedOffer.price += availableSalesTicket.addGlasses;
+                            //     coaInfo.salePrice += availableSalesTicket.addGlasses;
+                            //     coaInfo.addGlasses = availableSalesTicket.addGlasses;
+                            // }
+                        }
+
+                        // coaInfoプロパティを上書きする
+                        acceptedOffer.additionalProperty = acceptedOffer.additionalProperty.filter((p) => p.name !== 'coaInfo');
+                        acceptedOffer.additionalProperty.push({
+                            name: 'coaInfo',
+                            value: JSON.stringify(coaInfo)
+                        });
+
+                        break;
+
+                    default:
+                    // no op
+                }
+
+                return acceptedOffer;
+            }))
+            : [];
 
         // オファーIDごとにオファー適用条件を確認
         const offerIds = [...new Set(acceptedOffers.map((o) => o.id))];
