@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- インボイスリポジトリを削除
+
 ### Fixed
 
 - 予約承認開始前のコーディングバグに対応

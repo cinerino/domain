@@ -9,7 +9,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -115,7 +114,6 @@ export function authorize(params: {
 export function pay(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
-        invoice: InvoiceRepo;
     }): Promise<factory.action.trade.pay.IAction> => {
         const payService = new chevre.service.transaction.Pay({
             endpoint: credentials.chevre.endpoint,
@@ -131,13 +129,12 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
                     transactionNumber: paymentMethod.paymentMethod.paymentMethodId,
                     potentialActions: { pay: { purpose: params.purpose } }
                 });
-
-                await repos.invoice.changePaymentStatus({
-                    referencesOrder: { orderNumber: params.purpose.orderNumber },
-                    paymentMethod: paymentMethod.paymentMethod.typeOf,
-                    paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
-                    paymentStatus: factory.paymentStatusType.PaymentComplete
-                });
+                // await repos.invoice.changePaymentStatus({
+                //     referencesOrder: { orderNumber: params.purpose.orderNumber },
+                //     paymentMethod: paymentMethod.paymentMethod.typeOf,
+                //     paymentMethodId: paymentMethod.paymentMethod.paymentMethodId,
+                //     paymentStatus: factory.paymentStatusType.PaymentComplete
+                // });
             }
         } catch (error) {
             // actionにエラー結果を追加

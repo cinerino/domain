@@ -2,7 +2,6 @@
  * 決済サービス
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -29,7 +28,6 @@ export import chevre = ChevrePaymentService;
 export function pay(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
-        invoice: InvoiceRepo;
         project: ProjectRepo;
     }) => {
         if (params.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre) {

@@ -10,7 +10,6 @@
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as InvoiceRepo } from '../repo/invoice';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -29,7 +28,6 @@ export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 export function placeOrder(params: factory.action.trade.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        invoice: InvoiceRepo;
         order: OrderRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
@@ -52,46 +50,45 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
             // 注文保管
             await repos.order.createIfNotExist(order);
 
-            const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
-                placeOrderTransaction.object.authorizeActions)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
-                    && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
+            // const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
+            //     placeOrderTransaction.object.authorizeActions)
+            //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus
+            //         && a.result?.typeOf === factory.action.authorize.paymentMethod.any.ResultType.Payment);
 
             // 請求書作成
-            const invoices: factory.invoice.IInvoice[] = [];
+            // const invoices: factory.invoice.IInvoice[] = [];
 
-            authorizePaymentActions.forEach((a) => {
-                const result = (<factory.action.authorize.paymentMethod.any.IResult>a.result);
+            // authorizePaymentActions.forEach((a) => {
+            //     const result = (<factory.action.authorize.paymentMethod.any.IResult>a.result);
 
-                // 決済方法と決済IDごとに金額をまとめて請求書を作成する
-                const existingInvoiceIndex = invoices.findIndex((i) => {
-                    return i.paymentMethod === result.paymentMethod && i.paymentMethodId === result.paymentMethodId;
-                });
+            //     // 決済方法と決済IDごとに金額をまとめて請求書を作成する
+            //     const existingInvoiceIndex = invoices.findIndex((i) => {
+            //         return i.paymentMethod === result.paymentMethod && i.paymentMethodId === result.paymentMethodId;
+            //     });
 
-                if (existingInvoiceIndex < 0) {
-                    invoices.push({
-                        project: order.project,
-                        typeOf: 'Invoice',
-                        accountId: result.accountId,
-                        confirmationNumber: order.confirmationNumber.toString(),
-                        customer: order.customer,
-                        paymentMethod: <any>result.paymentMethod,
-                        paymentMethodId: result.paymentMethodId,
-                        paymentStatus: result.paymentStatus,
-                        referencesOrder: order,
-                        totalPaymentDue: result.totalPaymentDue
-                    });
-                } else {
-                    const existingInvoice = invoices[existingInvoiceIndex];
-                    if (existingInvoice.totalPaymentDue?.value !== undefined && result.totalPaymentDue?.value !== undefined) {
-                        existingInvoice.totalPaymentDue.value += result.totalPaymentDue.value;
-                    }
-                }
-            });
-
-            await Promise.all(invoices.map(async (invoice) => {
-                await repos.invoice.createIfNotExist(invoice);
-            }));
+            //     if (existingInvoiceIndex < 0) {
+            //         invoices.push({
+            //             project: order.project,
+            //             typeOf: 'Invoice',
+            //             accountId: result.accountId,
+            //             confirmationNumber: order.confirmationNumber.toString(),
+            //             customer: order.customer,
+            //             paymentMethod: <any>result.paymentMethod,
+            //             paymentMethodId: result.paymentMethodId,
+            //             paymentStatus: result.paymentStatus,
+            //             referencesOrder: order,
+            //             totalPaymentDue: result.totalPaymentDue
+            //         });
+            //     } else {
+            //         const existingInvoice = invoices[existingInvoiceIndex];
+            //         if (existingInvoice.totalPaymentDue?.value !== undefined && result.totalPaymentDue?.value !== undefined) {
+            //             existingInvoice.totalPaymentDue.value += result.totalPaymentDue.value;
+            //         }
+            //     }
+            // });
+            // await Promise.all(invoices.map(async (invoice) => {
+            //     await repos.invoice.createIfNotExist(invoice);
+            // }));
         } catch (error) {
             // actionにエラー結果を追加
             try {

@@ -10,7 +10,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as InvoiceRepo } from '../../repo/invoice';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
@@ -30,7 +29,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
-    invoice: InvoiceRepo;
     order: OrderRepo;
     project: ProjectRepo;
     transaction: TransactionRepo;
@@ -51,7 +49,6 @@ export function start(
 ): IStartOperation<factory.transaction.returnOrder.ITransaction> {
     return async (repos: {
         action: ActionRepo;
-        invoice: InvoiceRepo;
         order: OrderRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
@@ -157,9 +154,7 @@ export function start(
 function validateOrder(params: {
     orders: factory.order.IOrder[];
 }) {
-    return async (repos: {
-        invoice: InvoiceRepo;
-    }) => {
+    return async (__: {}) => {
         // 注文ステータスが配送済の場合のみ受け付け
         const allOrdersDelivered = params.orders.every((o) => o.orderStatus === factory.orderStatus.OrderDelivered);
         if (!allOrdersDelivered) {
@@ -169,11 +164,11 @@ function validateOrder(params: {
         // 決済がある場合、請求書の状態を検証
         // if (order.paymentMethods.length > 0) {
         // }
-        const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: params.orders.map((o) => o.orderNumber) } });
-        const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
-        if (!allPaymentCompleted) {
-            throw new factory.errors.Argument('Order Number', 'Payment not completed');
-        }
+        // const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: params.orders.map((o) => o.orderNumber) } });
+        // const allPaymentCompleted = invoices.every((invoice) => invoice.paymentStatus === factory.paymentStatusType.PaymentComplete);
+        // if (!allPaymentCompleted) {
+        //     throw new factory.errors.Argument('Order Number', 'Payment not completed');
+        // }
     };
 }
 

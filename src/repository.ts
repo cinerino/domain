@@ -6,7 +6,6 @@ import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterServiceActionInProgress } from './repo/action/registerServiceInProgress';
 import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
-import { MongoRepository as InvoiceRepo } from './repo/invoice';
 import { MongoRepository as MemberRepo } from './repo/member';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
@@ -38,11 +37,6 @@ export class Code extends CodeRepo { }
  * 確認番号リポジトリ
  */
 export class ConfirmationNumber extends ConfirmationNumberRepo { }
-
-/**
- * 請求書リポジトリ
- */
-export class Invoice extends InvoiceRepo { }
 
 /**
  * プロジェクトメンバーリポジトリ
