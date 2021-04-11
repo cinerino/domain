@@ -10,7 +10,6 @@ import { MongoRepository as MemberRepo } from './repo/member';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
-import { MongoRepository as PaymentMethodRepo } from './repo/paymentMethod';
 import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProjectRepo } from './repo/project';
@@ -57,11 +56,6 @@ export class OrderNumber extends OrderNumberRepo { }
  * 所有権リポジトリ
  */
 export class OwnershipInfo extends OwnershipInfoRepo { }
-
-/**
- * 決済方法リポジトリ
- */
-export class PaymentMethod extends PaymentMethodRepo { }
 
 export namespace paymentMethod {
     /**

@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - インボイスリポジトリを削除
+- 決済方法リポジトリを削除
 
 ### Fixed
 
