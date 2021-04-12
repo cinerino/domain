@@ -9,6 +9,8 @@ import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
 
+const USE_CHEVRE_SEARCH_ORDER = process.env.USE_CHEVRE_SEARCH_ORDER === '1';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -757,6 +759,10 @@ export class MongoRepository {
      * 注文番号から注文を取得する
      */
     public async findByOrderNumber(params: { orderNumber: string }): Promise<factory.order.IOrder> {
+        if (USE_CHEVRE_SEARCH_ORDER) {
+            return orderService.findByOrderNumber(params);
+        }
+
         const doc = await this.orderModel.findOne(
             { orderNumber: params.orderNumber },
             {
@@ -785,6 +791,12 @@ export class MongoRepository {
      * 注文を検索する
      */
     public async search(params: factory.order.ISearchConditions): Promise<factory.order.IOrder[]> {
+        if (USE_CHEVRE_SEARCH_ORDER) {
+            const searchResult = await orderService.search(params);
+
+            return searchResult.data;
+        }
+
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.orderModel.find((conditions.length > 0) ? { $and: conditions } : {})
             .select({ __v: 0, createdAt: 0, updatedAt: 0 });
