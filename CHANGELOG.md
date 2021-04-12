@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文取引のカスタマー情報をobject.customerにセットするように調整
 - order.customerをtransaction.object.customerから生成するように調整
 - プロダクトオファー承認時にポイント特典に識別子を自動発行
+- 注文作成&変更時にchevreへ連携
 
 ### Deprecated
 

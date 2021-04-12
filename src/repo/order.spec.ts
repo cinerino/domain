@@ -31,6 +31,10 @@ describe('createIfNotExist()', () => {
             .once()
             .chain('exec')
             .resolves(new repository.orderModel());
+        sandbox.mock(domain.chevre.service.Order.prototype)
+            .expects('createIfNotExist')
+            .once()
+            .resolves();
 
         const result = await repository.createIfNotExist(<any>order);
 
@@ -55,6 +59,10 @@ describe('changeStatus()', () => {
             .once()
             .chain('exec')
             .resolves(new repository.orderModel());
+        sandbox.mock(domain.chevre.service.Order.prototype)
+            .expects('deliverOrder')
+            .once()
+            .resolves({ orderNumber });
 
         const result = await repository.changeStatus({
             orderNumber: orderNumber, orderStatus: orderStatus,

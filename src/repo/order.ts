@@ -5,6 +5,23 @@ import { modelName } from './mongoose/model/order';
 
 import { MongoErrorCode } from '../errorHandler';
 
+import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
+const orderService = new chevre.service.Order({
+    endpoint: credentials.chevre.endpoint,
+    auth: chevreAuthClient
+});
+
 /**
  * 注文リポジトリ
  */
@@ -629,6 +646,9 @@ export class MongoRepository {
                 throw error;
             }
         }
+
+        // chevre連携
+        await orderService.createIfNotExist(order);
     }
 
     /**
@@ -673,6 +693,9 @@ export class MongoRepository {
                 );
             }
         }
+
+        // chevre連携
+        await orderService.deliverOrder({ orderNumber: params.orderNumber });
 
         return doc.toObject();
     }
@@ -723,6 +746,9 @@ export class MongoRepository {
                 );
             }
         }
+
+        // chevre連携
+        await orderService.returnOrder(params);
 
         return doc.toObject();
     }
