@@ -427,7 +427,7 @@ export function validateAcceptedOffers(params: {
             // ポイント特典入金先の指定があれば入金識別子を発行
             let pointAward: factory.chevre.product.IPointAward | undefined;
             let pointAwardPurposeIdentifier: string | undefined;
-            const pointAwardToAccountNumber = offerWithoutDetail.itemOffered?.pointAward?.toLocation?.identifer;
+            const pointAwardToAccountNumber = offerWithoutDetail.itemOffered?.pointAward?.toLocation?.identifier;
             if (typeof pointAwardToAccountNumber === 'string' && pointAwardToAccountNumber.length > 0) {
                 pointAwardPurposeIdentifier = createPointAwardIdentifier({
                     project: project,
