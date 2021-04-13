@@ -661,6 +661,9 @@ export class MongoRepository {
         orderStatus: factory.orderStatus;
         previousOrderStatus: factory.orderStatus;
     }): Promise<factory.order.IOrder> {
+        // chevre連携
+        await orderService.deliverOrder({ orderNumber: params.orderNumber });
+
         const doc = await this.orderModel.findOneAndUpdate(
             {
                 orderNumber: params.orderNumber,
@@ -681,7 +684,14 @@ export class MongoRepository {
         // NotFoundであれば状態確認
         if (doc === null) {
             // Mongoに問いあわせ
-            const order = await this.orderModel.findOne({ orderNumber: params.orderNumber })
+            const order = await this.orderModel.findOne(
+                { orderNumber: params.orderNumber },
+                {
+                    __v: 0,
+                    createdAt: 0,
+                    updatedAt: 0
+                }
+            )
                 .exec()
                 .then((docResearched) => {
                     if (docResearched === null) {
@@ -705,9 +715,6 @@ export class MongoRepository {
             }
         }
 
-        // chevre連携
-        await orderService.deliverOrder({ orderNumber: params.orderNumber });
-
         return doc.toObject();
     }
 
@@ -719,6 +726,9 @@ export class MongoRepository {
         dateReturned: Date;
         returner: factory.order.IReturner;
     }): Promise<factory.order.IOrder> {
+        // chevre連携
+        await orderService.returnOrder(params);
+
         const doc = await this.orderModel.findOneAndUpdate(
             {
                 orderNumber: params.orderNumber,
@@ -743,7 +753,14 @@ export class MongoRepository {
         // NotFoundであれば状態確認
         if (doc === null) {
             // Mongoに問いあわせ
-            const order = await this.orderModel.findOne({ orderNumber: params.orderNumber })
+            const order = await this.orderModel.findOne(
+                { orderNumber: params.orderNumber },
+                {
+                    __v: 0,
+                    createdAt: 0,
+                    updatedAt: 0
+                }
+            )
                 .exec()
                 .then((docResearched) => {
                     if (docResearched === null) {
@@ -766,9 +783,6 @@ export class MongoRepository {
                 );
             }
         }
-
-        // chevre連携
-        await orderService.returnOrder(params);
 
         return doc.toObject();
     }
