@@ -79,6 +79,10 @@ describe('changeStatus()', () => {
 
         const repository = new domain.repository.Order(mongoose.connection);
 
+        sandbox.mock(domain.chevre.service.Order.prototype)
+            .expects('deliverOrder')
+            .once()
+            .resolves({ orderNumber });
         sandbox.mock(repository.orderModel)
             .expects('findOneAndUpdate')
             .once()
