@@ -680,7 +680,16 @@ export class MongoRepository {
 
         // NotFoundであれば状態確認
         if (doc === null) {
-            const order = await this.findByOrderNumber(params);
+            // Mongoに問いあわせ
+            const order = await this.orderModel.findOne({ orderNumber: params.orderNumber })
+                .exec()
+                .then((docResearched) => {
+                    if (docResearched === null) {
+                        throw new factory.errors.NotFound(this.orderModel.modelName);
+                    }
+
+                    return docResearched.toObject();
+                });
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
             if (order.orderStatus === params.orderStatus) {
@@ -733,7 +742,16 @@ export class MongoRepository {
 
         // NotFoundであれば状態確認
         if (doc === null) {
-            const order = await this.findByOrderNumber(params);
+            // Mongoに問いあわせ
+            const order = await this.orderModel.findOne({ orderNumber: params.orderNumber })
+                .exec()
+                .then((docResearched) => {
+                    if (docResearched === null) {
+                        throw new factory.errors.NotFound(this.orderModel.modelName);
+                    }
+
+                    return docResearched.toObject();
+                });
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
             if (order.orderStatus === factory.orderStatus.OrderReturned) {
