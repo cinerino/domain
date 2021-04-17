@@ -4,23 +4,6 @@ const modelName = 'Task';
 
 const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
-const executionResultSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-const dataSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * タスクスキーマ
  */
@@ -33,8 +16,8 @@ const schema = new mongoose.Schema(
         remainingNumberOfTries: Number,
         lastTriedAt: Date,
         numberOfTried: Number,
-        executionResults: [executionResultSchema],
-        data: dataSchema
+        executionResults: [mongoose.SchemaTypes.Mixed],
+        data: mongoose.SchemaTypes.Mixed
     },
     {
         collection: 'tasks',

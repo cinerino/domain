@@ -6,69 +6,6 @@ const modelName = 'Transaction';
 
 const writeConcern: mongoose.WriteConcern = { j: true, w: 'majority', wtimeout: 10000 };
 
-const objectSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const resultSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const agentSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const recipientSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const sellerSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const errorSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
-const potentialActionsSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 取引スキーマ
  */
@@ -77,18 +14,18 @@ const schema = new mongoose.Schema(
         project: mongoose.SchemaTypes.Mixed,
         status: String,
         typeOf: String,
-        agent: agentSchema,
-        recipient: recipientSchema,
-        seller: sellerSchema,
-        error: errorSchema,
-        result: resultSchema,
-        object: objectSchema,
+        agent: mongoose.SchemaTypes.Mixed,
+        recipient: mongoose.SchemaTypes.Mixed,
+        seller: mongoose.SchemaTypes.Mixed,
+        error: mongoose.SchemaTypes.Mixed,
+        result: mongoose.SchemaTypes.Mixed,
+        object: mongoose.SchemaTypes.Mixed,
         expires: Date,
         startDate: Date,
         endDate: Date,
         tasksExportedAt: Date,
         tasksExportationStatus: String,
-        potentialActions: potentialActionsSchema
+        potentialActions: mongoose.SchemaTypes.Mixed
     },
     {
         collection: 'transactions',

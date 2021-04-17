@@ -9,10 +9,11 @@ async function main() {
 
     const cursor = await orderRepo.orderModel.find(
         {
-            // 'project.id': { $exists: true, $eq: 'sskts-production' },
+            // 'project.id': { $exists: true, $eq: '' },
             orderDate: {
-                $gte: moment('2020-04-01T00:00:00+09:00').toDate(),
-                // $gte: moment('2021-03-01T00:00:00+09:00').toDate(),
+                $gte: moment('2020-10-01T00:00:00+09:00').toDate(),
+                // $lte: moment('2020-04-26T00:00:00+09:00').toDate(),
+                // $gte: moment('2021-04-01T00:00:00+09:00').toDate(),
             }
         },
         { createdAt: 0, updatedAt: 0 }
