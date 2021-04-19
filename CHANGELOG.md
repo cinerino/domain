@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文作成&変更時にchevreへ連携
 - chevreでの注文検索に対応(USE_CHEVRE_SEARCH_ORDER設定)
 - mongooseモデルを最適化
+- 承認コード発行時にchevreへ連携
 
 ### Deprecated
 

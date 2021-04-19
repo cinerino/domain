@@ -7,7 +7,19 @@ import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { ICode, IData, MongoRepository as CodeRepo } from '../repo/code';
 
+import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
+
 export type IToken = string;
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 /**
  * コードを発行する
@@ -45,6 +57,22 @@ export function publish(params: {
                 return {
                     project: params.project,
                     data: o,
+                    validFrom: params.validFrom,
+                    expiresInSeconds: Number(params.expiresInSeconds)
+                };
+            }));
+
+            // chevreにも連携
+            const authorizationService = new chevre.service.Authorization({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+            await authorizationService.create(authorizations.map((authorization) => {
+                return {
+                    code: authorization.code,
+                    object: authorization.object,
+                    project: authorization.project,
+                    typeOf: authorization.typeOf,
                     validFrom: params.validFrom,
                     expiresInSeconds: Number(params.expiresInSeconds)
                 };
