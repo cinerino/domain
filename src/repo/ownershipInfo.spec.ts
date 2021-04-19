@@ -11,6 +11,8 @@ require('sinon-mongoose');
 
 import { MongoRepository as OwnershipInfoRepo } from './ownershipInfo';
 
+import * as chevre from '../chevre';
+
 let sandbox: sinon.SinonSandbox;
 
 before(() => {
@@ -27,6 +29,10 @@ describe('識別子で所有権を保管する', () => {
 
         const repository = new OwnershipInfoRepo(mongoose.connection);
 
+        sandbox.mock(chevre.service.OwnershipInfo.prototype)
+            .expects('saveByIdentifier')
+            .once()
+            .resolves(ownershipInfo);
         sandbox.mock(repository.ownershipInfoModel)
             .expects('findOneAndUpdate')
             .once()

@@ -6,6 +6,23 @@ import { modelName } from './mongoose/model/ownershipInfo';
 import { MongoErrorCode } from '../errorHandler';
 import * as factory from '../factory';
 
+import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
+const ownershipInfoService = new chevre.service.OwnershipInfo({
+    endpoint: credentials.chevre.endpoint,
+    auth: chevreAuthClient
+});
+
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 /**
@@ -234,6 +251,9 @@ export class MongoRepository {
         let duplicate = false;
 
         try {
+            // chevre連携
+            await ownershipInfoService.saveByIdentifier(ownershipInfo);
+
             doc = await this.ownershipInfoModel.findOneAndUpdate(
                 { identifier: ownershipInfo.identifier },
                 {
