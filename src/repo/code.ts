@@ -6,6 +6,25 @@ import * as factory from '../factory';
 
 import { modelName } from './mongoose/model/authorization';
 
+import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
+
+const USE_CHEVRE_SEARCH_AUTHORIZATION = process.env.USE_CHEVRE_SEARCH_AUTHORIZATION === '1';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
+const authorizationService = new chevre.service.Authorization({
+    endpoint: credentials.chevre.endpoint,
+    auth: chevreAuthClient
+});
+
 export type IData = any;
 export type ICode = string;
 
@@ -180,6 +199,22 @@ export class MongoRepository {
     }): Promise<IData> {
         const now = new Date();
 
+        if (USE_CHEVRE_SEARCH_AUTHORIZATION) {
+            const searchResult = await authorizationService.search({
+                limit: 1,
+                project: { id: { $eq: params.project.id } },
+                code: { $in: [params.code] },
+                validFrom: now,
+                validThrough: now
+            });
+            const authorizationByChevre = searchResult.data.shift();
+            if (authorizationByChevre === undefined) {
+                throw new factory.errors.NotFound(this.authorizationModel.modelName);
+            }
+
+            return authorizationByChevre.object;
+        }
+
         const doc = await this.authorizationModel.findOne({
             'project.id': {
                 $exists: true,
@@ -209,15 +244,21 @@ export class MongoRepository {
         return authorization.object;
     }
 
-    public async count(params: factory.authorization.ISearchConditions): Promise<number> {
-        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+    // public async count(params: factory.authorization.ISearchConditions): Promise<number> {
+    //     const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.authorizationModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
-            .setOptions({ maxTimeMS: 10000 })
-            .exec();
-    }
+    //     return this.authorizationModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
+    //         .setOptions({ maxTimeMS: 10000 })
+    //         .exec();
+    // }
 
     public async search(params: factory.authorization.ISearchConditions): Promise<factory.authorization.IAuthorization[]> {
+        if (USE_CHEVRE_SEARCH_AUTHORIZATION) {
+            const searchResult = await authorizationService.search(params);
+
+            return searchResult.data;
+        }
+
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.authorizationModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},

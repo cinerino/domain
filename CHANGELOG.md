@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 承認コード発行時にchevreへ連携
 - 所有権発行時にchevreへ連携
 - 座席オファー承認処理を最適化
+- chevreでの承認検索に対応(USE_CHEVRE_SEARCH_AUTHORIZATION設定)
 
 ### Deprecated
 
