@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - mongooseモデルを最適化
 - 承認コード発行時にchevreへ連携
 - 所有権発行時にchevreへ連携
+- 座席オファー承認処理を最適化
 
 ### Deprecated
 
