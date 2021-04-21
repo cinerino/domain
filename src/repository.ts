@@ -4,7 +4,6 @@
  */
 import { MongoRepository as ActionRepo } from './repo/action';
 import { RedisRepository as RegisterServiceActionInProgress } from './repo/action/registerServiceInProgress';
-import { MongoRepository as CodeRepo } from './repo/code';
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as MemberRepo } from './repo/member';
 import { MongoRepository as OrderRepo } from './repo/order';
@@ -26,11 +25,6 @@ export class Action extends ActionRepo { }
 export namespace action {
     export class RegisterServiceInProgress extends RegisterServiceActionInProgress { }
 }
-
-/**
- * 所有権コードリポジトリ
- */
-export class Code extends CodeRepo { }
 
 /**
  * 確認番号リポジトリ

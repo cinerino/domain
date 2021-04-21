@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - インボイスリポジトリを削除
 - 決済方法リポジトリを削除
+- 承認リポジトリを削除
 
 ### Fixed
 

@@ -2,16 +2,18 @@
  * コード(所有権をpublicにするもの)サービス
  */
 import * as jwt from 'jsonwebtoken';
+import * as uuid from 'uuid';
 
 import * as factory from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { ICode, IData, MongoRepository as CodeRepo } from '../repo/code';
 
 import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
 
 export type IToken = string;
+export type IData = any;
+export type ICode = string;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -19,6 +21,11 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     clientSecret: credentials.chevre.clientSecret,
     scopes: [],
     state: ''
+});
+
+const authorizationService = new chevre.service.Authorization({
+    endpoint: credentials.chevre.endpoint,
+    auth: chevreAuthClient
 });
 
 /**
@@ -38,7 +45,6 @@ export function publish(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        code: CodeRepo;
     }): Promise<factory.authorization.IAuthorization[]> => {
         const actionAttributes: factory.action.authorize.IAttributes<any, any> = {
             project: params.project,
@@ -53,26 +59,10 @@ export function publish(params: {
         let authorizations: factory.authorization.IAuthorization[];
 
         try {
-            authorizations = await repos.code.publish(params.object.map((o) => {
+            authorizations = await publishByChevre(params.object.map((o) => {
                 return {
                     project: params.project,
                     data: o,
-                    validFrom: params.validFrom,
-                    expiresInSeconds: Number(params.expiresInSeconds)
-                };
-            }));
-
-            // chevreにも連携
-            const authorizationService = new chevre.service.Authorization({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-            await authorizationService.create(authorizations.map((authorization) => {
-                return {
-                    code: authorization.code,
-                    object: authorization.object,
-                    project: authorization.project,
-                    typeOf: authorization.typeOf,
                     validFrom: params.validFrom,
                     expiresInSeconds: Number(params.expiresInSeconds)
                 };
@@ -101,6 +91,36 @@ export function publish(params: {
     };
 }
 
+async function publishByChevre(params: {
+    project: factory.project.IProject;
+    data: IData;
+    validFrom: Date;
+    expiresInSeconds: number;
+}[]): Promise<factory.authorization.IAuthorization[]> {
+    const saveParams = params.map((p) => {
+        const code = uuid.v4();
+
+        return {
+            project: p.project,
+            code: code,
+            object: p.data,
+            validFrom: p.validFrom,
+            expiresInSeconds: p.expiresInSeconds
+        };
+    });
+
+    return authorizationService.create(saveParams.map((authorization) => {
+        return {
+            code: authorization.code,
+            object: authorization.object,
+            project: { id: authorization.project.id, typeOf: authorization.project.typeOf },
+            typeOf: 'Authorization',
+            validFrom: authorization.validFrom,
+            expiresInSeconds: Number(authorization.expiresInSeconds)
+        };
+    }));
+}
+
 /**
  * コードをトークンに変換する
  */
@@ -111,10 +131,22 @@ export function getToken(params: {
     issuer: string;
     expiresIn: number;
 }) {
-    return async (repos: {
-        code: CodeRepo;
-    }): Promise<IToken> => {
-        const data = await repos.code.findOne({ project: params.project, code: params.code });
+    return async (): Promise<IToken> => {
+        const now = new Date();
+
+        const searchResult = await authorizationService.search({
+            limit: 1,
+            project: { id: { $eq: params.project.id } },
+            code: { $in: [params.code] },
+            validFrom: now,
+            validThrough: now
+        });
+        const authorizationByChevre = searchResult.data.shift();
+        if (authorizationByChevre === undefined) {
+            throw new factory.errors.NotFound('Authorization');
+        }
+
+        const data = authorizationByChevre.object;
 
         return new Promise<IToken>((resolve, reject) => {
             // 所有権を暗号化する

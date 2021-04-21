@@ -2,7 +2,6 @@
  * プロジェクトサービス
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as CodeRepo } from '../repo/code';
 import { MongoRepository as MemberRepo } from '../repo/member';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
@@ -13,7 +12,6 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 export function deleteProject(params: { id: string }) {
     return async (repos: {
         action: ActionRepo;
-        code: CodeRepo;
         member: MemberRepo;
         order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
@@ -22,10 +20,6 @@ export function deleteProject(params: { id: string }) {
         transaction: TransactionRepo;
     }): Promise<void> => {
         // プロジェクトに所属する全データをリポジトリから削除する
-        await repos.code.authorizationModel.deleteMany({
-            'project.id': { $exists: true, $eq: params.id }
-        })
-            .exec();
         await repos.ownershipInfo.ownershipInfoModel.deleteMany({
             'project.id': { $exists: true, $eq: params.id }
         })

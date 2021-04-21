@@ -24,10 +24,11 @@ async function main() {
         {
             'project.id': { $exists: true, $eq: 'sskts-production' },
             'ownedBy.memberOf.membershipNumber': { $exists: true },
-            'typeOfGood.typeOf': { $exists: true, $eq: 'Account' }
-            // ownedFrom: {
-            //     $gte: moment('2021-01-01T00:00:00+09:00').toDate(),
-            // }
+            'typeOfGood.typeOf': { $exists: true, $eq: 'EventReservation' },
+            ownedFrom: {
+                $lte: moment('2021-03-16T00:00:00+09:00').toDate(),
+                $gte: moment('2020-04-29T00:00:00+09:00').toDate(),
+            }
         },
         { createdAt: 0, updatedAt: 0 }
     )
