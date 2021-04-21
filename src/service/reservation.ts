@@ -37,7 +37,7 @@ type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.own
 
 export type ISearchEventReservationsOperation<T> = (repos: {
     ownershipInfo: OwnershipInfoRepo;
-    project: ProjectRepo;
+    // project: ProjectRepo;
 }) => Promise<T>;
 
 /**
@@ -237,17 +237,20 @@ export function searchScreeningEventReservations(
 ): ISearchEventReservationsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: OwnershipInfoRepo;
-        project: ProjectRepo;
+        // project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-        if (project.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
+        // const project = await repos.project.findById({ id: params.project.id });
+        // if (project.settings === undefined) {
+        //     throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        // }
 
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 所有権検索
-            const ownershipInfos = await repos.ownershipInfo.search(params);
+            const ownershipInfos = await repos.ownershipInfo.search({
+                ...params,
+                project: { id: { $eq: params.project.id } }
+            });
 
             // Chevre予約の場合、詳細を取得
             const reservationIds = ownershipInfos
@@ -266,7 +269,7 @@ export function searchScreeningEventReservations(
                 });
 
                 const searchReservationsResult = await reservationService.search<factory.chevre.reservationType.EventReservation>({
-                    project: { ids: [project.id] },
+                    project: { ids: [params.project.id] },
                     typeOf: factory.chevre.reservationType.EventReservation,
                     ids: reservationIds
                 });
