@@ -171,6 +171,7 @@ export function searchMoneyTransferActions(params: {
         let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
             const ownershipInfos = await repos.ownershipInfo.search({
+                project: { id: { $eq: params.project.id } },
                 typeOfGood: {
                     accountNumber: { $eq: params.typeOfGood.accountNumber }
                 },

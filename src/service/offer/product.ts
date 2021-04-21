@@ -480,6 +480,7 @@ function checkIfRegistered(params: {
         if (params.product.typeOf === factory.chevre.product.ProductType.MembershipService) {
             if (typeof serviceOutputType === 'string') {
                 const ownershipInfos = await repos.ownershipInfo.search({
+                    project: { id: { $eq: params.product.project.id } },
                     typeOfGood: {
                         typeOf: serviceOutputType
                     },
