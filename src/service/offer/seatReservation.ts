@@ -302,20 +302,32 @@ export function selectSeats(
         // チケットオファー検索
         const ticketOffers = await eventService.searchTicketOffers({ id: performance.id });
 
-        // Chevreで全座席オファーを検索
-        const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
-        const sectionOffer = screeningRoomSectionOffers[0];
+        // Chevreで全座席オファーを検索(tttsは座席数が42なので1ページ検索で十分
+        const searchSeatOffersResult = await eventService.searchSeats({
+            limit: 100,
+            id: performance.id,
+            // 冗長な情報を非取得
+            ...{
+                $projection: {
+                    'containedInPlace.containedInPlace': 0
+                }
+            }
+        });
+        const seatOffers = searchSeatOffersResult.data;
+        // const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
+        // const sectionOffer = screeningRoomSectionOffers[0];
 
-        const seats = sectionOffer.containsPlace;
-        const unavailableSeats = (Array.isArray(seats))
-            ? seats.filter((s) => {
+        // const seats = sectionOffer.containsPlace;
+        const unavailableSeats = (Array.isArray(seatOffers))
+            ? seatOffers.filter((s) => {
                 return Array.isArray(s.offers)
                     && s.offers.length > 0
                     && s.offers[0].availability === chevre.factory.itemAvailability.OutOfStock;
             })
                 .map((s) => {
                     return {
-                        seatSection: sectionOffer.branchCode,
+                        // seatSection: sectionOffer.branchCode,
+                        seatSection: s.containedInPlace?.branchCode,
                         seatNumber: s.branchCode
                     };
                 })
@@ -337,21 +349,23 @@ export function selectSeats(
             }
 
             // まず利用可能な座席は全座席
-            let availableSeats = (Array.isArray(sectionOffer.containsPlace))
-                ? sectionOffer.containsPlace.map((p) => {
+            let availableSeats = (Array.isArray(seatOffers))
+                ? seatOffers.map((p) => {
                     return {
                         typeOf: p.typeOf,
                         branchCode: p.branchCode,
-                        seatingType: p.seatingType
+                        seatingType: p.seatingType,
+                        containedInPlace: p.containedInPlace
                     };
                 })
                 : [];
-            let availableSeatsForAdditionalStocks = (Array.isArray(sectionOffer.containsPlace))
-                ? sectionOffer.containsPlace.map((p) => {
+            let availableSeatsForAdditionalStocks = (Array.isArray(seatOffers))
+                ? seatOffers.map((p) => {
                     return {
                         typeOf: p.typeOf,
                         branchCode: p.branchCode,
-                        seatingType: p.seatingType
+                        seatingType: p.seatingType,
+                        containedInPlace: p.containedInPlace
                     };
                 })
                 : [];
@@ -369,14 +383,12 @@ export function selectSeats(
             if (isWheelChairOffer) {
                 // 車椅子予約の場合、車椅子タイプ座席のみ
                 availableSeats = availableSeats.filter(
-                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Wheelchair)
-                        || (Array.isArray(s.seatingType) && s.seatingType.includes(<string>SeatingType.Wheelchair))
+                    (s) => Array.isArray(s.seatingType) && s.seatingType.includes(SeatingType.Wheelchair)
                 );
 
                 // 余分確保は一般座席から
                 availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
-                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
-                        || (Array.isArray(s.seatingType) && s.seatingType.includes(<string>SeatingType.Normal))
+                    (s) => Array.isArray(s.seatingType) && s.seatingType.includes(SeatingType.Normal)
                 );
 
                 // 車椅子確保分が一般座席になければ車椅子は0
@@ -385,8 +397,7 @@ export function selectSeats(
                 }
             } else {
                 availableSeats = availableSeats.filter(
-                    (s) => (typeof s.seatingType === 'string' && s.seatingType === <string>SeatingType.Normal)
-                        || (Array.isArray(s.seatingType) && s.seatingType.includes(<string>SeatingType.Normal))
+                    (s) => Array.isArray(s.seatingType) && s.seatingType.includes(SeatingType.Normal)
                 );
 
                 // 余分確保なし
@@ -426,7 +437,9 @@ export function selectSeats(
                         reservedTicket: {
                             typeOf: 'Ticket',
                             ticketedSeat: {
-                                seatSection: sectionOffer.branchCode,
+                                seatSection: (typeof selectedSeat.containedInPlace?.branchCode === 'string')
+                                    ? selectedSeat.containedInPlace.branchCode
+                                    : '',
                                 seatNumber: selectedSeat.branchCode,
                                 seatRow: '',
                                 seatingType: selectedSeat.seatingType,
@@ -441,7 +454,9 @@ export function selectSeats(
                                     reservedTicket: {
                                         typeOf: 'Ticket',
                                         ticketedSeat: {
-                                            seatSection: sectionOffer.branchCode,
+                                            seatSection: (typeof selectedSeatForAdditionalStocks.containedInPlace?.branchCode === 'string')
+                                                ? selectedSeatForAdditionalStocks.containedInPlace.branchCode
+                                                : '',
                                             seatNumber: selectedSeatForAdditionalStocks.branchCode,
                                             seatRow: '',
                                             typeOf: selectedSeatForAdditionalStocks.typeOf

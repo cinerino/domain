@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - chevreでの承認検索に対応(USE_CHEVRE_SEARCH_AUTHORIZATION設定)
 - chevreでの所有権検索に対応(USE_CHEVRE_SEARCH_OWNERSHIPINFO設定)
 - 注文返品時の所有権変更をchevre連携
+- chevreイベント全座席検索を使用しないように調整
 
 ### Deprecated
 
