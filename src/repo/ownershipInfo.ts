@@ -1,4 +1,4 @@
-import { Connection, Document, Model, QueryCursor } from 'mongoose';
+import { Connection, Document, Model } from 'mongoose';
 import * as uuid from 'uuid';
 
 import { modelName } from './mongoose/model/ownershipInfo';
@@ -9,6 +9,8 @@ import * as factory from '../factory';
 import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
+
+const USE_CHEVRE_SEARCH_OWNERSHIPINFO = process.env.USE_CHEVRE_SEARCH_OWNERSHIPINFO === '1';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -293,23 +295,23 @@ export class MongoRepository {
         return doc.toObject();
     }
 
-    public async findById(params: { id: string }): Promise<IOwnershipInfo> {
-        const doc = await this.ownershipInfoModel.findById(params.id)
-            .exec();
-        if (doc === null) {
-            throw new factory.errors.NotFound(this.ownershipInfoModel.modelName);
-        }
+    // public async findById(params: { id: string }): Promise<IOwnershipInfo> {
+    //     const doc = await this.ownershipInfoModel.findById(params.id)
+    //         .exec();
+    //     if (doc === null) {
+    //         throw new factory.errors.NotFound(this.ownershipInfoModel.modelName);
+    //     }
 
-        return doc.toObject();
-    }
+    //     return doc.toObject();
+    // }
 
-    public async count(params: factory.ownershipInfo.ISearchConditions): Promise<number> {
-        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+    // public async count(params: factory.ownershipInfo.ISearchConditions): Promise<number> {
+    //     const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
-        return this.ownershipInfoModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
-            .setOptions({ maxTimeMS: 10000 })
-            .exec();
-    }
+    //     return this.ownershipInfoModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
+    //         .setOptions({ maxTimeMS: 10000 })
+    //         .exec();
+    // }
 
     /**
      * 所有権を検索する
@@ -317,6 +319,12 @@ export class MongoRepository {
     public async search(
         params: factory.ownershipInfo.ISearchConditions
     ): Promise<IOwnershipInfo[]> {
+        if (USE_CHEVRE_SEARCH_OWNERSHIPINFO) {
+            const searchResult = await ownershipInfoService.search(params);
+
+            return searchResult.data;
+        }
+
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.ownershipInfoModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},
@@ -343,24 +351,24 @@ export class MongoRepository {
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
 
-    public stream(params: factory.ownershipInfo.ISearchConditions): QueryCursor<Document> {
-        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-        const query = this.ownershipInfoModel.find((conditions.length > 0) ? { $and: conditions } : {})
-            .select({ __v: 0, createdAt: 0, updatedAt: 0 });
+    // public stream(params: factory.ownershipInfo.ISearchConditions): QueryCursor<Document> {
+    //     const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+    //     const query = this.ownershipInfoModel.find((conditions.length > 0) ? { $and: conditions } : {})
+    //         .select({ __v: 0, createdAt: 0, updatedAt: 0 });
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit)
-                .skip(params.limit * (params.page - 1));
-        }
+    //     // tslint:disable-next-line:no-single-line-block-comment
+    //     /* istanbul ignore else */
+    //     if (params.limit !== undefined && params.page !== undefined) {
+    //         query.limit(params.limit)
+    //             .skip(params.limit * (params.page - 1));
+    //     }
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.sort !== undefined) {
-            query.sort(params.sort);
-        }
+    //     // tslint:disable-next-line:no-single-line-block-comment
+    //     /* istanbul ignore else */
+    //     if (params.sort !== undefined) {
+    //         query.sort(params.sort);
+    //     }
 
-        return query.cursor();
-    }
+    //     return query.cursor();
+    // }
 }

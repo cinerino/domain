@@ -1,15 +1,15 @@
 /**
  * 所有権レポートサービス
  */
-import * as json2csv from 'json2csv';
+// import * as json2csv from 'json2csv';
 // @ts-ignore
 import * as JSONStream from 'JSONStream';
 import * as moment from 'moment';
-import { Stream } from 'stream';
+// import { Stream } from 'stream';
 
 import * as factory from '../../factory';
 
-import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
+// import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 
 /**
  * 所有権レポートインターフェース
@@ -32,72 +32,72 @@ export interface IOwnershipInfoReport {
 /**
  * フォーマット指定でストリーミングダウンロード
  */
-export function stream(params: {
-    conditions: factory.ownershipInfo.ISearchConditions;
-    format?: factory.chevre.encodingFormat.Application | factory.chevre.encodingFormat.Text;
-}) {
-    // tslint:disable-next-line:max-func-body-length
-    return async (repos: { ownershipInfo: OwnershipInfoRepo }): Promise<Stream> => {
-        let inputStream = repos.ownershipInfo.stream(params.conditions);
-        let processor: Stream;
+// export function stream(params: {
+//     conditions: factory.ownershipInfo.ISearchConditions;
+//     format?: factory.chevre.encodingFormat.Application | factory.chevre.encodingFormat.Text;
+// }) {
+//     // tslint:disable-next-line:max-func-body-length
+//     return async (repos: { ownershipInfo: OwnershipInfoRepo }): Promise<Stream> => {
+//         let inputStream = repos.ownershipInfo.stream(params.conditions);
+//         let processor: Stream;
 
-        switch (params.format) {
-            case factory.chevre.encodingFormat.Application.json:
-                inputStream = inputStream.map((doc) => {
-                    return doc.toObject();
-                });
+//         switch (params.format) {
+//             case factory.chevre.encodingFormat.Application.json:
+//                 inputStream = inputStream.map((doc) => {
+//                     return doc.toObject();
+//                 });
 
-                processor = inputStream.pipe(JSONStream.stringify());
+//                 processor = inputStream.pipe(JSONStream.stringify());
 
-                break;
+//                 break;
 
-            case factory.chevre.encodingFormat.Text.csv:
-                inputStream = inputStream.map((doc) => {
-                    return <any>JSON.stringify(ownershipInfo2report({
-                        ownershipInfo: doc.toObject()
-                    }));
-                });
+//             case factory.chevre.encodingFormat.Text.csv:
+//                 inputStream = inputStream.map((doc) => {
+//                     return <any>JSON.stringify(ownershipInfo2report({
+//                         ownershipInfo: doc.toObject()
+//                     }));
+//                 });
 
-                const fields: json2csv.default.FieldInfo<any>[] = [
-                    { label: 'ID', default: '', value: 'id' },
-                    { label: '識別子', default: '', value: 'identifier' },
-                    { label: '所有者タイプ', default: '', value: 'ownedBy.typeOf' },
-                    { label: '所有者ID', default: '', value: 'ownedBy.id' },
-                    { label: '所有期間from', default: '', value: 'ownedFrom' },
-                    { label: '所有期間through', default: '', value: 'ownedThrough' },
-                    { label: '所有物タイプ', default: '', value: 'typeOfGood.typeOf' },
-                    { label: '所有物ID', default: '', value: 'typeOfGood.id' }
-                ];
+//                 const fields: json2csv.default.FieldInfo<any>[] = [
+//                     { label: 'ID', default: '', value: 'id' },
+//                     { label: '識別子', default: '', value: 'identifier' },
+//                     { label: '所有者タイプ', default: '', value: 'ownedBy.typeOf' },
+//                     { label: '所有者ID', default: '', value: 'ownedBy.id' },
+//                     { label: '所有期間from', default: '', value: 'ownedFrom' },
+//                     { label: '所有期間through', default: '', value: 'ownedThrough' },
+//                     { label: '所有物タイプ', default: '', value: 'typeOfGood.typeOf' },
+//                     { label: '所有物ID', default: '', value: 'typeOfGood.id' }
+//                 ];
 
-                const opts = {
-                    fields: fields,
-                    delimiter: ',',
-                    eol: '\n'
-                    // flatten: true,
-                    // preserveNewLinesInValues: true,
-                    // unwind: 'acceptedOffers'
-                };
-                // const json2csvParser = new json2csv.Parser(opts);
-                const transformOpts = {
-                    highWaterMark: 16384,
-                    encoding: 'utf-8'
-                };
-                const transform = new json2csv.Transform(opts, transformOpts);
-                processor = inputStream.pipe(transform);
+//                 const opts = {
+//                     fields: fields,
+//                     delimiter: ',',
+//                     eol: '\n'
+//                     // flatten: true,
+//                     // preserveNewLinesInValues: true,
+//                     // unwind: 'acceptedOffers'
+//                 };
+//                 // const json2csvParser = new json2csv.Parser(opts);
+//                 const transformOpts = {
+//                     highWaterMark: 16384,
+//                     encoding: 'utf-8'
+//                 };
+//                 const transform = new json2csv.Transform(opts, transformOpts);
+//                 processor = inputStream.pipe(transform);
 
-                break;
+//                 break;
 
-            default:
-                inputStream = inputStream.map((doc) => {
-                    return doc.toObject();
-                });
+//             default:
+//                 inputStream = inputStream.map((doc) => {
+//                     return doc.toObject();
+//                 });
 
-                processor = inputStream;
-        }
+//                 processor = inputStream;
+//         }
 
-        return processor;
-    };
-}
+//         return processor;
+//     };
+// }
 
 export function ownershipInfo2report(params: {
     ownershipInfo: factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;

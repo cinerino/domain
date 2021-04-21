@@ -4,9 +4,9 @@
 // import * as createDebug from 'debug';
 // import * as moment from 'moment';
 
-// import { credentials } from '../credentials';
+import { credentials } from '../credentials';
 
-// import * as chevre from '../chevre';
+import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -14,6 +14,14 @@ import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 // import * as COA from '../coa';
 
@@ -215,33 +223,10 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
-        // 確定済の注文返品取引がひとつあるはず
-        // const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
-        //     limit: 1,
-        //     typeOf: factory.transactionType.ReturnOrder,
-        //     object: {
-        //         order: { orderNumbers: [params.orderNumber] }
-        //     },
-        //     statuses: [factory.transactionStatusType.Confirmed]
-        // });
-        // const returnOrderTransaction = returnOrderTransactions.shift();
-        // if (returnOrderTransaction === undefined) {
-        //     throw new factory.errors.NotFound('Return order transaction');
-        // }
-
-        // const dateReturned = moment(returnOrderTransaction.endDate)
-        //     .toDate();
         const dateReturned = new Date();
 
-        // const potentialActions = returnOrderTransaction.potentialActions;
-        // if (potentialActions === undefined) {
-        //     throw new factory.errors.NotFound('PotentialActions of return order transaction');
-        // }
-
-        // let order = await repos.order.findByOrderNumber({ orderNumber: returnOrderTransaction.object.order.orderNumber });
         let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
 
-        // const returnOrderActionAttributes = potentialActions.returnOrder;
         const returnOrderActionAttributes = params;
         const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
 
@@ -249,6 +234,11 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         const action = await repos.action.start(returnOrderActionAttributes);
 
         try {
+            const ownershipInfoService = new chevre.service.OwnershipInfo({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
             // 所有権の所有期間変更
             const sendOrderActions = <factory.action.transfer.send.order.IAction[]>await repos.action.search({
                 typeOf: factory.actionType.SendAction,
@@ -260,6 +250,13 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
                 const ownershipInfos = a.result;
                 if (Array.isArray(ownershipInfos)) {
                     await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
+                        // chevre連携
+                        await ownershipInfoService.updateByIdentifier({
+                            project: { id: params.project.id },
+                            identifier: String(ownershipInfo.identifier),
+                            ownedThrough: dateReturned
+                        });
+
                         const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
                             { _id: ownershipInfo.id },
                             { ownedThrough: dateReturned },
