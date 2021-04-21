@@ -107,7 +107,10 @@ export function search(params: {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 口座所有権を検索
-            const ownershipInfos = await repos.ownershipInfo.search(params.conditions);
+            const ownershipInfos = await repos.ownershipInfo.search({
+                ...params.conditions,
+                project: { id: { $eq: params.project.id } }
+            });
             const accountNumbers = ownershipInfos.map((o) => (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber);
 
             const typeOfGood = params.conditions.typeOfGood;
