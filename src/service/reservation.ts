@@ -12,7 +12,6 @@ import * as factory from '../factory';
 
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -36,8 +35,7 @@ type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reser
 type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 
 export type ISearchEventReservationsOperation<T> = (repos: {
-    ownershipInfo: OwnershipInfoRepo;
-    // project: ProjectRepo;
+    ownershipInfo: chevre.service.OwnershipInfo;
 }) => Promise<T>;
 
 /**
@@ -236,8 +234,7 @@ export function searchScreeningEventReservations(
     }
 ): ISearchEventReservationsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
-        // project: ProjectRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         // const project = await repos.project.findById({ id: params.project.id });
         // if (project.settings === undefined) {
@@ -247,10 +244,11 @@ export function searchScreeningEventReservations(
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 所有権検索
-            const ownershipInfos = await repos.ownershipInfo.search({
+            const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                 ...params,
                 project: { id: { $eq: params.project.id } }
             });
+            const ownershipInfos = searchOwnershipInfosResult.data;
 
             // Chevre予約の場合、詳細を取得
             const reservationIds = ownershipInfos

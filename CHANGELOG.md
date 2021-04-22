@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 決済方法リポジトリを削除
 - 承認リポジトリを削除
 - 注文リポジトリを削除
+- 所有権リポジトリを削除
 
 ### Fixed
 

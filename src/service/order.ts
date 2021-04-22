@@ -10,7 +10,6 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -220,7 +219,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOrder>) {
     return async (repos: {
         action: ActionRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
@@ -240,11 +239,6 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         const action = await repos.action.start(returnOrderActionAttributes);
 
         try {
-            const ownershipInfoService = new chevre.service.OwnershipInfo({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
             // 所有権の所有期間変更
             const sendOrderActions = <factory.action.transfer.send.order.IAction[]>await repos.action.search({
                 typeOf: factory.actionType.SendAction,
@@ -257,22 +251,12 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
                 if (Array.isArray(ownershipInfos)) {
                     await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
                         // chevre連携
-                        await ownershipInfoService.updateByIdentifier({
+                        await repos.ownershipInfo.updateByIdentifier({
                             project: { id: params.project.id },
                             identifier: String(ownershipInfo.identifier),
                             ownedThrough: dateReturned
                         });
-
-                        const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
-                            { _id: ownershipInfo.id },
-                            { ownedThrough: dateReturned },
-                            { new: true }
-                        )
-                            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
-                            .exec();
-                        if (doc !== null) {
-                            returnedOwnershipInfos.push(doc.toObject());
-                        }
+                        returnedOwnershipInfos.push(ownershipInfo);
                     }));
                 }
             }));

@@ -7,7 +7,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -32,7 +31,7 @@ export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
     confirmationNumber: ConfirmationNumberRepo;
     orderNumber: OrderNumberRepo;
-    ownershipInfo: OwnershipInfoRepo;
+    ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
@@ -58,7 +57,7 @@ export function orderAccount(params: {
         action: ActionRepo;
         confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
@@ -176,7 +175,7 @@ function processPlaceOrder(params: {
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
@@ -240,7 +239,7 @@ function processAuthorizeProductOffer(params: {
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         productService: chevre.service.Product;
     }) => {
         const acceptedOffer = params.acceptedOffer;

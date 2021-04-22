@@ -10,12 +10,11 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 
 type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 type IAccountsOperation<T> = (repos: {
-    ownershipInfo: OwnershipInfoRepo;
+    ownershipInfo: chevre.service.OwnershipInfo;
     project: ProjectRepo;
 }) => Promise<T>;
 
@@ -53,7 +52,7 @@ export function close(params: {
     accountNumber: string;
 }): IAccountsOperation<void> {
     return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         project: ProjectRepo;
     }) => {
         try {
@@ -66,7 +65,7 @@ export function close(params: {
             // 所有者を指定された場合、口座所有権を確認
             const ownerId = params.ownedBy?.id;
             if (typeof ownerId === 'string') {
-                const accountOwnershipInfos = await repos.ownershipInfo.search({
+                const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                     limit: 1,
                     project: { id: { $eq: params.project.id } },
                     typeOfGood: { accountNumber: { $eq: closingAccount.accountNumber } },
@@ -74,6 +73,7 @@ export function close(params: {
                     ownedFrom: now,
                     ownedThrough: now
                 });
+                const accountOwnershipInfos = searchOwnershipInfosResult.data;
                 const ownershipInfo = accountOwnershipInfos[0];
                 if (ownershipInfo === undefined) {
                     throw new factory.errors.NotFound('Account');
@@ -99,7 +99,7 @@ export function search(params: {
     conditions: factory.ownershipInfo.ISearchConditions;
 }): IAccountsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -107,10 +107,11 @@ export function search(params: {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 口座所有権を検索
-            const ownershipInfos = await repos.ownershipInfo.search({
+            const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                 ...params.conditions,
                 project: { id: { $eq: params.project.id } }
             });
+            const ownershipInfos = searchOwnershipInfosResult.data;
             const accountNumbers = ownershipInfos.map((o) => (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber);
 
             const typeOfGood = params.conditions.typeOfGood;
@@ -166,14 +167,14 @@ export function searchMoneyTransferActions(params: {
     };
 }): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction[]> {
     return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         project: ProjectRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
         let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
-            const ownershipInfos = await repos.ownershipInfo.search({
+            const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                 project: { id: { $eq: params.project.id } },
                 typeOfGood: {
                     accountNumber: { $eq: params.typeOfGood.accountNumber }
@@ -182,6 +183,7 @@ export function searchMoneyTransferActions(params: {
                 ownedFrom: params.ownedFrom,
                 ownedThrough: params.ownedThrough
             });
+            const ownershipInfos = searchOwnershipInfosResult.data;
             const ownershipInfo = ownershipInfos[0];
             if (ownershipInfo === undefined) {
                 throw new factory.errors.NotFound('Account');
@@ -222,7 +224,7 @@ export function findAccount(params: {
 }) {
     return async (repos: {
         project: ProjectRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
     }): Promise<factory.pecorino.account.IAccount> => {
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,

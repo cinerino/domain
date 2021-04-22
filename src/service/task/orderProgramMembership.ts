@@ -2,13 +2,15 @@ import * as GMO from '@motionpicture/gmo-service';
 
 import { IConnectionSettings, IOperation } from '../task';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
@@ -49,12 +51,25 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             userPoolId: project.settings.cognito.customerUserPool.id
         });
 
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const ownershipInfoService = new chevre.service.OwnershipInfo({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         await orderProgramMembership(data)({
             action: new ActionRepo(settings.connection),
             confirmationNumber: new ConfirmationNumberRepo(settings.redisClient),
             creditCard: creditCardRepo,
             orderNumber: new OrderNumberRepo(settings.redisClient),
-            ownershipInfo: new OwnershipInfoRepo(settings.connection),
+            ownershipInfo: ownershipInfoService,
             person: personRepo,
             project: new ProjectRepo(settings.connection),
             registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),

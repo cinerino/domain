@@ -17,7 +17,6 @@ import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../repo/action/registerServiceInProgress';
-import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
@@ -41,7 +40,7 @@ export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.owners
 export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         task: TaskRepo;
         transaction: TransactionRepo;

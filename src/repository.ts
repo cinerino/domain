@@ -7,7 +7,6 @@ import { RedisRepository as RegisterServiceActionInProgress } from './repo/actio
 import { RedisRepository as ConfirmationNumberRepo } from './repo/confirmationNumber';
 import { MongoRepository as MemberRepo } from './repo/member';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
-import { MongoRepository as OwnershipInfoRepo } from './repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { MongoRepository as ProjectRepo } from './repo/project';
@@ -39,11 +38,6 @@ export class Member extends MemberRepo { }
  * 注文番号リポジトリ
  */
 export class OrderNumber extends OrderNumberRepo { }
-
-/**
- * 所有権リポジトリ
- */
-export class OwnershipInfo extends OwnershipInfoRepo { }
 
 export namespace paymentMethod {
     /**

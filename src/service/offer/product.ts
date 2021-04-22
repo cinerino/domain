@@ -9,7 +9,6 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -36,7 +35,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     orderNumber: OrderNumberRepo;
-    ownershipInfo: OwnershipInfoRepo;
+    ownershipInfo: chevre.service.OwnershipInfo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
     transaction: TransactionRepo;
@@ -134,7 +133,7 @@ export function authorize(params: {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
@@ -472,14 +471,14 @@ function checkIfRegistered(params: {
     now: Date;
 }) {
     return async (repos: {
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const serviceOutputType = params.product.serviceOutput?.typeOf;
 
         // メンバーシップについては、登録済かどうか確認する
         if (params.product.typeOf === factory.chevre.product.ProductType.MembershipService) {
             if (typeof serviceOutputType === 'string') {
-                const ownershipInfos = await repos.ownershipInfo.search({
+                const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                     project: { id: { $eq: params.product.project.id } },
                     typeOfGood: {
                         typeOf: serviceOutputType
@@ -488,6 +487,7 @@ function checkIfRegistered(params: {
                     ownedFrom: params.now,
                     ownedThrough: params.now
                 });
+                const ownershipInfos = searchOwnershipInfosResult.data;
 
                 const selectedProgramMembership = ownershipInfos.find(
                     (o) => (<any>o.typeOfGood).membershipFor?.id === params.product.id

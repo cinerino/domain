@@ -8,7 +8,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
@@ -21,6 +20,7 @@ import * as OfferService from '../offer';
 import * as ChevrePaymentService from '../payment/chevre';
 import * as TransactionService from '../transaction';
 
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 export type IOrderOperation<T> = (repos: {
@@ -28,7 +28,7 @@ export type IOrderOperation<T> = (repos: {
     confirmationNumber: ConfirmationNumberRepo;
     creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
-    ownershipInfo: OwnershipInfoRepo;
+    ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
@@ -46,7 +46,7 @@ export function orderProgramMembership(
         confirmationNumber: ConfirmationNumberRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
@@ -144,7 +144,7 @@ function processPlaceOrder(params: {
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
@@ -225,7 +225,7 @@ function processAuthorizeProductOffer(params: {
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
-        ownershipInfo: OwnershipInfoRepo;
+        ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const acceptedOffer = params.acceptedOffer;
         const customer = params.customer;
