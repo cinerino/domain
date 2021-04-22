@@ -9,7 +9,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -240,7 +239,6 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
         project: ProjectRepo;
-        order: OrderRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
@@ -277,7 +275,14 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         // プロジェクトの対応決済サービスを確認
         const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
 
-        const order = await repos.order.findByOrderNumber({
+        // const order = await repos.order.findByOrderNumber({
+        //     orderNumber: refundActionAttributes.purpose.orderNumber
+        // });
+        const orderService = new chevre.service.Order({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+        const order = await orderService.findByOrderNumber({
             orderNumber: refundActionAttributes.purpose.orderNumber
         });
 

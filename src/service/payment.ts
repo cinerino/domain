@@ -2,7 +2,6 @@
  * 決済サービス
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
@@ -83,7 +82,6 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
 export function refund(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
-        order: OrderRepo;
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;

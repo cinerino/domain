@@ -17,7 +17,6 @@ import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../repo/action/registerServiceInProgress';
-import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as OwnershipInfoRepo } from '../repo/ownershipInfo';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -42,7 +41,6 @@ export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.owners
 export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        order: OrderRepo;
         ownershipInfo: OwnershipInfoRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         task: TaskRepo;
@@ -62,12 +60,12 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 return repos.ownershipInfo.saveByIdentifier(ownershipInfo);
             }));
 
-            // 注文ステータス変更
-            order = await repos.order.changeStatus({
-                orderNumber: order.orderNumber,
-                orderStatus: factory.orderStatus.OrderDelivered,
-                previousOrderStatus: factory.orderStatus.OrderProcessing
+            // 注文ステータス変更(chevre連携)
+            const orderService = new chevre.service.Order({
+                endpoint: credentials.chevre.endpoint,
+                auth: chevreAuthClient
             });
+            order = await orderService.deliverOrder({ orderNumber: order.orderNumber });
 
             // 注文取引検索
             const searchTransactionsResult = await repos.transaction.search<factory.transactionType.PlaceOrder>({
