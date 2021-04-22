@@ -40,6 +40,7 @@ export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.owners
 export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         ownershipInfo: chevre.service.OwnershipInfo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         task: TaskRepo;
@@ -60,11 +61,7 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
             }));
 
             // 注文ステータス変更(chevre連携)
-            const orderService = new chevre.service.Order({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-            order = await orderService.deliverOrder({ orderNumber: order.orderNumber });
+            order = await repos.order.deliverOrder({ orderNumber: order.orderNumber });
 
             // 注文取引検索
             const searchTransactionsResult = await repos.transaction.search<factory.transactionType.PlaceOrder>({

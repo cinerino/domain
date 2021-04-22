@@ -9,6 +9,7 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
 
+import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 /**
@@ -82,6 +83,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
 export function refund(params: factory.task.IData<factory.taskName.Refund>) {
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;

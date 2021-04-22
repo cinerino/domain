@@ -36,6 +36,10 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
             state: ''
         });
 
+        const orderService = new chevre.service.Order({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
@@ -43,6 +47,7 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
 
         await DeliveryService.sendOrder(data)({
             action: actionRepo,
+            order: orderService,
             ownershipInfo: ownershipInfoService,
             registerActionInProgress: registerActionInProgressRepo,
             task: taskRepo,

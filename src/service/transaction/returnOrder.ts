@@ -28,6 +28,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
+    order: chevre.service.Order;
     project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -48,6 +49,7 @@ export function start(
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
@@ -70,11 +72,7 @@ export function start(
         //     orderNumbers: params.object.order.map((o) => o.orderNumber),
         //     seller: { ids: [String(seller.id)] }
         // });
-        const orderService = new chevre.service.Order({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const searchOrdersResult = await orderService.search({
+        const searchOrdersResult = await repos.order.search({
             project: { id: { $eq: project.id } },
             orderNumbers: params.object.order.map((o) => o.orderNumber),
             seller: { ids: [String(seller.id)] }
@@ -257,6 +255,7 @@ function createInformOrderParams(params: factory.transaction.returnOrder.IStartP
 export function confirm(params: factory.transaction.returnOrder.IConfirmParams) {
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         transaction: TransactionRepo;
     }) => {
         let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
@@ -279,11 +278,7 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
         //     project: { id: { $eq: transaction.project.id } },
         //     orderNumbers: orderNumbers
         // });
-        const orderService = new chevre.service.Order({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const searchOrdersResult = await orderService.search({
+        const searchOrdersResult = await repos.order.search({
             project: { id: { $eq: transaction.project.id } },
             orderNumbers: orderNumbers
         });

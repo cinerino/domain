@@ -238,6 +238,7 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
@@ -278,11 +279,7 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         // const order = await repos.order.findByOrderNumber({
         //     orderNumber: refundActionAttributes.purpose.orderNumber
         // });
-        const orderService = new chevre.service.Order({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        const order = await orderService.findByOrderNumber({
+        const order = await repos.order.findByOrderNumber({
             orderNumber: refundActionAttributes.purpose.orderNumber
         });
 

@@ -1,6 +1,10 @@
 import { IConnectionSettings, IOperation } from '../task';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import * as factory from '../../factory';
+
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -16,8 +20,22 @@ export function call(data: factory.task.IData<factory.taskName.PlaceOrder>): IOp
         const taskRepo = new TaskRepo(settings.connection);
         const transactioinRepo = new TransactionRepo(settings.connection);
 
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const orderService = new chevre.service.Order({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         await OrderService.placeOrder(data)({
             action: actionRepo,
+            order: orderService,
             task: taskRepo,
             transaction: transactioinRepo
         });

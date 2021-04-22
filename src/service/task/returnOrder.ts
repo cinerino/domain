@@ -28,12 +28,17 @@ export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IO
             state: ''
         });
 
+        const orderService = new chevre.service.Order({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
         await OrderService.returnOrder(data)({
             action: actionRepo,
+            order: orderService,
             ownershipInfo: ownershipInfoService,
             transaction: transactionRepo,
             task: taskRepo

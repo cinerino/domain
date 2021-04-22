@@ -4,22 +4,12 @@
 // import * as createDebug from 'debug';
 // import * as moment from 'moment';
 
-import { credentials } from '../credentials';
-
 import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 // import * as COA from '../coa';
 
@@ -34,6 +24,7 @@ export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 export function placeOrder(params: factory.action.trade.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
@@ -53,11 +44,7 @@ export function placeOrder(params: factory.action.trade.order.IAttributes) {
 
         try {
             // chevre連携
-            const orderService = new chevre.service.Order({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-            await orderService.createIfNotExist(order);
+            await repos.order.createIfNotExist(order);
 
             // const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
             //     placeOrderTransaction.object.authorizeActions)
@@ -219,6 +206,7 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOrder>) {
     return async (repos: {
         action: ActionRepo;
+        order: chevre.service.Order;
         ownershipInfo: chevre.service.OwnershipInfo;
         transaction: TransactionRepo;
         task: TaskRepo;
@@ -226,11 +214,7 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
         const dateReturned = new Date();
 
         // let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
-        const orderService = new chevre.service.Order({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-        let order = await orderService.findByOrderNumber({ orderNumber: params.object.orderNumber });
+        let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
 
         const returnOrderActionAttributes = params;
         const returnedOwnershipInfos: factory.ownershipInfo.IOwnershipInfo<any>[] = [];
@@ -262,7 +246,7 @@ export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOr
             }));
 
             // 注文ステータス変更(chevre連携)
-            order = await orderService.returnOrder({
+            order = await repos.order.returnOrder({
                 orderNumber: order.orderNumber,
                 dateReturned: dateReturned,
                 returner: returnOrderActionAttributes.agent
