@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - chevreイベント全座席検索を使用しないように調整
 - PayAction -> ConfirmActionとして再構築
 - RefundAction -> ReturnActionとして再構築
+- RegisterAction -> ConfirmActionとして再構築
 
 ### Deprecated
 

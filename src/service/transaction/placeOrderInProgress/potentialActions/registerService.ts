@@ -8,8 +8,8 @@ export async function createRegisterServiceActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.IAttributes<factory.actionType.RegisterAction, any, any>[]> {
-    const registerServiceActions: factory.action.IAttributes<factory.actionType.RegisterAction, any, any>[] = [];
+}): Promise<factory.action.interact.register.service.IAttributes[]> {
+    const registerServiceActions: factory.action.interact.register.service.IAttributes[] = [];
 
     const authorizeProductOfferActions = (<factory.action.authorize.offer.product.IAction[]>
         params.transaction.object.authorizeActions)
@@ -43,7 +43,7 @@ export async function createRegisterServiceActions(params: {
 
             registerServiceActions.push({
                 project: params.transaction.project,
-                typeOf: <factory.actionType.RegisterAction>factory.actionType.RegisterAction,
+                typeOf: factory.actionType.ConfirmAction,
                 object: registerServiceObject,
                 agent: params.transaction.agent,
                 purpose: <any>{
