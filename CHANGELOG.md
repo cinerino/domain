@@ -23,15 +23,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - order.customerをtransaction.object.customerから生成するように調整
 - プロダクトオファー承認時にポイント特典に識別子を自動発行
 - 注文作成&変更時にchevreへ連携
-- chevreでの注文検索に対応(USE_CHEVRE_SEARCH_ORDER設定)
+- chevreでの注文検索に対応
 - mongooseモデルを最適化
 - 承認コード発行時にchevreへ連携
 - 所有権発行時にchevreへ連携
 - 座席オファー承認処理を最適化
-- chevreでの承認検索に対応(USE_CHEVRE_SEARCH_AUTHORIZATION設定)
-- chevreでの所有権検索に対応(USE_CHEVRE_SEARCH_OWNERSHIPINFO設定)
+- chevreでの承認検索に対応
+- chevreでの所有権検索に対応
 - 注文返品時の所有権変更をchevre連携
 - chevreイベント全座席検索を使用しないように調整
+- PayAction -> ConfirmActionとして再構築
+- RefundAction -> ReturnActionとして再構築
 
 ### Deprecated
 

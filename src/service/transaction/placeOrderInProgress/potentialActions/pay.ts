@@ -18,7 +18,7 @@ export async function createPayActions(params: {
 
         return {
             project: params.transaction.project,
-            typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+            typeOf: factory.actionType.ConfirmAction,
             object: [{
                 typeOf: factory.action.trade.pay.ObjectType.PaymentMethod,
                 paymentMethod: {

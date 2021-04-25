@@ -151,30 +151,6 @@ export function voidTransaction(params: {
     };
 }
 
-export function findPayActionByOrderNumber(params: {
-    object: {
-        paymentMethod: string;
-        paymentMethodId: string;
-    };
-    purpose: { orderNumber: string };
-}) {
-    return async (repos: {
-        action: ActionRepo;
-    }): Promise<factory.action.trade.pay.IAction | undefined> => {
-        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: params.purpose.orderNumber });
-        const payActions = <factory.action.trade.pay.IAction[]>actionsOnOrder
-            .filter((a) => a.typeOf === factory.actionType.PayAction)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
-
-        return payActions
-            .filter((a) => a.object[0].paymentMethod.typeOf === params.object.paymentMethod)
-            .find((a) => {
-                return a.object.some((p) => p.paymentMethod.paymentMethodId === params.object.paymentMethodId);
-                // a.object[0].paymentMethod.paymentMethodId === params.object.paymentMethodId
-            });
-    };
-}
-
 /**
  * 返金後のアクション
  */

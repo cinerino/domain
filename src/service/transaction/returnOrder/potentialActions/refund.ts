@@ -103,7 +103,7 @@ export async function createRefundActions(params: {
 
         return {
             project: transaction.project,
-            typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+            typeOf: factory.actionType.ReturnAction,
             object: p,
             agent: {
                 project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
