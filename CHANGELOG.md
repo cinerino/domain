@@ -35,6 +35,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - PayAction -> ConfirmActionとして再構築
 - RefundAction -> ReturnActionとして再構築
 - RegisterAction -> ConfirmActionとして再構築
+- MoneyTransfer -> ConfirmActionとして再構築
 
 ### Deprecated
 

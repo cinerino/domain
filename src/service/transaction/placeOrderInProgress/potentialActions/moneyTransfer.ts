@@ -22,7 +22,7 @@ export async function createMoneyTransferActions(params: {
         if (actionResult !== undefined && pendingTransaction !== undefined) {
             moneyTransferActions.push({
                 project: params.transaction.project,
-                typeOf: <factory.actionType.MoneyTransfer>factory.actionType.MoneyTransfer,
+                typeOf: factory.actionType.ConfirmAction,
                 object: {
                     pendingTransaction: actionResult.responseBody
                 },
