@@ -58,7 +58,7 @@ export async function createCancelReservationActions(params: {
 
                         cancelReservationAction = {
                             project: transaction.project,
-                            typeOf: factory.actionType.CancelAction,
+                            typeOf: factory.actionType.ReturnAction,
                             object: {
                                 theaterCode: superEventLocationBranchCode,
                                 reserveNum: Number(reservationNumber),
@@ -75,7 +75,7 @@ export async function createCancelReservationActions(params: {
                     default:
                         cancelReservationAction = {
                             project: transaction.project,
-                            typeOf: factory.actionType.CancelAction,
+                            typeOf: factory.actionType.ReturnAction,
                             object: {
                                 typeOf: factory.chevre.transactionType.Reserve,
                                 transactionNumber: reservationNumber
