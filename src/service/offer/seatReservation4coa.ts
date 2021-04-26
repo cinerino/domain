@@ -4,7 +4,6 @@ import * as moment from 'moment';
 import { credentials } from '../../credentials';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleCOAReserveTemporarilyError } from '../../errorHandler';
@@ -45,7 +44,6 @@ export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -61,7 +59,6 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -72,8 +69,6 @@ export function create(params: {
         if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
-
-        const project = await repos.project.findById({ id: params.project.id });
 
         // イベントを取得
         const eventService = new chevre.service.Event({
@@ -93,7 +88,7 @@ export function create(params: {
         });
 
         const acceptedOffer = await validateOffers(
-            project,
+            params.project,
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
             acceptedOffersWithoutDetails
@@ -242,7 +237,6 @@ export function changeOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -263,8 +257,6 @@ export function changeOffers(params: {
 
         validate4changeOffer({ action, object: params.object });
         const authorizeAction = action;
-
-        const project = await repos.project.findById({ id: params.project.id });
 
         // イベントを取得
         const eventService = new chevre.service.Event({
@@ -296,7 +288,7 @@ export function changeOffers(params: {
             };
         });
         const acceptedOffer = await validateOffers(
-            project,
+            params.project,
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
             acceptedOffersWithoutDetails

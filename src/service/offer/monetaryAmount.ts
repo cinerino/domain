@@ -6,7 +6,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handlePecorinoError } from '../../errorHandler';
@@ -21,7 +20,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -33,11 +31,8 @@ export function authorize(params: {
 }): ICreateOperation<factory.action.authorize.offer.monetaryAmount.IAction> {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -49,7 +44,7 @@ export function authorize(params: {
         const seller = transaction.seller;
 
         const { requestBody, responseBody } = await processStartDepositTransaction({
-            project: project,
+            project: params.project,
             transaction: transaction,
             object: params.object
         });
@@ -143,7 +138,7 @@ async function processStartDepositTransaction(params: {
         // 販売者が取引人に入金
         requestBody = {
             typeOf: chevre.factory.transactionType.MoneyTransfer,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: {
                 typeOf: params.transaction.seller.typeOf,
                 id: params.transaction.seller.id,
@@ -193,7 +188,6 @@ async function processStartDepositTransaction(params: {
 export function voidTransaction(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
@@ -250,7 +244,6 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
 export function settleTransaction(params: factory.task.IData<factory.taskName.MoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
         const action = await repos.action.start(params);
 

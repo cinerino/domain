@@ -9,7 +9,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -28,12 +27,10 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
-    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
 export type ITaskAndTransactionOperation<T> = (repos: {
-    project: ProjectRepo;
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -55,7 +52,6 @@ export type IStartParams = factory.transaction.moneyTransfer.IStartParamsWithout
 export function start(params: IStartParams): IStartOperation<factory.transaction.moneyTransfer.ITransaction> {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const sellerService = new chevre.service.Seller({
@@ -130,7 +126,6 @@ function authorizePaymentCard(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = params.transaction;
@@ -141,7 +136,7 @@ function authorizePaymentCard(params: {
 
             // 転送取引
             await processAuthorizePaymentCard({
-                project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
+                project: { id: transaction.project.id },
                 agent: { id: transaction.agent.id },
                 object: {
                     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
@@ -231,7 +226,6 @@ function fixToLocation(
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
-    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -240,7 +234,7 @@ export type IAuthorizeOperation<T> = (repos: {
  * 口座取引は、出金取引あるいは転送取引のどちらかを選択できます
  */
 function processAuthorizePaymentCard(params: {
-    project: factory.project.IProject;
+    project: { id: string };
     agent: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject & {
         fromLocation?: factory.action.transfer.moneyTransfer.IPaymentCard;
@@ -251,10 +245,8 @@ function processAuthorizePaymentCard(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -307,7 +299,7 @@ function processAuthorizePaymentCard(params: {
 
         try {
             responseBody = await processMoneyTransferTransaction({
-                project: project,
+                project: params.project,
                 object: params.object,
                 recipient: recipient,
                 transaction: transaction
@@ -352,7 +344,7 @@ function processAuthorizePaymentCard(params: {
 
 // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 async function processMoneyTransferTransaction(params: {
-    project: factory.project.IProject;
+    project: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject & {
         fromLocation?: factory.action.transfer.moneyTransfer.IPaymentCard;
         currency?: string;
@@ -398,7 +390,7 @@ async function processMoneyTransferTransaction(params: {
         // 転送先口座が指定されていない場合は、出金取引
         pendingTransaction = await moneyTransferService.start({
             typeOf: chevre.factory.transactionType.MoneyTransfer,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: recipient,
@@ -431,7 +423,7 @@ async function processMoneyTransferTransaction(params: {
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
             typeOf: chevre.factory.transactionType.MoneyTransfer,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: recipient,
@@ -464,7 +456,7 @@ async function processMoneyTransferTransaction(params: {
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
             typeOf: chevre.factory.transactionType.MoneyTransfer,
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: recipient,
@@ -590,7 +582,6 @@ export function exportTasksById(params: {
     runsTasksAfterInSeconds?: number;
 }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {
-        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {

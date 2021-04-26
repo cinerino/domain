@@ -5,7 +5,6 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
 import * as factory from '../factory';
 
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -124,7 +123,6 @@ export function exportTasks<T extends factory.transactionType>(params: {
     typeOf?: { $in: T[] };
 }) {
     return async (repos: {
-        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {

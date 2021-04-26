@@ -30,14 +30,9 @@ describe('exportTasksById()', () => {
             potentialActions: {}
         };
 
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves({ id: '' });
         sandbox.mock(transactionRepo)
             .expects('findById')
             .once()
@@ -48,7 +43,6 @@ describe('exportTasksById()', () => {
             .resolves();
 
         const result = await domain.service.transaction.placeOrder.exportTasksById(transaction)({
-            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -65,14 +59,9 @@ describe('exportTasksById()', () => {
             status: domain.factory.transactionStatusType.InProgress
         };
 
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves({ id: '' });
         sandbox.mock(transactionRepo)
             .expects('findById')
             .once()
@@ -82,7 +71,6 @@ describe('exportTasksById()', () => {
             .never();
 
         const result = await domain.service.transaction.placeOrder.exportTasksById(transaction)({
-            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         })

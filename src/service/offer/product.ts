@@ -9,7 +9,6 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleChevreError } from '../../errorHandler';
@@ -36,7 +35,6 @@ export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
-    project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -51,7 +49,6 @@ export function search(params: {
     availableAt?: { id: string };
 }) {
     return async (__: {
-        project: ProjectRepo;
     }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> => {
         const now = moment();
 
@@ -134,13 +131,10 @@ export function authorize(params: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
-        project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
         const now = new Date();
-
-        const project = await repos.project.findById({ id: params.project.id });
 
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -163,7 +157,7 @@ export function authorize(params: {
             id: String(params.object[0]?.itemOffered?.id)
         });
         const availableOffers = await search({
-            project: { id: project.id },
+            project: { id: params.project.id },
             itemOffered: { id: String(product.id) },
             // 利用アプリケーションを指定
             ...(typeof params.location?.id === 'string') ? { availableAt: { id: params.location.id } } : undefined
@@ -201,7 +195,7 @@ export function authorize(params: {
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const publishResult = await transactionNumberService.publish({ project: { id: project.id } });
+        const publishResult = await transactionNumberService.publish({ project: { id: params.project.id } });
         const transactionNumber = publishResult.transactionNumber;
 
         // 承認アクション開始
@@ -226,7 +220,7 @@ export function authorize(params: {
             });
 
             const startParams = createRegisterServiceStartParams({
-                project: { typeOf: project.typeOf, id: project.id },
+                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
                 object: acceptedOffer,
                 transaction: transaction,
                 transactionNumber
@@ -259,7 +253,7 @@ export function authorize(params: {
 
         // アクションを完了
         const result = createResult({
-            project: { typeOf: project.typeOf, id: project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             requestBody: requestBody,
             responseBody: responseBody,
             acceptedOffer: acceptedOffer
@@ -272,12 +266,9 @@ export function authorize(params: {
 export function voidTransaction(params: factory.task.IData<factory.taskName.VoidRegisterService>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const transaction = await repos.transaction.findById({
             typeOf: params.purpose.typeOf,
             id: params.purpose.id
@@ -337,7 +328,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
 
             await processVoidRegisterServiceTransaction({
                 action,
-                project
+                project: params.project
             });
         }));
     };
@@ -348,7 +339,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
  */
 async function processVoidRegisterServiceTransaction(params: {
     action: factory.action.authorize.offer.product.IAction;
-    project: factory.project.IProject;
+    project: { id: string };
 }) {
     const transactionNumber = params.action.instrument?.transactionNumber;
     if (typeof transactionNumber === 'string') {

@@ -66,17 +66,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -112,7 +107,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -163,17 +157,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -217,7 +206,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
         assert.deepEqual(result, action);
@@ -269,17 +257,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -315,7 +298,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -376,17 +358,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -426,7 +403,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -486,17 +462,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -536,7 +507,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -587,17 +557,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -634,7 +599,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
 
@@ -685,17 +649,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -733,7 +692,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -781,17 +739,12 @@ describe('action.authorize.seatReservation.create()', () => {
         const mvtkTicketResult = new Error('mvtkTicketResult');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -829,7 +782,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -879,17 +831,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -926,7 +873,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -971,17 +917,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1014,7 +955,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1047,16 +987,12 @@ describe('action.authorize.seatReservation.create()', () => {
         }];
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .never();
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .never();
@@ -1077,7 +1013,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1129,17 +1064,12 @@ describe('action.authorize.seatReservation.create()', () => {
         const updTmpReserveSeatResult = new Error('message');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1179,7 +1109,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1229,17 +1158,12 @@ describe('action.authorize.seatReservation.create()', () => {
         const updTmpReserveSeatResult = new Error('updTmpReserveSeatResult');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1278,7 +1202,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1329,17 +1252,12 @@ describe('action.authorize.seatReservation.create()', () => {
         const updTmpReserveSeatResult = new Error('既に予約済みです');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1380,7 +1298,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1433,17 +1350,12 @@ describe('action.authorize.seatReservation.create()', () => {
         (<any>updTmpReserveSeatResult).code = 200;
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1484,7 +1396,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1537,17 +1448,12 @@ describe('action.authorize.seatReservation.create()', () => {
         (<any>updTmpReserveSeatResult).code = 500;
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1588,7 +1494,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1663,17 +1568,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1709,7 +1609,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -1788,17 +1687,12 @@ describe('action.authorize.seatReservation.create()', () => {
         };
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
             .once()
             .resolves(transaction);
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Event.prototype)
             .expects('findById')
             .once()
@@ -1834,7 +1728,6 @@ describe('action.authorize.seatReservation.create()', () => {
             }
         })({
             action: actionRepo,
-            project: projectRepo,
             transaction: transactionRepo
         });
         assert.deepEqual(result, action);

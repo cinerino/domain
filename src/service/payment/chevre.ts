@@ -363,7 +363,7 @@ export function refund(params: factory.task.IData<factory.taskName.Refund>) {
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
 
         // 潜在アクション
-        await onRefund(refundActionAttributes, order)({ project: repos.project, task: repos.task });
+        await onRefund(refundActionAttributes, order)({ task: repos.task });
     };
 }
 

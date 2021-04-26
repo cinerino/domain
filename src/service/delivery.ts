@@ -17,7 +17,6 @@ import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../repo/action/registerServiceInProgress';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -228,20 +227,17 @@ export function onSend(
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
-            const project = await repos.project.findById({ id: params.project.id });
-
             const transactionNumberService = new chevre.service.TransactionNumber({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
             const { transactionNumber } = await transactionNumberService.publish({
-                project: { id: project.id }
+                project: { id: params.project.id }
             });
 
             // Chevreで入金
@@ -354,7 +350,6 @@ export function createPointAwardIdentifier(params: {
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
         // アクション開始
         const givePointAwardAction = params.object;
@@ -365,14 +360,12 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const action = await repos.action.start(params);
 
         try {
-            const project = await repos.project.findById({ id: params.project.id });
-
             const transactionNumberService = new chevre.service.TransactionNumber({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
             const { transactionNumber } = await transactionNumberService.publish({
-                project: { id: project.id }
+                project: { id: params.project.id }
             });
 
             // Chevreで入金した分を出金

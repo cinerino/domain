@@ -10,12 +10,10 @@ import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 
 type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 type IAccountsOperation<T> = (repos: {
     ownershipInfo: chevre.service.OwnershipInfo;
-    project: ProjectRepo;
 }) => Promise<T>;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
@@ -53,7 +51,6 @@ export function close(params: {
 }): IAccountsOperation<void> {
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
-        project: ProjectRepo;
     }) => {
         try {
             const now = new Date();
@@ -100,10 +97,7 @@ export function search(params: {
 }): IAccountsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
-        project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 口座所有権を検索
@@ -125,7 +119,7 @@ export function search(params: {
                     auth: pecorinoAuthClient
                 });
                 const searchAccountResult = await accountService.search({
-                    project: { id: { $eq: project.id } },
+                    project: { id: { $eq: params.project.id } },
                     accountNumbers: accountNumbers,
                     statuses: [],
                     limit: 100
@@ -168,10 +162,7 @@ export function searchMoneyTransferActions(params: {
 }): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction[]> {
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
-        project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
         try {
             const searchOwnershipInfosResult = await repos.ownershipInfo.search({
@@ -197,7 +188,7 @@ export function searchMoneyTransferActions(params: {
                 ...params.conditions,
                 // 口座番号条件は上書き
                 accountNumber: params.typeOfGood.accountNumber,
-                project: { id: { $eq: project.id } }
+                project: { id: { $eq: params.project.id } }
             });
             actions = searchMoneyTransferActionsResult.data;
         } catch (error) {
@@ -223,7 +214,6 @@ export function findAccount(params: {
     accountType: string;
 }) {
     return async (repos: {
-        project: ProjectRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
     }): Promise<factory.pecorino.account.IAccount> => {
         const productService = new chevre.service.Product({
@@ -253,8 +243,8 @@ export function findAccount(params: {
                 ownedThrough: params.now
             }
         })({
-            ownershipInfo: repos.ownershipInfo,
-            project: repos.project
+            ownershipInfo: repos.ownershipInfo
+            // project: repos.project
         });
 
         // 開設口座に絞る

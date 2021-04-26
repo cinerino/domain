@@ -124,7 +124,7 @@ export async function createAcceptedOffersWithoutDetails(params: {
 
 // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 async function offer2availableSalesTicket(params: {
-    project: factory.project.IProject;
+    project: { id: string };
     offers: IAcceptedOfferWithoutDetail[];
     offer: IAcceptedOfferWithoutDetail;
     offerIndex: number;
@@ -536,7 +536,7 @@ function availableSalesTicket2offerWithDetails(params: {
  * バグ、不足等あれば、随時更新することが望ましい。
  */
 export async function validateOffers(
-    project: factory.project.IProject,
+    project: { id: string },
     isMember: boolean,
     screeningEvent: factory.event.screeningEvent.IEvent,
     offers: IAcceptedOfferWithoutDetail[]

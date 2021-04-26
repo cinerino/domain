@@ -24,16 +24,11 @@ describe('ポイントインセンティブを適用する', () => {
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
             .expects('publish')
             .once()
@@ -60,8 +55,7 @@ describe('ポイントインセンティブを適用する', () => {
             },
             purpose: {}
         })({
-            action: actionRepo,
-            project: projectRepo
+            action: actionRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -71,16 +65,11 @@ describe('ポイントインセンティブを適用する', () => {
         const pecorinoError = new Error('pecorinoError');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
             .expects('publish')
             .once()
@@ -106,8 +95,7 @@ describe('ポイントインセンティブを適用する', () => {
             },
             purpose: {}
         })({
-            action: actionRepo,
-            project: projectRepo
+            action: actionRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, pecorinoError);
@@ -122,16 +110,11 @@ describe('ポイントインセンティブを返却する', () => {
 
     it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
             .expects('publish')
             .once()
@@ -165,8 +148,7 @@ describe('ポイントインセンティブを返却する', () => {
                 }
             }
         })({
-            action: actionRepo,
-            project: projectRepo
+            action: actionRepo
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -176,16 +158,11 @@ describe('ポイントインセンティブを返却する', () => {
         const pecorinoError = new Error('pecorinoError');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
 
         sandbox.mock(actionRepo)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.TransactionNumber.prototype)
             .expects('publish')
             .once()
@@ -221,8 +198,7 @@ describe('ポイントインセンティブを返却する', () => {
                 }
             }
         })({
-            action: actionRepo,
-            project: projectRepo
+            action: actionRepo
         })
             .catch((err) => err);
         assert.deepEqual(result, pecorinoError);

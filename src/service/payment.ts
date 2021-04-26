@@ -28,7 +28,6 @@ export import chevre = ChevrePaymentService;
 export function pay(params: factory.task.IData<factory.taskName.Pay>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
         if (params.instrument?.identifier === factory.action.authorize.paymentMethod.any.ServiceIdentifier.Chevre) {
             await ChevrePaymentService.pay(params)(repos);
@@ -51,7 +50,6 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
 export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayment>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         // 決済承認アクションを検索

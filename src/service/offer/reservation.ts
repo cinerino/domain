@@ -7,7 +7,6 @@ import * as COA from '../../coa';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -35,10 +34,7 @@ export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
 export function voidTransaction(params: factory.task.IData<factory.taskName.VoidReserve>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         // 座席仮予約アクション検索
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
             await repos.action.searchByPurpose({
@@ -73,7 +69,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
                 default:
                     await processVoidTransaction4chevre({
                         action: <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.Chevre>>action,
-                        project: project
+                        project: params.project
                     });
             }
         }));
@@ -136,7 +132,7 @@ async function processVoidTransaction4coa(params: {
 
 async function processVoidTransaction4chevre(params: {
     action: factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.Chevre>;
-    project: factory.project.IProject;
+    project: { id: string };
 }) {
     const transactionNumber = params.action.object.pendingTransaction?.transactionNumber;
     if (typeof transactionNumber === 'string') {

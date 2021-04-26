@@ -4,7 +4,6 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as ProductOfferService from '../offer/product';
@@ -19,13 +18,11 @@ export function call(data: factory.task.IData<factory.taskName.VoidRegisterServi
         }
 
         const actionRepo = new ActionRepo(settings.connection);
-        const projectRepo = new ProjectRepo(settings.connection);
         const registerActionInProgress = new RegisterServiceInProgressRepo(settings.redisClient);
         const transactionRepo = new TransactionRepo(settings.connection);
 
         await ProductOfferService.voidTransaction(data)({
             action: actionRepo,
-            project: projectRepo,
             registerActionInProgress: registerActionInProgress,
             transaction: transactionRepo
         });

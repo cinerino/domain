@@ -3,7 +3,6 @@ import { IConnectionSettings, IOperation } from '../task';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 
 import * as DeliveryService from '../delivery';
 
@@ -19,8 +18,7 @@ export function call(data: factory.task.IData<factory.taskName.ReturnPointAward>
         }
 
         await DeliveryService.returnPointAward(data)({
-            action: new ActionRepo(settings.connection),
-            project: new ProjectRepo(settings.connection)
+            action: new ActionRepo(settings.connection)
         });
     };
 }

@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - RegisterAction -> ConfirmActionとして再構築
 - MoneyTransfer -> ConfirmActionとして再構築
 - CancelAction -> ReturnActionとして再構築
+- 不要なプロジェクト参照処理を削除
 
 ### Deprecated
 

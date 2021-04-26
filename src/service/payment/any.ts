@@ -7,7 +7,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -159,7 +158,6 @@ export function onRefund(
     order?: factory.order.IOrder
 ) {
     return async (repos: {
-        project: ProjectRepo;
         task: TaskRepo;
     }) => {
         const potentialActions = refundActionAttributes.potentialActions;

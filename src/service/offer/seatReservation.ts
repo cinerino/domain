@@ -8,7 +8,6 @@ import * as COA from '../../coa';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleChevreError, handleCOAReserveTemporarilyError } from '../../errorHandler';
@@ -48,7 +47,6 @@ enum SeatingType {
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
-    project: ProjectRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -76,11 +74,8 @@ export function create(params: {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
             id: params.transaction.id
@@ -114,7 +109,7 @@ export function create(params: {
             && params.autoSeatSelection === true) {
             // 座席自動選択
             params.object.acceptedOffer = await selectSeats(
-                project,
+                params.project,
                 event,
                 params.object.acceptedOffer
                 // params.transaction.id
@@ -122,7 +117,7 @@ export function create(params: {
         }
 
         const acceptedOffers = await validateAcceptedOffers({
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             object: params.object,
             event: event,
             seller: { typeOf: transaction.seller.typeOf, id: String(transaction.seller.id) }
@@ -145,7 +140,7 @@ export function create(params: {
                     auth: chevreAuthClient
                 });
                 const publishResult = await transactionNumberService.publish({
-                    project: { id: project.id }
+                    project: { id: params.project.id }
                 });
                 transactionNumber = publishResult.transactionNumber;
 
@@ -217,7 +212,7 @@ export function create(params: {
 
                     // Chevreで仮予約
                     const startParams = createReserveTransactionStartParams({
-                        project: project,
+                        project: params.project,
                         object: params.object,
                         transaction: transaction,
                         transactionNumber: transactionNumber
@@ -485,7 +480,6 @@ export function validateAcceptedOffers(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        project: ProjectRepo;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = <factory.chevre.event.screeningEvent.ITicketOffer[]>await OfferService.searchEventTicketOffers({
@@ -1163,7 +1157,6 @@ export function cancel(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({

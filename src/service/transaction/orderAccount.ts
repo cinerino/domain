@@ -63,8 +63,6 @@ export function orderAccount(params: {
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
@@ -75,7 +73,7 @@ export function orderAccount(params: {
 
         // プロダクト検索
         const searchProductsResult = await productService.search({
-            project: { id: { $eq: project.id } },
+            project: { id: { $eq: params.project.id } },
             typeOf: { $in: [chevre.factory.product.ProductType.PaymentCard] }
         });
         const accountProduct = (<chevre.factory.product.IProduct[]>searchProductsResult.data)
@@ -86,7 +84,7 @@ export function orderAccount(params: {
 
         // プロダクトオファー検索
         const availableOffers = await OfferService.product.search({
-            project: { id: project.id },
+            project: { id: params.project.id },
             itemOffered: { id: String(accountProduct.id) },
             availableAt: { id: params.location.id }
         })(repos);
@@ -119,7 +117,7 @@ export function orderAccount(params: {
 
         // 注文取引開始
         transaction = await TransactionService.placeOrderInProgress.start({
-            project: { typeOf: project.typeOf, id: project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             expires: moment()
                 // tslint:disable-next-line:no-magic-numbers
                 .add(5, 'minutes')
@@ -143,7 +141,7 @@ export function orderAccount(params: {
             customer: customer,
             potentialActions: params.potentialActions,
             product: accountProduct,
-            project: project,
+            project: { id: params.project.id },
             transaction: transaction,
             serviceOutputName: params.name,
             location: params.location
@@ -172,13 +170,10 @@ function processPlaceOrder(params: {
         confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
-        project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
@@ -190,7 +185,7 @@ function processPlaceOrder(params: {
 
         // プロダクトオファー承認
         await processAuthorizeProductOffer({
-            project: { id: project.id },
+            project: { id: params.project.id },
             customer: customer,
             transaction: transaction,
             acceptedOffer: acceptedOffer,
@@ -210,7 +205,7 @@ function processPlaceOrder(params: {
 
         // 取引確定
         return TransactionService.placeOrderInProgress.confirm({
-            project: { id: project.id },
+            project: { id: params.project.id },
             id: transaction.id,
             agent: { id: customer.id },
             result: {
@@ -236,7 +231,6 @@ function processAuthorizeProductOffer(params: {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
-        project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;

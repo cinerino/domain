@@ -5,14 +5,12 @@ import * as moment from 'moment';
 
 import * as factory from '../../factory';
 
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createTasks } from './placeOrder/exportTasks/factory';
 
 export type ITaskAndTransactionOperation<T> = (repos: {
-    project: ProjectRepo;
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -28,7 +26,6 @@ export function exportTasksById(params: {
     runsTasksAfterInSeconds?: number;
 }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {
-        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
@@ -36,8 +33,6 @@ export function exportTasksById(params: {
             typeOf: factory.transactionType.PlaceOrder,
             id: params.id
         });
-
-        const project = await repos.project.findById({ id: transaction.project.id });
 
         // タスク実行日時バッファの指定があれば調整
         let taskRunsAt = new Date();
@@ -48,7 +43,6 @@ export function exportTasksById(params: {
         }
 
         const taskAttributes = createTasks({
-            project,
             transaction,
             runsAt: taskRunsAt
         });

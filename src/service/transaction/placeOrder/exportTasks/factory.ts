@@ -7,13 +7,11 @@ import { settings } from '../../../../settings';
  */
 // tslint:disable-next-line:max-func-body-length
 export function createTasks(params: {
-    project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     runsAt: Date;
 }): factory.task.IAttributes<factory.taskName>[] {
     const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
 
-    const project = params.project;
     const transaction = params.transaction;
     const taskRunsAt = params.runsAt;
 
@@ -21,7 +19,7 @@ export function createTasks(params: {
     const triggerWebhookTaskAttributes: factory.task.IAttributes<factory.taskName.TriggerWebhook>[] =
         transactionWebhookUrls.map((webhookUrl) => {
             return {
-                project: { typeOf: params.project.typeOf, id: params.project.id },
+                project: transaction.project,
                 name: factory.taskName.TriggerWebhook,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
@@ -55,7 +53,7 @@ export function createTasks(params: {
             }
             const orderActionAttributes = potentialActions.order;
             const placeOrderTaskAttributes: factory.task.IAttributes<factory.taskName.PlaceOrder> = {
-                project: { typeOf: project.typeOf, id: project.id },
+                project: transaction.project,
                 name: factory.taskName.PlaceOrder,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
@@ -73,7 +71,7 @@ export function createTasks(params: {
         case factory.transactionStatusType.Canceled:
         case factory.transactionStatusType.Expired:
             const voidReserveTaskAttributes: factory.task.IAttributes<factory.taskName.VoidReserve> = {
-                project: { typeOf: project.typeOf, id: project.id },
+                project: transaction.project,
                 name: factory.taskName.VoidReserve,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
@@ -81,13 +79,13 @@ export function createTasks(params: {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    project: { typeOf: project.typeOf, id: project.id },
+                    project: transaction.project,
                     purpose: { typeOf: transaction.typeOf, id: transaction.id }
                 }
             };
 
             const voidRegisterServiceTaskAttributes: factory.task.IAttributes<factory.taskName.VoidRegisterService> = {
-                project: { typeOf: project.typeOf, id: project.id },
+                project: transaction.project,
                 name: factory.taskName.VoidRegisterService,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
@@ -95,13 +93,13 @@ export function createTasks(params: {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    project: { typeOf: project.typeOf, id: project.id },
+                    project: transaction.project,
                     purpose: { typeOf: transaction.typeOf, id: transaction.id }
                 }
             };
 
             const voidPaymentTaskAttributes: factory.task.IAttributes<factory.taskName.VoidPayment> = {
-                project: { typeOf: project.typeOf, id: project.id },
+                project: transaction.project,
                 name: factory.taskName.VoidPayment,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
@@ -109,13 +107,13 @@ export function createTasks(params: {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    project: { typeOf: project.typeOf, id: project.id },
+                    project: transaction.project,
                     purpose: { typeOf: transaction.typeOf, id: transaction.id }
                 }
             };
 
             const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
-                project: { typeOf: project.typeOf, id: project.id },
+                project: transaction.project,
                 name: factory.taskName.VoidMoneyTransfer,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
@@ -123,7 +121,7 @@ export function createTasks(params: {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    project: { typeOf: project.typeOf, id: project.id },
+                    project: transaction.project,
                     purpose: { typeOf: transaction.typeOf, id: transaction.id }
                 }
             };

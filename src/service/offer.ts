@@ -2,8 +2,6 @@ import * as createDebug from 'debug';
 import { INTERNAL_SERVER_ERROR } from 'http-status';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as ProjectRepo } from '../repo/project';
-
 import * as MonetaryAmountOfferService from './offer/monetaryAmount';
 import * as ProductOfferService from './offer/product';
 import * as ReservationOfferService from './offer/reservation';
@@ -40,12 +38,7 @@ const coaAuthClient = new COA.auth.RefreshToken({
     refreshToken: credentials.coa.refreshToken
 });
 
-export type ISearchEventOffersOperation<T> = (repos: {
-    project: ProjectRepo;
-}) => Promise<T>;
-
 export type ISearchEventTicketOffersOperation<T> = (repos: {
-    project: ProjectRepo;
 }) => Promise<T>;
 
 export type IAcceptedPaymentMethod = factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket;
@@ -103,12 +96,9 @@ export function searchEventTicketOffers(params: {
     };
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[]> {
     // tslint:disable-next-line:max-func-body-length
-    return async (repos: {
-        project: ProjectRepo;
+    return async (__: {
     }) => {
         const now = moment();
-
-        const project = await repos.project.findById({ id: params.project.id });
 
         const eventService = new chevre.service.Event({
             endpoint: credentials.chevre.endpoint,
@@ -134,7 +124,7 @@ export function searchEventTicketOffers(params: {
 
         switch (eventOffers.offeredThrough.identifier) {
             case factory.service.webAPI.Identifier.COA:
-                offers = await searchCOAAvailableTickets({ event, project, movieTicket: params.movieTicket });
+                offers = await searchCOAAvailableTickets({ event, movieTicket: params.movieTicket });
 
                 break;
 
@@ -235,7 +225,7 @@ export type IAvailableSalesTickets = COA.factory.reserve.ISalesTicketResult & {
 // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 async function searchCOAAvailableTickets(params: {
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    project: factory.project.IProject;
+    // project: factory.project.IProject;
     movieTicket?: {
         /**
          * 電子券区分

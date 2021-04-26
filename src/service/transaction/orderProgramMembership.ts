@@ -52,8 +52,6 @@ export function orderProgramMembership(
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         const customer = await repos.person.findById({ userId: String(params.agent.id) });
 
@@ -68,7 +66,7 @@ export function orderProgramMembership(
         try {
             // 注文取引開始
             transaction = await TransactionService.placeOrderInProgress.start({
-                project: { typeOf: project.typeOf, id: project.id },
+                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
                 expires: moment()
                     // tslint:disable-next-line:no-magic-numbers
                     .add(5, 'minutes')
@@ -98,7 +96,7 @@ export function orderProgramMembership(
                 acceptedOffer: acceptedOffer,
                 customer: customer,
                 potentialActions: params.potentialActions,
-                project: project,
+                project: { id: params.project.id },
                 transaction: transaction
             })(repos);
         } catch (error) {
@@ -106,7 +104,7 @@ export function orderProgramMembership(
                 if (typeof transaction?.id === 'string') {
                     await OfferService.product.voidTransaction({
                         agent: { id: customer.id },
-                        project: { typeOf: project.typeOf, id: project.id },
+                        project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
                         purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     })(repos);
                 }
@@ -146,8 +144,6 @@ function processPlaceOrder(params: {
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const acceptedOffer = params.acceptedOffer;
         const customer = params.customer;
         const transaction = params.transaction;
@@ -167,7 +163,7 @@ function processPlaceOrder(params: {
         // メンバーシップオファー承認
         let authorizeProductOfferAction: factory.action.authorize.offer.product.IAction;
         authorizeProductOfferAction = await processAuthorizeProductOffer({
-            project: { id: project.id },
+            project: { id: params.project.id },
             orderNumber,
             customer: customer,
             transaction: transaction,
@@ -178,7 +174,7 @@ function processPlaceOrder(params: {
         const amount = Number(authorizeProductOfferAction.result?.price);
         if (amount > 0) {
             await processAuthorizeCreditCard({
-                project: { id: project.id },
+                project: { id: params.project.id },
                 customer: customer,
                 object: { amount },
                 purpose: transaction
@@ -200,7 +196,7 @@ function processPlaceOrder(params: {
 
         // 取引確定
         return TransactionService.placeOrderInProgress.confirm({
-            project: { id: project.id },
+            project: { id: params.project.id },
             id: transaction.id,
             agent: { id: customer.id },
             result: {

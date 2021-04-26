@@ -11,7 +11,6 @@ import { createOrderProgramMembershipActionAttributes } from './product/factory'
 import { handleChevreError } from '../errorHandler';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as OfferService from './offer';
@@ -25,7 +24,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ICreateOrderTaskOperation<T> = (repos: {
-    project: ProjectRepo;
     task: TaskRepo;
 }) => Promise<T>;
 
@@ -55,12 +53,9 @@ export function createOrderTask(params: {
     location: { id: string };
 }): ICreateOrderTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
-        project: ProjectRepo;
         task: TaskRepo;
     }) => {
         const now = new Date();
-
-        const project = await repos.project.findById({ id: params.project.id });
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
@@ -75,7 +70,7 @@ export function createOrderTask(params: {
 
         const product = <chevre.factory.product.IProduct>await productService.findById({ id: params.object.itemOffered.id });
         const offers = await OfferService.product.search({
-            project: { id: project.id },
+            project: { id: params.project.id },
             itemOffered: { id: String(product.id) },
             seller: { id: String(seller.id) },
             availableAt: { id: params.location.id }
@@ -174,7 +169,6 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
 export function registerService(params: factory.action.interact.register.service.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         task: TaskRepo;
     }) => {
         // アクション開始

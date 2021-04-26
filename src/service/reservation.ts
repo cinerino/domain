@@ -12,7 +12,6 @@ import * as factory from '../factory';
 
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -44,10 +43,7 @@ export type ISearchEventReservationsOperation<T> = (repos: {
 export function cancelReservation(params: factory.task.IData<factory.taskName.CancelReservation>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
-        const project = await repos.project.findById({ id: params.project.id });
-
         const action = await repos.action.start(params);
 
         try {
@@ -69,7 +65,7 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Ca
                 default:
                     await processCancelReservation4chevre({
                         ...params,
-                        project: project
+                        project: params.project
                     });
             }
         } catch (error) {
@@ -127,7 +123,7 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
     });
 
     await cancelReservationService.startAndConfirm({
-        project: { typeOf: project.typeOf, id: project.id },
+        project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
         typeOf: factory.chevre.transactionType.CancelReservation,
         agent: {
             typeOf: params.agent.typeOf,
@@ -156,7 +152,6 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
 export function confirmReservation(params: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
     }) => {
         let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
 
@@ -236,11 +231,6 @@ export function searchScreeningEventReservations(
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
-        // const project = await repos.project.findById({ id: params.project.id });
-        // if (project.settings === undefined) {
-        //     throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        // }
-
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
             // 所有権検索

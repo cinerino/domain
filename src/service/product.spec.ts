@@ -31,13 +31,8 @@ describe('プロダクト注文タスクを作成する', () => {
         };
         const task = {};
 
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves(project);
         sandbox.mock(domain.chevre.service.Seller.prototype)
             .expects('findById')
             .once()
@@ -66,7 +61,6 @@ describe('プロダクト注文タスクを作成する', () => {
             },
             location: { id: 'locationId' }
         })({
-            project: projectRepo,
             task: taskRepo
         });
         assert.equal(typeof result, 'object');

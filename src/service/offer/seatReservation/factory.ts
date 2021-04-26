@@ -10,7 +10,7 @@ export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
 
 export function createReserveTransactionStartParams(params: {
-    project: factory.project.IProject;
+    project: { id: string };
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     transaction: factory.transaction.ITransaction<any>;
     transactionNumber: string;
@@ -18,7 +18,7 @@ export function createReserveTransactionStartParams(params: {
     const informReservationParamsFromObject = params.object?.onReservationStatusChanged?.informReservation;
 
     return {
-        project: { typeOf: params.project.typeOf, id: params.project.id },
+        project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
         typeOf: chevre.factory.transactionType.Reserve,
         transactionNumber: params.transactionNumber,
         agent: {

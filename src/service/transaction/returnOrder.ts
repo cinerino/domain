@@ -34,7 +34,6 @@ export type IStartOperation<T> = (repos: {
 }) => Promise<T>;
 
 export type ITaskAndTransactionOperation<T> = (repos: {
-    project: ProjectRepo;
     task: TaskRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -324,7 +323,6 @@ export function exportTasksById(params: {
     runsTasksAfterInSeconds?: number;
 }): ITaskAndTransactionOperation<factory.task.ITask<factory.taskName>[]> {
     return async (repos: {
-        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {

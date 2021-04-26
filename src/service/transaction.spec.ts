@@ -161,7 +161,6 @@ describe('exportTasks()', () => {
     });
 
     it('タスクエクスポート待ちの取引があれば、エクスポートされるはず', async () => {
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
@@ -176,10 +175,6 @@ describe('exportTasks()', () => {
             potentialActions: {}
         };
 
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .once()
-            .resolves({ id: '' });
         sandbox.mock(transactionRepo)
             .expects('startExportTasks')
             .once()
@@ -200,7 +195,6 @@ describe('exportTasks()', () => {
         const result = await domain.service.transaction.exportTasks({
             status: status
         })({
-            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });
@@ -211,13 +205,9 @@ describe('exportTasks()', () => {
     it('タスクエクスポート待ちの取引がなければ、何もしないはず', async () => {
         const status = domain.factory.transactionStatusType.Confirmed;
 
-        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
         const taskRepo = new domain.repository.Task(mongoose.connection);
 
-        sandbox.mock(projectRepo)
-            .expects('findById')
-            .never();
         sandbox.mock(transactionRepo)
             .expects('startExportTasks')
             .once()
@@ -232,7 +222,6 @@ describe('exportTasks()', () => {
         const result = await domain.service.transaction.exportTasks({
             status: status
         })({
-            project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo
         });

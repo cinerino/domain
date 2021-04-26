@@ -142,7 +142,6 @@ export function confirm(params: IConfirmParams) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
         transaction: TransactionRepo;
         orderNumber: OrderNumberRepo;
         confirmationNumber: ConfirmationNumberRepo;
@@ -164,8 +163,6 @@ export function confirm(params: IConfirmParams) {
         if (typeof params.agent?.id === 'string' && transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
-
-        const project = await repos.project.findById({ id: transaction.project.id });
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
@@ -195,7 +192,7 @@ export function confirm(params: IConfirmParams) {
             auth: chevreAuthClient
         });
         const searchAccountTypesResult = await categoryCodeService.search({
-            project: { id: { $eq: project.id } },
+            project: { id: { $eq: transaction.project.id } },
             inCodeSet: { identifier: { $eq: factory.chevre.categoryCode.CategorySetIdentifier.AccountType } }
         });
 
