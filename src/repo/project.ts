@@ -3,6 +3,25 @@ import { modelName } from './mongoose/model/project';
 
 import * as factory from '../factory';
 
+import { credentials } from '../credentials';
+
+import * as chevre from '../chevre';
+
+const USE_CHEVRE_SEARCH_PROJECT = process.env.USE_CHEVRE_SEARCH_PROJECT === '1';
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
+
+const projectService = new chevre.service.Project({
+    endpoint: credentials.chevre.endpoint,
+    auth: chevreAuthClient
+});
+
 /**
  * プロジェクトリポジトリ
  */
@@ -55,6 +74,13 @@ export class MongoRepository {
         },
         projection?: any
     ): Promise<factory.project.IProject> {
+        if (USE_CHEVRE_SEARCH_PROJECT) {
+            return <any>projectService.findById({
+                id: conditions.id,
+                ...(projection !== undefined && projection !== null) ? { $projection: projection } : undefined
+            });
+        }
+
         const doc = await this.projectModel.findOne(
             { _id: conditions.id },
             {
