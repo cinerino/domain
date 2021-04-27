@@ -25,9 +25,9 @@ export async function createInformOrderOnPlacedActions(params: {
                     recipient: {
                         ...a.recipient,
                         project: params.transaction.project,
-                        id: (typeof a.recipient.id === 'string') ? a.recipient.id : params.transaction.agent.id,
-                        name: (typeof a.recipient.name === 'string') ? a.recipient.name : params.transaction.agent.name,
-                        typeOf: (typeof a.recipient.typeOf === 'string') ? <any>a.recipient.typeOf : params.transaction.agent.typeOf
+                        id: (typeof a.recipient?.id === 'string') ? a.recipient.id : params.transaction.agent.id,
+                        name: (typeof a.recipient?.name === 'string') ? a.recipient.name : params.transaction.agent.name,
+                        typeOf: (typeof a.recipient?.typeOf === 'string') ? <any>a.recipient.typeOf : params.transaction.agent.typeOf
                     },
                     typeOf: factory.actionType.InformAction
                 };
@@ -60,9 +60,9 @@ export async function createInformOrderOnSentActions(params: {
                     recipient: {
                         ...a.recipient,
                         project: params.transaction.project,
-                        id: (typeof a.recipient.id === 'string') ? a.recipient.id : params.transaction.agent.id,
-                        name: (typeof a.recipient.name === 'string') ? a.recipient.name : params.transaction.agent.name,
-                        typeOf: (typeof a.recipient.typeOf === 'string') ? <any>a.recipient.typeOf : params.transaction.agent.typeOf
+                        id: (typeof a.recipient?.id === 'string') ? a.recipient.id : params.transaction.agent.id,
+                        name: (typeof a.recipient?.name === 'string') ? a.recipient.name : params.transaction.agent.name,
+                        typeOf: (typeof a.recipient?.typeOf === 'string') ? <any>a.recipient.typeOf : params.transaction.agent.typeOf
                     },
                     typeOf: factory.actionType.InformAction
                 };

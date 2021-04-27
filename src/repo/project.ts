@@ -75,7 +75,7 @@ export class MongoRepository {
         projection?: any
     ): Promise<factory.project.IProject> {
         if (USE_CHEVRE_SEARCH_PROJECT) {
-            return <any>projectService.findById({
+            return projectService.findById({
                 id: conditions.id,
                 ...(projection !== undefined && projection !== null) ? { $projection: projection } : undefined
             });
@@ -113,6 +113,15 @@ export class MongoRepository {
         conditions: factory.project.ISearchConditions,
         projection?: any
     ): Promise<factory.project.IProject[]> {
+        if (USE_CHEVRE_SEARCH_PROJECT) {
+            const searchResult = await projectService.search({
+                ...conditions,
+                ...(projection !== undefined && projection !== null) ? { $projection: projection } : undefined
+            });
+
+            return searchResult.data;
+        }
+
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(conditions);
 
         const query = this.projectModel.find(
