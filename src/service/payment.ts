@@ -25,7 +25,7 @@ export import chevre = ChevrePaymentService;
 /**
  * 決済
  */
-export function pay(params: factory.task.IData<factory.taskName.Pay>) {
+export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
     return async (repos: {
         action: ActionRepo;
     }) => {
@@ -47,7 +47,7 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
 /**
  * 決済中止
  */
-export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayment>) {
+export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayTransaction>) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -78,7 +78,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
 /**
  * 返金
  */
-export function refund(params: factory.task.IData<factory.taskName.Refund>) {
+export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund>) {
     return async (repos: {
         action: ActionRepo;
         order: chevre.service.Order;

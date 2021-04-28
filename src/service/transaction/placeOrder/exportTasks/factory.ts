@@ -70,9 +70,9 @@ export function createTasks(params: {
         // 期限切れor中止の場合は、タスクリストを作成する
         case factory.transactionStatusType.Canceled:
         case factory.transactionStatusType.Expired:
-            const voidReserveTaskAttributes: factory.task.IAttributes<factory.taskName.VoidReserve> = {
+            const voidReserveTaskAttributes: factory.task.IAttributes<factory.taskName.VoidReserveTransaction> = {
                 project: transaction.project,
-                name: factory.taskName.VoidReserve,
+                name: factory.taskName.VoidReserveTransaction,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
                 remainingNumberOfTries: 10,
@@ -84,9 +84,9 @@ export function createTasks(params: {
                 }
             };
 
-            const voidRegisterServiceTaskAttributes: factory.task.IAttributes<factory.taskName.VoidRegisterService> = {
+            const voidRegisterServiceTaskAttributes: factory.task.IAttributes<factory.taskName.VoidRegisterServiceTransaction> = {
                 project: transaction.project,
-                name: factory.taskName.VoidRegisterService,
+                name: factory.taskName.VoidRegisterServiceTransaction,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
                 remainingNumberOfTries: 10,
@@ -98,9 +98,9 @@ export function createTasks(params: {
                 }
             };
 
-            const voidPaymentTaskAttributes: factory.task.IAttributes<factory.taskName.VoidPayment> = {
+            const voidPaymentTaskAttributes: factory.task.IAttributes<factory.taskName.VoidPayTransaction> = {
                 project: transaction.project,
-                name: factory.taskName.VoidPayment,
+                name: factory.taskName.VoidPayTransaction,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
                 remainingNumberOfTries: 10,
@@ -112,9 +112,9 @@ export function createTasks(params: {
                 }
             };
 
-            const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
+            const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransferTransaction> = {
                 project: transaction.project,
-                name: factory.taskName.VoidMoneyTransfer,
+                name: factory.taskName.VoidMoneyTransferTransaction,
                 status: factory.taskStatus.Ready,
                 runsAt: taskRunsAt,
                 remainingNumberOfTries: 10,

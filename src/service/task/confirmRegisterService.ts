@@ -10,7 +10,7 @@ import * as ProductService from '../product';
 /**
  * タスク実行関数
  */
-export function call(data: factory.task.IData<factory.taskName.RegisterService>): IOperation<void> {
+export function call(data: factory.task.IData<factory.taskName.ConfirmRegisterService>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         await ProductService.registerService(data)({
             action: new ActionRepo(settings.connection),

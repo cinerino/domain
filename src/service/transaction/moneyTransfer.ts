@@ -612,7 +612,7 @@ export function exportTasksById(params: {
                         taskAttributes.push(...potentialActions.moneyTransfer.map((a) => {
                             return {
                                 project: transaction.project,
-                                name: <factory.taskName.MoneyTransfer>factory.taskName.MoneyTransfer,
+                                name: <factory.taskName.ConfirmMoneyTransfer>factory.taskName.ConfirmMoneyTransfer,
                                 status: factory.taskStatus.Ready,
                                 runsAt: taskRunsAt,
                                 remainingNumberOfTries: 10,
@@ -628,9 +628,9 @@ export function exportTasksById(params: {
 
             case factory.transactionStatusType.Canceled:
             case factory.transactionStatusType.Expired:
-                const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransfer> = {
+                const voidMoneyTransferTaskAttributes: factory.task.IAttributes<factory.taskName.VoidMoneyTransferTransaction> = {
                     project: { typeOf: transaction.project.typeOf, id: transaction.project.id },
-                    name: factory.taskName.VoidMoneyTransfer,
+                    name: factory.taskName.VoidMoneyTransferTransaction,
                     status: factory.taskStatus.Ready,
                     runsAt: taskRunsAt,
                     remainingNumberOfTries: 10,

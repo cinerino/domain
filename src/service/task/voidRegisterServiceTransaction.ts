@@ -11,7 +11,7 @@ import * as ProductOfferService from '../offer/product';
 /**
  * タスク実行関数
  */
-export function call(data: factory.task.IData<factory.taskName.VoidRegisterService>): IOperation<void> {
+export function call(data: factory.task.IData<factory.taskName.VoidRegisterServiceTransaction>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         if (settings.redisClient === undefined) {
             throw new Error('settings.redisClient undefined.');

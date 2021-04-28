@@ -263,7 +263,7 @@ export function authorize(params: {
     };
 }
 
-export function voidTransaction(params: factory.task.IData<factory.taskName.VoidRegisterService>) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidRegisterServiceTransaction>) {
     return async (repos: {
         action: ActionRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;

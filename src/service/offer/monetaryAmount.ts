@@ -185,7 +185,7 @@ async function processStartDepositTransaction(params: {
     return { requestBody, responseBody };
 }
 
-export function voidTransaction(params: factory.task.IData<factory.taskName.VoidMoneyTransfer>) {
+export function voidTransaction(params: factory.task.IData<factory.taskName.VoidMoneyTransferTransaction>) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -241,7 +241,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
     };
 }
 
-export function settleTransaction(params: factory.task.IData<factory.taskName.MoneyTransfer>) {
+export function settleTransaction(params: factory.task.IData<factory.taskName.ConfirmMoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
     }) => {

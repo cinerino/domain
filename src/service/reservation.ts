@@ -40,7 +40,7 @@ export type ISearchEventReservationsOperation<T> = (repos: {
 /**
  * 予約取消
  */
-export function cancelReservation(params: factory.task.IData<factory.taskName.CancelReservation>) {
+export function cancelReservation(params: factory.task.IData<factory.taskName.ConfirmCancelReserve>) {
     return async (repos: {
         action: ActionRepo;
     }) => {
@@ -111,7 +111,7 @@ async function processCancelReservation4coa(params: {
     }
 }
 
-async function processCancelReservation4chevre(params: factory.task.IData<factory.taskName.CancelReservation> & {
+async function processCancelReservation4chevre(params: factory.task.IData<factory.taskName.ConfirmCancelReserve> & {
     project: factory.project.IProject;
 }) {
     const cancelReservationObject = params.object;

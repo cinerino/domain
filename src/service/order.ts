@@ -142,10 +142,10 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.pay)) {
                 taskAttributes.push(...potentialActions.pay.map(
-                    (a): factory.task.IAttributes<factory.taskName.Pay> => {
+                    (a): factory.task.IAttributes<factory.taskName.ConfirmPay> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.Pay,
+                            name: factory.taskName.ConfirmPay,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -294,10 +294,10 @@ export function onReturn(
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.cancelReservation)) {
                 taskAttributes.push(...potentialActions.cancelReservation.map(
-                    (a): factory.task.IAttributes<factory.taskName.CancelReservation> => {
+                    (a): factory.task.IAttributes<factory.taskName.ConfirmCancelReserve> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.CancelReservation,
+                            name: factory.taskName.ConfirmCancelReserve,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -313,10 +313,10 @@ export function onReturn(
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.refund)) {
                 taskAttributes.push(...potentialActions.refund.map(
-                    (a): factory.task.IAttributes<factory.taskName.Refund> => {
+                    (a): factory.task.IAttributes<factory.taskName.ConfirmRefund> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.Refund,
+                            name: factory.taskName.ConfirmRefund,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,

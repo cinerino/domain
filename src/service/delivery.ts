@@ -140,10 +140,10 @@ export function onSend(
 
             if (Array.isArray(potentialActions.registerService)) {
                 taskAttributes.push(...potentialActions.registerService.map(
-                    (a): factory.task.IAttributes<factory.taskName.RegisterService> => {
+                    (a): factory.task.IAttributes<factory.taskName.ConfirmRegisterService> => {
                         return {
                             project: a.project,
-                            name: factory.taskName.RegisterService,
+                            name: factory.taskName.ConfirmRegisterService,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -159,10 +159,10 @@ export function onSend(
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.moneyTransfer)) {
                 taskAttributes.push(...potentialActions.moneyTransfer.map(
-                    (a): factory.task.IAttributes<factory.taskName.MoneyTransfer> => {
+                    (a): factory.task.IAttributes<factory.taskName.ConfirmMoneyTransfer> => {
                         return {
                             project: a.project,
-                            name: <factory.taskName.MoneyTransfer>factory.taskName.MoneyTransfer,
+                            name: <factory.taskName.ConfirmMoneyTransfer>factory.taskName.ConfirmMoneyTransfer,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,

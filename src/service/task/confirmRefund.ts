@@ -15,7 +15,7 @@ import * as PaymentService from '../payment';
 /**
  * タスク実行関数
  */
-export function call(data: factory.task.IData<factory.taskName.Refund>): IOperation<void> {
+export function call(data: factory.task.IData<factory.taskName.ConfirmRefund>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
         const projectRepo = new ProjectRepo(settings.connection);

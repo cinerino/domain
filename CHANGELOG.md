@@ -39,6 +39,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - CancelAction -> ReturnActionとして再構築
 - 不要なプロジェクト参照処理を削除
 - USE_CHEVRE_SEARCH_PROJECT設定を追加
+- chevreと重複するタスク名をrename
 
 ### Deprecated
 

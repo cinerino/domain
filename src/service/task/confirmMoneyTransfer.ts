@@ -4,16 +4,16 @@ import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 
-import * as PaymentService from '../payment';
+import * as OfferService from '../offer';
 
 /**
  * タスク実行関数
  */
-export function call(data: factory.task.IData<factory.taskName.Pay>): IOperation<void> {
+export function call(data: factory.task.IData<factory.taskName.ConfirmMoneyTransfer>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
 
-        await PaymentService.pay(data)({
+        await OfferService.monetaryAmount.settleTransaction(data)({
             action: actionRepo
         });
     };

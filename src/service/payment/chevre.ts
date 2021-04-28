@@ -110,7 +110,7 @@ export function authorize(params: {
     };
 }
 
-export function pay(params: factory.task.IData<factory.taskName.Pay>) {
+export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
     return async (repos: {
         action: ActionRepo;
     }): Promise<factory.action.trade.pay.IAction> => {
@@ -155,7 +155,7 @@ export function pay(params: factory.task.IData<factory.taskName.Pay>) {
     };
 }
 
-export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayment>) {
+export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayTransaction>) {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
@@ -234,7 +234,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPaym
     };
 }
 
-export function refund(params: factory.task.IData<factory.taskName.Refund>) {
+export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund>) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;

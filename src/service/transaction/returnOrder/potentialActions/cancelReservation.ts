@@ -10,12 +10,12 @@ export async function createCancelReservationActions(params: {
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
     // placeOrderTransaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.task.IData<factory.taskName.CancelReservation>[]> {
+}): Promise<factory.task.IData<factory.taskName.ConfirmCancelReserve>[]> {
     const transaction = params.transaction;
     const order = params.order;
     // const placeOrderTransaction = params.placeOrderTransaction;
 
-    const cancelReservationActions: factory.task.IData<factory.taskName.CancelReservation>[] = [];
+    const cancelReservationActions: factory.task.IData<factory.taskName.ConfirmCancelReserve>[] = [];
 
     let cancelReservationParams: factory.transaction.returnOrder.ICancelReservationParams[] = [];
     const cancelReservation = params.returnOrderActionParams?.potentialActions?.cancelReservation;
@@ -45,7 +45,7 @@ export async function createCancelReservationActions(params: {
 
             // 予約番号ごとに取消アクションを作成する
             if (!reservationNumbers.includes(reservationNumber)) {
-                let cancelReservationAction: factory.task.IData<factory.taskName.CancelReservation>;
+                let cancelReservationAction: factory.task.IData<factory.taskName.ConfirmCancelReserve>;
 
                 switch (acceptedOffer.offeredThrough?.identifier) {
                     case factory.service.webAPI.Identifier.COA:
