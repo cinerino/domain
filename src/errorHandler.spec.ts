@@ -28,14 +28,14 @@ describe('Chevreリクエストエラーをハンドリングする', () => {
         TOO_MANY_REQUESTS,
         INTERNAL_SERVER_ERROR
     ].map((code) => {
-        it(`Chevreサービスが${code}であればCinerinoErrorに変換されるはず`, () => {
+        it(`Chevreサービスが${code}であればChevreErrorに変換されるはず`, () => {
             const error = {
                 name: 'ChevreRequestError',
                 code: code
             };
 
             const result = errorHandler.handleChevreError(error);
-            assert(result instanceof domain.factory.errors.Cinerino);
+            assert(result instanceof domain.factory.errors.Chevre);
             sandbox.verify();
         });
     });
@@ -55,14 +55,14 @@ describe('Pecorinoリクエストエラーをハンドリングする', () => {
         TOO_MANY_REQUESTS,
         INTERNAL_SERVER_ERROR
     ].map((code) => {
-        it(`Pecorinoサービスが${code}であればCinerinoErrorに変換されるはず`, () => {
+        it(`Pecorinoサービスが${code}であればChevreErrorに変換されるはず`, () => {
             const error = {
                 name: 'PecorinoRequestError',
                 code: code
             };
 
             const result = errorHandler.handlePecorinoError(error);
-            assert(result instanceof domain.factory.errors.Cinerino);
+            assert(result instanceof domain.factory.errors.Chevre);
             sandbox.verify();
         });
     });
@@ -82,14 +82,14 @@ describe('MovieTicketReserveリクエストエラーをハンドリングする'
         TOO_MANY_REQUESTS,
         INTERNAL_SERVER_ERROR
     ].map((code) => {
-        it(`ムビチケ着券サービスが${code}であればCinerinoErrorに変換されるはず`, () => {
+        it(`ムビチケ着券サービスが${code}であればChevreErrorに変換されるはず`, () => {
             const error = {
                 name: 'MovieticketReserveRequestError',
                 code: code
             };
 
             const result = errorHandler.handleMvtkReserveError(error);
-            assert(result instanceof domain.factory.errors.Cinerino);
+            assert(result instanceof domain.factory.errors.Chevre);
             sandbox.verify();
         });
     });
