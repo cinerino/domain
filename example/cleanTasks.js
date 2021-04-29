@@ -7,7 +7,7 @@ async function main() {
 
     const now = new Date();
     const startThrough = moment(now)
-        .add(-12, 'months')
+        .add(-9, 'months')
         .toDate();
 
     console.log('deleting...startThrough:', startThrough);
@@ -17,6 +17,7 @@ async function main() {
     let result;
 
     result = await taskRepo.taskModel.deleteMany({
+        status: { $in: [domain.factory.taskStatus.Aborted, domain.factory.taskStatus.Executed] },
         runsAt: { $lt: startThrough }
     })
         .exec();
