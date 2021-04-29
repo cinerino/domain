@@ -10,7 +10,6 @@ import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmati
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { findAccount } from '../account';
@@ -30,7 +29,7 @@ export type IOrderOperation<T> = (repos: {
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
-    project: ProjectRepo;
+    project: chevre.service.Project;
     registerActionInProgress: RegisterServiceInProgressRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -48,7 +47,7 @@ export function orderProgramMembership(
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
@@ -139,7 +138,7 @@ function processPlaceOrder(params: {
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
@@ -218,7 +217,7 @@ function processAuthorizeProductOffer(params: {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
@@ -323,7 +322,7 @@ function processAuthorizeCreditCard(params: {
         action: ActionRepo;
         creditCard: CreditCardRepo;
         person: PersonRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         transaction: TransactionRepo;
     }) => {
         // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)

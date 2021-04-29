@@ -7,7 +7,7 @@ async function main() {
 
     const now = new Date();
     const startThrough = moment(now)
-        .add(-9, 'months')
+        .add(-8, 'months')
         .toDate();
 
     console.log('deleting...startThrough:', startThrough);

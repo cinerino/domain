@@ -22,21 +22,19 @@ async function main() {
     const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-    const projectRepo = new domain.repository.Project(mongoose.connection);
+    const projectRepo = new domain.chevre.service.Project(chevreAuthClient);
     const registerActionInProgressRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderNumberRepo = new domain.repository.OrderNumber(redisClient);
     const confirmationNumberRepo = new domain.repository.ConfirmationNumber(redisClient);
 
-    const project = await projectRepo.findById({ id: 'cinerino' });
-
     const productService = new domain.chevre.service.Product({
-        endpoint: project.settings.chevre.endpoint,
+        endpoint: domain.credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 
     const searchProductsResult = await productService.search({
-        project: { id: { $eq: project.id } },
+        project: { id: { $eq: 'cinerino' } },
         // typeOf: { $eq: 'PaymentCard' }
         typeOf: { $eq: 'MembershipService' }
     });
@@ -51,7 +49,7 @@ async function main() {
     const selectedOffer = offers[0];
 
     const transaction = await domain.service.transaction.placeOrderInProgress.start({
-        project: { id: project.id },
+        project: { id: 'cinerino' },
         expires: moment().add(5, 'minutes').toDate(),
         agent: {
             typeOf: domain.factory.personType.Person,
@@ -75,7 +73,7 @@ async function main() {
     const serviceOutputName = 'サンプルプロダクト名称';
 
     const authorizeAction = await domain.service.offer.product.authorize({
-        project: { id: project.id },
+        project: { id: 'cinerino' },
         object: [{
             id: selectedOffer.id,
             itemOffered: {
@@ -100,7 +98,6 @@ async function main() {
         accountNumber: accountNumberRepo,
         action: actionRepo,
         ownershipInfo: ownershipInfoRepo,
-        project: projectRepo,
         registerActionInProgress: registerActionInProgressRepo,
         transaction: transactionRepo
     });
@@ -135,7 +132,7 @@ async function main() {
 
     await domain.service.transaction.placeOrderInProgress.confirm({
         id: transaction.id,
-        project: { id: project.id },
+        project: { id: 'cinerino' },
         agent: { id: transaction.agent.id },
         potentialActions: {
             order: {
@@ -159,7 +156,6 @@ async function main() {
         }
     })({
         action: actionRepo,
-        project: projectRepo,
         transaction: transactionRepo,
         orderNumber: orderNumberRepo,
         confirmationNumber: confirmationNumberRepo

@@ -12,7 +12,6 @@ import * as factory from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { createAttributes } from './placeOrderInProgress/factory';
@@ -43,7 +42,7 @@ export interface IAwardAccount {
 }
 
 export type IStartOperation<T> = (repos: {
-    project: ProjectRepo;
+    project: chevre.service.Project;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -58,7 +57,7 @@ export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDet
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
-        project: ProjectRepo;
+        project: chevre.service.Project;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });

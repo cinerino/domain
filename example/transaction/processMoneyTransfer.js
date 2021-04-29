@@ -7,7 +7,6 @@ async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
     const actionRepo = new domain.repository.Action(mongoose.connection);
-    const projectRepo = new domain.repository.Project(mongoose.connection);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
     const transaction = await domain.service.transaction.moneyTransfer.start({
@@ -35,7 +34,6 @@ async function main() {
         seller: { typeOf: 'Corporation', id: '59d20831e53ebc2b4e774466' },
     })({
         action: actionRepo,
-        project: projectRepo,
         transaction: transactionRepo
     });
     console.log('transaction started', transaction);

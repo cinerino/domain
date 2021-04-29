@@ -9,7 +9,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -239,7 +238,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
     return async (repos: {
         action: ActionRepo;
         order: chevre.service.Order;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {

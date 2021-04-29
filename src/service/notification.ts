@@ -12,10 +12,10 @@ import * as util from 'util';
 
 import { credentials } from '../credentials';
 
+import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 
 export type Operation<T> = () => Promise<T>;
 
@@ -31,7 +31,7 @@ const TRIGGER_WEBHOOK_TIMEOUT = (process.env.TRIGGER_WEBHOOK_TIMEOUT !== undefin
 export function sendEmailMessage(params: factory.action.transfer.send.message.email.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 

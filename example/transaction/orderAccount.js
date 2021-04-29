@@ -23,7 +23,7 @@ async function main() {
 
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-    const projectRepo = new domain.repository.Project(mongoose.connection);
+    const projectRepo = new domain.chevre.service.Project(chevreAuthClient);
     const registerActionInProgressRepo = new domain.repository.action.RegisterServiceInProgress(redisClient);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderRepo = new domain.repository.Order(mongoose.connection);
@@ -34,21 +34,19 @@ async function main() {
         userPoolId: userPoolId
     });
 
-    const project = await projectRepo.findById({ id: 'cinerino' });
-
     const productService = new domain.chevre.service.Product({
-        endpoint: project.settings.chevre.endpoint,
+        endpoint: domain.credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
 
     const searchProductsResult = await productService.search({
-        project: { id: { $eq: project.id } },
+        project: { id: { $eq: 'cinerino' } },
         typeOf: { $eq: 'Account' }
     });
     console.log('products found', searchProductsResult);
 
     const result = await domain.service.transaction.orderAccount.orderAccount({
-        project: { id: project.id },
+        project: { id: 'cinerino' },
         // expires: moment().add(5, 'minutes').toDate(),
         agent: {
             typeOf: domain.factory.personType.Person,

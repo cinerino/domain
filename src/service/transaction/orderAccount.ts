@@ -8,7 +8,6 @@ import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/act
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as OfferService from '../offer';
@@ -33,7 +32,7 @@ export type IOrderOperation<T> = (repos: {
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
-    project: ProjectRepo;
+    project: chevre.service.Project;
     registerActionInProgress: RegisterServiceInProgressRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -59,7 +58,7 @@ export function orderAccount(params: {
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {

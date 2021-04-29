@@ -10,7 +10,6 @@ import * as chevre from '../../chevre';
 import * as factory from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -29,7 +28,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
     order: chevre.service.Order;
-    project: ProjectRepo;
+    project: chevre.service.Project;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -49,7 +48,7 @@ export function start(
     return async (repos: {
         action: ActionRepo;
         order: chevre.service.Order;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         transaction: TransactionRepo;
     }) => {
         const now = new Date();

@@ -13,7 +13,6 @@ import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmati
 import { RedisRepository as OrderNumberRepo } from '../../repo/orderNumber';
 import { GMORepository as CreditCardRepo } from '../../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../../repo/person';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { getCreditCardPaymentServiceChannel } from '../payment/chevre';
@@ -30,8 +29,25 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             throw new Error('settings.redisClient undefined.');
         }
 
-        const projectRepo = new ProjectRepo(settings.connection);
-        const project = await projectRepo.findById({ id: data.project.id });
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const ownershipInfoService = new chevre.service.OwnershipInfo({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const projectService = new chevre.service.Project({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        const project = await projectService.findById({ id: data.project.id });
         if (project.settings?.cognito === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
@@ -51,19 +67,6 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             userPoolId: project.settings.cognito.customerUserPool.id
         });
 
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
-
-        const ownershipInfoService = new chevre.service.OwnershipInfo({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
         await orderProgramMembership(data)({
             action: new ActionRepo(settings.connection),
             confirmationNumber: new ConfirmationNumberRepo(settings.redisClient),
@@ -71,7 +74,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             orderNumber: new OrderNumberRepo(settings.redisClient),
             ownershipInfo: ownershipInfoService,
             person: personRepo,
-            project: new ProjectRepo(settings.connection),
+            project: projectService,
             registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
             transaction: new TransactionRepo(settings.connection)
         });

@@ -244,7 +244,6 @@ export function findAccount(params: {
             }
         })({
             ownershipInfo: repos.ownershipInfo
-            // project: repos.project
         });
 
         // 開設口座に絞る

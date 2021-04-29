@@ -50,6 +50,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 承認リポジトリを削除
 - 注文リポジトリを削除
 - 所有権リポジトリを削除
+- プロジェクトリポジトリを削除
 
 ### Fixed
 

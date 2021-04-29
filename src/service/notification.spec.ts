@@ -110,7 +110,7 @@ describe('sendEmailMessage()', () => {
             typeOf: domain.factory.actionType.SendAction
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
+        const projectRepo = new domain.chevre.service.Project(<any>{});
 
         sandbox.mock(projectRepo)
             .expects('findById')
@@ -154,7 +154,7 @@ describe('sendEmailMessage()', () => {
             typeOf: domain.factory.actionType.SendAction
         };
         const actionRepo = new domain.repository.Action(mongoose.connection);
-        const projectRepo = new domain.repository.Project(mongoose.connection);
+        const projectRepo = new domain.chevre.service.Project(<any>{});
 
         sandbox.mock(projectRepo)
             .expects('findById')

@@ -4,9 +4,9 @@
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { GMORepository as CreditCardRepo } from '../repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from '../repo/person';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
+import * as chevre from '../chevre';
 import * as factory from '../factory';
 
 /**
@@ -19,7 +19,7 @@ export function deleteMember(params: factory.action.update.deleteAction.member.I
         action: ActionRepo;
         creditCard: CreditCardRepo;
         person: PersonRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
         task: TaskRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
@@ -118,7 +118,7 @@ export function findCreditCard(params: {
     return async (repos: {
         creditCard: CreditCardRepo;
         person: PersonRepo;
-        project: ProjectRepo;
+        project: chevre.service.Project;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
         const customer = await repos.person.findById({ userId: params.customer.id });

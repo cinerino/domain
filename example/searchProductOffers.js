@@ -12,9 +12,7 @@ async function main() {
         },
         seller: { id: 'xxx' },
         // availableAt: { id: 'xxx' }
-    })({
-        project: new domain.repository.Project(mongoose.connection),
-    });
+    })({});
 
     console.log(offers);
     console.log(offers.length, 'offers found.');
