@@ -214,7 +214,7 @@ export function authorize(params: {
             })(repos);
 
             // サービス登録開始
-            const registerService = new chevre.service.transaction.RegisterService({
+            const registerService = new chevre.service.assetTransaction.RegisterService({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
@@ -344,7 +344,7 @@ async function processVoidRegisterServiceTransaction(params: {
     const transactionNumber = params.action.instrument?.transactionNumber;
     if (typeof transactionNumber === 'string') {
         // 取引が存在すれば中止
-        const transactionService = new chevre.service.Transaction({
+        const transactionService = new chevre.service.AssetTransaction({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -352,11 +352,11 @@ async function processVoidRegisterServiceTransaction(params: {
         const { data } = await transactionService.search({
             limit: 1,
             project: { ids: [params.project.id] },
-            typeOf: chevre.factory.transactionType.RegisterService,
+            typeOf: chevre.factory.assetTransactionType.RegisterService,
             transactionNumber: { $eq: transactionNumber }
         });
         if (data.length > 0) {
-            const registerService = new chevre.service.transaction.RegisterService({
+            const registerService = new chevre.service.assetTransaction.RegisterService({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });

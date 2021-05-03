@@ -8,7 +8,7 @@ export function creatPayTransactionStartParams(params: {
     paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
     transactionNumber: string;
-}): chevre.factory.transaction.pay.IStartParamsWithoutDetail {
+}): chevre.factory.assetTransaction.pay.IStartParamsWithoutDetail {
     const expires = moment(params.transaction.expires)
         .add(1, 'month')
         .toDate(); // 余裕を持って
@@ -17,7 +17,7 @@ export function creatPayTransactionStartParams(params: {
 
     return {
         project: { id: params.transaction.project.id, typeOf: chevre.factory.organizationType.Project },
-        typeOf: chevre.factory.transactionType.Pay,
+        typeOf: chevre.factory.assetTransactionType.Pay,
         transactionNumber: params.transactionNumber,
         agent: {
             typeOf: params.transaction.agent.typeOf,
@@ -61,7 +61,7 @@ export function creatPayTransactionStartParams(params: {
 export function createAuthorizeResult(params: {
     object: factory.action.authorize.paymentMethod.any.IObject;
     paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
-    payTransaction: chevre.factory.transaction.pay.ITransaction;
+    payTransaction: chevre.factory.assetTransaction.pay.ITransaction;
 }): factory.action.authorize.paymentMethod.any.IResult {
     const totalPaymentDue = params.payTransaction.object.paymentMethod?.totalPaymentDue;
     if (typeof totalPaymentDue?.typeOf !== 'string') {

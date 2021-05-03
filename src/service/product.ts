@@ -178,7 +178,7 @@ export function registerService(params: factory.action.interact.register.service
         try {
             const object = registerActionAttributes.object;
 
-            const registerServiceTransaction = new chevre.service.transaction.RegisterService({
+            const registerServiceTransaction = new chevre.service.assetTransaction.RegisterService({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });

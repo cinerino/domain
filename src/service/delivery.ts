@@ -241,7 +241,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
             });
 
             // Chevreで入金
-            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
@@ -302,7 +302,7 @@ function createGivePointAwardStartParams(
         identifier: identifier,
         transactionNumber: transactionNumber,
         project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: chevre.factory.transactionType.MoneyTransfer,
+        typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
         agent: agent,
         expires: moment()
             .add(1, 'minutes')
@@ -356,7 +356,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let moneyTransferTransaction: chevre.factory.transaction.moneyTransfer.ITransaction;
+        let moneyTransferTransaction: chevre.factory.assetTransaction.moneyTransfer.ITransaction;
         const action = await repos.action.start(params);
 
         try {
@@ -369,7 +369,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             });
 
             // Chevreで入金した分を出金
-            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
@@ -384,7 +384,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             moneyTransferTransaction = await moneyTransferService.start({
                 transactionNumber: transactionNumber,
                 project: { typeOf: order.project.typeOf, id: order.project.id },
-                typeOf: chevre.factory.transactionType.MoneyTransfer,
+                typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
                 agent: {
                     typeOf: params.agent.typeOf,
                     id: params.agent.id,

@@ -16,7 +16,7 @@ export function createRegisterServiceStartParams(params: {
 }): factory.chevre.transaction.registerService.IStartParamsWithoutDetail {
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: chevre.factory.transactionType.RegisterService,
+        typeOf: chevre.factory.assetTransactionType.RegisterService,
         transactionNumber: params.transactionNumber,
         agent: {
             typeOf: params.transaction.agent.typeOf,

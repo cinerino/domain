@@ -117,7 +117,7 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
     const cancelReservationObject = params.object;
     const project = params.project;
 
-    const cancelReservationService = new chevre.service.transaction.CancelReservation({
+    const cancelReservationService = new chevre.service.assetTransaction.CancelReservation({
         endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
@@ -153,7 +153,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
     return async (repos: {
         action: ActionRepo;
     }) => {
-        let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve;
+        let reserveService: COA.service.Reserve | chevre.service.assetTransaction.Reserve;
 
         // アクション開始
         const confirmActionAttributes = params;
@@ -193,7 +193,7 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                 default:
                     // 座席予約確定
-                    reserveService = new chevre.service.transaction.Reserve({
+                    reserveService = new chevre.service.assetTransaction.Reserve({
                         endpoint: credentials.chevre.endpoint,
                         auth: chevreAuthClient
                     });

@@ -381,7 +381,7 @@ async function processMoneyTransferTransaction(params: {
         .add(1, 'month')
         .toDate();
 
-    const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+    const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
         endpoint: credentials.chevre.endpoint,
         auth: chevreAuthClient
     });
@@ -389,7 +389,7 @@ async function processMoneyTransferTransaction(params: {
     if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
         // 転送先口座が指定されていない場合は、出金取引
         pendingTransaction = await moneyTransferService.start({
-            typeOf: chevre.factory.transactionType.MoneyTransfer,
+            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
@@ -422,7 +422,7 @@ async function processMoneyTransferTransaction(params: {
         });
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
-            typeOf: chevre.factory.transactionType.MoneyTransfer,
+            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
@@ -455,7 +455,7 @@ async function processMoneyTransferTransaction(params: {
         });
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
         pendingTransaction = await moneyTransferService.start({
-            typeOf: chevre.factory.transactionType.MoneyTransfer,
+            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,

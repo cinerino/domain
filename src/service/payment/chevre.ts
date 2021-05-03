@@ -74,11 +74,11 @@ export function authorize(params: {
         };
         const action = await repos.action.start(actionAttributes);
 
-        let payTransaction: chevre.factory.transaction.pay.ITransaction | undefined;
+        let payTransaction: chevre.factory.assetTransaction.pay.ITransaction | undefined;
 
         try {
             // 決済取引開始
-            const payService = new chevre.service.transaction.Pay({
+            const payService = new chevre.service.assetTransaction.Pay({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
@@ -113,7 +113,7 @@ export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
     return async (repos: {
         action: ActionRepo;
     }): Promise<factory.action.trade.pay.IAction> => {
-        const payService = new chevre.service.transaction.Pay({
+        const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -191,11 +191,11 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
             );
         }
 
-        const transactionService = new chevre.service.Transaction({
+        const transactionService = new chevre.service.AssetTransaction({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const payService = new chevre.service.transaction.Pay({
+        const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -214,7 +214,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
                     const { data } = await transactionService.search({
                         limit: 1,
                         project: { ids: [action.project.id] },
-                        typeOf: chevre.factory.transactionType.Pay,
+                        typeOf: chevre.factory.assetTransactionType.Pay,
                         transactionNumber: { $eq: transactionNumber }
                     });
                     if (data.length > 0) {
@@ -248,7 +248,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
-        const refundService = new chevre.service.transaction.Refund({
+        const refundService = new chevre.service.assetTransaction.Refund({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -284,7 +284,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
 
         const action = await repos.action.start(refundActionAttributes);
 
-        let refundTransaction: chevre.factory.transaction.refund.ITransaction | undefined;
+        let refundTransaction: chevre.factory.assetTransaction.refund.ITransaction | undefined;
 
         try {
             const returnPolicy = returnOrderTransaction.object.returnPolicy;
@@ -301,7 +301,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
             // no op
             refundTransaction = await refundService.start({
                 project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
-                typeOf: chevre.factory.transactionType.Refund,
+                typeOf: chevre.factory.assetTransactionType.Refund,
                 transactionNumber: transactionNumber,
                 agent: { typeOf: params.agent.typeOf, name: params.agent.name, id: params.agent.id },
                 recipient: { typeOf: params.recipient.typeOf, name: params.recipient.name },

@@ -19,7 +19,7 @@ export function createReserveTransactionStartParams(params: {
 
     return {
         project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-        typeOf: chevre.factory.transactionType.Reserve,
+        typeOf: chevre.factory.assetTransactionType.Reserve,
         transactionNumber: params.transactionNumber,
         agent: {
             typeOf: params.transaction.agent.typeOf,

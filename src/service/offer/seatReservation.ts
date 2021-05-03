@@ -125,7 +125,7 @@ export function create(params: {
 
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
-        let reserveService: COA.service.Reserve | chevre.service.transaction.Reserve | undefined;
+        let reserveService: COA.service.Reserve | chevre.service.assetTransaction.Reserve | undefined;
         let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] = [];
         let transactionNumber: string | undefined;
 
@@ -205,7 +205,7 @@ export function create(params: {
                         throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transactionNumber not found');
                     }
 
-                    reserveService = new chevre.service.transaction.Reserve({
+                    reserveService = new chevre.service.assetTransaction.Reserve({
                         endpoint: credentials.chevre.endpoint,
                         auth: chevreAuthClient
                     });
@@ -694,7 +694,7 @@ async function addExtraProperties4COA(params: {
         }
 
         // ムビチケ認証
-        const payService = new chevre.service.transaction.Pay({
+        const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -1206,7 +1206,7 @@ export function cancel(params: {
                 break;
 
             default:
-                const reserveService = new chevre.service.transaction.Reserve({
+                const reserveService = new chevre.service.assetTransaction.Reserve({
                     endpoint: credentials.chevre.endpoint,
                     auth: chevreAuthClient
                 });

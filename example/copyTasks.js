@@ -4,7 +4,7 @@ async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI_ADMIN);
 
     const db = mongoose.connection.db.admin();
-    const result = await db.command({ renameCollection: "cinerino.roles", to: "chevre.roles", dropTarget: true });
+    const result = await db.command({ renameCollection: "cinerino.tasks", to: "chevre.tasks", dropTarget: true });
     console.log(result);
 }
 

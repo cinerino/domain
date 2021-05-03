@@ -123,7 +123,7 @@ async function processStartDepositTransaction(params: {
     let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
     try {
-        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+        const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -137,7 +137,7 @@ async function processStartDepositTransaction(params: {
 
         // 販売者が取引人に入金
         requestBody = {
-            typeOf: chevre.factory.transactionType.MoneyTransfer,
+            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: {
                 typeOf: params.transaction.seller.typeOf,
@@ -190,7 +190,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
         action: ActionRepo;
         transaction: TransactionRepo;
     }) => {
-        const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+        const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
         });
@@ -248,7 +248,7 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Co
         const action = await repos.action.start(params);
 
         try {
-            const moneyTransferService = new chevre.service.transaction.MoneyTransfer({
+            const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient
             });
