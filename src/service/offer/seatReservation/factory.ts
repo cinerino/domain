@@ -14,7 +14,7 @@ export function createReserveTransactionStartParams(params: {
     object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
     transaction: factory.transaction.ITransaction<any>;
     transactionNumber: string;
-}): factory.chevre.transaction.reserve.IStartParamsWithoutDetail {
+}): factory.chevre.assetTransaction.reserve.IStartParamsWithoutDetail {
     const informReservationParamsFromObject = params.object?.onReservationStatusChanged?.informReservation;
 
     return {
@@ -52,7 +52,7 @@ export function createReserveTransactionStartParams(params: {
 export function createAuthorizeSeatReservationActionAttributes(params: {
     acceptedOffers: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[];
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-    pendingTransaction?: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
+    pendingTransaction?: factory.chevre.assetTransaction.ITransaction<factory.chevre.assetTransactionType.Reserve> | undefined;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
 }): factory.action.authorize.offer.seatReservation.IAttributes<factory.service.webAPI.Identifier> {
     const acceptedOffers = params.acceptedOffers;
@@ -235,7 +235,7 @@ export function responseBody2acceptedOffers4result(params: {
  */
 function createReservation(params: {
     project: factory.project.IProject;
-    itemOffered: factory.chevre.transaction.reserve.ISubReservation;
+    itemOffered: factory.chevre.assetTransaction.reserve.ISubReservation;
     event: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 }): factory.order.IReservation {
     const itemOffered = params.itemOffered;

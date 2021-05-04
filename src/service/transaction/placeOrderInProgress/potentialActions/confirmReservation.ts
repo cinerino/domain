@@ -168,7 +168,7 @@ function createConfirmReservationActionObject(params: {
 
     const confirmReservationObject:
         factory.action.interact.confirm.reservation.IObject<factory.service.webAPI.Identifier.Chevre> = {
-        typeOf: factory.chevre.transactionType.Reserve,
+        typeOf: factory.chevre.assetTransactionType.Reserve,
         transactionNumber: params.reserveTransaction.transactionNumber,
         object: {
             reservations: (Array.isArray(params.reserveTransaction.object.reservations))
@@ -199,7 +199,7 @@ function createConfirmReservationActionObject(params: {
     const confirmReservationObjectParams = confirmReservationParams.find((p) => {
         const object = <factory.action.interact.confirm.reservation.IObject4Chevre>p.object;
 
-        return object?.typeOf === factory.chevre.transactionType.Reserve
+        return object?.typeOf === factory.chevre.assetTransactionType.Reserve
             && object?.id === params.reserveTransaction.id;
     });
 

@@ -124,7 +124,7 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
 
     await cancelReservationService.startAndConfirm({
         project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
-        typeOf: factory.chevre.transactionType.CancelReservation,
+        typeOf: factory.chevre.assetTransactionType.CancelReservation,
         agent: {
             typeOf: params.agent.typeOf,
             id: params.agent.id,

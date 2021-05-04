@@ -187,8 +187,8 @@ export function authorize(params: {
             serviceOutputService
         });
 
-        let requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
-        let responseBody: factory.chevre.transaction.registerService.ITransaction;
+        let requestBody: factory.chevre.assetTransaction.registerService.IStartParamsWithoutDetail;
+        let responseBody: factory.chevre.assetTransaction.registerService.ITransaction;
 
         // まず取引番号発行
         const transactionNumberService = new chevre.service.TransactionNumber({

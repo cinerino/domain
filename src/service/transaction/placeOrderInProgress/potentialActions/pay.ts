@@ -4,7 +4,7 @@ export async function createPayActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.trade.pay.IAttributes[]> {
+}): Promise<factory.action.interact.confirm.pay.IAttributes[]> {
     const authorizePaymentActions = (<factory.action.authorize.paymentMethod.any.IAction[]>
         params.transaction.object.authorizeActions)
         .filter(
@@ -20,7 +20,7 @@ export async function createPayActions(params: {
             project: params.transaction.project,
             typeOf: factory.actionType.ConfirmAction,
             object: [{
-                typeOf: factory.action.trade.pay.ObjectType.PaymentMethod,
+                typeOf: factory.action.interact.confirm.pay.ObjectType.PaymentMethod,
                 paymentMethod: {
                     accountId: result.accountId,
                     additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],

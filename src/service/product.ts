@@ -166,7 +166,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
 /**
  * サービス登録
  */
-export function registerService(params: factory.action.interact.register.service.IAttributes) {
+export function registerService(params: factory.action.interact.confirm.registerService.IAttributes) {
     return async (repos: {
         action: ActionRepo;
         task: TaskRepo;
@@ -199,7 +199,7 @@ export function registerService(params: factory.action.interact.register.service
         }
 
         // アクション完了
-        const result: factory.action.interact.register.service.IResult = {};
+        const result: factory.action.interact.confirm.registerService.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
 
         await onRegistered(registerActionAttributes)(repos);
@@ -207,7 +207,7 @@ export function registerService(params: factory.action.interact.register.service
 }
 
 export function onRegistered(
-    actionAttributes: factory.action.interact.register.service.IAttributes
+    actionAttributes: factory.action.interact.confirm.registerService.IAttributes
 ) {
     return async (repos: { task: TaskRepo }) => {
         const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];

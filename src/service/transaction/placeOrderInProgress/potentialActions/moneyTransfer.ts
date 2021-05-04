@@ -6,8 +6,8 @@ export async function createMoneyTransferActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.transfer.moneyTransfer.IAttributes[]> {
-    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes[] = [];
+}): Promise<factory.action.interact.confirm.moneyTransfer.IAttributes[]> {
+    const moneyTransferActions: factory.action.interact.confirm.moneyTransfer.IAttributes[] = [];
 
     const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)

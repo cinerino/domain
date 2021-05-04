@@ -112,7 +112,7 @@ export function authorize(params: {
 export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
     return async (repos: {
         action: ActionRepo;
-    }): Promise<factory.action.trade.pay.IAction> => {
+    }): Promise<factory.action.interact.confirm.pay.IAction> => {
         const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient
@@ -147,9 +147,9 @@ export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
         }
 
         // アクション完了
-        const actionResult: factory.action.trade.pay.IResult = {};
+        const actionResult: factory.action.interact.confirm.pay.IResult = {};
 
-        return <Promise<factory.action.trade.pay.IAction>>
+        return <Promise<factory.action.interact.confirm.pay.IAction>>
             repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }
@@ -356,7 +356,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
             throw error;
         }
 
-        const result: factory.action.trade.refund.IResult = {
+        const result: factory.action.transfer.returnAction.paymentMethod.IResult = {
             refundTransaction
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });

@@ -9,7 +9,7 @@ async function createRefundPotentialActions(params: {
     paymentMethod: factory.order.IPaymentMethod;
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
-}): Promise<factory.action.trade.refund.IPotentialActions> {
+}): Promise<factory.action.transfer.returnAction.paymentMethod.IPotentialActions> {
     const transaction = params.transaction;
     const order = params.order;
 
@@ -78,7 +78,7 @@ export async function createRefundActions(params: {
     order: factory.order.IOrder;
     returnOrderActionParams?: factory.transaction.returnOrder.IReturnOrderActionParams;
     transaction: factory.transaction.returnOrder.ITransaction;
-}): Promise<factory.action.trade.refund.IAttributes[]> {
+}): Promise<factory.action.transfer.returnAction.paymentMethod.IAttributes[]> {
     const transaction = params.transaction;
     const order = params.order;
 
@@ -93,7 +93,7 @@ export async function createRefundActions(params: {
             && !nonrefundingPaymentMethodTypes.includes(p.typeOf) // 返金対象外に含まれない決済方法のみ
     );
 
-    return Promise.all(refundingPaymentMethods.map(async (p): Promise<factory.action.trade.refund.IAttributes> => {
+    return Promise.all(refundingPaymentMethods.map(async (p): Promise<factory.action.transfer.returnAction.paymentMethod.IAttributes> => {
         const potentialActionsOnRefund = await createRefundPotentialActions({
             paymentMethod: p,
             order: params.order,

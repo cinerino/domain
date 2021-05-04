@@ -116,10 +116,10 @@ async function processStartDepositTransaction(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType>;
     object: factory.action.authorize.offer.monetaryAmount.IObject;
 }): Promise<{
-    requestBody: factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail;
+    requestBody: factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail;
     responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 }> {
-    let requestBody: factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail;
+    let requestBody: factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail;
     let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
     try {
@@ -268,7 +268,7 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Co
             throw error;
         }
 
-        const actionResult: factory.action.transfer.moneyTransfer.IResult = {};
+        const actionResult: factory.action.interact.confirm.moneyTransfer.IResult = {};
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };
 }

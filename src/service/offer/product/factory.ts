@@ -13,7 +13,7 @@ export function createRegisterServiceStartParams(params: {
     object: factory.action.authorize.offer.product.IObject;
     transaction: factory.transaction.ITransaction<any>;
     transactionNumber: string;
-}): factory.chevre.transaction.registerService.IStartParamsWithoutDetail {
+}): factory.chevre.assetTransaction.registerService.IStartParamsWithoutDetail {
     return {
         project: { typeOf: params.project.typeOf, id: params.project.id },
         typeOf: chevre.factory.assetTransactionType.RegisterService,
@@ -57,7 +57,7 @@ export function createActionAttributes(params: {
         typeOf: factory.actionType.AuthorizeAction,
         // Chevreサービス登録取引を使用して
         instrument: {
-            typeOf: factory.chevre.transactionType.RegisterService,
+            typeOf: factory.chevre.assetTransactionType.RegisterService,
             transactionNumber: params.transactionNumber
         },
         object: params.acceptedOffer,
@@ -102,7 +102,7 @@ function acceptedOffers2amount(params: {
 
 function responseBody2resultAcceptedOffer(params: {
     project: factory.project.IProject;
-    responseBody: factory.chevre.transaction.registerService.ITransaction;
+    responseBody: factory.chevre.assetTransaction.registerService.ITransaction;
     acceptedOffer: factory.action.authorize.offer.product.IObject;
 }): factory.action.authorize.offer.product.IResultAcceptedOffer {
     let acceptedOffers: factory.action.authorize.offer.product.IResultAcceptedOffer = [];
@@ -156,8 +156,8 @@ function responseBody2resultAcceptedOffer(params: {
 
 export function createResult(params: {
     project: factory.project.IProject;
-    requestBody: factory.chevre.transaction.registerService.IStartParamsWithoutDetail;
-    responseBody: factory.chevre.transaction.registerService.ITransaction;
+    requestBody: factory.chevre.assetTransaction.registerService.IStartParamsWithoutDetail;
+    responseBody: factory.chevre.assetTransaction.registerService.ITransaction;
     acceptedOffer: factory.action.authorize.offer.product.IObject;
 }): factory.action.authorize.offer.product.IResult {
     const acceptedOffers4result = responseBody2resultAcceptedOffer(params);

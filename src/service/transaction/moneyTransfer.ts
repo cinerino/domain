@@ -182,7 +182,7 @@ function fixFromLocation(
 ) {
     return async (__: {
     }): Promise<factory.transaction.moneyTransfer.IFromLocation> => {
-        let fromLocation = <factory.action.transfer.moneyTransfer.IPaymentCard>params.object.fromLocation;
+        let fromLocation = <factory.action.interact.confirm.moneyTransfer.IPaymentCard>params.object.fromLocation;
 
         if (typeof fromLocation.typeOf === 'string') {
             const fromLocationObject = fromLocation;
@@ -237,7 +237,7 @@ function processAuthorizePaymentCard(params: {
     project: { id: string };
     agent: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject & {
-        fromLocation?: factory.action.transfer.moneyTransfer.IPaymentCard;
+        fromLocation?: factory.action.interact.confirm.moneyTransfer.IPaymentCard;
         currency?: string;
     };
     purpose: factory.action.authorize.offer.monetaryAmount.IPurpose;
@@ -346,7 +346,7 @@ function processAuthorizePaymentCard(params: {
 async function processMoneyTransferTransaction(params: {
     project: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject & {
-        fromLocation?: factory.action.transfer.moneyTransfer.IPaymentCard;
+        fromLocation?: factory.action.interact.confirm.moneyTransfer.IPaymentCard;
         currency?: string;
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;

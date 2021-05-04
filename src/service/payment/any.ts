@@ -154,7 +154,7 @@ export function voidTransaction(params: {
  * 返金後のアクション
  */
 export function onRefund(
-    refundActionAttributes: factory.action.trade.refund.IAttributes,
+    refundActionAttributes: factory.action.transfer.returnAction.paymentMethod.IAttributes,
     order?: factory.order.IOrder
 ) {
     return async (repos: {

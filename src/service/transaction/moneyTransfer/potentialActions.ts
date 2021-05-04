@@ -4,8 +4,8 @@ export type IAuthorizeMoneyTransferOffer = factory.action.authorize.offer.moneta
 
 function createMoneyTransferActions(params: {
     transaction: factory.transaction.ITransaction<factory.transactionType.MoneyTransfer>;
-}): factory.action.transfer.moneyTransfer.IAttributes[] {
-    const moneyTransferActions: factory.action.transfer.moneyTransfer.IAttributes[] = [];
+}): factory.action.interact.confirm.moneyTransfer.IAttributes[] {
+    const moneyTransferActions: factory.action.interact.confirm.moneyTransfer.IAttributes[] = [];
 
     const authorizeMoneyTransferActions = (<IAuthorizeMoneyTransferOffer[]>params.transaction.object.authorizeActions)
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)

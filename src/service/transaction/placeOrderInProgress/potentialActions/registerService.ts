@@ -8,8 +8,8 @@ export async function createRegisterServiceActions(params: {
     order: factory.order.IOrder;
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
     transaction: factory.transaction.placeOrder.ITransaction;
-}): Promise<factory.action.interact.register.service.IAttributes[]> {
-    const registerServiceActions: factory.action.interact.register.service.IAttributes[] = [];
+}): Promise<factory.action.interact.confirm.registerService.IAttributes[]> {
+    const registerServiceActions: factory.action.interact.confirm.registerService.IAttributes[] = [];
 
     const authorizeProductOfferActions = (<factory.action.authorize.offer.product.IAction[]>
         params.transaction.object.authorizeActions)
@@ -75,7 +75,7 @@ function createRegisterServiceActionObject(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     // registerServiceTransaction: any;
     transactionNumber?: string;
-}): factory.chevre.transaction.registerService.IConfirmParams {
+}): factory.chevre.assetTransaction.registerService.IConfirmParams {
     return {
         // id: params.registerServiceTransaction.id,
         transactionNumber: params.transactionNumber,
@@ -83,7 +83,7 @@ function createRegisterServiceActionObject(params: {
         object: {
         },
         ...{
-            typeOf: factory.chevre.transactionType.RegisterService
+            typeOf: factory.chevre.assetTransactionType.RegisterService
         }
         // potentialActions?: IPotentialActionsParams;
     };

@@ -271,7 +271,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 function createGivePointAwardStartParams(
     params: factory.task.IData<factory.taskName.GivePointAward>,
     transactionNumber: string
-): factory.chevre.transaction.moneyTransfer.IStartParamsWithoutDetail {
+): factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail {
     const agent = {
         typeOf: params.agent.typeOf,
         id: params.agent.id,
@@ -281,7 +281,7 @@ function createGivePointAwardStartParams(
         url: params.agent.url
     };
 
-    const recipient: factory.chevre.transaction.moneyTransfer.IRecipient = {
+    const recipient: factory.chevre.assetTransaction.moneyTransfer.IRecipient = {
         typeOf: params.recipient.typeOf,
         id: params.recipient.id,
         name: (typeof params.recipient.name === 'string')

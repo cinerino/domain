@@ -77,7 +77,7 @@ export async function createCancelReservationActions(params: {
                             project: transaction.project,
                             typeOf: factory.actionType.ReturnAction,
                             object: {
-                                typeOf: factory.chevre.transactionType.Reserve,
+                                typeOf: factory.chevre.assetTransactionType.Reserve,
                                 transactionNumber: reservationNumber
                             },
                             agent: transaction.agent,
