@@ -92,7 +92,8 @@ export function create(params: {
 
         const eventService = new chevre.service.Event({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
@@ -137,7 +138,8 @@ export function create(params: {
                 // Chevre予約の場合、まず取引番号発行
                 const transactionNumberService = new chevre.service.TransactionNumber({
                     endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient
+                    auth: chevreAuthClient,
+                    project: { id: params.project.id }
                 });
                 const publishResult = await transactionNumberService.publish({
                     project: { id: params.project.id }
@@ -207,7 +209,8 @@ export function create(params: {
 
                     reserveService = new chevre.service.assetTransaction.Reserve({
                         endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient
+                        auth: chevreAuthClient,
+                        project: { id: params.project.id }
                     });
 
                     // Chevreで仮予約
@@ -291,7 +294,8 @@ export function selectSeats(
 
         const eventService = new chevre.service.Event({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: performance.project.id }
         });
 
         // チケットオファー検索
@@ -685,7 +689,8 @@ async function addExtraProperties4COA(params: {
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const seller = await sellerService.findById({ id: params.seller.id });
         const paymentAccepted = seller.paymentAccepted?.some((a) => a.paymentMethodType === movieTicket.typeOf);
@@ -696,7 +701,8 @@ async function addExtraProperties4COA(params: {
         // ムビチケ認証
         const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const checkAction = await payService.check({
             project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
@@ -1208,7 +1214,8 @@ export function cancel(params: {
             default:
                 const reserveService = new chevre.service.assetTransaction.Reserve({
                     endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient
+                    auth: chevreAuthClient,
+                    project: { id: params.project.id }
                 });
 
                 if (typeof action.object.pendingTransaction?.transactionNumber === 'string') {

@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - USE_CHEVRE_SEARCH_PROJECT設定を追加
 - chevreと重複するタスク名をrename
 - 資産取引を再定義したchevreで再構築
+- 全chevreサービスにプロジェクトを指定
 
 ### Deprecated
 

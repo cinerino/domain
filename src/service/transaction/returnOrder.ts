@@ -57,7 +57,8 @@ export function start(
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: project.id }
         });
         const seller = await sellerService.findById({ id: params.seller.id });
 

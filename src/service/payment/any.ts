@@ -72,7 +72,8 @@ export function authorize(params: {
             // 販売者情報取得
             const sellerService = new chevre.service.Seller({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: transaction.project.id }
             });
             const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 

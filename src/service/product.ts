@@ -59,13 +59,15 @@ export function createOrderTask(params: {
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const seller = await sellerService.findById({ id: params.object.seller.id });
 
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const product = <chevre.factory.product.IProduct>await productService.findById({ id: params.object.itemOffered.id });
@@ -180,7 +182,8 @@ export function registerService(params: factory.action.interact.confirm.register
 
             const registerServiceTransaction = new chevre.service.assetTransaction.RegisterService({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             await registerServiceTransaction.confirm(object);

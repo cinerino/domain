@@ -13,8 +13,8 @@ async function main() {
         {
             // 'project.id': { $exists: true, $eq: 'sskts-production' },
             startDate: {
-                $gte: moment('2020-12-01T00:00:00+09:00').toDate(),
-                $lt: moment('2021-01-01T00:00:00+09:00').toDate(),
+                $gte: moment('2020-10-01T00:00:00+09:00').toDate(),
+                $lt: moment('2020-11-01T00:00:00+09:00').toDate(),
             }
         },
         { createdAt: 0, updatedAt: 0 }

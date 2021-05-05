@@ -73,7 +73,8 @@ export function create(params: {
         // イベントを取得
         const eventService = new chevre.service.Event({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
@@ -261,7 +262,8 @@ export function changeOffers(params: {
         // イベントを取得
         const eventService = new chevre.service.Event({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id

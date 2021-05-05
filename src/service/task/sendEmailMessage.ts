@@ -24,7 +24,8 @@ export function call(data: factory.task.IData<factory.taskName.SendEmailMessage>
 
         const projectService = new chevre.service.Project({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: '' }
         });
 
         await NotificationService.sendEmailMessage(data.actionAttributes)({

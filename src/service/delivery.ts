@@ -234,7 +234,8 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
         try {
             const transactionNumberService = new chevre.service.TransactionNumber({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
             const { transactionNumber } = await transactionNumberService.publish({
                 project: { id: params.project.id }
@@ -243,7 +244,8 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
             // Chevreで入金
             const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             const startParams = createGivePointAwardStartParams(params, transactionNumber);
@@ -362,7 +364,8 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         try {
             const transactionNumberService = new chevre.service.TransactionNumber({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
             const { transactionNumber } = await transactionNumberService.publish({
                 project: { id: params.project.id }
@@ -371,7 +374,8 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             // Chevreで入金した分を出金
             const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             const recipient = {

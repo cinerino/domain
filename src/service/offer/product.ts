@@ -56,7 +56,8 @@ export function search(params: {
 
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const product = <chevre.factory.product.IProduct>await productService.findById({ id: params.itemOffered.id });
 
@@ -146,11 +147,13 @@ export function authorize(params: {
 
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
         const serviceOutputService = new chevre.service.ServiceOutput({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
 
         const product = <chevre.factory.product.IProduct>await productService.findById({
@@ -193,7 +196,8 @@ export function authorize(params: {
         // まず取引番号発行
         const transactionNumberService = new chevre.service.TransactionNumber({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
         const publishResult = await transactionNumberService.publish({ project: { id: params.project.id } });
         const transactionNumber = publishResult.transactionNumber;
@@ -216,7 +220,8 @@ export function authorize(params: {
             // サービス登録開始
             const registerService = new chevre.service.assetTransaction.RegisterService({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: transaction.project.id }
             });
 
             const startParams = createRegisterServiceStartParams({
@@ -346,7 +351,8 @@ async function processVoidRegisterServiceTransaction(params: {
         // 取引が存在すれば中止
         const transactionService = new chevre.service.AssetTransaction({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const { data } = await transactionService.search({
@@ -358,7 +364,8 @@ async function processVoidRegisterServiceTransaction(params: {
         if (data.length > 0) {
             const registerService = new chevre.service.assetTransaction.RegisterService({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             await registerService.cancel({ transactionNumber: transactionNumber });

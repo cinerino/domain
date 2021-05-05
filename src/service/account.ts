@@ -218,7 +218,8 @@ export function findAccount(params: {
     }): Promise<factory.pecorino.account.IAccount> => {
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const searchProductsResult = await productService.search({

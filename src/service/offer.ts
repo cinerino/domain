@@ -102,7 +102,8 @@ export function searchEventTicketOffers(params: {
 
         const eventService = new chevre.service.Event({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         debug('searching screeninf event offers...', params);
@@ -410,7 +411,8 @@ async function searchEventTicketOffers4COA(params: {
 
     const offerService = new chevre.service.Offer({
         endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
+        auth: chevreAuthClient,
+        project: { id: params.project.id }
     });
 
     let coaInfo: factory.event.screeningEvent.ICOAInfo | undefined;

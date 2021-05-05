@@ -33,7 +33,8 @@ describe('汎用決済承認', () => {
             typeOf: domain.factory.transactionType.PlaceOrder,
             id: 'transactionId',
             agent: agent,
-            seller: seller
+            seller: seller,
+            project: { id: '' }
         };
         const amount = 1234;
         const additionalProperty = [{

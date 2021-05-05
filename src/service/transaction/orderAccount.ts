@@ -64,7 +64,8 @@ export function orderAccount(params: {
     }) => {
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
@@ -108,7 +109,8 @@ export function orderAccount(params: {
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const seller = await sellerService.findById({ id: productOfferSellerId });
 
@@ -175,7 +177,8 @@ function processPlaceOrder(params: {
     }) => {
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const acceptedOffer = params.acceptedOffer;

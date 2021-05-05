@@ -64,7 +64,8 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: project.id }
         });
         const seller = await sellerService.findById({ id: params.seller.id });
 
@@ -165,14 +166,16 @@ export function confirm(params: IConfirmParams) {
 
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
         const seller = await sellerService.findById({ id: String(transaction.seller.id) });
 
         // プロジェクトの対応決済サービスを確認するためにChevreプロジェクトを検索
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
         const searchPaymentServicesResult = await productService.search({
             project: { id: { $eq: transaction.project.id } },
@@ -188,7 +191,8 @@ export function confirm(params: IConfirmParams) {
         // 利用可能な口座区分を検索
         const categoryCodeService = new chevre.service.CategoryCode({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
         const searchAccountTypesResult = await categoryCodeService.search({
             project: { id: { $eq: transaction.project.id } },
@@ -623,7 +627,8 @@ export function publishAwardAccountNumberIfNotExist(params: {
         // 指定された口座種別数だけ、注文番号を発行
         const serviceOutputService = new chevre.service.ServiceOutput({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: transaction.project.id }
         });
 
         const publishIdentifierResult = await serviceOutputService.publishIdentifier(params.object.awardAccounts.map(() => {

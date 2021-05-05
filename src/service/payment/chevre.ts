@@ -48,7 +48,8 @@ export function authorize(params: {
         // 取引番号生成
         const transactionNumberService = new chevre.service.TransactionNumber({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const { transactionNumber } = await transactionNumberService.publish({
@@ -80,7 +81,8 @@ export function authorize(params: {
             // 決済取引開始
             const payService = new chevre.service.assetTransaction.Pay({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             const startParams = creatPayTransactionStartParams({
@@ -115,7 +117,8 @@ export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
     }): Promise<factory.action.interact.confirm.pay.IAction> => {
         const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         // アクション開始
@@ -193,11 +196,13 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
 
         const transactionService = new chevre.service.AssetTransaction({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const errors: any[] = [];
@@ -246,11 +251,13 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
 
         const transactionNumberService = new chevre.service.TransactionNumber({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const refundService = new chevre.service.assetTransaction.Refund({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const { transactionNumber } = await transactionNumberService.publish({
@@ -373,7 +380,8 @@ async function getPaymentServiceType(params: {
     // プロジェクトの対応決済サービスを確認
     const productService = new chevre.service.Product({
         endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
+        auth: chevreAuthClient,
+        project: { id: params.project.id }
     });
     const searchPaymentServicesResult = await productService.search({
         limit: 1,
@@ -408,7 +416,8 @@ export async function getCreditCardPaymentServiceChannel(params: {
 }): Promise<ICreditCardPaymentServiceCredentials> {
     const productService = new chevre.service.Product({
         endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
+        auth: chevreAuthClient,
+        project: { id: params.project.id }
     });
     const searchPaymentServicesResult = await productService.search({
         limit: 1,

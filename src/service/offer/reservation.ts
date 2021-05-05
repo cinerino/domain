@@ -139,7 +139,8 @@ async function processVoidTransaction4chevre(params: {
         // 取引が存在すれば中止
         const transactionService = new chevre.service.AssetTransaction({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const { data } = await transactionService.search({
@@ -152,7 +153,8 @@ async function processVoidTransaction4chevre(params: {
             // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
             const reserveService = new chevre.service.assetTransaction.Reserve({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             await reserveService.cancel({ transactionNumber: transactionNumber });

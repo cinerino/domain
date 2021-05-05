@@ -30,7 +30,8 @@ export function call(data: factory.task.IData<factory.taskName.PlaceOrder>): IOp
 
         const orderService = new chevre.service.Order({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
         });
 
         await OrderService.placeOrder(data)({

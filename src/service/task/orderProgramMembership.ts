@@ -39,12 +39,14 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
 
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
         });
 
         const projectService = new chevre.service.Project({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: '' }
         });
 
         const project = await projectService.findById({ id: data.project.id });

@@ -38,11 +38,13 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
 
         const orderService = new chevre.service.Order({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
         });
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
         });
 
         await DeliveryService.sendOrder(data)({

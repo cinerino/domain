@@ -163,7 +163,8 @@ async function offer2availableSalesTicket(params: {
             const offerIdentifier = `COA-${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
             const offerService = new chevre.service.Offer({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
             const searchOffersResult = await offerService.search({
                 limit: 1,

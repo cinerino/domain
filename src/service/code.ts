@@ -23,11 +23,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-const authorizationService = new chevre.service.Authorization({
-    endpoint: credentials.chevre.endpoint,
-    auth: chevreAuthClient
-});
-
 /**
  * コードを発行する
  */
@@ -109,6 +104,12 @@ async function publishByChevre(params: {
         };
     });
 
+    const authorizationService = new chevre.service.Authorization({
+        endpoint: credentials.chevre.endpoint,
+        auth: chevreAuthClient,
+        project: { id: params[0]?.project.id }
+    });
+
     return authorizationService.create(saveParams.map((authorization) => {
         return {
             code: authorization.code,
@@ -133,6 +134,12 @@ export function getToken(params: {
 }) {
     return async (): Promise<IToken> => {
         const now = new Date();
+
+        const authorizationService = new chevre.service.Authorization({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
+        });
 
         const searchResult = await authorizationService.search({
             limit: 1,

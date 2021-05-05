@@ -56,7 +56,8 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
     }) => {
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
         const seller = await sellerService.findById({ id: params.seller.id });
 
@@ -383,7 +384,8 @@ async function processMoneyTransferTransaction(params: {
 
     const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
         endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
+        auth: chevreAuthClient,
+        project: { id: params.project.id }
     });
 
     if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {

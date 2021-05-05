@@ -30,7 +30,8 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
 
         const projectService = new chevre.service.Project({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: '' }
         });
 
         const project = await projectService.findById({ id: data.project.id });

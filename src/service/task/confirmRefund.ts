@@ -30,12 +30,14 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmRefund>): 
 
         const orderService = new chevre.service.Order({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
         });
 
         const projectService = new chevre.service.Project({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: '' }
         });
 
         await PaymentService.refund(data)({

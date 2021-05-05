@@ -125,7 +125,8 @@ async function processStartDepositTransaction(params: {
     try {
         const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         const description = `for ${params.transaction.typeOf} Transaction ${params.transaction.id}`;
@@ -192,7 +193,8 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
     }) => {
         const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
             endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
         });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
@@ -250,7 +252,8 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Co
         try {
             const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
                 endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient
+                auth: chevreAuthClient,
+                project: { id: params.project.id }
             });
 
             const pendingTransaction = params.object.pendingTransaction;

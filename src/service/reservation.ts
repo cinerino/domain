@@ -119,7 +119,8 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
 
     const cancelReservationService = new chevre.service.assetTransaction.CancelReservation({
         endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient
+        auth: chevreAuthClient,
+        project: { id: params.project.id }
     });
 
     await cancelReservationService.startAndConfirm({
@@ -195,7 +196,8 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
                     // 座席予約確定
                     reserveService = new chevre.service.assetTransaction.Reserve({
                         endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient
+                        auth: chevreAuthClient,
+                        project: { id: params.project.id }
                     });
 
                     object = <factory.action.interact.confirm.reservation.IObject4Chevre>object;
@@ -253,7 +255,8 @@ export function searchScreeningEventReservations(
             if (reservationIds.length > 0) {
                 const reservationService = new chevre.service.Reservation({
                     endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient
+                    auth: chevreAuthClient,
+                    project: { id: params.project.id }
                 });
 
                 const searchReservationsResult = await reservationService.search<factory.chevre.reservationType.EventReservation>({
