@@ -13,6 +13,10 @@ import { task2lineNotify } from './notification/factory';
 
 const debug = createDebug('cinerino-domain:service');
 
+const ABORTED_TASKS_WITHOUT_REPORT: string[] = (typeof process.env.ABORTED_TASKS_WITHOUT_REPORT === 'string')
+    ? process.env.ABORTED_TASKS_WITHOUT_REPORT.split(',')
+    : [];
+
 export interface IConnectionSettings {
     /**
      * MongoDBコネクション
@@ -128,6 +132,11 @@ export function abort(params: {
             return;
         }
         debug('abortedTask found', abortedTask);
+
+        // 中止を報告しないタスクであれば終了
+        if (ABORTED_TASKS_WITHOUT_REPORT.includes(abortedTask.name)) {
+            return;
+        }
 
         // 開発者へ報告
         const message = task2lineNotify({ task: abortedTask });

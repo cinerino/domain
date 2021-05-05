@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- ABORTED_TASKS_WITHOUT_REPORT設定を追加
+
 ### Changed
 
 - プロジェクトに返品手数料設定を追加
