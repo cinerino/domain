@@ -311,7 +311,9 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
                 typeOf: chevre.factory.assetTransactionType.Refund,
                 transactionNumber: transactionNumber,
                 agent: { typeOf: params.agent.typeOf, name: params.agent.name, id: params.agent.id },
-                recipient: { typeOf: params.recipient.typeOf, name: params.recipient.name },
+                // tslint:disable-next-line:no-object-literal-type-assertion
+                recipient: <factory.person.IPerson | factory.creativeWork.softwareApplication.webApplication.ICreativeWork>
+                    { typeOf: params.recipient.typeOf, name: params.recipient.name },
                 object: {
                     // paymentServiceType未指定であれば、Chevre側で自動選択される
                     typeOf: (typeof paymentServiceType === 'string') ? paymentServiceType : <any>'',

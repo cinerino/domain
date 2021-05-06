@@ -283,15 +283,18 @@ function createGivePointAwardStartParams(
         url: params.agent.url
     };
 
-    const recipient: factory.chevre.assetTransaction.moneyTransfer.IRecipient = {
-        typeOf: params.recipient.typeOf,
-        id: params.recipient.id,
-        name: (typeof params.recipient.name === 'string')
-            ? params.recipient.name
-            : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
-                ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
-                : ''
-    };
+    const recipient: factory.chevre.assetTransaction.moneyTransfer.IRecipient
+        // tslint:disable-next-line:no-object-literal-type-assertion
+        = <factory.person.IPerson | factory.creativeWork.softwareApplication.webApplication.ICreativeWork>
+        {
+            typeOf: params.recipient.typeOf,
+            id: params.recipient.id,
+            name: (typeof params.recipient.name === 'string')
+                ? params.recipient.name
+                : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
+                    ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
+                    : ''
+        };
 
     const identifier = createPointAwardIdentifier({
         project: params.project,
@@ -379,6 +382,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             });
 
             const recipient = {
+                project: params.project,
                 typeOf: params.recipient.typeOf,
                 id: params.recipient.id,
                 name: order.seller.name,
@@ -398,7 +402,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 expires: moment()
                     .add(1, 'minutes')
                     .toDate(),
-                recipient: recipient,
+                recipient: <factory.seller.ISeller>recipient,
                 object: {
                     amount: {
                         typeOf: 'MonetaryAmount',

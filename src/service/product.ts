@@ -122,8 +122,8 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
         try {
             const membershipServiceId = params.object.membershipFor?.id;
             if (typeof membershipServiceId === 'string') {
-                if (Array.isArray(params.object.member)) {
-                    const customers = params.object.member;
+                if (Array.isArray((<any>params).object.member)) {
+                    const customers = <factory.programMembership.IMember[]>(<any>params).object.member;
 
                     await Promise.all(customers.map(async (customer) => {
                         // メンバーシップ更新タスク(継続課金タスク)をキャンセル

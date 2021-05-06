@@ -364,8 +364,9 @@ async function processMoneyTransferTransaction(params: {
         ...(typeof transaction.agent.url === 'string') ? { url: transaction.agent.url } : undefined
     };
 
-    const recipient = {
-        typeOf: params.recipient.typeOf,
+    const recipient: factory.person.IPerson | factory.seller.ISeller = {
+        project: transaction.project,
+        typeOf: <any>params.recipient.typeOf,
         id: params.recipient.id,
         name: (typeof params.recipient.name === 'string')
             ? params.recipient.name

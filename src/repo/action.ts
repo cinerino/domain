@@ -19,7 +19,7 @@ export class MongoRepository {
     }
 
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-    public static CREATE_MONGO_CONDITIONS<T extends factory.actionType>(params: factory.action.ISearchConditions<T>) {
+    public static CREATE_MONGO_CONDITIONS(params: factory.action.ISearchConditions) {
         const andConditions: any[] = [];
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -68,7 +68,7 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        const objectPaymentMethodEq = params.object?.paymentMethod?.$eq;
+        const objectPaymentMethodEq = (<any>params).object?.paymentMethod?.$eq;
         if (typeof objectPaymentMethodEq === 'string') {
             andConditions.push({
                 'object.paymentMethod': {
@@ -136,11 +136,11 @@ export class MongoRepository {
             /* istanbul ignore else */
             if (params.object.paymentMethod !== undefined) {
                 if (params.object.paymentMethod.paymentMethodId !== undefined) {
-                    if (Array.isArray(params.object.paymentMethod.paymentMethodId.$in)) {
+                    if (Array.isArray((<any>params).object.paymentMethod.paymentMethodId.$in)) {
                         andConditions.push({
                             'object.paymentMethod.paymentMethodId': {
                                 $exists: true,
-                                $in: params.object.paymentMethod.paymentMethodId.$in
+                                $in: (<any>params).object.paymentMethod.paymentMethodId.$in
                             }
                         });
                     }
@@ -397,7 +397,7 @@ export class MongoRepository {
         return andConditions;
     }
 
-    public async count<T extends factory.actionType>(params: factory.action.ISearchConditions<T>): Promise<number> {
+    public async count(params: factory.action.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.actionModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
@@ -408,9 +408,7 @@ export class MongoRepository {
     /**
      * アクション検索
      */
-    public async search<T extends factory.actionType>(
-        params: factory.action.ISearchConditions<T>
-    ): Promise<IAction<T>[]> {
+    public async search<T extends factory.actionType>(params: factory.action.ISearchConditions): Promise<IAction<T>[]> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
         const query = this.actionModel.find(
             (conditions.length > 0) ? { $and: conditions } : {},
