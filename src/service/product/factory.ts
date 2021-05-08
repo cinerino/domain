@@ -17,7 +17,7 @@ export function createOrderProgramMembershipActionAttributes(params: {
         throw new factory.errors.NotFound(`ServiceOutput for product ${params.product.id}`);
     }
 
-    const itemOffered: factory.programMembership.IProgramMembership = {
+    const itemOffered: factory.chevre.programMembership.IProgramMembership = {
         project: { typeOf: factory.chevre.organizationType.Project, id: params.product.project.id },
         typeOf: <any>serviceOutputType,
         name: <any>params.product.name,
@@ -34,7 +34,7 @@ export function createOrderProgramMembershipActionAttributes(params: {
     };
 
     // 受け入れれたオファーオブジェクトを作成
-    const acceptedOffer: factory.order.IAcceptedOffer<factory.programMembership.IProgramMembership> = {
+    const acceptedOffer: factory.order.IAcceptedOffer<factory.chevre.programMembership.IProgramMembership> = {
         project: { typeOf: seller.project.typeOf, id: seller.project.typeOf },
         typeOf: factory.chevre.offerType.Offer,
         identifier: offer.identifier,
