@@ -1,6 +1,6 @@
 import { Connection, Model } from 'mongoose';
 
-import * as factory from '../factory';
+import { factory } from '../factory';
 import { modelName } from './mongoose/model/action';
 
 export type IAction<T extends factory.actionType> =

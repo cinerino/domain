@@ -7,7 +7,7 @@ import * as JSONStream from 'JSONStream';
 import * as moment from 'moment';
 // import { Stream } from 'stream';
 
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 // import { MongoRepository as OwnershipInfoRepo } from '../../repo/ownershipInfo';
 

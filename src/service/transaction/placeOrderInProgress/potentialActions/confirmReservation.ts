@@ -1,7 +1,7 @@
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import { format } from 'util';
 
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 export type IAuthorizeSeatReservationOffer = factory.action.authorize.offer.seatReservation.IAction<factory.service.webAPI.Identifier>;
 

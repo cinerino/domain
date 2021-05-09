@@ -3,7 +3,7 @@
  */
 import * as moment from 'moment';
 
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
 

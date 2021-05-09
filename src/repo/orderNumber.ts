@@ -6,7 +6,7 @@ import * as util from 'util';
 // tslint:disable-next-line:no-require-imports no-var-requires
 const fpe = require('node-fpe');
 
-import * as factory from '../factory';
+import { factory } from '../factory';
 
 /**
  * 注文番号リポジトリ

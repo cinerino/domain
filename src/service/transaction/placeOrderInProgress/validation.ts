@@ -4,7 +4,7 @@
 import * as createDebug from 'debug';
 import { format } from 'util';
 
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 const debug = createDebug('cinerino-domain:service');
 export type IAuthorizeAnyPaymentResult = factory.action.authorize.paymentMethod.any.IResult;

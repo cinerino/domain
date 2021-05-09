@@ -1,7 +1,7 @@
 /**
  * プロダクトサービスファクトリー
  */
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 export function createOrderProgramMembershipActionAttributes(params: {
     agent: factory.person.IPerson;

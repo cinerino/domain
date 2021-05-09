@@ -1,4 +1,4 @@
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 import { availableProductTypes } from '../../../offer/product/factory';
 

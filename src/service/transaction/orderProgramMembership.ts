@@ -20,7 +20,7 @@ import * as ChevrePaymentService from '../payment/chevre';
 import * as TransactionService from '../transaction';
 
 import * as chevre from '../../chevre';
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;

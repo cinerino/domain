@@ -1,6 +1,6 @@
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 export type WebAPIIdentifier = factory.service.webAPI.Identifier;
 

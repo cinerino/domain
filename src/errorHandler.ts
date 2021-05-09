@@ -3,7 +3,7 @@
  * 外部サービスと連携している場合に、サービス(API)のエラーを本ドメインのエラーに変換する責任を担います。
  */
 import { BAD_REQUEST, CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from 'http-status';
-import { errors } from './factory';
+import { factory } from './factory';
 
 export enum MongoErrorCode {
     DuplicateKey = 11000
@@ -20,16 +20,16 @@ export function handleCOAReserveTemporarilyError(error: any) {
 
     // メッセージ「既に予約済みです」の場合は、座席の重複とみなす
     if (error.message === '既に予約済みです') {
-        handledError = new errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
+        handledError = new factory.errors.AlreadyInUse('offer', ['seatNumber'], 'Seat not available');
     }
 
     // Chevreが500未満であればクライアントエラーとみなす
     const reserveServiceHttpStatusCode = error.code;
     if (Number.isInteger(reserveServiceHttpStatusCode)) {
         if (reserveServiceHttpStatusCode < INTERNAL_SERVER_ERROR) {
-            handledError = new errors.Argument('Event', error.message);
+            handledError = new factory.errors.Argument('Event', error.message);
         } else {
-            handledError = new errors.ServiceUnavailable(`Reserve service temporarily unavailable. name:${error.name} code:${error.code} message:${error.message}`);
+            handledError = new factory.errors.ServiceUnavailable(`Reserve service temporarily unavailable. name:${error.name} code:${error.code} message:${error.message}`);
         }
     }
 
@@ -49,32 +49,32 @@ export function handleChevreError(error: any) {
         const message = `${error.name}:${error.message}`;
         switch (error.code) {
             case BAD_REQUEST: // 400
-                handledError = new errors.Argument(
+                handledError = new factory.errors.Argument(
                     (typeof error.argumentName === 'string' && error.argumentName.length > 0) ? error.argumentName : 'ChevreArgument',
                     message
                 );
                 break;
             case UNAUTHORIZED: // 401
-                handledError = new errors.Unauthorized(message);
+                handledError = new factory.errors.Unauthorized(message);
                 break;
             case FORBIDDEN: // 403
-                handledError = new errors.Forbidden(message);
+                handledError = new factory.errors.Forbidden(message);
                 break;
             case NOT_FOUND: // 404
-                handledError = new errors.NotFound(message);
+                handledError = new factory.errors.NotFound(message);
                 break;
             case CONFLICT: // 409
-                handledError = new errors.AlreadyInUse(
+                handledError = new factory.errors.AlreadyInUse(
                     (typeof error.entityName === 'string' && error.entityName.length > 0) ? error.entityName : 'ChevreArgument',
                     (Array.isArray(error.fieldNames)) ? error.fieldNames : [],
                     message
                 );
                 break;
             case TOO_MANY_REQUESTS: // 429
-                handledError = new errors.RateLimitExceeded(message);
+                handledError = new factory.errors.RateLimitExceeded(message);
                 break;
             default:
-                handledError = new errors.ServiceUnavailable(message);
+                handledError = new factory.errors.ServiceUnavailable(message);
         }
     }
 
@@ -94,25 +94,25 @@ export function handlePecorinoError(error: any) {
         const message = `${error.name}:${error.message}`;
         switch (error.code) {
             case BAD_REQUEST: // 400
-                handledError = new errors.Argument(
+                handledError = new factory.errors.Argument(
                     (typeof error.argumentName === 'string' && error.argumentName.length > 0) ? error.argumentName : 'PecorinoArgument',
                     message
                 );
                 break;
             case UNAUTHORIZED: // 401
-                handledError = new errors.Unauthorized(message);
+                handledError = new factory.errors.Unauthorized(message);
                 break;
             case FORBIDDEN: // 403
-                handledError = new errors.Forbidden(message);
+                handledError = new factory.errors.Forbidden(message);
                 break;
             case NOT_FOUND: // 404
-                handledError = new errors.NotFound(message);
+                handledError = new factory.errors.NotFound(message);
                 break;
             case TOO_MANY_REQUESTS: // 429
-                handledError = new errors.RateLimitExceeded(message);
+                handledError = new factory.errors.RateLimitExceeded(message);
                 break;
             default:
-                handledError = new errors.ServiceUnavailable(message);
+                handledError = new factory.errors.ServiceUnavailable(message);
         }
     }
 
@@ -132,25 +132,25 @@ export function handleMvtkReserveError(error: any) {
         const message = `${error.name}:${error.message}`;
         switch (error.code) {
             case BAD_REQUEST: // 400
-                handledError = new errors.Argument(
+                handledError = new factory.errors.Argument(
                     (typeof error.argumentName === 'string' && error.argumentName.length > 0) ? error.argumentName : 'MovieticketReserveArgument',
                     message
                 );
                 break;
             case UNAUTHORIZED: // 401
-                handledError = new errors.Unauthorized(message);
+                handledError = new factory.errors.Unauthorized(message);
                 break;
             case FORBIDDEN: // 403
-                handledError = new errors.Forbidden(message);
+                handledError = new factory.errors.Forbidden(message);
                 break;
             case NOT_FOUND: // 404
-                handledError = new errors.NotFound(message);
+                handledError = new factory.errors.NotFound(message);
                 break;
             case TOO_MANY_REQUESTS: // 429
-                handledError = new errors.RateLimitExceeded(message);
+                handledError = new factory.errors.RateLimitExceeded(message);
                 break;
             default:
-                handledError = new errors.ServiceUnavailable(message);
+                handledError = new factory.errors.ServiceUnavailable(message);
         }
     }
 
@@ -167,31 +167,31 @@ export function handleAWSError(error: any) {
 
     switch (error.name) {
         case 'InternalErrorException':
-            handledError = new errors.ServiceUnavailable(message);
+            handledError = new factory.errors.ServiceUnavailable(message);
             break;
 
         case 'MissingRequiredParameter':
-            handledError = new errors.ArgumentNull('AWSArgument', message);
+            handledError = new factory.errors.ArgumentNull('AWSArgument', message);
             break;
 
         case 'InvalidParameterException':
-            handledError = new errors.Argument('AWSArgument', message);
+            handledError = new factory.errors.Argument('AWSArgument', message);
             break;
 
         case 'NotAuthorizedException':
-            handledError = new errors.Forbidden(message);
+            handledError = new factory.errors.Forbidden(message);
             break;
 
         case 'TooManyRequestsException':
-            handledError = new errors.RateLimitExceeded(message);
+            handledError = new factory.errors.RateLimitExceeded(message);
             break;
 
         case 'ResourceNotFoundException':
-            handledError = new errors.NotFound('Resource', message);
+            handledError = new factory.errors.NotFound('Resource', message);
             break;
 
         case 'UserNotFoundException':
-            handledError = new errors.NotFound('User', message);
+            handledError = new factory.errors.NotFound('User', message);
             break;
 
         default:

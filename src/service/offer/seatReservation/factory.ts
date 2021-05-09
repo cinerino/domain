@@ -1,7 +1,7 @@
 import * as moment from 'moment';
 
 import * as chevre from '../../../chevre';
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
 export type IReservationPriceSpecification =

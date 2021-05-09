@@ -3,7 +3,7 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
 import { credentials } from '../credentials';
 
-import * as factory from '../factory';
+import { factory } from '../factory';
 
 export type AttributeListType = AWS.CognitoIdentityServiceProvider.AttributeListType;
 export type IPerson = factory.person.IPerson;

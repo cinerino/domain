@@ -7,7 +7,7 @@ import * as repository from '../../repository';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 export type TelemetryOperation<T> =
     (repos: { telemetry: repository.Telemetry }) => Promise<T>;

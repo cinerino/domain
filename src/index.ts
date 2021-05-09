@@ -10,7 +10,7 @@ import * as AWS from 'aws-sdk';
 import * as chevre from './chevre';
 import { credentials as cred } from './credentials';
 import * as errorHandler from './errorHandler';
-import * as factory from './factory';
+import { factory } from './factory';
 import * as repository from './repository';
 import * as service from './service';
 

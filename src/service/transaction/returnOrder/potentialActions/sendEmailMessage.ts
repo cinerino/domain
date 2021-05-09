@@ -1,6 +1,6 @@
 import * as emailMessageBuilder from '../../../../emailMessageBuilder';
 
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 export async function createSendEmailMessaegActionsOnReturn(params: {
     order: factory.order.IOrder;

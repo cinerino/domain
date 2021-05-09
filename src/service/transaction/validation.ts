@@ -3,7 +3,7 @@
  */
 import * as waiter from '@waiter/domain';
 
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 export type IPassportValidator = (params: { passport: factory.waiter.passport.IPassport }) => boolean;
 export type IStartParams =

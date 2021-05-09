@@ -8,7 +8,7 @@ import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
 import * as COA from '../coa';
-import * as factory from '../factory';
+import { factory } from '../factory';
 
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';

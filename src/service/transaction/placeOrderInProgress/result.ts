@@ -1,6 +1,6 @@
 import * as moment from 'moment-timezone';
 
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 import { createMoneyTransferAcceptedOffers, createProductItems, createReservationAcceptedOffers } from './result/acceptedOffers';
 

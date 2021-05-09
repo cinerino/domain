@@ -44,6 +44,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - chevreと重複するタスク名をrename
 - 資産取引を再定義したchevreで再構築
 - 全chevreサービスにプロジェクトを指定
+- @chevre/factoryで再構築
 
 ### Deprecated
 

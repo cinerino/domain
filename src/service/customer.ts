@@ -7,7 +7,7 @@ import { CognitoRepository as PersonRepo } from '../repo/person';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as chevre from '../chevre';
-import * as factory from '../factory';
+import { factory } from '../factory';
 
 /**
  * 会員削除

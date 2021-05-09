@@ -1,5 +1,5 @@
 
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail;
 

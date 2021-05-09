@@ -7,7 +7,7 @@ import { handleCOAReserveTemporarilyError } from '../../../errorHandler';
 
 import * as chevre from '../../../chevre';
 import * as COA from '../../../coa';
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 // tslint:disable-next-line:no-magic-numbers
 const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;

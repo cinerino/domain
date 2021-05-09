@@ -5,7 +5,7 @@ import * as createDebug from 'debug';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import * as factory from '../factory';
+import { factory } from '../factory';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as NotificationService from './notification';

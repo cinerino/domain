@@ -3,7 +3,7 @@
  */
 import * as moment from 'moment';
 
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';

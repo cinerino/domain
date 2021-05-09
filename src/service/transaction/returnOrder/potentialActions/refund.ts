@@ -1,6 +1,6 @@
 import * as emailMessageBuilder from '../../../../emailMessageBuilder';
 
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 export type IAction = factory.action.IAction<factory.action.IAttributes<factory.actionType, any, any>>;
 

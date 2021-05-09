@@ -9,7 +9,7 @@ import { createPayActions } from './potentialActions/pay';
 import { createRegisterServiceActions } from './potentialActions/registerService';
 import { createSendEmailMessageActions } from './potentialActions/sendEmailMessage';
 
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 /**
  * 取引のポストアクションを作成する

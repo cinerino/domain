@@ -1,4 +1,4 @@
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 export async function createInformOrderActionsOnReturn(params: {
     order: factory.order.IOrder;

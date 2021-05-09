@@ -20,7 +20,7 @@ import {
 
 import * as chevre from '../../chevre';
 import * as COA from '../../coa';
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 const debug = createDebug('cinerino-domain:service');
 

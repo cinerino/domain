@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 const modelName = 'Transaction';
 

@@ -16,7 +16,7 @@ import * as TransactionService from '../transaction';
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,

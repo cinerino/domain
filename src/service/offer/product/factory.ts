@@ -1,7 +1,7 @@
 import * as moment from 'moment';
 
 import * as chevre from '../../../chevre';
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 export const availableProductTypes: string[] = [
     chevre.factory.product.ProductType.PaymentCard,

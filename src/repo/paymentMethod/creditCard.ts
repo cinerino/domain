@@ -1,6 +1,6 @@
 import * as GMO from '@motionpicture/gmo-service';
 
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 export type IUncheckedCardRaw = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw;
 export type IUncheckedCardTokenized = factory.chevre.paymentMethod.paymentCard.creditCard.IUncheckedCardTokenized;

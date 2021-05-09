@@ -9,7 +9,7 @@ import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
 
 import * as chevre from '../chevre';
-import * as factory from '../factory';
+import { factory } from '../factory';
 
 /**
  * 汎用決済

@@ -3,7 +3,7 @@ import * as moment from 'moment-timezone';
 import * as redis from 'redis';
 import * as util from 'util';
 
-import * as factory from '../factory';
+import { factory } from '../factory';
 
 const debug = createDebug('cinerino-domain:repository');
 

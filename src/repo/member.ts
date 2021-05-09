@@ -1,6 +1,6 @@
 import { Connection, Model } from 'mongoose';
 
-import * as factory from '../factory';
+import { factory } from '../factory';
 import { modelName } from './mongoose/model/member';
 
 export enum RoleType {

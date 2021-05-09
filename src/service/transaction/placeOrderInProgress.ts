@@ -7,7 +7,7 @@ import { credentials } from '../../credentials';
 import { settings } from '../../settings';
 
 import * as chevre from '../../chevre';
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as ConfirmationNumberRepo } from '../../repo/confirmationNumber';

@@ -1,4 +1,4 @@
 /**
  * factory
  */
-export * from '@cinerino/factory';
+export { factory } from '@chevre/api-nodejs-client';

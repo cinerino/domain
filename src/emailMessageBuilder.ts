@@ -5,7 +5,7 @@ import * as moment from 'moment-timezone';
 import * as pug from 'pug';
 import * as util from 'util';
 
-import * as factory from './factory';
+import { factory } from './factory';
 
 const templateDirectory = `${__dirname}/../emails`;
 

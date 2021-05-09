@@ -1,4 +1,4 @@
-import * as factory from '../../../../factory';
+import { factory } from '../../../../factory';
 
 import { settings } from '../../../../settings';
 

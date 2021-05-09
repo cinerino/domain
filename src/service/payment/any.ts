@@ -4,7 +4,7 @@
 import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
-import * as factory from '../../factory';
+import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TaskRepo } from '../../repo/task';

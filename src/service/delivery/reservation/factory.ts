@@ -1,6 +1,6 @@
 import * as moment from 'moment-timezone';
 
-import * as factory from '../../../factory';
+import { factory } from '../../../factory';
 
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
