@@ -16,6 +16,7 @@ import * as ProductService from './service/product';
 import * as ProjectService from './service/project';
 import * as ReportService from './service/report';
 import * as ReservationService from './service/reservation';
+import * as TaskService from './service/task';
 import * as TransactionService from './service/transaction';
 import * as UtilService from './service/util';
 
@@ -32,6 +33,6 @@ export import report = ReportService;
 export import reservation = ReservationService;
 export import payment = PaymentService;
 export import project = ProjectService;
-export import task = service.task;
+export import task = TaskService;
 export import transaction = TransactionService;
 export import util = UtilService;
