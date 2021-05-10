@@ -1,14 +1,7 @@
-import { Connection, Model } from 'mongoose';
-
-import { modelName } from './mongoose/model/telemetry';
+import { repository } from '@chevre/domain';
 
 /**
  * 測定リポジトリ
  */
-export class MongoRepository {
-    public readonly telemetryModel: typeof Model;
-
-    constructor(connection: Connection) {
-        this.telemetryModel = connection.model(modelName);
-    }
+export class MongoRepository extends repository.Telemetry {
 }

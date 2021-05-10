@@ -102,7 +102,7 @@ export function createOrderTask(params: {
             data: data
         };
 
-        return repos.task.save<factory.taskName.OrderProgramMembership>(taskAttributes);
+        return <Promise<factory.task.ITask<factory.taskName.OrderProgramMembership>>>repos.task.save(taskAttributes);
     };
 }
 
