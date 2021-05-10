@@ -59,8 +59,22 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
                 return repos.ownershipInfo.saveByIdentifier(ownershipInfo);
             }));
 
-            // 注文ステータス変更(chevre連携)
-            order = await repos.order.deliverOrder({ orderNumber: order.orderNumber });
+            try {
+                // 注文ステータス変更(chevre連携)
+                order = await repos.order.deliverOrder({ orderNumber: order.orderNumber });
+            } catch (error) {
+                let throwsError = true;
+
+                // すでにOrderReturnedだった場合、OrderDelivered->OrderReturnedの処理自体は成功しているので、後処理を続行する
+                order = await repos.order.findByOrderNumber({ orderNumber: order.orderNumber });
+                if (order.orderStatus === factory.orderStatus.OrderReturned) {
+                    throwsError = false;
+                }
+
+                if (throwsError) {
+                    throw error;
+                }
+            }
 
             // 注文取引検索
             const searchTransactionsResult = await repos.transaction.search<factory.transactionType.PlaceOrder>({
