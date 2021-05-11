@@ -8,6 +8,7 @@ import * as chevre from '../chevre';
 import { factory } from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -206,14 +207,13 @@ function onPlaceOrder(orderActionAttributes: factory.action.trade.order.IAttribu
 export function returnOrder(params: factory.task.IData<factory.taskName.ReturnOrder>) {
     return async (repos: {
         action: ActionRepo;
-        order: chevre.service.Order;
+        order: OrderRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         transaction: TransactionRepo;
         task: TaskRepo;
     }) => {
         const dateReturned = new Date();
 
-        // let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
         let order = await repos.order.findByOrderNumber({ orderNumber: params.object.orderNumber });
 
         const returnOrderActionAttributes = params;

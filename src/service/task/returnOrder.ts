@@ -6,6 +6,7 @@ import * as chevre from '../../chevre';
 import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -17,6 +18,7 @@ import * as OrderService from '../order';
 export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
+        const orderRepo = new OrderRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
 
@@ -28,11 +30,11 @@ export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IO
             state: ''
         });
 
-        const orderService = new chevre.service.Order({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: data.project.id }
-        });
+        // const orderService = new chevre.service.Order({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: data.project.id }
+        // });
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -40,7 +42,7 @@ export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IO
         });
         await OrderService.returnOrder(data)({
             action: actionRepo,
-            order: orderService,
+            order: orderRepo,
             ownershipInfo: ownershipInfoService,
             transaction: transactionRepo,
             task: taskRepo

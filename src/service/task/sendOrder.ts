@@ -7,6 +7,7 @@ import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../../repo/action/registerServiceInProgress';
+import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -24,6 +25,7 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
         }
 
         const actionRepo = new ActionRepo(settings.connection);
+        const orderRepo = new OrderRepo(settings.connection);
         const registerActionInProgressRepo = new RegisterServiceInProgressRepo(settings.redisClient);
         const taskRepo = new TaskRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
@@ -36,11 +38,11 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
             state: ''
         });
 
-        const orderService = new chevre.service.Order({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: data.project.id }
-        });
+        // const orderService = new chevre.service.Order({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: data.project.id }
+        // });
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -49,7 +51,7 @@ export function call(data: factory.task.IData<factory.taskName.SendOrder>): IOpe
 
         await DeliveryService.sendOrder(data)({
             action: actionRepo,
-            order: orderService,
+            order: orderRepo,
             ownershipInfo: ownershipInfoService,
             registerActionInProgress: registerActionInProgressRepo,
             task: taskRepo,

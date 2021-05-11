@@ -17,6 +17,7 @@ import { factory } from '../factory';
 
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { RedisRepository as RegisterServiceInProgressRepo } from '../repo/action/registerServiceInProgress';
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -39,7 +40,7 @@ export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.owners
 export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
     return async (repos: {
         action: ActionRepo;
-        order: chevre.service.Order;
+        order: OrderRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         task: TaskRepo;
@@ -61,7 +62,12 @@ export function sendOrder(params: factory.action.transfer.send.order.IAttributes
 
             try {
                 // 注文ステータス変更(chevre連携)
-                order = await repos.order.deliverOrder({ orderNumber: order.orderNumber });
+                // order = await repos.order.deliverOrder({ orderNumber: order.orderNumber });
+                order = await repos.order.changeStatus({
+                    orderNumber: order.orderNumber,
+                    orderStatus: chevre.factory.orderStatus.OrderDelivered,
+                    previousOrderStatus: chevre.factory.orderStatus.OrderProcessing
+                });
             } catch (error) {
                 let throwsError = true;
 

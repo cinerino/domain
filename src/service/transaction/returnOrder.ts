@@ -10,6 +10,7 @@ import * as chevre from '../../chevre';
 import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
+import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -27,7 +28,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
-    order: chevre.service.Order;
+    order: OrderRepo;
     project: chevre.service.Project;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -47,7 +48,7 @@ export function start(
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
-        order: chevre.service.Order;
+        order: OrderRepo;
         project: chevre.service.Project;
         transaction: TransactionRepo;
     }) => {
@@ -66,17 +67,12 @@ export function start(
             params.object.order = [params.object.order];
         }
 
-        // const orders = await repos.order.search({
-        //     project: { id: { $eq: project.id } },
-        //     orderNumbers: params.object.order.map((o) => o.orderNumber),
-        //     seller: { ids: [String(seller.id)] }
-        // });
-        const searchOrdersResult = await repos.order.search({
+        const orders = await repos.order.search({
             project: { id: { $eq: project.id } },
             orderNumbers: params.object.order.map((o) => o.orderNumber),
             seller: { ids: [String(seller.id)] }
         });
-        const orders = searchOrdersResult.data;
+        // const orders = searchOrdersResult.data;
 
         if (orders.length !== params.object.order.length) {
             throw new factory.errors.NotFound('Order');
@@ -254,7 +250,7 @@ function createInformOrderParams(params: factory.transaction.returnOrder.IStartP
 export function confirm(params: factory.transaction.returnOrder.IConfirmParams) {
     return async (repos: {
         action: ActionRepo;
-        order: chevre.service.Order;
+        order: OrderRepo;
         transaction: TransactionRepo;
     }) => {
         let transaction = await repos.transaction.findById({ typeOf: factory.transactionType.ReturnOrder, id: params.id });
@@ -273,15 +269,11 @@ export function confirm(params: factory.transaction.returnOrder.IConfirmParams) 
 
         const orderNumbers: string[] = transaction.object.order.map((o) => o.orderNumber);
 
-        // const orders = await repos.order.search({
-        //     project: { id: { $eq: transaction.project.id } },
-        //     orderNumbers: orderNumbers
-        // });
-        const searchOrdersResult = await repos.order.search({
+        const orders = await repos.order.search({
             project: { id: { $eq: transaction.project.id } },
             orderNumbers: orderNumbers
         });
-        const orders = searchOrdersResult.data;
+        // const orders = searchOrdersResult.data;
 
         const result: factory.transaction.returnOrder.IResult = {};
         const potentialActions = await createPotentialActions({
