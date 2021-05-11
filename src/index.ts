@@ -2,10 +2,10 @@
 /**
  * domain index
  */
+import { AWS } from '@chevre/domain';
 import * as COA from '@motionpicture/coa-service';
 import * as GMO from '@motionpicture/gmo-service';
 import * as pecorinoapi from '@pecorino/api-nodejs-client';
-import * as AWS from 'aws-sdk';
 
 import * as chevre from './chevre';
 import { credentials as cred } from './credentials';

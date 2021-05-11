@@ -16,10 +16,6 @@ export const credentials = {
         endpoint: <string>process.env.COA_ENDPOINT,
         refreshToken: <string>process.env.COA_REFRESH_TOKEN
     },
-    customSearch: {
-        engineId: <string>process.env.CUSTOM_SEARCH_ENGINE_ID,
-        apiKey: <string>process.env.GOOGLE_API_KEY
-    },
     lineNotify: {
         url: <string>process.env.LINE_NOTIFY_URL,
         accessToken: <string>process.env.LINE_NOTIFY_ACCESS_TOKEN
