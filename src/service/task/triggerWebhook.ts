@@ -1,10 +1,9 @@
+import { service } from '@chevre/domain';
 import { IConnectionSettings, IOperation } from '../task';
 
 import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
-
-import * as NotificationService from '../notification';
 
 /**
  * タスク実行関数
@@ -12,6 +11,6 @@ import * as NotificationService from '../notification';
 export function call(data: factory.task.IData<factory.taskName.TriggerWebhook>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
-        await NotificationService.triggerWebhook(data)({ action: actionRepo });
+        await service.notification.triggerWebhook(data)({ action: actionRepo });
     };
 }

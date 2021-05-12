@@ -10,6 +10,7 @@ import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as OrderNumberRepo } from './repo/orderNumber';
 import { GMORepository as CreditCardRepo } from './repo/paymentMethod/creditCard';
 import { CognitoRepository as PersonRepo } from './repo/person';
+import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as RoleRepo } from './repo/role';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
@@ -55,6 +56,11 @@ export namespace paymentMethod {
  * 顧客リポジトリ
  */
 export class Person extends PersonRepo { }
+
+/**
+ * プロジェクトリポジトリ
+ */
+export class Project extends ProjectRepo { }
 
 /**
  * ロールリポジトリ

@@ -46,6 +46,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 全chevreサービスにプロジェクトを指定
 - @chevre/factoryで再構築
 - Mongoリポジトリを@chevre/domainからインポートするように変更
+- 通知サービスを@chevre/domainからインポートするように変更
+- utilサービスを@chevre/domainからインポートするように変更
 
 ### Deprecated
 
