@@ -22,7 +22,7 @@ async function main() {
     const accountNumberRepo = new domain.repository.AccountNumber(redisClient);
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-    const projectRepo = new domain.chevre.service.Project(chevreAuthClient);
+    const projectRepo = new domain.repository.Project(mongoose.connection);
     const registerActionInProgressRepo = new domain.repository.action.RegisterProgramMembershipInProgress(redisClient);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderNumberRepo = new domain.repository.OrderNumber(redisClient);

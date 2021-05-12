@@ -23,7 +23,7 @@ async function main() {
 
     const actionRepo = new domain.repository.Action(mongoose.connection);
     const ownershipInfoRepo = new domain.repository.OwnershipInfo(mongoose.connection);
-    const projectRepo = new domain.chevre.service.Project(chevreAuthClient);
+    const projectRepo = new domain.repository.Project(mongoose.connection);
     const registerActionInProgressRepo = new domain.repository.action.RegisterServiceInProgress(redisClient);
     const transactionRepo = new domain.repository.Transaction(mongoose.connection);
     const orderRepo = new domain.repository.Order(mongoose.connection);

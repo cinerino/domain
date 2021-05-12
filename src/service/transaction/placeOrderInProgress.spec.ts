@@ -50,7 +50,7 @@ describe('start()', () => {
             issueUnit: {}
         };
 
-        const projectRepo = new domain.chevre.service.Project(<any>{});
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -117,7 +117,7 @@ describe('start()', () => {
             issueUnit: {}
         };
 
-        const projectRepo = new domain.chevre.service.Project(<any>{});
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -176,7 +176,7 @@ describe('start()', () => {
         const passportToken = 'passportToken';
         const verifyResult = new Error('verifyError');
 
-        const projectRepo = new domain.chevre.service.Project(<any>{});
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)
@@ -240,7 +240,7 @@ describe('start()', () => {
             issueUnit: {}
         };
 
-        const projectRepo = new domain.chevre.service.Project(<any>{});
+        const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
 
         sandbox.mock(projectRepo)

@@ -3,13 +3,13 @@
  */
 import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OrderRepo } from '../repo/order';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
 
-import * as chevre from '../chevre';
 import { factory } from '../factory';
 
 /**
@@ -82,7 +82,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
-        project: chevre.service.Project;
+        project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
     }) => {
