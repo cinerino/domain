@@ -47,10 +47,13 @@ enum SeatingType {
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
+    event: chevre.service.Event;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
-export type ISelectSeatOperation<T> = () => Promise<T>;
+export type ISelectSeatOperation<T> = (repos: {
+    event: chevre.service.Event;
+}) => Promise<T>;
 
 export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
 export type IReservationPriceSpecification =
@@ -74,6 +77,7 @@ export function create(params: {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        event: chevre.service.Event;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -90,13 +94,13 @@ export function create(params: {
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        const eventService = new chevre.service.Event({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
+        // const eventService = new chevre.service.Event({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
-        event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+        event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 
@@ -114,7 +118,7 @@ export function create(params: {
                 event,
                 params.object.acceptedOffer
                 // params.transaction.id
-            )();
+            )(repos);
         }
 
         const acceptedOffers = await validateAcceptedOffers({
@@ -289,20 +293,22 @@ export function selectSeats(
     acceptedOffer: IAcceptedOfferWithoutDetail4chevre[]
     // transactionId: string
 ): ISelectSeatOperation<IAcceptedOfferWithoutDetail4chevre[]> {
-    return async () => {
+    return async (repos: {
+        event: chevre.service.Event;
+    }) => {
         const acceptedOffersWithoutDetail: IAcceptedOfferWithoutDetail4chevre[] = [];
 
-        const eventService = new chevre.service.Event({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: performance.project.id }
-        });
+        // const eventService = new chevre.service.Event({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: performance.project.id }
+        // });
 
         // チケットオファー検索
-        const ticketOffers = await eventService.searchTicketOffers({ id: performance.id });
+        const ticketOffers = await repos.event.searchTicketOffers({ id: performance.id });
 
         // Chevreで全座席オファーを検索(tttsは座席数が42なので1ページ検索で十分
-        const searchSeatOffersResult = await eventService.searchSeats({
+        const searchSeatOffersResult = await repos.event.searchSeats({
             limit: 100,
             id: performance.id,
             // 冗長な情報を非取得
@@ -484,6 +490,7 @@ export function validateAcceptedOffers(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
+        event: chevre.service.Event;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
         const availableTicketOffers = <factory.chevre.event.screeningEvent.ITicketOffer[]>await OfferService.searchEventTicketOffers({

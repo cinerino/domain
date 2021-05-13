@@ -39,6 +39,7 @@ const coaAuthClient = new COA.auth.RefreshToken({
 });
 
 export type ISearchEventTicketOffersOperation<T> = (repos: {
+    event: chevre.service.Event;
 }) => Promise<T>;
 
 export type IAcceptedPaymentMethod = factory.chevre.paymentMethod.paymentCard.movieTicket.IMovieTicket;
@@ -96,20 +97,21 @@ export function searchEventTicketOffers(params: {
     };
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[] | IAvailableSalesTickets[]> {
     // tslint:disable-next-line:max-func-body-length
-    return async (__: {
+    return async (repos: {
+        event: chevre.service.Event;
     }) => {
         const now = moment();
 
-        const eventService = new chevre.service.Event({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
+        // const eventService = new chevre.service.Event({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
         debug('searching screeninf event offers...', params);
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+        event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.event.id
         });
 
@@ -131,7 +133,7 @@ export function searchEventTicketOffers(params: {
 
             default:
                 // Chevreで券種オファーを検索
-                offers = await eventService.searchTicketOffers({ id: params.event.id });
+                offers = await repos.event.searchTicketOffers({ id: params.event.id });
 
                 const specifiedStoreId = params.store?.id;
                 if (typeof specifiedStoreId === 'string') {
