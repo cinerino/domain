@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Mongoリポジトリを@chevre/domainからインポートするように変更
 - 通知サービスを@chevre/domainからインポートするように変更
 - utilサービスを@chevre/domainからインポートするように変更
+- 承認コードの発行をchevreへ移行
 
 ### Deprecated
 

@@ -2,7 +2,7 @@
  * コード(所有権をpublicにするもの)サービス
  */
 import * as jwt from 'jsonwebtoken';
-import * as uuid from 'uuid';
+// import * as uuid from 'uuid';
 
 import { factory } from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
@@ -93,11 +93,11 @@ async function publishByChevre(params: {
     expiresInSeconds: number;
 }[]): Promise<factory.authorization.IAuthorization[]> {
     const saveParams = params.map((p) => {
-        const code = uuid.v4();
+        // const code = uuid.v4();
 
         return {
             project: p.project,
-            code: code,
+            code: 'xxxxx', // 実際はchevre側で発行されるので適当な値でよし
             object: p.data,
             validFrom: p.validFrom,
             expiresInSeconds: p.expiresInSeconds
