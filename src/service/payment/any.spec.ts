@@ -49,6 +49,7 @@ describe('汎用決済承認', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const sellerRepo = new domain.chevre.service.Seller(<any>{});
 
         sandbox.mock(transactionRepo)
             .expects('findInProgressById')
@@ -58,7 +59,7 @@ describe('汎用決済承認', () => {
             .expects('start')
             .once()
             .resolves(action);
-        sandbox.mock(domain.chevre.service.Seller.prototype)
+        sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -78,6 +79,7 @@ describe('汎用決済承認', () => {
             }
         })({
             action: actionRepo,
+            seller: sellerRepo,
             transaction: transactionRepo
         });
 

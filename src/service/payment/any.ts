@@ -1,7 +1,7 @@
 /**
  * 汎用決済承認アクションサービス
  */
-import { credentials } from '../../credentials';
+// import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
 import { factory } from '../../factory';
@@ -10,16 +10,17 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const chevreAuthClient = new chevre.auth.ClientCredentials({
+//     domain: credentials.chevre.authorizeServerDomain,
+//     clientId: credentials.chevre.clientId,
+//     clientSecret: credentials.chevre.clientSecret,
+//     scopes: [],
+//     state: ''
+// });
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    seller: chevre.service.Seller;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -33,6 +34,7 @@ export function authorize(params: {
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -70,12 +72,12 @@ export function authorize(params: {
 
         try {
             // 販売者情報取得
-            const sellerService = new chevre.service.Seller({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: transaction.project.id }
-            });
-            const seller = await sellerService.findById({ id: String(transaction.seller.id) });
+            // const sellerService = new chevre.service.Seller({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: transaction.project.id }
+            // });
+            const seller = await repos.seller.findById({ id: String(transaction.seller.id) });
 
             // 外部決済連携はしないので、販売者の対応決済方法かどうかのみ確認する
             const paymentAccepted = seller.paymentAccepted?.some((a) => a.paymentMethodType === paymentMethodType);

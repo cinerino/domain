@@ -29,12 +29,14 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
+    categoryCode: chevre.service.CategoryCode;
     confirmationNumber: ConfirmationNumberRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
+    seller: chevre.service.Seller;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -55,12 +57,14 @@ export function orderAccount(params: {
 }): IOrderOperation<factory.transaction.placeOrder.IResult> {
     return async (repos: {
         action: ActionRepo;
+        categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
         const productService = new chevre.service.Product({
@@ -108,12 +112,12 @@ export function orderAccount(params: {
             throw new factory.errors.NotFound('seller of product offer');
         }
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const seller = await sellerService.findById({ id: productOfferSellerId });
+        // const sellerService = new chevre.service.Seller({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
+        const seller = await repos.seller.findById({ id: productOfferSellerId });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder> | undefined;
 
@@ -169,10 +173,12 @@ function processPlaceOrder(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {

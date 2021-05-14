@@ -32,18 +32,19 @@ const coaAuthClient = new COA.auth.RefreshToken({
     refreshToken: credentials.coa.refreshToken
 });
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const chevreAuthClient = new chevre.auth.ClientCredentials({
+//     domain: credentials.chevre.authorizeServerDomain,
+//     clientId: credentials.chevre.clientId,
+//     clientSecret: credentials.chevre.clientSecret,
+//     scopes: [],
+//     state: ''
+// });
 
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
+    event: chevre.service.Event;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -59,6 +60,7 @@ export function create(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        event: chevre.service.Event;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -71,12 +73,12 @@ export function create(params: {
         }
 
         // イベントを取得
-        const eventService = new chevre.service.Event({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+        // const eventService = new chevre.service.Event({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
+        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 
@@ -238,6 +240,7 @@ export function changeOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        event: chevre.service.Event;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -260,12 +263,12 @@ export function changeOffers(params: {
         const authorizeAction = action;
 
         // イベントを取得
-        const eventService = new chevre.service.Event({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const screeningEvent = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({
+        // const eventService = new chevre.service.Event({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
+        const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
 

@@ -52,12 +52,13 @@ describe('start()', () => {
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const sellerRepo = new domain.chevre.service.Seller(<any>{});
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
-        sandbox.mock(domain.chevre.service.Seller.prototype)
+        sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -84,6 +85,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
+            seller: sellerRepo,
             transaction: transactionRepo
         });
 
@@ -119,12 +121,13 @@ describe('start()', () => {
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const sellerRepo = new domain.chevre.service.Seller(<any>{});
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
-        sandbox.mock(domain.chevre.service.Seller.prototype)
+        sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -151,6 +154,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
+            seller: sellerRepo,
             transaction: transactionRepo
         });
         assert.deepEqual(result, transaction);
@@ -178,12 +182,13 @@ describe('start()', () => {
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const sellerRepo = new domain.chevre.service.Seller(<any>{});
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
-        sandbox.mock(domain.chevre.service.Seller.prototype)
+        sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -209,6 +214,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
+            seller: sellerRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);
@@ -242,12 +248,13 @@ describe('start()', () => {
 
         const projectRepo = new domain.repository.Project(mongoose.connection);
         const transactionRepo = new domain.repository.Transaction(mongoose.connection);
+        const sellerRepo = new domain.chevre.service.Seller(<any>{});
 
         sandbox.mock(projectRepo)
             .expects('findById')
             .once()
             .resolves({ typeOf: domain.factory.chevre.organizationType.Project, id: 'projectId' });
-        sandbox.mock(domain.chevre.service.Seller.prototype)
+        sandbox.mock(sellerRepo)
             .expects('findById')
             .once()
             .resolves(seller);
@@ -274,6 +281,7 @@ describe('start()', () => {
             seller: seller
         })({
             project: projectRepo,
+            seller: sellerRepo,
             transaction: transactionRepo
         })
             .catch((err) => err);

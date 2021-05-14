@@ -44,6 +44,7 @@ export interface IAwardAccount {
 
 export type IStartOperation<T> = (repos: {
     project: ProjectRepo;
+    seller: chevre.service.Seller;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -59,16 +60,17 @@ export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDet
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (repos: {
         project: ProjectRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: project.id }
-        });
-        const seller = await sellerService.findById({ id: params.seller.id });
+        // const sellerService = new chevre.service.Seller({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: project.id }
+        // });
+        const seller = await repos.seller.findById({ id: params.seller.id });
 
         const passport = await validateWaiterPassport(params);
 
@@ -143,6 +145,8 @@ export function confirm(params: IConfirmParams) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
+        categoryCode: chevre.service.CategoryCode;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
         orderNumber: OrderNumberRepo;
         confirmationNumber: ConfirmationNumberRepo;
@@ -165,12 +169,12 @@ export function confirm(params: IConfirmParams) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
-        const seller = await sellerService.findById({ id: String(transaction.seller.id) });
+        // const sellerService = new chevre.service.Seller({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: transaction.project.id }
+        // });
+        const seller = await repos.seller.findById({ id: String(transaction.seller.id) });
 
         // プロジェクトの対応決済サービスを確認するためにChevreプロジェクトを検索
         const productService = new chevre.service.Product({
@@ -190,12 +194,12 @@ export function confirm(params: IConfirmParams) {
         const paymentServices = <chevre.factory.service.paymentService.IService[]>searchPaymentServicesResult.data;
 
         // 利用可能な口座区分を検索
-        const categoryCodeService = new chevre.service.CategoryCode({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
-        const searchAccountTypesResult = await categoryCodeService.search({
+        // const categoryCodeService = new chevre.service.CategoryCode({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: transaction.project.id }
+        // });
+        const searchAccountTypesResult = await repos.categoryCode.search({
             project: { id: { $eq: transaction.project.id } },
             inCodeSet: { identifier: { $eq: factory.chevre.categoryCode.CategorySetIdentifier.AccountType } }
         });

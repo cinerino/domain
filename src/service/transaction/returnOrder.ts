@@ -3,7 +3,7 @@
  */
 import * as moment from 'moment';
 
-import { credentials } from '../../credentials';
+// import { credentials } from '../../credentials';
 import { settings } from '../../settings';
 
 import * as chevre from '../../chevre';
@@ -19,18 +19,19 @@ import { createPotentialActions } from './returnOrder/potentialActions';
 
 import { MongoErrorCode } from '../../errorHandler';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const chevreAuthClient = new chevre.auth.ClientCredentials({
+//     domain: credentials.chevre.authorizeServerDomain,
+//     clientId: credentials.chevre.clientId,
+//     clientSecret: credentials.chevre.clientSecret,
+//     scopes: [],
+//     state: ''
+// });
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
     order: OrderRepo;
     project: ProjectRepo;
+    seller: chevre.service.Seller;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -51,18 +52,19 @@ export function start(
         action: ActionRepo;
         order: OrderRepo;
         project: ProjectRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
         const now = new Date();
 
         const project = await repos.project.findById({ id: params.project.id });
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: project.id }
-        });
-        const seller = await sellerService.findById({ id: params.seller.id });
+        // const sellerService = new chevre.service.Seller({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: project.id }
+        // });
+        const seller = await repos.seller.findById({ id: params.seller.id });
 
         if (!Array.isArray(params.object.order)) {
             params.object.order = [params.object.order];

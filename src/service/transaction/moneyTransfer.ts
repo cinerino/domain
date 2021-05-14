@@ -27,6 +27,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
+    seller: chevre.service.Seller;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -52,14 +53,15 @@ export type IStartParams = factory.transaction.moneyTransfer.IStartParamsWithout
 export function start(params: IStartParams): IStartOperation<factory.transaction.moneyTransfer.ITransaction> {
     return async (repos: {
         action: ActionRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const seller = await sellerService.findById({ id: params.seller.id });
+        // const sellerService = new chevre.service.Seller({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
+        const seller = await repos.seller.findById({ id: params.seller.id });
 
         const passport = await validateWaiterPassport(params);
 

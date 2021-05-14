@@ -24,6 +24,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ICreateOrderTaskOperation<T> = (repos: {
+    seller: chevre.service.Seller;
     task: TaskRepo;
 }) => Promise<T>;
 
@@ -53,16 +54,17 @@ export function createOrderTask(params: {
     location: { id: string };
 }): ICreateOrderTaskOperation<factory.task.ITask<factory.taskName.OrderProgramMembership>> {
     return async (repos: {
+        seller: chevre.service.Seller;
         task: TaskRepo;
     }) => {
         const now = new Date();
 
-        const sellerService = new chevre.service.Seller({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const seller = await sellerService.findById({ id: params.object.seller.id });
+        // const sellerService = new chevre.service.Seller({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
+        const seller = await repos.seller.findById({ id: params.object.seller.id });
 
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,

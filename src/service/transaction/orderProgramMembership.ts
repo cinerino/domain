@@ -25,6 +25,7 @@ import { factory } from '../../factory';
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
+    categoryCode: chevre.service.CategoryCode;
     confirmationNumber: ConfirmationNumberRepo;
     creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
@@ -32,6 +33,7 @@ export type IOrderOperation<T> = (repos: {
     person: PersonRepo;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
+    seller: chevre.service.Seller;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -43,6 +45,7 @@ export function orderProgramMembership(
 ): IOrderOperation<void> {
     return async (repos: {
         action: ActionRepo;
+        categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
@@ -50,6 +53,7 @@ export function orderProgramMembership(
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
@@ -135,12 +139,14 @@ function processPlaceOrder(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        seller: chevre.service.Seller;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {

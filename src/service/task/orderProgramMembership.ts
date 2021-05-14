@@ -39,7 +39,19 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             state: ''
         });
 
+        const categoryCodeService = new chevre.service.CategoryCode({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const ownershipInfoService = new chevre.service.OwnershipInfo({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
+        const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
             project: { id: data.project.id }
@@ -67,6 +79,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
 
         await orderProgramMembership(data)({
             action: new ActionRepo(settings.connection),
+            categoryCode: categoryCodeService,
             confirmationNumber: new ConfirmationNumberRepo(settings.redisClient),
             creditCard: creditCardRepo,
             orderNumber: new OrderNumberRepo(settings.redisClient),
@@ -74,6 +87,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             person: personRepo,
             project: projectRepo,
             registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
+            seller: sellerService,
             transaction: new TransactionRepo(settings.connection)
         });
     };
