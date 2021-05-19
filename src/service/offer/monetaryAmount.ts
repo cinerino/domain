@@ -163,7 +163,7 @@ async function processStartDepositTransaction(params: {
                 toLocation: params.object.toLocation,
                 description: description,
                 pendingTransaction: {
-                    typeOf: factory.pecorino.transactionType.Deposit,
+                    typeOf: factory.account.transactionType.Deposit,
                     id: '' // 空でok
                 }
             },

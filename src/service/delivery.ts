@@ -348,7 +348,7 @@ function createGivePointAwardStartParams(
                 identifier: params.object.toLocation.accountNumber
             },
             pendingTransaction: {
-                typeOf: factory.pecorino.transactionType.Deposit,
+                typeOf: factory.account.transactionType.Deposit,
                 id: '' // 空でok
             }
         }
@@ -436,7 +436,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     toLocation: recipient,
                     description: `[Return Award]${givePointAwardActionObject.description}`,
                     pendingTransaction: {
-                        typeOf: factory.pecorino.transactionType.Withdraw,
+                        typeOf: factory.account.transactionType.Withdraw,
                         id: '' // 空でok
                     }
                 }

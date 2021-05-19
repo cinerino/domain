@@ -155,15 +155,15 @@ export function searchMoneyTransferActions(params: {
     };
     ownedFrom?: Date;
     ownedThrough?: Date;
-    conditions: pecorinoapi.factory.action.transfer.moneyTransfer.ISearchConditions;
+    conditions: pecorinoapi.factory.account.action.moneyTransfer.ISearchConditions;
     typeOfGood: {
         accountNumber: string;
     };
-}): IAccountsOperation<factory.pecorino.action.transfer.moneyTransfer.IAction[]> {
+}): IAccountsOperation<factory.account.action.moneyTransfer.IAction[]> {
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
-        let actions: factory.pecorino.action.transfer.moneyTransfer.IAction[] = [];
+        let actions: factory.account.action.moneyTransfer.IAction[] = [];
         try {
             const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                 project: { id: { $eq: params.project.id } },
@@ -215,7 +215,7 @@ export function findAccount(params: {
 }) {
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
-    }): Promise<factory.pecorino.account.IAccount> => {
+    }): Promise<factory.account.IAccount> => {
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -250,12 +250,12 @@ export function findAccount(params: {
         // 開設口座に絞る
         accountOwnershipInfos =
             accountOwnershipInfos.filter(
-                (o) => (<factory.pecorino.account.IAccount>o.typeOfGood).status === factory.pecorino.accountStatusType.Opened
+                (o) => (<factory.account.IAccount>o.typeOfGood).status === factory.accountStatusType.Opened
             );
         if (accountOwnershipInfos.length === 0) {
             throw new factory.errors.NotFound('accountOwnershipInfos');
         }
 
-        return <factory.pecorino.account.IAccount>accountOwnershipInfos[0].typeOfGood;
+        return <factory.account.IAccount>accountOwnershipInfos[0].typeOfGood;
     };
 }
