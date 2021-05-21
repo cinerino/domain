@@ -122,6 +122,11 @@ export function orderProgramMembership(
                 return;
             }
 
+            // すでに登録済のエラーハンドリング
+            if (error instanceof factory.errors.Argument && error.message === OfferService.product.ERROR_MESSAGE_ALREADY_REGISTERED) {
+                return;
+            }
+
             throw error;
         }
     };

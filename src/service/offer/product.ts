@@ -39,6 +39,8 @@ export type IAuthorizeOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
+export const ERROR_MESSAGE_ALREADY_REGISTERED = 'Already registered';
+
 /**
  * プロダクトオファーを検索する
  */
@@ -492,7 +494,7 @@ function checkIfRegistered(params: {
                 );
                 if (selectedProgramMembership !== undefined) {
                     // Already registered
-                    throw new factory.errors.Argument('object', 'Already registered');
+                    throw new factory.errors.Argument('object', ERROR_MESSAGE_ALREADY_REGISTERED);
                 }
             }
         }

@@ -49,6 +49,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 通知サービスを@chevre/domainからインポートするように変更
 - utilサービスを@chevre/domainからインポートするように変更
 - 承認コードの発行をchevreへ移行
+- メンバーシップ注文処理中のすでに登録済エラーハンドリング
 
 ### Deprecated
 
