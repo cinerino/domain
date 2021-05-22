@@ -13,6 +13,7 @@ import { handlePecorinoError } from '../errorHandler';
 
 type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 type IAccountsOperation<T> = (repos: {
+    account: chevre.service.Account;
     ownershipInfo: chevre.service.OwnershipInfo;
 }) => Promise<T>;
 
@@ -24,13 +25,13 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
-const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-    domain: credentials.pecorino.authorizeServerDomain,
-    clientId: credentials.pecorino.clientId,
-    clientSecret: credentials.pecorino.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
+//     domain: credentials.pecorino.authorizeServerDomain,
+//     clientId: credentials.pecorino.clientId,
+//     clientSecret: credentials.pecorino.clientSecret,
+//     scopes: [],
+//     state: ''
+// });
 
 export interface IClosingAccount {
     accountNumber: string;
@@ -50,6 +51,7 @@ export function close(params: {
     accountNumber: string;
 }): IAccountsOperation<void> {
     return async (repos: {
+        account: chevre.service.Account;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         try {
@@ -77,11 +79,13 @@ export function close(params: {
                 }
             }
 
-            const accountService = new pecorinoapi.service.Account({
-                endpoint: credentials.pecorino.endpoint,
-                auth: pecorinoAuthClient
-            });
-            await accountService.close(closingAccount);
+            // chevreで実装
+            await repos.account.close(closingAccount);
+            // const accountService = new pecorinoapi.service.Account({
+            //     endpoint: credentials.pecorino.endpoint,
+            //     auth: pecorinoAuthClient
+            // });
+            // await accountService.close(closingAccount);
         } catch (error) {
             throw handlePecorinoError(error);
         }
@@ -96,6 +100,7 @@ export function search(params: {
     conditions: factory.ownershipInfo.ISearchConditions;
 }): IAccountsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
+        account: chevre.service.Account;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
@@ -114,16 +119,23 @@ export function search(params: {
             }
 
             if (accountNumbers.length > 0) {
-                const accountService = new pecorinoapi.service.Account({
-                    endpoint: credentials.pecorino.endpoint,
-                    auth: pecorinoAuthClient
-                });
-                const searchAccountResult = await accountService.search({
+                // chevreで実装
+                const searchAccountResult = await repos.account.search({
                     project: { id: { $eq: params.project.id } },
                     accountNumbers: accountNumbers,
                     statuses: [],
                     limit: 100
                 });
+                // const accountService = new pecorinoapi.service.Account({
+                //     endpoint: credentials.pecorino.endpoint,
+                //     auth: pecorinoAuthClient
+                // });
+                // const searchAccountResult = await accountService.search({
+                //     project: { id: { $eq: params.project.id } },
+                //     accountNumbers: accountNumbers,
+                //     statuses: [],
+                //     limit: 100
+                // });
 
                 ownershipInfosWithDetail = ownershipInfos.map((o) => {
                     const account = searchAccountResult.data.find(
@@ -161,6 +173,7 @@ export function searchMoneyTransferActions(params: {
     };
 }): IAccountsOperation<factory.account.action.moneyTransfer.IAction[]> {
     return async (repos: {
+        account: chevre.service.Account;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         let actions: factory.account.action.moneyTransfer.IAction[] = [];
@@ -180,16 +193,23 @@ export function searchMoneyTransferActions(params: {
                 throw new factory.errors.NotFound('Account');
             }
 
-            const accountService = new pecorinoapi.service.Account({
-                endpoint: credentials.pecorino.endpoint,
-                auth: pecorinoAuthClient
-            });
-            const searchMoneyTransferActionsResult = await accountService.searchMoneyTransferActions({
+            // chevreで実装
+            const searchMoneyTransferActionsResult = await repos.account.searchMoneyTransferActions({
                 ...params.conditions,
                 // 口座番号条件は上書き
                 accountNumber: params.typeOfGood.accountNumber,
                 project: { id: { $eq: params.project.id } }
             });
+            // const accountService = new pecorinoapi.service.Account({
+            //     endpoint: credentials.pecorino.endpoint,
+            //     auth: pecorinoAuthClient
+            // });
+            // const searchMoneyTransferActionsResult = await accountService.searchMoneyTransferActions({
+            //     ...params.conditions,
+            //     // 口座番号条件は上書き
+            //     accountNumber: params.typeOfGood.accountNumber,
+            //     project: { id: { $eq: params.project.id } }
+            // });
             actions = searchMoneyTransferActionsResult.data;
         } catch (error) {
             throw handlePecorinoError(error);
@@ -214,6 +234,7 @@ export function findAccount(params: {
     accountType: string;
 }) {
     return async (repos: {
+        account: chevre.service.Account;
         ownershipInfo: chevre.service.OwnershipInfo;
     }): Promise<factory.account.IAccount> => {
         const productService = new chevre.service.Product({
@@ -244,6 +265,7 @@ export function findAccount(params: {
                 ownedThrough: params.now
             }
         })({
+            account: repos.account,
             ownershipInfo: repos.ownershipInfo
         });
 

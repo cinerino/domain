@@ -50,6 +50,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - utilサービスを@chevre/domainからインポートするように変更
 - 承認コードの発行をchevreへ移行
 - メンバーシップ注文処理中のすでに登録済エラーハンドリング
+- Pecorino依存をChevre依存へ変更
 
 ### Deprecated
 
