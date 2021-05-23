@@ -1,8 +1,6 @@
 /**
  * 口座サービス
  */
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
-
 import { credentials } from '../credentials';
 
 import * as chevre from '../chevre';
@@ -167,7 +165,7 @@ export function searchMoneyTransferActions(params: {
     };
     ownedFrom?: Date;
     ownedThrough?: Date;
-    conditions: pecorinoapi.factory.account.action.moneyTransfer.ISearchConditions;
+    conditions: factory.account.action.moneyTransfer.ISearchConditions;
     typeOfGood: {
         accountNumber: string;
     };

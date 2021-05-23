@@ -5,7 +5,6 @@
 import { AWS } from '@chevre/domain';
 import * as COA from '@motionpicture/coa-service';
 import * as GMO from '@motionpicture/gmo-service';
-import * as pecorinoapi from '@pecorino/api-nodejs-client';
 
 import * as chevre from './chevre';
 import { credentials as cred } from './credentials';
@@ -24,11 +23,6 @@ export import COA = COA;
  */
 export import GMO = GMO;
 
-/**
- * Pecorino APIクライアント
- * Pecorinoサービスとの連携は全てこのクライアントを通じて行います。
- */
-export import pecorinoapi = pecorinoapi;
 export import chevre = chevre;
 
 /**
