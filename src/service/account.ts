@@ -9,7 +9,7 @@ import { factory } from '../factory';
 
 import { handlePecorinoError } from '../errorHandler';
 
-type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
+type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood | factory.ownershipInfo.IGoodWithDetail>;
 type IAccountsOperation<T> = (repos: {
     account: chevre.service.Account;
     ownershipInfo: chevre.service.OwnershipInfo;
@@ -22,14 +22,6 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     scopes: [],
     state: ''
 });
-
-// const pecorinoAuthClient = new pecorinoapi.auth.ClientCredentials({
-//     domain: credentials.pecorino.authorizeServerDomain,
-//     clientId: credentials.pecorino.clientId,
-//     clientSecret: credentials.pecorino.clientSecret,
-//     scopes: [],
-//     state: ''
-// });
 
 export interface IClosingAccount {
     accountNumber: string;
@@ -79,11 +71,6 @@ export function close(params: {
 
             // chevreで実装
             await repos.account.close(closingAccount);
-            // const accountService = new pecorinoapi.service.Account({
-            //     endpoint: credentials.pecorino.endpoint,
-            //     auth: pecorinoAuthClient
-            // });
-            // await accountService.close(closingAccount);
         } catch (error) {
             throw handlePecorinoError(error);
         }
@@ -103,51 +90,56 @@ export function search(params: {
     }) => {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
-            // 口座所有権を検索
-            const searchOwnershipInfosResult = await repos.ownershipInfo.search({
-                ...params.conditions,
-                project: { id: { $eq: params.project.id } }
-            });
-            const ownershipInfos = searchOwnershipInfosResult.data;
-            const accountNumbers = ownershipInfos.map((o) => (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber);
-
             const typeOfGood = params.conditions.typeOfGood;
             if (typeOfGood === undefined) {
                 throw new factory.errors.ArgumentNull('typeOfGood');
             }
 
-            if (accountNumbers.length > 0) {
-                // chevreで実装
-                const searchAccountResult = await repos.account.search({
-                    project: { id: { $eq: params.project.id } },
-                    accountNumbers: accountNumbers,
-                    statuses: [],
-                    limit: 100
-                });
-                // const accountService = new pecorinoapi.service.Account({
-                //     endpoint: credentials.pecorino.endpoint,
-                //     auth: pecorinoAuthClient
-                // });
-                // const searchAccountResult = await accountService.search({
-                //     project: { id: { $eq: params.project.id } },
-                //     accountNumbers: accountNumbers,
-                //     statuses: [],
-                //     limit: 100
-                // });
-
-                ownershipInfosWithDetail = ownershipInfos.map((o) => {
-                    const account = searchAccountResult.data.find(
-                        (a) => a.accountNumber === (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber
-                    );
-                    if (account === undefined) {
-                        throw new factory.errors.NotFound('Account');
+            const searchConditions: factory.ownershipInfo.ISearchConditions = {
+                ...params.conditions,
+                project: { id: { $eq: params.project.id } },
+                typeOfGood: {
+                    ...params.conditions.typeOfGood,
+                    issuedThrough: {
+                        ...params.conditions.typeOfGood?.issuedThrough,
+                        // 発行サービスタイプをPaymentCardに自動指定(しないと所有物詳細を取得できない)
+                        typeOf: { $eq: chevre.factory.product.ProductType.PaymentCard }
                     }
+                }
+            };
 
-                    return { ...o, typeOfGood: account };
-                });
-            }
+            // 口座所有権を検索
+            const searchOwnershipInfosResult = await repos.ownershipInfo.search({
+                ...searchConditions,
+                // chevreの所有権検索の中で、口座詳細も検索する
+                includeGoodWithDetails: '1'
+            });
+            const ownershipInfos = searchOwnershipInfosResult.data;
+            // const accountNumbers = ownershipInfos.map((o) => (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber);
+
+            ownershipInfosWithDetail = ownershipInfos;
+            // if (accountNumbers.length > 0) {
+            //     // chevreで実装
+            //     const searchAccountResult = await repos.account.search({
+            //         project: { id: { $eq: params.project.id } },
+            //         accountNumbers: accountNumbers,
+            //         statuses: [],
+            //         limit: 100
+            //     });
+
+            //     ownershipInfosWithDetail = ownershipInfos.map((o) => {
+            //         const account = searchAccountResult.data.find(
+            //             (a) => a.accountNumber === (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber
+            //         );
+            //         if (account === undefined) {
+            //             throw new factory.errors.NotFound('Account');
+            //         }
+
+            //         return { ...o, typeOfGood: account };
+            //     });
+            // }
         } catch (error) {
-            error = handlePecorinoError(error);
+            // error = handlePecorinoError(error);
             throw error;
         }
 
@@ -198,16 +190,6 @@ export function searchMoneyTransferActions(params: {
                 accountNumber: params.typeOfGood.accountNumber,
                 project: { id: { $eq: params.project.id } }
             });
-            // const accountService = new pecorinoapi.service.Account({
-            //     endpoint: credentials.pecorino.endpoint,
-            //     auth: pecorinoAuthClient
-            // });
-            // const searchMoneyTransferActionsResult = await accountService.searchMoneyTransferActions({
-            //     ...params.conditions,
-            //     // 口座番号条件は上書き
-            //     accountNumber: params.typeOfGood.accountNumber,
-            //     project: { id: { $eq: params.project.id } }
-            // });
             actions = searchMoneyTransferActionsResult.data;
         } catch (error) {
             throw handlePecorinoError(error);

@@ -51,6 +51,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 承認コードの発行をchevreへ移行
 - メンバーシップ注文処理中のすでに登録済エラーハンドリング
 - Pecorino依存をChevre依存へ変更
+- 口座所有権検索時に所有物詳細をChevre側で取得するように変更
 
 ### Deprecated
 
