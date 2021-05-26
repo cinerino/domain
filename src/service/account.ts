@@ -7,11 +7,14 @@ import * as chevre from '../chevre';
 
 import { factory } from '../factory';
 
-import { handlePecorinoError } from '../errorHandler';
+import { handleChevreError } from '../errorHandler';
 
 type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood | factory.ownershipInfo.IGoodWithDetail>;
 type IAccountsOperation<T> = (repos: {
     account: chevre.service.Account;
+    ownershipInfo: chevre.service.OwnershipInfo;
+}) => Promise<T>;
+type ISearchOperation<T> = (repos: {
     ownershipInfo: chevre.service.OwnershipInfo;
 }) => Promise<T>;
 
@@ -72,7 +75,7 @@ export function close(params: {
             // chevreで実装
             await repos.account.close(closingAccount);
         } catch (error) {
-            throw handlePecorinoError(error);
+            throw handleChevreError(error);
         }
     };
 }
@@ -83,9 +86,8 @@ export function close(params: {
 export function search(params: {
     project: factory.project.IProject;
     conditions: factory.ownershipInfo.ISearchConditions;
-}): IAccountsOperation<IOwnershipInfoWithDetail[]> {
+}): ISearchOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
-        account: chevre.service.Account;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
@@ -115,31 +117,9 @@ export function search(params: {
                 includeGoodWithDetails: '1'
             });
             const ownershipInfos = searchOwnershipInfosResult.data;
-            // const accountNumbers = ownershipInfos.map((o) => (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber);
 
             ownershipInfosWithDetail = ownershipInfos;
-            // if (accountNumbers.length > 0) {
-            //     // chevreで実装
-            //     const searchAccountResult = await repos.account.search({
-            //         project: { id: { $eq: params.project.id } },
-            //         accountNumbers: accountNumbers,
-            //         statuses: [],
-            //         limit: 100
-            //     });
-
-            //     ownershipInfosWithDetail = ownershipInfos.map((o) => {
-            //         const account = searchAccountResult.data.find(
-            //             (a) => a.accountNumber === (<factory.ownershipInfo.IAccount>o.typeOfGood).accountNumber
-            //         );
-            //         if (account === undefined) {
-            //             throw new factory.errors.NotFound('Account');
-            //         }
-
-            //         return { ...o, typeOfGood: account };
-            //     });
-            // }
         } catch (error) {
-            // error = handlePecorinoError(error);
             throw error;
         }
 
@@ -192,7 +172,7 @@ export function searchMoneyTransferActions(params: {
             });
             actions = searchMoneyTransferActionsResult.data;
         } catch (error) {
-            throw handlePecorinoError(error);
+            throw handleChevreError(error);
         }
 
         return actions;
@@ -212,9 +192,8 @@ export function findAccount(params: {
      * 口座タイプ
      */
     accountType: string;
-}) {
+}): ISearchOperation<factory.account.IAccount> {
     return async (repos: {
-        account: chevre.service.Account;
         ownershipInfo: chevre.service.OwnershipInfo;
     }): Promise<factory.account.IAccount> => {
         const productService = new chevre.service.Product({
@@ -245,7 +224,6 @@ export function findAccount(params: {
                 ownedThrough: params.now
             }
         })({
-            account: repos.account,
             ownershipInfo: repos.ownershipInfo
         });
 

@@ -328,7 +328,7 @@ export function onReturn(
                 ));
             }
 
-            // Pecorinoインセンティブ返却タスク
+            // ポイントインセンティブ返却タスク
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (Array.isArray(potentialActions.returnPointAward)) {

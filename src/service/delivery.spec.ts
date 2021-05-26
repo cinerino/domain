@@ -22,7 +22,7 @@ describe('ポイントインセンティブを適用する', () => {
         sandbox.restore();
     });
 
-    it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
+    it('Chevreサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
 
         sandbox.mock(actionRepo)
@@ -61,8 +61,8 @@ describe('ポイントインセンティブを適用する', () => {
         sandbox.verify();
     });
 
-    it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
-        const pecorinoError = new Error('pecorinoError');
+    it('Chevreサービスがエラーを返せばアクションを断念するはず', async () => {
+        const chevreError = new Error('chevreError');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
 
@@ -77,7 +77,7 @@ describe('ポイントインセンティブを適用する', () => {
         sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
-            .rejects(pecorinoError);
+            .rejects(chevreError);
         sandbox.mock(actionRepo)
             .expects('complete')
             .never();
@@ -98,7 +98,7 @@ describe('ポイントインセンティブを適用する', () => {
             action: actionRepo
         })
             .catch((err) => err);
-        assert.deepEqual(result, pecorinoError);
+        assert.deepEqual(result, chevreError);
         sandbox.verify();
     });
 });
@@ -108,7 +108,7 @@ describe('ポイントインセンティブを返却する', () => {
         sandbox.restore();
     });
 
-    it('Pecorinoサービスが正常であればアクションを完了できるはず', async () => {
+    it('Chevreサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
 
         sandbox.mock(actionRepo)
@@ -154,8 +154,8 @@ describe('ポイントインセンティブを返却する', () => {
         sandbox.verify();
     });
 
-    it('Pecorinoサービスがエラーを返せばアクションを断念するはず', async () => {
-        const pecorinoError = new Error('pecorinoError');
+    it('Chevreサービスがエラーを返せばアクションを断念するはず', async () => {
+        const chevreError = new Error('chevreError');
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
 
@@ -170,7 +170,7 @@ describe('ポイントインセンティブを返却する', () => {
         sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
             .expects('start')
             .once()
-            .rejects(pecorinoError);
+            .rejects(chevreError);
         sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
             .expects('confirm')
             .never();
@@ -201,7 +201,7 @@ describe('ポイントインセンティブを返却する', () => {
             action: actionRepo
         })
             .catch((err) => err);
-        assert.deepEqual(result, pecorinoError);
+        assert.deepEqual(result, chevreError);
         sandbox.verify();
     });
 });

@@ -8,7 +8,7 @@ import { factory } from '../../factory';
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import { handlePecorinoError } from '../../errorHandler';
+import { handleChevreError } from '../../errorHandler';
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -96,7 +96,7 @@ export function authorize(params: {
                 // 失敗したら仕方ない
             }
 
-            error = handlePecorinoError(error);
+            error = handleChevreError(error);
             throw error;
         }
 
@@ -179,7 +179,7 @@ async function processStartDepositTransaction(params: {
 
         responseBody = await moneyTransferService.start(requestBody);
     } catch (error) {
-        error = handlePecorinoError(error);
+        error = handleChevreError(error);
         throw error;
     }
 

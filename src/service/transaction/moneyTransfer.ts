@@ -329,7 +329,6 @@ function processAuthorizePaymentCard(params: {
                 // no op
             }
 
-            // PecorinoAPIのエラーをハンドリング
             error = handleChevreError(error);
             throw error;
         }

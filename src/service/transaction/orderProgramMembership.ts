@@ -24,7 +24,6 @@ import * as chevre from '../../chevre';
 import { factory } from '../../factory';
 
 export type IOrderOperation<T> = (repos: {
-    account: chevre.service.Account;
     action: ActionRepo;
     categoryCode: chevre.service.CategoryCode;
     confirmationNumber: ConfirmationNumberRepo;
@@ -45,7 +44,6 @@ export function orderProgramMembership(
     params: factory.task.IData<factory.taskName.OrderProgramMembership>
 ): IOrderOperation<void> {
     return async (repos: {
-        account: chevre.service.Account;
         action: ActionRepo;
         categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
@@ -145,7 +143,6 @@ function processPlaceOrder(params: {
     potentialActions?: factory.transaction.placeOrder.IPotentialActionsParams;
 }) {
     return async (repos: {
-        account: chevre.service.Account;
         action: ActionRepo;
         categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
@@ -230,7 +227,6 @@ function processAuthorizeProductOffer(params: {
     product: { id: string };
 }) {
     return async (repos: {
-        account: chevre.service.Account;
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
         project: ProjectRepo;
@@ -271,7 +267,7 @@ function processAuthorizeProductOffer(params: {
                 project: transaction.project,
                 now: new Date(),
                 accountType: pointAwardAccountType
-            })(repos);
+            })({ ownershipInfo: repos.ownershipInfo });
 
             const identifier = createPointAwardIdentifier({
                 project: params.project,

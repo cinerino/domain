@@ -23,28 +23,24 @@ npm install @cinerino/domain
 
 ### Environment variables
 
-| Name                               | Required | Value             | Purpose                        |
-| ---------------------------------- | -------- | ----------------- | ------------------------------ |
-| `AWS_ACCESS_KEY_ID`                | true     |                   | AWS access key                 |
-| `AWS_SECRET_ACCESS_KEY`            | true     |                   | AWS secret access key          |
-| `CHEVRE_AUTHORIZE_SERVER_DOMAIN`   | true     |                   | Chevre credentials             |
-| `CHEVRE_CLIENT_ID`                 | true     |                   | Chevre credentials             |
-| `CHEVRE_CLIENT_SECRET`             | true     |                   | Chevre credentials             |
-| `CHEVRE_ENDPOINT`                  | true     |                   | Chevre credentials             |
-| `CUSTOM_SEARCH_ENGINE_ID`          | true     |                   | Google Custom Search Engine ID |
-| `COA_ENDPOINT`                     | true     |                   | COA credentilas                |
-| `COA_REFRESH_TOKEN`                | true     |                   | credentilas                    |
-| `DEBUG`                            | false    | cinerino-domain:* | Debug                          |
-| `GOOGLE_API_KEY`                   | true     |                   | Google API Key                 |
-| `INFORM_ORDER_URL`                 | false    |                   | Inform Order URLs              |
-| `INFORM_TRANSACTION_URL`           | false    |                   | Inform Transaction URLs        |
-| `LINE_NOTIFY_URL`                  | true     |                   | LINE Notify URL                |
-| `LINE_NOTIFY_ACCESS_TOKEN`         | true     |                   | LINE Notify access token       |
-| `PECORINO_AUTHORIZE_SERVER_DOMAIN` | true     |                   | Pecorino credentials           |
-| `PECORINO_CLIENT_ID`               | true     |                   | Pecorino credentials           |
-| `PECORINO_CLIENT_SECRET`           | true     |                   | Pecorino credentials           |
-| `PECORINO_ENDPOINT`                | true     |                   | Pecorino credentials           |
-| `SENDGRID_API_KEY`                 | true     |                   | SendGrid API key               |
+| Name                             | Required | Value             | Purpose                        |
+| -------------------------------- | -------- | ----------------- | ------------------------------ |
+| `AWS_ACCESS_KEY_ID`              | true     |                   | AWS access key                 |
+| `AWS_SECRET_ACCESS_KEY`          | true     |                   | AWS secret access key          |
+| `CHEVRE_AUTHORIZE_SERVER_DOMAIN` | true     |                   | Chevre credentials             |
+| `CHEVRE_CLIENT_ID`               | true     |                   | Chevre credentials             |
+| `CHEVRE_CLIENT_SECRET`           | true     |                   | Chevre credentials             |
+| `CHEVRE_ENDPOINT`                | true     |                   | Chevre credentials             |
+| `CUSTOM_SEARCH_ENGINE_ID`        | true     |                   | Google Custom Search Engine ID |
+| `COA_ENDPOINT`                   | true     |                   | COA credentilas                |
+| `COA_REFRESH_TOKEN`              | true     |                   | credentilas                    |
+| `DEBUG`                          | false    | cinerino-domain:* | Debug                          |
+| `GOOGLE_API_KEY`                 | true     |                   | Google API Key                 |
+| `INFORM_ORDER_URL`               | false    |                   | Inform Order URLs              |
+| `INFORM_TRANSACTION_URL`         | false    |                   | Inform Transaction URLs        |
+| `LINE_NOTIFY_URL`                | true     |                   | LINE Notify URL                |
+| `LINE_NOTIFY_ACCESS_TOKEN`       | true     |                   | LINE Notify access token       |
+| `SENDGRID_API_KEY`               | true     |                   | SendGrid API key               |
 
 ## Code Samples
 
