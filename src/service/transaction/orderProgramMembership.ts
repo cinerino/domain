@@ -31,6 +31,7 @@ export type IOrderOperation<T> = (repos: {
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
+    product: chevre.service.Product;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
     seller: chevre.service.Seller;
@@ -51,6 +52,7 @@ export function orderProgramMembership(
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
+        product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
@@ -149,6 +151,7 @@ function processPlaceOrder(params: {
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
+        product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
@@ -229,6 +232,7 @@ function processAuthorizeProductOffer(params: {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
+        product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
@@ -267,7 +271,7 @@ function processAuthorizeProductOffer(params: {
                 project: transaction.project,
                 now: new Date(),
                 accountType: pointAwardAccountType
-            })({ ownershipInfo: repos.ownershipInfo });
+            })({ product: repos.product, ownershipInfo: repos.ownershipInfo });
 
             const identifier = createPointAwardIdentifier({
                 project: params.project,

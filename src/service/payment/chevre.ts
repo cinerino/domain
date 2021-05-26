@@ -245,6 +245,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
+        product: chevre.service.Product;
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
@@ -282,7 +283,10 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
         const paymentMethodType = params.object.typeOf;
 
         // プロジェクトの対応決済サービスを確認
-        const paymentServiceType = await getPaymentServiceType({ project: { id: params.project.id }, paymentMethodType });
+        const paymentServiceType: string | undefined = await getPaymentServiceType({
+            project: { id: params.project.id },
+            paymentMethodType
+        })({ product: repos.product });
 
         const order = await repos.order.findByOrderNumber({
             orderNumber: refundActionAttributes.purpose.orderNumber
@@ -374,35 +378,34 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
     };
 }
 
-async function getPaymentServiceType(params: {
+function getPaymentServiceType(params: {
     project: { id: string };
     paymentMethodType: string;
-}): Promise<chevre.factory.service.paymentService.PaymentServiceType | undefined> {
-    // プロジェクトの対応決済サービスを確認
-    const productService = new chevre.service.Product({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient,
-        project: { id: params.project.id }
-    });
-    const searchPaymentServicesResult = await productService.search({
-        limit: 1,
-        project: { id: { $eq: params.project.id } },
-        typeOf: {
-            $in: [
-                chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
-                chevre.factory.service.paymentService.PaymentServiceType.MovieTicket,
-                chevre.factory.service.paymentService.PaymentServiceType.PaymentCard
-            ]
-        },
-        serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
-    });
-    const paymentServiceSetting = <chevre.factory.service.paymentService.IService | undefined>
-        searchPaymentServicesResult.data.shift();
-    // if (paymentServiceSetting === undefined) {
-    //     throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
-    // }
+}) {
+    return async (repos: {
+        product: chevre.service.Product;
+    }): Promise<chevre.factory.service.paymentService.PaymentServiceType | undefined> => {
+        // プロジェクトの対応決済サービスを確認
+        const searchPaymentServicesResult = await repos.product.search({
+            limit: 1,
+            project: { id: { $eq: params.project.id } },
+            typeOf: {
+                $in: [
+                    chevre.factory.service.paymentService.PaymentServiceType.CreditCard,
+                    chevre.factory.service.paymentService.PaymentServiceType.MovieTicket,
+                    chevre.factory.service.paymentService.PaymentServiceType.PaymentCard
+                ]
+            },
+            serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
+        });
+        const paymentServiceSetting = <chevre.factory.service.paymentService.IService | undefined>
+            searchPaymentServicesResult.data.shift();
+        // if (paymentServiceSetting === undefined) {
+        //     throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
+        // }
 
-    return paymentServiceSetting?.typeOf;
+        return paymentServiceSetting?.typeOf;
+    };
 }
 
 interface ICreditCardPaymentServiceCredentials {
@@ -411,42 +414,43 @@ interface ICreditCardPaymentServiceCredentials {
     sitePass: string;
 }
 
-export async function getCreditCardPaymentServiceChannel(params: {
+export function getCreditCardPaymentServiceChannel(params: {
     project: { id: string };
     paymentMethodType: string;
-}): Promise<ICreditCardPaymentServiceCredentials> {
-    const productService = new chevre.service.Product({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient,
-        project: { id: params.project.id }
-    });
-    const searchPaymentServicesResult = await productService.search({
-        limit: 1,
-        project: { id: { $eq: params.project.id } },
-        typeOf: { $eq: chevre.factory.service.paymentService.PaymentServiceType.CreditCard },
-        serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
-    });
-    const paymentServiceSetting = searchPaymentServicesResult.data.shift();
-    if (paymentServiceSetting === undefined) {
-        throw new factory.errors.NotFound('PaymentService');
-    }
-    // IDで検索いないとavailableChannelを取得できない
-    const paymentService = <factory.service.paymentService.IService>await productService.findById({ id: String(paymentServiceSetting.id) });
+}) {
+    return async (repos: {
+        product: chevre.service.Product;
+    }): Promise<ICreditCardPaymentServiceCredentials> => {
+        const searchPaymentServicesResult = await repos.product.search({
+            limit: 1,
+            project: { id: { $eq: params.project.id } },
+            typeOf: { $eq: chevre.factory.service.paymentService.PaymentServiceType.CreditCard },
+            serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
+        });
+        const paymentServiceSetting = searchPaymentServicesResult.data.shift();
+        if (paymentServiceSetting === undefined) {
+            throw new factory.errors.NotFound('PaymentService');
+        }
+        // IDで検索いないとavailableChannelを取得できない
+        const paymentService =
+            <factory.service.paymentService.IService>await repos.product.findById({ id: String(paymentServiceSetting.id) });
 
-    const availableChannel = paymentService?.availableChannel;
-    if (typeof availableChannel?.serviceUrl !== 'string') {
-        throw new factory.errors.NotFound('paymentService.availableChannel.serviceUrl');
-    }
-    if (typeof availableChannel?.credentials?.siteId !== 'string') {
-        throw new factory.errors.NotFound('paymentService.availableChannel.credentials.siteId');
-    }
-    if (typeof availableChannel?.credentials?.sitePass !== 'string') {
-        throw new factory.errors.NotFound('paymentService.availableChannel.credentials.sitePass');
-    }
+        const availableChannel = paymentService?.availableChannel;
+        if (typeof availableChannel?.serviceUrl !== 'string') {
+            throw new factory.errors.NotFound('paymentService.availableChannel.serviceUrl');
+        }
+        if (typeof availableChannel?.credentials?.siteId !== 'string') {
+            throw new factory.errors.NotFound('paymentService.availableChannel.credentials.siteId');
+        }
+        if (typeof availableChannel?.credentials?.sitePass !== 'string') {
+            throw new factory.errors.NotFound('paymentService.availableChannel.credentials.sitePass');
+        }
 
-    return {
-        endpoint: availableChannel.serviceUrl,
-        siteId: availableChannel.credentials.siteId,
-        sitePass: availableChannel.credentials.sitePass
+        return {
+            endpoint: availableChannel.serviceUrl,
+            siteId: availableChannel.credentials.siteId,
+            sitePass: availableChannel.credentials.sitePass
+        };
+
     };
 }

@@ -35,6 +35,7 @@ export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
+    product: chevre.service.Product;
     registerActionInProgress: RegisterServiceInProgressRepo;
     transaction: TransactionRepo;
 }) => Promise<T>;
@@ -50,18 +51,14 @@ export function search(params: {
     seller?: { id: string };
     availableAt?: { id: string };
 }) {
-    return async (__: {
+    return async (repos: {
+        product: chevre.service.Product;
     }): Promise<factory.chevre.event.screeningEvent.ITicketOffer[]> => {
         const now = moment();
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
 
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const product = <chevre.factory.product.IProduct>await productService.findById({ id: params.itemOffered.id });
+        const product = <chevre.factory.product.IProduct>await repos.product.findById({ id: params.itemOffered.id });
 
         // 販売者指定の場合、検証
         if (typeof params.seller?.id === 'string') {
@@ -84,7 +81,7 @@ export function search(params: {
             }
         }
 
-        offers = await productService.searchOffers({ id: String(product.id) });
+        offers = await repos.product.searchOffers({ id: String(product.id) });
 
         // 店舗条件によって対象を絞る
         const storeId = params.availableAt?.id;
@@ -134,6 +131,7 @@ export function authorize(params: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
+        product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
     }) => {
@@ -147,18 +145,13 @@ export function authorize(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
         const serviceOutputService = new chevre.service.ServiceOutput({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
             project: { id: transaction.project.id }
         });
 
-        const product = <chevre.factory.product.IProduct>await productService.findById({
+        const product = <chevre.factory.product.IProduct>await repos.product.findById({
             id: String(params.object[0]?.itemOffered?.id)
         });
         const availableOffers = await search({

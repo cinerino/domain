@@ -13,6 +13,10 @@ import { MongoRepository as TaskRepo } from '../../repo/task';
 import * as CustomerService from '../customer';
 import { getCreditCardPaymentServiceChannel } from '../payment/chevre';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
+
 /**
  * タスク実行関数
  */
@@ -25,10 +29,24 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const productService = new chevre.service.Product({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const paymentServiceCredentials = await getCreditCardPaymentServiceChannel({
             project: { id: data.project.id },
             paymentMethodType: factory.paymentMethodType.CreditCard
-        });
+        })({ product: productService });
 
         const creditCardRepo = new CreditCardRepo({
             siteId: paymentServiceCredentials.siteId,

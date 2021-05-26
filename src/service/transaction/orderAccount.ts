@@ -14,18 +14,8 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import * as OfferService from '../offer';
 import * as TransactionService from '../transaction';
 
-import { credentials } from '../../credentials';
-
 import * as chevre from '../../chevre';
 import { factory } from '../../factory';
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
@@ -34,6 +24,7 @@ export type IOrderOperation<T> = (repos: {
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
     person: PersonRepo;
+    product: chevre.service.Product;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
     seller: chevre.service.Seller;
@@ -44,6 +35,7 @@ export type IOrderOperation<T> = (repos: {
  * 口座注文
  * 通貨がaccountTypeの口座を注文する処理
  */
+// tslint:disable-next-line:max-func-body-length
 export function orderAccount(params: {
     project: factory.project.IProject;
     agent: factory.ownershipInfo.IOwner;
@@ -62,22 +54,17 @@ export function orderAccount(params: {
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
         person: PersonRepo;
+        product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         const customer = await repos.person.findById({ userId: String(params.agent.id) });
 
         // プロダクト検索
-        const searchProductsResult = await productService.search({
+        const searchProductsResult = await repos.product.search({
             project: { id: { $eq: params.project.id } },
             typeOf: { $in: [chevre.factory.product.ProductType.PaymentCard] }
         });
@@ -177,17 +164,12 @@ function processPlaceOrder(params: {
         confirmationNumber: ConfirmationNumberRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
+        product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-
         const acceptedOffer = params.acceptedOffer;
         const customer = params.customer;
         const transaction = params.transaction;
@@ -201,10 +183,7 @@ function processPlaceOrder(params: {
             product: { id: String(params.product.id) },
             serviceOutputName: params.serviceOutputName,
             location: params.location
-        })({
-            ...repos,
-            productService: productService
-        });
+        })(repos);
 
         await TransactionService.updateAgent({
             typeOf: transaction.typeOf,
@@ -240,10 +219,10 @@ function processAuthorizeProductOffer(params: {
     return async (repos: {
         action: ActionRepo;
         orderNumber: OrderNumberRepo;
+        product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
-        productService: chevre.service.Product;
     }) => {
         const acceptedOffer = params.acceptedOffer;
         const customer = params.customer;

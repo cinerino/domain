@@ -146,6 +146,7 @@ export function confirm(params: IConfirmParams) {
     return async (repos: {
         action: ActionRepo;
         categoryCode: chevre.service.CategoryCode;
+        product: chevre.service.Product;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
         orderNumber: OrderNumberRepo;
@@ -177,12 +178,7 @@ export function confirm(params: IConfirmParams) {
         const seller = await repos.seller.findById({ id: String(transaction.seller.id) });
 
         // プロジェクトの対応決済サービスを確認するためにChevreプロジェクトを検索
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
-        const searchPaymentServicesResult = await productService.search({
+        const searchPaymentServicesResult = await repos.product.search({
             project: { id: { $eq: transaction.project.id } },
             typeOf: {
                 $in: [

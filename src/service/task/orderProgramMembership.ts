@@ -51,6 +51,12 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             project: { id: data.project.id }
         });
 
+        const productService = new chevre.service.Product({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const sellerService = new chevre.service.Seller({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -65,7 +71,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
         const paymentServiceCredentials = await getCreditCardPaymentServiceChannel({
             project: { id: data.project.id },
             paymentMethodType: factory.paymentMethodType.CreditCard
-        });
+        })({ product: productService });
 
         const creditCardRepo = new CreditCardRepo({
             siteId: paymentServiceCredentials.siteId,
@@ -85,6 +91,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             orderNumber: new OrderNumberRepo(settings.redisClient),
             ownershipInfo: ownershipInfoService,
             person: personRepo,
+            product: productService,
             project: projectRepo,
             registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
             seller: sellerService,

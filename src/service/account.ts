@@ -1,8 +1,6 @@
 /**
  * 口座サービス
  */
-import { credentials } from '../credentials';
-
 import * as chevre from '../chevre';
 
 import { factory } from '../factory';
@@ -17,14 +15,6 @@ type IAccountsOperation<T> = (repos: {
 type ISearchOperation<T> = (repos: {
     ownershipInfo: chevre.service.OwnershipInfo;
 }) => Promise<T>;
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 export interface IClosingAccount {
     accountNumber: string;
@@ -192,17 +182,12 @@ export function findAccount(params: {
      * 口座タイプ
      */
     accountType: string;
-}): ISearchOperation<factory.account.IAccount> {
+}) {
     return async (repos: {
+        product: chevre.service.Product;
         ownershipInfo: chevre.service.OwnershipInfo;
     }): Promise<factory.account.IAccount> => {
-        const productService = new chevre.service.Product({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-
-        const searchProductsResult = await productService.search({
+        const searchProductsResult = await repos.product.search({
             project: { id: { $eq: params.project.id } },
             typeOf: { $eq: chevre.factory.product.ProductType.PaymentCard }
         });

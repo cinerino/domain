@@ -33,6 +33,7 @@ describe('プロダクト注文タスクを作成する', () => {
 
         const taskRepo = new domain.repository.Task(mongoose.connection);
         const sellerRepo = new domain.chevre.service.Seller(<any>{});
+        const productRepo = new domain.chevre.service.Product(<any>{});
 
         sandbox.mock(sellerRepo)
             .expects('findById')
@@ -42,7 +43,7 @@ describe('プロダクト注文タスクを作成する', () => {
             .expects('save')
             .once()
             .resolves(task);
-        sandbox.mock(domain.chevre.service.Product.prototype)
+        sandbox.mock(productRepo)
             .expects('findById')
             .once()
             .resolves(membershipService);
@@ -62,6 +63,7 @@ describe('プロダクト注文タスクを作成する', () => {
             },
             location: { id: 'locationId' }
         })({
+            product: productRepo,
             seller: sellerRepo,
             task: taskRepo
         });

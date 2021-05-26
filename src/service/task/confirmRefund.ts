@@ -10,6 +10,10 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as PaymentService from '../payment';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
+
 /**
  * タスク実行関数
  */
@@ -21,9 +25,24 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmRefund>): 
         const taskRepo = new TaskRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
 
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const productService = new chevre.service.Product({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await PaymentService.refund(data)({
             action: actionRepo,
             order: orderRepo,
+            product: productService,
             project: projectRepo,
             task: taskRepo,
             transaction: transactionRepo

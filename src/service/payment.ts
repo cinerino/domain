@@ -12,6 +12,8 @@ import * as ChevrePaymentService from './payment/chevre';
 
 import { factory } from '../factory';
 
+import * as chevreapi from '../chevre';
+
 /**
  * 汎用決済
  */
@@ -82,6 +84,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;
+        product: chevreapi.service.Product;
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
