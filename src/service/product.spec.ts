@@ -44,9 +44,9 @@ describe('プロダクト注文タスクを作成する', () => {
             .once()
             .resolves(task);
         sandbox.mock(productRepo)
-            .expects('findById')
+            .expects('search')
             .once()
-            .resolves(membershipService);
+            .resolves({ data: [membershipService] });
         sandbox.mock(domain.service.offer.product)
             .expects('search')
             .once()

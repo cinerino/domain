@@ -58,7 +58,14 @@ export function search(params: {
 
         let offers: factory.chevre.event.screeningEvent.ITicketOffer[] = [];
 
-        const product = <chevre.factory.product.IProduct>await repos.product.findById({ id: params.itemOffered.id });
+        const searchProductsResult = await repos.product.search({
+            limit: 1,
+            id: { $eq: params.itemOffered.id }
+        });
+        const product = <chevre.factory.product.IProduct | undefined>searchProductsResult.data.shift();
+        if (product === undefined) {
+            throw new chevre.factory.errors.NotFound('Product');
+        }
 
         // 販売者指定の場合、検証
         if (typeof params.seller?.id === 'string') {
@@ -151,9 +158,14 @@ export function authorize(params: {
             project: { id: transaction.project.id }
         });
 
-        const product = <chevre.factory.product.IProduct>await repos.product.findById({
-            id: String(params.object[0]?.itemOffered?.id)
+        const searchProductsResult = await repos.product.search({
+            limit: 1,
+            id: { $eq: String(params.object[0]?.itemOffered?.id) }
         });
+        const product = <chevre.factory.product.IProduct | undefined>searchProductsResult.data.shift();
+        if (product === undefined) {
+            throw new chevre.factory.errors.NotFound('Product');
+        }
         const availableOffers = await search({
             project: { id: params.project.id },
             itemOffered: { id: String(product.id) },
