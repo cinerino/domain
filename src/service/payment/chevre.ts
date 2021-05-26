@@ -426,10 +426,14 @@ export async function getCreditCardPaymentServiceChannel(params: {
         typeOf: { $eq: chevre.factory.service.paymentService.PaymentServiceType.CreditCard },
         serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
     });
-    const paymentServiceSetting = <chevre.factory.service.paymentService.IService | undefined>
-        searchPaymentServicesResult.data.shift();
+    const paymentServiceSetting = searchPaymentServicesResult.data.shift();
+    if (paymentServiceSetting === undefined) {
+        throw new factory.errors.NotFound('PaymentService');
+    }
+    // IDで検索いないとavailableChannelを取得できない
+    const paymentService = <factory.service.paymentService.IService>await productService.findById({ id: String(paymentServiceSetting.id) });
 
-    const availableChannel = paymentServiceSetting?.availableChannel;
+    const availableChannel = paymentService?.availableChannel;
     if (typeof availableChannel?.serviceUrl !== 'string') {
         throw new factory.errors.NotFound('paymentService.availableChannel.serviceUrl');
     }
