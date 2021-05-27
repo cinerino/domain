@@ -29,6 +29,7 @@ export type IOrderOperation<T> = (repos: {
     registerActionInProgress: RegisterServiceInProgressRepo;
     seller: chevre.service.Seller;
     transaction: TransactionRepo;
+    transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
 
 /**
@@ -59,6 +60,7 @@ export function orderAccount(params: {
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         const customer = await repos.person.findById({ userId: String(params.agent.id) });
@@ -168,6 +170,7 @@ function processPlaceOrder(params: {
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const acceptedOffer = params.acceptedOffer;
@@ -222,6 +225,7 @@ function processAuthorizeProductOffer(params: {
         product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const acceptedOffer = params.acceptedOffer;

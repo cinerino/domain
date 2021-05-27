@@ -49,6 +49,7 @@ export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     event: chevre.service.Event;
     transaction: TransactionRepo;
+    transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
 
 export type ISelectSeatOperation<T> = (repos: {
@@ -79,6 +80,7 @@ export function create(params: {
         action: ActionRepo;
         event: chevre.service.Event;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,
@@ -134,12 +136,7 @@ export function create(params: {
 
             case factory.service.webAPI.Identifier.Chevre:
                 // Chevre予約の場合、まず取引番号発行
-                const transactionNumberService = new chevre.service.TransactionNumber({
-                    endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient,
-                    project: { id: params.project.id }
-                });
-                const publishResult = await transactionNumberService.publish({
+                const publishResult = await repos.transactionNumber.publish({
                     project: { id: params.project.id }
                 });
                 transactionNumber = publishResult.transactionNumber;

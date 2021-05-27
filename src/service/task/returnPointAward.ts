@@ -6,6 +6,10 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 
 import * as DeliveryService from '../delivery';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
+
 /**
  * タスク実行関数
  */
@@ -17,8 +21,23 @@ export function call(data: factory.task.IData<factory.taskName.ReturnPointAward>
             throw new Error('settings.redisClient undefined.');
         }
 
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await DeliveryService.returnPointAward(data)({
-            action: new ActionRepo(settings.connection)
+            action: new ActionRepo(settings.connection),
+            transactionNumber: transactionNumberService
         });
     };
 }

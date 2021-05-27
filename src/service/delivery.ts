@@ -258,17 +258,13 @@ export function onSend(
 export function givePointAward(params: factory.task.IData<factory.taskName.GivePointAward>) {
     return async (repos: {
         action: ActionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
-            const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
-            });
-            const { transactionNumber } = await transactionNumberService.publish({
+            const { transactionNumber } = await repos.transactionNumber.publish({
                 project: { id: params.project.id }
             });
 
@@ -386,6 +382,7 @@ export function createPointAwardIdentifier(params: {
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
     return async (repos: {
         action: ActionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         // アクション開始
         const givePointAwardAction = params.object;
@@ -396,12 +393,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const action = await repos.action.start(params);
 
         try {
-            const transactionNumberService = new chevre.service.TransactionNumber({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
-            });
-            const { transactionNumber } = await transactionNumberService.publish({
+            const { transactionNumber } = await repos.transactionNumber.publish({
                 project: { id: params.project.id }
             });
 

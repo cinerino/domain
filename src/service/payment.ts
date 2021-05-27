@@ -88,6 +88,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevreapi.service.TransactionNumber;
     }) => {
         await ChevrePaymentService.refund(params)(repos);
     };

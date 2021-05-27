@@ -39,13 +39,20 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmRefund>): 
             project: { id: data.project.id }
         });
 
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await PaymentService.refund(data)({
             action: actionRepo,
             order: orderRepo,
             product: productService,
             project: projectRepo,
             task: taskRepo,
-            transaction: transactionRepo
+            transaction: transactionRepo,
+            transactionNumber: transactionNumberService
         });
     };
 }

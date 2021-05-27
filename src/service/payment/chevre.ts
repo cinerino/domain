@@ -30,6 +30,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     transaction: TransactionRepo;
+    transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
 
 export type IPayOperation<T> = (repos: {
@@ -46,19 +47,14 @@ export function authorize(params: {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
 
         const paymentServiceType = params.paymentServiceType;
 
         // 取引番号生成
-        const transactionNumberService = new chevre.service.TransactionNumber({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-
-        const { transactionNumber } = await transactionNumberService.publish({
+        const { transactionNumber } = await repos.transactionNumber.publish({
             project: { id: params.project.id }
         });
 
@@ -253,21 +249,17 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
         project: ProjectRepo;
         task: TaskRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        const transactionNumberService = new chevre.service.TransactionNumber({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
         const refundService = new chevre.service.assetTransaction.Refund({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
             project: { id: params.project.id }
         });
 
-        const { transactionNumber } = await transactionNumberService.publish({
+        const { transactionNumber } = await repos.transactionNumber.publish({
             project: { id: params.project.id }
         });
 

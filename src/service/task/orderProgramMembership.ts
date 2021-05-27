@@ -63,6 +63,12 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             project: { id: data.project.id }
         });
 
+        const transactionNumberService = new chevre.service.TransactionNumber({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const project = await projectRepo.findById({ id: data.project.id });
         if (project.settings?.cognito === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
@@ -95,7 +101,8 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             project: projectRepo,
             registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
             seller: sellerService,
-            transaction: new TransactionRepo(settings.connection)
+            transaction: new TransactionRepo(settings.connection),
+            transactionNumber: transactionNumberService
         });
     };
 }

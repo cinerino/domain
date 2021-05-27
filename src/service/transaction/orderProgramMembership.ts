@@ -36,6 +36,7 @@ export type IOrderOperation<T> = (repos: {
     registerActionInProgress: RegisterServiceInProgressRepo;
     seller: chevre.service.Seller;
     transaction: TransactionRepo;
+    transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
 
 /**
@@ -57,6 +58,7 @@ export function orderProgramMembership(
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         // ユーザー存在確認(管理者がマニュアルでユーザーを削除する可能性があるので)
         const customer = await repos.person.findById({ userId: String(params.agent.id) });
@@ -156,6 +158,7 @@ function processPlaceOrder(params: {
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const acceptedOffer = params.acceptedOffer;
@@ -236,6 +239,7 @@ function processAuthorizeProductOffer(params: {
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
         ownershipInfo: chevre.service.OwnershipInfo;
     }) => {
         const acceptedOffer = params.acceptedOffer;
@@ -340,6 +344,7 @@ function processAuthorizeCreditCard(params: {
         person: PersonRepo;
         project: ProjectRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         // 会員クレジットカード検索(事前にクレジットカードを登録しているはず)
         const creditCard = await findCreditCard({

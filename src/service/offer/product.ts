@@ -38,6 +38,7 @@ export type IAuthorizeOperation<T> = (repos: {
     product: chevre.service.Product;
     registerActionInProgress: RegisterServiceInProgressRepo;
     transaction: TransactionRepo;
+    transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
 
 export const ERROR_MESSAGE_ALREADY_REGISTERED = 'Already registered';
@@ -141,6 +142,7 @@ export function authorize(params: {
         product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
         transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
     }) => {
         const now = new Date();
 
@@ -201,12 +203,7 @@ export function authorize(params: {
         let responseBody: factory.chevre.assetTransaction.registerService.ITransaction;
 
         // まず取引番号発行
-        const transactionNumberService = new chevre.service.TransactionNumber({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
-        const publishResult = await transactionNumberService.publish({ project: { id: params.project.id } });
+        const publishResult = await repos.transactionNumber.publish({ project: { id: params.project.id } });
         const transactionNumber = publishResult.transactionNumber;
 
         // 承認アクション開始
