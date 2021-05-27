@@ -32,19 +32,12 @@ const coaAuthClient = new COA.auth.RefreshToken({
     refreshToken: credentials.coa.refreshToken
 });
 
-// const chevreAuthClient = new chevre.auth.ClientCredentials({
-//     domain: credentials.chevre.authorizeServerDomain,
-//     clientId: credentials.chevre.clientId,
-//     clientSecret: credentials.chevre.clientSecret,
-//     scopes: [],
-//     state: ''
-// });
-
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     event: chevre.service.Event;
+    offer: chevre.service.Offer;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -61,6 +54,7 @@ export function create(params: {
     return async (repos: {
         action: ActionRepo;
         event: chevre.service.Event;
+        offer: chevre.service.Offer;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -89,7 +83,7 @@ export function create(params: {
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
             acceptedOffersWithoutDetails
-        );
+        )(repos);
 
         // 承認アクションを開始
         const actionAttributes = createAuthorizeSeatReservationActionAttributes({
@@ -235,6 +229,7 @@ export function changeOffers(params: {
     return async (repos: {
         action: ActionRepo;
         event: chevre.service.Event;
+        offer: chevre.service.Offer;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -285,7 +280,7 @@ export function changeOffers(params: {
             (transaction.agent.memberOf !== undefined),
             screeningEvent,
             acceptedOffersWithoutDetails
-        );
+        )(repos);
 
         // 供給情報と価格を変更してからDB更新
         authorizeAction.object.acceptedOffer = acceptedOffer;

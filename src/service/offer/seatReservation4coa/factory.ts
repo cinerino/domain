@@ -17,14 +17,6 @@ const coaAuthClient = new COA.auth.RefreshToken({
     refreshToken: credentials.coa.refreshToken
 });
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 export type IReservationFor = factory.chevre.reservation.IReservationFor<factory.chevre.reservationType.EventReservation>;
 export import WebAPIIdentifier = factory.service.webAPI.Identifier;
 
@@ -122,8 +114,7 @@ export async function createAcceptedOffersWithoutDetails(params: {
     });
 }
 
-// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-async function offer2availableSalesTicket(params: {
+function offer2availableSalesTicket(params: {
     project: { id: string };
     offers: IAcceptedOfferWithoutDetail[];
     offer: IAcceptedOfferWithoutDetail;
@@ -131,215 +122,215 @@ async function offer2availableSalesTicket(params: {
     availableSalesTickets: COA.factory.reserve.ISalesTicketResult[];
     coaInfo: factory.event.screeningEvent.ICOAInfo;
 }) {
-    let availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
-    let coaPointTicket: COA.factory.master.ITicketResult | undefined;
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+    return async (repos: {
+        offer: chevre.service.Offer;
+    }) => {
+        let availableSalesTicket: COA.factory.reserve.ISalesTicketResult | ICOAMvtkTicket | undefined;
+        let coaPointTicket: COA.factory.master.ITicketResult | undefined;
 
-    const offers = params.offers;
-    const offer = params.offer;
-    const offerIndex = params.offerIndex;
-    const availableSalesTickets = params.availableSalesTickets;
-    const coaInfo = params.coaInfo;
+        const offers = params.offers;
+        const offer = params.offer;
+        const offerIndex = params.offerIndex;
+        const availableSalesTickets = params.availableSalesTickets;
+        const coaInfo = params.coaInfo;
 
-    const masterService = new COA.service.Master(
-        {
-            endpoint: credentials.coa.endpoint,
-            auth: coaAuthClient
-        },
-        { timeout: COA_TIMEOUT }
-    );
+        const masterService = new COA.service.Master(
+            {
+                endpoint: credentials.coa.endpoint,
+                auth: coaAuthClient
+            },
+            { timeout: COA_TIMEOUT }
+        );
 
-    const isMvtkOrMG = typeof offer.ticketInfo.mvtkNum === 'string' && offer.ticketInfo.mvtkNum.length > 0;
+        const isMvtkOrMG = typeof offer.ticketInfo.mvtkNum === 'string' && offer.ticketInfo.mvtkNum.length > 0;
 
-    // ポイント消費鑑賞券の場合
-    if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
-        // COA側のマスタ構成で、
-        // 券種マスタに消費ポイント
-        // 販売可能チケット情報に販売金額
-        // を持っているので、処理が少し冗長になってしまうが、しょうがない
-        try {
-            let availableTickets: COA.factory.master.ITicketResult[] | undefined;
+        // ポイント消費鑑賞券の場合
+        if (typeof offer.ticketInfo.usePoint === 'number' && offer.ticketInfo.usePoint > 0) {
+            // COA側のマスタ構成で、
+            // 券種マスタに消費ポイント
+            // 販売可能チケット情報に販売金額
+            // を持っているので、処理が少し冗長になってしまうが、しょうがない
+            try {
+                let availableTickets: COA.factory.master.ITicketResult[] | undefined;
 
-            // Chevreでオファー検索トライ
-            const offerIdentifier = `COA-${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
-            const offerService = new chevre.service.Offer({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
-            });
-            const searchOffersResult = await offerService.search({
-                limit: 1,
-                project: { id: { $eq: params.project.id } },
-                itemOffered: { typeOf: { $eq: 'EventService' } },
-                identifier: { $eq: offerIdentifier }
-            });
-            if (searchOffersResult.data.length > 0) {
-                availableTickets = searchOffersResult.data.map((o) => {
-                    return {
-                        ticketCode: (typeof o.additionalProperty?.find((p) => p.name === 'ticketCode')?.value === 'string')
-                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketCode')?.value)
-                            : '',
-                        ticketName: (typeof o.additionalProperty?.find((p) => p.name === 'ticketName')?.value === 'string')
-                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketName')?.value)
-                            : '',
-                        ticketNameKana: (typeof o.additionalProperty?.find((p) => p.name === 'ticketNameKana')?.value === 'string')
-                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketNameKana')?.value)
-                            : '',
-                        ticketNameEng: (typeof o.additionalProperty?.find((p) => p.name === 'ticketNameEng')?.value === 'string')
-                            ? String(o.additionalProperty?.find((p) => p.name === 'ticketNameEng')?.value)
-                            : '',
-                        usePoint: (typeof o.additionalProperty?.find((p) => p.name === 'usePoint')?.value === 'string')
-                            ? Number(o.additionalProperty?.find((p) => p.name === 'usePoint')?.value)
-                            : 0,
-                        flgMember: (typeof o.additionalProperty?.find((p) => p.name === 'flgMember')?.value === 'string')
-                            ? <COA.factory.master.FlgMember>String(o.additionalProperty?.find((p) => p.name === 'flgMember')?.value)
-                            : COA.factory.master.FlgMember.NonMember
+                // Chevreでオファー検索トライ
+                const offerIdentifier = `COA-${coaInfo.theaterCode}-${offer.ticketInfo.ticketCode}`;
+                const searchOffersResult = await repos.offer.search({
+                    limit: 1,
+                    project: { id: { $eq: params.project.id } },
+                    itemOffered: { typeOf: { $eq: 'EventService' } },
+                    identifier: { $eq: offerIdentifier }
+                });
+                if (searchOffersResult.data.length > 0) {
+                    availableTickets = searchOffersResult.data.map((o) => {
+                        return {
+                            ticketCode: (typeof o.additionalProperty?.find((p) => p.name === 'ticketCode')?.value === 'string')
+                                ? String(o.additionalProperty?.find((p) => p.name === 'ticketCode')?.value)
+                                : '',
+                            ticketName: (typeof o.additionalProperty?.find((p) => p.name === 'ticketName')?.value === 'string')
+                                ? String(o.additionalProperty?.find((p) => p.name === 'ticketName')?.value)
+                                : '',
+                            ticketNameKana: (typeof o.additionalProperty?.find((p) => p.name === 'ticketNameKana')?.value === 'string')
+                                ? String(o.additionalProperty?.find((p) => p.name === 'ticketNameKana')?.value)
+                                : '',
+                            ticketNameEng: (typeof o.additionalProperty?.find((p) => p.name === 'ticketNameEng')?.value === 'string')
+                                ? String(o.additionalProperty?.find((p) => p.name === 'ticketNameEng')?.value)
+                                : '',
+                            usePoint: (typeof o.additionalProperty?.find((p) => p.name === 'usePoint')?.value === 'string')
+                                ? Number(o.additionalProperty?.find((p) => p.name === 'usePoint')?.value)
+                                : 0,
+                            flgMember: (typeof o.additionalProperty?.find((p) => p.name === 'flgMember')?.value === 'string')
+                                ? <COA.factory.master.FlgMember>String(o.additionalProperty?.find((p) => p.name === 'flgMember')?.value)
+                                : COA.factory.master.FlgMember.NonMember
+                        };
+                    });
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (availableTickets === undefined) {
+                    availableTickets = await masterService.ticket({
+                        theaterCode: coaInfo.theaterCode
+                    });
+                }
+                coaPointTicket = availableTickets.find((t) => t.ticketCode === offer.ticketInfo.ticketCode);
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore if: please write tests */
+                if (coaPointTicket === undefined) {
+                    throw new factory.errors.NotFound(
+                        `offers.${offerIndex}`,
+                        `ticketInfo of ticketCode ${offer.ticketInfo.ticketCode} is invalid.`);
+                }
+            } catch (error) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next: please write tests */
+                // COAサービスエラーの場合ハンドリング
+                if (error.name === 'COAServiceError') {
+                    // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
+                    // 500未満であればクライアントエラーとみなす
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (error.code < INTERNAL_SERVER_ERROR) {
+                        throw new factory.errors.NotFound(
+                            `offers.${offerIndex}`,
+                            `ticketCode ${offer.ticketInfo.ticketCode} not found. ${error.message}`
+                        );
+                    }
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore next: please write tests */
+                throw error;
+            }
+
+            availableSalesTicket = availableSalesTickets.find((t) => t.ticketCode === offer.ticketInfo.ticketCode);
+            // 利用可能な券種が見つからなければエラー
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore if */
+            if (availableSalesTicket === undefined) {
+                throw new factory.errors.NotFound(`offers.${offerIndex}`, `ticketCode ${offer.ticketInfo.ticketCode} not found.`);
+            }
+        } else if (isMvtkOrMG) {
+            // ムビチケの場合、ムビチケ情報をCOA券種に変換
+            try {
+                const kbnMgtk = offer.ticketInfo.kbnMgtk;
+                if (typeof kbnMgtk === 'string' && kbnMgtk === 'MG') {
+                    const mgtkTicketcodeResult = await masterService.mgtkTicketcode({
+                        theaterCode: coaInfo.theaterCode,
+                        mgtkTicketcode: offer.ticketInfo.mvtkKbnKensyu, // MG券種区分
+                        titleCode: coaInfo.titleCode,
+                        titleBranchNum: coaInfo.titleBranchNum,
+                        dateJouei: coaInfo.dateJouei
+                    });
+                    availableSalesTicket = {
+                        ...mgtkTicketcodeResult,
+                        // ムビチケチケットインターフェース属性が少なめなので補ってあげる
+                        stdPrice: 0,
+                        salePrice: mgtkTicketcodeResult.addPrice,
+                        addGlasses: mgtkTicketcodeResult.addPriceGlasses
                     };
-                });
+                } else {
+                    const mvtkTicketcodeResult = await masterService.mvtkTicketcode({
+                        theaterCode: coaInfo.theaterCode,
+                        kbnDenshiken: offer.ticketInfo.mvtkKbnDenshiken,
+                        kbnMaeuriken: offer.ticketInfo.mvtkKbnMaeuriken,
+                        kbnKensyu: offer.ticketInfo.mvtkKbnKensyu,
+                        salesPrice: offer.ticketInfo.mvtkSalesPrice,
+                        appPrice: offer.ticketInfo.mvtkAppPrice,
+                        kbnEisyahousiki: offer.ticketInfo.kbnEisyahousiki,
+                        titleCode: coaInfo.titleCode,
+                        titleBranchNum: coaInfo.titleBranchNum,
+                        dateJouei: coaInfo.dateJouei
+                    });
+                    availableSalesTicket = {
+                        ...mvtkTicketcodeResult,
+                        // ムビチケチケットインターフェース属性が少なめなので補ってあげる
+                        stdPrice: 0,
+                        salePrice: mvtkTicketcodeResult.addPrice,
+                        addGlasses: mvtkTicketcodeResult.addPriceGlasses
+                    };
+                }
+            } catch (error) {
+                // COAサービスエラーの場合ハンドリング
+                if (error.name === 'COAServiceError') {
+                    // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
+                    // 500未満であればクライアントエラーとみなす
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (error.code < INTERNAL_SERVER_ERROR) {
+                        throw new factory.errors.NotFound(
+                            `offers.${offerIndex}`,
+                            `ticketCode ${offer.ticketInfo.ticketCode} not found. ${error.message}`
+                        );
+                    }
+                }
+
+                throw error;
             }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (availableTickets === undefined) {
-                availableTickets = await masterService.ticket({
-                    theaterCode: coaInfo.theaterCode
-                });
-            }
-            coaPointTicket = availableTickets.find((t) => t.ticketCode === offer.ticketInfo.ticketCode);
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore if: please write tests */
-            if (coaPointTicket === undefined) {
+            // COA券種が見つかっても、指定された券種コードと異なればエラー
+            if (offer.ticketInfo.ticketCode !== availableSalesTicket.ticketCode) {
                 throw new factory.errors.NotFound(
                     `offers.${offerIndex}`,
                     `ticketInfo of ticketCode ${offer.ticketInfo.ticketCode} is invalid.`);
             }
-        } catch (error) {
+        } else {
+            availableSalesTicket = availableSalesTickets.find((t) => t.ticketCode === offer.ticketInfo.ticketCode);
+
+            // 利用可能な券種が見つからなければエラー
             // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next: please write tests */
-            // COAサービスエラーの場合ハンドリング
-            if (error.name === 'COAServiceError') {
-                // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
-                // 500未満であればクライアントエラーとみなす
+            /* istanbul ignore if */
+            if (availableSalesTicket === undefined) {
+                throw new factory.errors.NotFound(`offers.${offerIndex}`, `ticketCode ${offer.ticketInfo.ticketCode} not found.`);
+            }
+
+            const ticketCode = availableSalesTicket.ticketCode;
+
+            // 制限単位がn人単位(例えば夫婦割り)の場合、同一券種の数を確認
+            // '001'の値は、区分マスター取得APIにて、"kubunCode": "011"を指定すると取得できる
+            if (availableSalesTicket.limitUnit === '001') {
+                const numberOfSameOffer = offers.filter((o) => o.ticketInfo.ticketCode === ticketCode).length;
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
-                if (error.code < INTERNAL_SERVER_ERROR) {
-                    throw new factory.errors.NotFound(
-                        `offers.${offerIndex}`,
-                        `ticketCode ${offer.ticketInfo.ticketCode} not found. ${error.message}`
+                if (numberOfSameOffer % availableSalesTicket.limitCount !== 0) {
+                    // 割引条件が満たされていません
+                    // 選択した券種の中に、割引券が含まれています。
+                    // 割引券の適用条件を再度ご確認ください。
+                    const invalidOfferIndexes = offers.reduce<number[]>(
+                        (a, b, index) => (b.ticketInfo.ticketCode === ticketCode) ? [...a, ...[index]] : a,
+                        []
                     );
+
+                    throw invalidOfferIndexes.map((index) => new factory.errors.Argument(`offers.${index}`, '割引条件が満たされていません。'));
                 }
             }
-
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next: please write tests */
-            throw error;
         }
 
-        availableSalesTicket = availableSalesTickets.find((t) => t.ticketCode === offer.ticketInfo.ticketCode);
-        // 利用可能な券種が見つからなければエラー
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (availableSalesTicket === undefined) {
-            throw new factory.errors.NotFound(`offers.${offerIndex}`, `ticketCode ${offer.ticketInfo.ticketCode} not found.`);
-        }
-    } else if (isMvtkOrMG) {
-        // ムビチケの場合、ムビチケ情報をCOA券種に変換
-        try {
-            const kbnMgtk = offer.ticketInfo.kbnMgtk;
-            if (typeof kbnMgtk === 'string' && kbnMgtk === 'MG') {
-                const mgtkTicketcodeResult = await masterService.mgtkTicketcode({
-                    theaterCode: coaInfo.theaterCode,
-                    mgtkTicketcode: offer.ticketInfo.mvtkKbnKensyu, // MG券種区分
-                    titleCode: coaInfo.titleCode,
-                    titleBranchNum: coaInfo.titleBranchNum,
-                    dateJouei: coaInfo.dateJouei
-                });
-                availableSalesTicket = {
-                    ...mgtkTicketcodeResult,
-                    // ムビチケチケットインターフェース属性が少なめなので補ってあげる
-                    stdPrice: 0,
-                    salePrice: mgtkTicketcodeResult.addPrice,
-                    addGlasses: mgtkTicketcodeResult.addPriceGlasses
-                };
-            } else {
-                const mvtkTicketcodeResult = await masterService.mvtkTicketcode({
-                    theaterCode: coaInfo.theaterCode,
-                    kbnDenshiken: offer.ticketInfo.mvtkKbnDenshiken,
-                    kbnMaeuriken: offer.ticketInfo.mvtkKbnMaeuriken,
-                    kbnKensyu: offer.ticketInfo.mvtkKbnKensyu,
-                    salesPrice: offer.ticketInfo.mvtkSalesPrice,
-                    appPrice: offer.ticketInfo.mvtkAppPrice,
-                    kbnEisyahousiki: offer.ticketInfo.kbnEisyahousiki,
-                    titleCode: coaInfo.titleCode,
-                    titleBranchNum: coaInfo.titleBranchNum,
-                    dateJouei: coaInfo.dateJouei
-                });
-                availableSalesTicket = {
-                    ...mvtkTicketcodeResult,
-                    // ムビチケチケットインターフェース属性が少なめなので補ってあげる
-                    stdPrice: 0,
-                    salePrice: mvtkTicketcodeResult.addPrice,
-                    addGlasses: mvtkTicketcodeResult.addPriceGlasses
-                };
-            }
-        } catch (error) {
-            // COAサービスエラーの場合ハンドリング
-            if (error.name === 'COAServiceError') {
-                // COAはクライアントエラーかサーバーエラーかに関わらずステータスコード200 or 500を返却する。
-                // 500未満であればクライアントエラーとみなす
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (error.code < INTERNAL_SERVER_ERROR) {
-                    throw new factory.errors.NotFound(
-                        `offers.${offerIndex}`,
-                        `ticketCode ${offer.ticketInfo.ticketCode} not found. ${error.message}`
-                    );
-                }
-            }
-
-            throw error;
-        }
-
-        // COA券種が見つかっても、指定された券種コードと異なればエラー
-        if (offer.ticketInfo.ticketCode !== availableSalesTicket.ticketCode) {
-            throw new factory.errors.NotFound(
-                `offers.${offerIndex}`,
-                `ticketInfo of ticketCode ${offer.ticketInfo.ticketCode} is invalid.`);
-        }
-    } else {
-        availableSalesTicket = availableSalesTickets.find((t) => t.ticketCode === offer.ticketInfo.ticketCode);
-
-        // 利用可能な券種が見つからなければエラー
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore if */
-        if (availableSalesTicket === undefined) {
-            throw new factory.errors.NotFound(`offers.${offerIndex}`, `ticketCode ${offer.ticketInfo.ticketCode} not found.`);
-        }
-
-        const ticketCode = availableSalesTicket.ticketCode;
-
-        // 制限単位がn人単位(例えば夫婦割り)の場合、同一券種の数を確認
-        // '001'の値は、区分マスター取得APIにて、"kubunCode": "011"を指定すると取得できる
-        if (availableSalesTicket.limitUnit === '001') {
-            const numberOfSameOffer = offers.filter((o) => o.ticketInfo.ticketCode === ticketCode).length;
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (numberOfSameOffer % availableSalesTicket.limitCount !== 0) {
-                // 割引条件が満たされていません
-                // 選択した券種の中に、割引券が含まれています。
-                // 割引券の適用条件を再度ご確認ください。
-                const invalidOfferIndexes = offers.reduce<number[]>(
-                    (a, b, index) => (b.ticketInfo.ticketCode === ticketCode) ? [...a, ...[index]] : a,
-                    []
-                );
-
-                throw invalidOfferIndexes.map((index) => new factory.errors.Argument(`offers.${index}`, '割引条件が満たされていません。'));
-            }
-        }
-    }
-
-    return {
-        availableSalesTicket,
-        coaPointTicket
+        return {
+            availableSalesTicket,
+            coaPointTicket
+        };
     };
 }
 
@@ -536,97 +527,101 @@ function availableSalesTicket2offerWithDetails(params: {
  * この処理次第で、どのような供給情報を受け入れられるかが決定するので、とても大事な処理です。
  * バグ、不足等あれば、随時更新することが望ましい。
  */
-export async function validateOffers(
+export function validateOffers(
     project: { id: string },
     isMember: boolean,
     screeningEvent: factory.event.screeningEvent.IEvent,
     offers: IAcceptedOfferWithoutDetail[]
-): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> {
-    const reserveService = new COA.service.Reserve(
-        {
-            endpoint: credentials.coa.endpoint,
-            auth: coaAuthClient
-        },
-        { timeout: COA_TIMEOUT }
-    );
+) {
+    return async (repos: {
+        offer: chevre.service.Offer;
+    }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[]> => {
+        const reserveService = new COA.service.Reserve(
+            {
+                endpoint: credentials.coa.endpoint,
+                auth: coaAuthClient
+            },
+            { timeout: COA_TIMEOUT }
+        );
 
-    // 詳細情報ありの供給情報リストを初期化
-    // 要求された各供給情報について、バリデーションをかけながら、このリストに追加していく
-    const offersWithDetails: factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[] = [];
+        // 詳細情報ありの供給情報リストを初期化
+        // 要求された各供給情報について、バリデーションをかけながら、このリストに追加していく
+        const offersWithDetails: factory.action.authorize.offer.seatReservation.IAcceptedOffer<WebAPIIdentifier.COA>[] = [];
 
-    // 供給情報が適切かどうか確認
-    const availableSalesTickets: COA.factory.reserve.ISalesTicketResult[] = [];
+        // 供給情報が適切かどうか確認
+        const availableSalesTickets: COA.factory.reserve.ISalesTicketResult[] = [];
 
-    // 必ず定義されている前提
-    const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
+        // 必ず定義されている前提
+        const coaInfo = <factory.event.screeningEvent.ICOAInfo>screeningEvent.coaInfo;
 
-    try {
-        // COA券種取得(非会員)
-        const salesTickets4nonMember = await reserveService.salesTicket({
-            theaterCode: coaInfo.theaterCode,
-            dateJouei: coaInfo.dateJouei,
-            titleCode: coaInfo.titleCode,
-            titleBranchNum: coaInfo.titleBranchNum,
-            timeBegin: coaInfo.timeBegin,
-            flgMember: COA.factory.reserve.FlgMember.NonMember
-        });
-        availableSalesTickets.push(...salesTickets4nonMember);
-
-        // COA券種取得(会員)
-        if (isMember) {
-            const salesTickets4member = await reserveService.salesTicket({
+        try {
+            // COA券種取得(非会員)
+            const salesTickets4nonMember = await reserveService.salesTicket({
                 theaterCode: coaInfo.theaterCode,
                 dateJouei: coaInfo.dateJouei,
                 titleCode: coaInfo.titleCode,
                 titleBranchNum: coaInfo.titleBranchNum,
                 timeBegin: coaInfo.timeBegin,
-                flgMember: COA.factory.reserve.FlgMember.Member
+                flgMember: COA.factory.reserve.FlgMember.NonMember
             });
-            availableSalesTickets.push(...salesTickets4member);
-        }
-    } catch (error) {
-        throw handleCOAReserveTemporarilyError(error);
-    }
+            availableSalesTickets.push(...salesTickets4nonMember);
 
-    // 利用可能でないチケットコードがオファーに含まれていれば引数エラー
-    // オファーごとに確認
-    await Promise.all(offers.map(async (offer, offerIndex) => {
-        const { availableSalesTicket, coaPointTicket } = await offer2availableSalesTicket({
-            project: project,
-            offers: offers,
-            offer: offer,
-            offerIndex: offerIndex,
-            availableSalesTickets: availableSalesTickets,
-            coaInfo: coaInfo
-        });
-
-        const offerWithDetails = availableSalesTicket2offerWithDetails({
-            project: { typeOf: screeningEvent.project.typeOf, id: screeningEvent.project.id },
-            availableSalesTicket,
-            coaPointTicket,
-            offer,
-            offerIndex
-        });
-
-        offersWithDetails.push({
-            ...offerWithDetails,
-            addOn: [],
-            additionalProperty: offer.additionalProperty,
-            id: <string>offerWithDetails.id,
-            itemOffered: offerWithDetails.itemOffered,
-            ...{
-                ticketedSeat: {
-                    typeOf: factory.chevre.placeType.Seat,
-                    // seatingType?: ISeatingType;
-                    seatNumber: offerWithDetails.seatNumber,
-                    seatRow: '',
-                    seatSection: offerWithDetails.seatSection
-                }
+            // COA券種取得(会員)
+            if (isMember) {
+                const salesTickets4member = await reserveService.salesTicket({
+                    theaterCode: coaInfo.theaterCode,
+                    dateJouei: coaInfo.dateJouei,
+                    titleCode: coaInfo.titleCode,
+                    titleBranchNum: coaInfo.titleBranchNum,
+                    timeBegin: coaInfo.timeBegin,
+                    flgMember: COA.factory.reserve.FlgMember.Member
+                });
+                availableSalesTickets.push(...salesTickets4member);
             }
-        });
-    }));
+        } catch (error) {
+            throw handleCOAReserveTemporarilyError(error);
+        }
 
-    return offersWithDetails;
+        // 利用可能でないチケットコードがオファーに含まれていれば引数エラー
+        // オファーごとに確認
+        await Promise.all(offers.map(async (offer, offerIndex) => {
+            const { availableSalesTicket, coaPointTicket } = await offer2availableSalesTicket({
+                project: project,
+                offers: offers,
+                offer: offer,
+                offerIndex: offerIndex,
+                availableSalesTickets: availableSalesTickets,
+                coaInfo: coaInfo
+            })(repos);
+
+            const offerWithDetails = availableSalesTicket2offerWithDetails({
+                project: { typeOf: screeningEvent.project.typeOf, id: screeningEvent.project.id },
+                availableSalesTicket,
+                coaPointTicket,
+                offer,
+                offerIndex
+            });
+
+            offersWithDetails.push({
+                ...offerWithDetails,
+                addOn: [],
+                additionalProperty: offer.additionalProperty,
+                id: <string>offerWithDetails.id,
+                itemOffered: offerWithDetails.itemOffered,
+                ...{
+                    ticketedSeat: {
+                        typeOf: factory.chevre.placeType.Seat,
+                        // seatingType?: ISeatingType;
+                        seatNumber: offerWithDetails.seatNumber,
+                        seatRow: '',
+                        seatSection: offerWithDetails.seatSection
+                    }
+                }
+            });
+        }));
+
+        return offersWithDetails;
+    };
 }
 
 /**
