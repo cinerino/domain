@@ -63,6 +63,12 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             project: { id: data.project.id }
         });
 
+        const serviceOutputService = new chevre.service.ServiceOutput({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const transactionNumberService = new chevre.service.TransactionNumber({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -101,6 +107,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             project: projectRepo,
             registerActionInProgress: new RegisterServiceInProgressRepo(settings.redisClient),
             seller: sellerService,
+            serviceOutput: serviceOutputService,
             transaction: new TransactionRepo(settings.connection),
             transactionNumber: transactionNumberService
         });

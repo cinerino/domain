@@ -35,6 +35,7 @@ export type IOrderOperation<T> = (repos: {
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
     seller: chevre.service.Seller;
+    serviceOutput: chevre.service.ServiceOutput;
     transaction: TransactionRepo;
     transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
@@ -57,6 +58,7 @@ export function orderProgramMembership(
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
+        serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
     }) => {
@@ -157,6 +159,7 @@ function processPlaceOrder(params: {
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
         seller: chevre.service.Seller;
+        serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
         ownershipInfo: chevre.service.OwnershipInfo;
@@ -224,6 +227,7 @@ function processPlaceOrder(params: {
     };
 }
 
+// tslint:disable-next-line:max-func-body-length
 function processAuthorizeProductOffer(params: {
     project: { id: string };
     orderNumber: string;
@@ -238,6 +242,7 @@ function processAuthorizeProductOffer(params: {
         product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
         ownershipInfo: chevre.service.OwnershipInfo;

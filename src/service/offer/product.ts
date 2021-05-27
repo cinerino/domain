@@ -37,6 +37,7 @@ export type IAuthorizeOperation<T> = (repos: {
     ownershipInfo: chevre.service.OwnershipInfo;
     product: chevre.service.Product;
     registerActionInProgress: RegisterServiceInProgressRepo;
+    serviceOutput: chevre.service.ServiceOutput;
     transaction: TransactionRepo;
     transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
@@ -141,6 +142,7 @@ export function authorize(params: {
         ownershipInfo: chevre.service.OwnershipInfo;
         product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
     }) => {
@@ -153,12 +155,6 @@ export function authorize(params: {
         if (transaction.agent.id !== params.agent.id) {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
-
-        const serviceOutputService = new chevre.service.ServiceOutput({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
 
         const searchProductsResult = await repos.product.search({
             limit: 1,
@@ -196,7 +192,7 @@ export function authorize(params: {
         })(repos);
 
         acceptedOffer = await createServiceOutputIdentifier({ acceptedOffer, product })({
-            serviceOutputService
+            serviceOutputService: repos.serviceOutput
         });
 
         let requestBody: factory.chevre.assetTransaction.registerService.IStartParamsWithoutDetail;

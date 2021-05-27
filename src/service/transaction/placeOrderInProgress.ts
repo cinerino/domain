@@ -27,14 +27,6 @@ import { IPassportValidator as IWaiterPassportValidator, validateWaiterPassport 
 
 import { MongoErrorCode } from '../../errorHandler';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 export const AWARD_ACCOUNTS_IDENTIFIER_NAME = 'awardAccounts';
 export const TOKEN_EXPIRES_IN = 604800;
 
@@ -190,11 +182,6 @@ export function confirm(params: IConfirmParams): IConfirmOperation<factory.trans
         const paymentServices = <chevre.factory.service.paymentService.IService[]>searchPaymentServicesResult.data;
 
         // 利用可能な口座区分を検索
-        // const categoryCodeService = new chevre.service.CategoryCode({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: transaction.project.id }
-        // });
         const searchAccountTypesResult = await repos.categoryCode.search({
             project: { id: { $eq: transaction.project.id } },
             inCodeSet: { identifier: { $eq: factory.chevre.categoryCode.CategorySetIdentifier.AccountType } }
@@ -608,6 +595,7 @@ export function publishAwardAccountNumberIfNotExist(params: {
     };
 }) {
     return async (repos: {
+        serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
     }): Promise<IAwardAccount[]> => {
         let transaction = await repos.transaction.findInProgressById({
@@ -626,13 +614,7 @@ export function publishAwardAccountNumberIfNotExist(params: {
         }
 
         // 指定された口座種別数だけ、注文番号を発行
-        const serviceOutputService = new chevre.service.ServiceOutput({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: transaction.project.id }
-        });
-
-        const publishIdentifierResult = await serviceOutputService.publishIdentifier(params.object.awardAccounts.map(() => {
+        const publishIdentifierResult = await repos.serviceOutput.publishIdentifier(params.object.awardAccounts.map(() => {
             return { project: { id: transaction.project.id } };
         }));
 
