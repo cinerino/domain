@@ -7,21 +7,11 @@ import * as jwt from 'jsonwebtoken';
 import { factory } from '../factory';
 import { MongoRepository as ActionRepo } from '../repo/action';
 
-import { credentials } from '../credentials';
-
 import * as chevre from '../chevre';
 
 export type IToken = string;
 export type IData = any;
 export type ICode = string;
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 /**
  * コードを発行する
@@ -40,6 +30,7 @@ export function publish(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        authorization: chevre.service.Authorization;
     }): Promise<factory.authorization.IAuthorization[]> => {
         const actionAttributes: factory.action.authorize.IAttributes<any, any> = {
             project: params.project,
@@ -61,7 +52,7 @@ export function publish(params: {
                     validFrom: params.validFrom,
                     expiresInSeconds: Number(params.expiresInSeconds)
                 };
-            }));
+            }))(repos);
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -86,40 +77,38 @@ export function publish(params: {
     };
 }
 
-async function publishByChevre(params: {
+function publishByChevre(params: {
     project: factory.project.IProject;
     data: IData;
     validFrom: Date;
     expiresInSeconds: number;
-}[]): Promise<factory.authorization.IAuthorization[]> {
-    const saveParams = params.map((p) => {
-        // const code = uuid.v4();
+}[]) {
+    return async (repos: {
+        authorization: chevre.service.Authorization;
+    }): Promise<factory.authorization.IAuthorization[]> => {
+        const saveParams = params.map((p) => {
+            // const code = uuid.v4();
 
-        return {
-            project: p.project,
-            code: 'xxxxx', // 実際はchevre側で発行されるので適当な値でよし
-            object: p.data,
-            validFrom: p.validFrom,
-            expiresInSeconds: p.expiresInSeconds
-        };
-    });
+            return {
+                project: p.project,
+                code: 'xxxxx', // 実際はchevre側で発行されるので適当な値でよし
+                object: p.data,
+                validFrom: p.validFrom,
+                expiresInSeconds: p.expiresInSeconds
+            };
+        });
 
-    const authorizationService = new chevre.service.Authorization({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient,
-        project: { id: params[0]?.project.id }
-    });
-
-    return authorizationService.create(saveParams.map((authorization) => {
-        return {
-            code: authorization.code,
-            object: authorization.object,
-            project: { id: authorization.project.id, typeOf: authorization.project.typeOf },
-            typeOf: 'Authorization',
-            validFrom: authorization.validFrom,
-            expiresInSeconds: Number(authorization.expiresInSeconds)
-        };
-    }));
+        return repos.authorization.create(saveParams.map((authorization) => {
+            return {
+                code: authorization.code,
+                object: authorization.object,
+                project: { id: authorization.project.id, typeOf: authorization.project.typeOf },
+                typeOf: 'Authorization',
+                validFrom: authorization.validFrom,
+                expiresInSeconds: Number(authorization.expiresInSeconds)
+            };
+        }));
+    };
 }
 
 /**
@@ -132,16 +121,12 @@ export function getToken(params: {
     issuer: string;
     expiresIn: number;
 }) {
-    return async (): Promise<IToken> => {
+    return async (repos: {
+        authorization: chevre.service.Authorization;
+    }): Promise<IToken> => {
         const now = new Date();
 
-        const authorizationService = new chevre.service.Authorization({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-
-        const searchResult = await authorizationService.search({
+        const searchResult = await repos.authorization.search({
             limit: 1,
             project: { id: { $eq: params.project.id } },
             code: { $in: [params.code] },
