@@ -72,11 +72,6 @@ export function authorize(params: {
 
         try {
             // 販売者情報取得
-            // const sellerService = new chevre.service.Seller({
-            //     endpoint: credentials.chevre.endpoint,
-            //     auth: chevreAuthClient,
-            //     project: { id: transaction.project.id }
-            // });
             const seller = await repos.seller.findById({ id: String(transaction.seller.id) });
 
             // 外部決済連携はしないので、販売者の対応決済方法かどうかのみ確認する

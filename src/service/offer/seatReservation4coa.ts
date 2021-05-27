@@ -72,12 +72,6 @@ export function create(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        // イベントを取得
-        // const eventService = new chevre.service.Event({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
         const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
@@ -262,12 +256,6 @@ export function changeOffers(params: {
         validate4changeOffer({ action, object: params.object });
         const authorizeAction = action;
 
-        // イベントを取得
-        // const eventService = new chevre.service.Event({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
         const screeningEvent = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });

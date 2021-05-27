@@ -94,12 +94,6 @@ export function create(params: {
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 
-        // const eventService = new chevre.service.Event({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
-
         event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
             id: params.object.event.id
         });
@@ -297,12 +291,6 @@ export function selectSeats(
         event: chevre.service.Event;
     }) => {
         const acceptedOffersWithoutDetail: IAcceptedOfferWithoutDetail4chevre[] = [];
-
-        // const eventService = new chevre.service.Event({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: performance.project.id }
-        // });
 
         // チケットオファー検索
         const ticketOffers = await repos.event.searchTicketOffers({ id: performance.id });

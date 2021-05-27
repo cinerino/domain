@@ -102,12 +102,6 @@ export function searchEventTicketOffers(params: {
     }) => {
         const now = moment();
 
-        // const eventService = new chevre.service.Event({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
-
         debug('searching screeninf event offers...', params);
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
 

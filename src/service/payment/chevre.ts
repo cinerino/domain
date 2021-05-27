@@ -32,6 +32,10 @@ export type IAuthorizeOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
+export type IPayOperation<T> = (repos: {
+    action: ActionRepo;
+}) => Promise<T>;
+
 export function authorize(params: {
     project: { id: string };
     agent: { id: string };
@@ -113,10 +117,10 @@ export function authorize(params: {
     };
 }
 
-export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
+export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>): IPayOperation<factory.action.interact.confirm.pay.IAction> {
     return async (repos: {
         action: ActionRepo;
-    }): Promise<factory.action.interact.confirm.pay.IAction> => {
+    }) => {
         const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
