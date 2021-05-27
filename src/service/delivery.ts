@@ -32,12 +32,23 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
     state: ''
 });
 
+export type ISendOperation<T> = (repos: {
+    action: ActionRepo;
+    order: OrderRepo;
+    ownershipInfo: chevre.service.OwnershipInfo;
+    registerActionInProgress: RegisterServiceInProgressRepo;
+    task: TaskRepo;
+    transaction: TransactionRepo;
+}) => Promise<T>;
+
 export type IOwnershipInfo = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGood>;
 
 /**
  * 注文を配送する
  */
-export function sendOrder(params: factory.action.transfer.send.order.IAttributes) {
+export function sendOrder(
+    params: factory.action.transfer.send.order.IAttributes
+): ISendOperation<factory.action.transfer.send.order.IResult> {
     return async (repos: {
         action: ActionRepo;
         order: OrderRepo;

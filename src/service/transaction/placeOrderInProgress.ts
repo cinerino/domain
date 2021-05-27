@@ -48,6 +48,16 @@ export type IStartOperation<T> = (repos: {
     transaction: TransactionRepo;
 }) => Promise<T>;
 
+export type IConfirmOperation<T> = (repos: {
+    action: ActionRepo;
+    categoryCode: chevre.service.CategoryCode;
+    product: chevre.service.Product;
+    seller: chevre.service.Seller;
+    transaction: TransactionRepo;
+    orderNumber: OrderNumberRepo;
+    confirmationNumber: ConfirmationNumberRepo;
+}) => Promise<T>;
+
 export type IPassportValidator = IWaiterPassportValidator;
 export type IStartParams = factory.transaction.placeOrder.IStartParamsWithoutDetail & {
     passportValidator?: IPassportValidator;
@@ -141,7 +151,7 @@ export type IConfirmParams = factory.transaction.placeOrder.IConfirmParams & {
 /**
  * 注文取引を確定する
  */
-export function confirm(params: IConfirmParams) {
+export function confirm(params: IConfirmParams): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;

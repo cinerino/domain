@@ -1,4 +1,4 @@
 /**
  * factory
  */
-export { factory } from '@chevre/api-nodejs-client';
+export { factory } from '@chevre/domain';
