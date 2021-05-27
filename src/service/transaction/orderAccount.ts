@@ -101,11 +101,6 @@ export function orderAccount(params: {
             throw new factory.errors.NotFound('seller of product offer');
         }
 
-        // const sellerService = new chevre.service.Seller({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
         const seller = await repos.seller.findById({ id: productOfferSellerId });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder> | undefined;

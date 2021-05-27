@@ -56,11 +56,6 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
     }) => {
-        // const sellerService = new chevre.service.Seller({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
         const seller = await repos.seller.findById({ id: params.seller.id });
 
         const passport = await validateWaiterPassport(params);

@@ -59,11 +59,6 @@ export function start(
 
         const project = await repos.project.findById({ id: params.project.id });
 
-        // const sellerService = new chevre.service.Seller({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: project.id }
-        // });
         const seller = await repos.seller.findById({ id: params.seller.id });
 
         if (!Array.isArray(params.object.order)) {

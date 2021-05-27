@@ -75,11 +75,6 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        // const sellerService = new chevre.service.Seller({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: project.id }
-        // });
         const seller = await repos.seller.findById({ id: params.seller.id });
 
         const passport = await validateWaiterPassport(params);
@@ -180,11 +175,6 @@ export function confirm(params: IConfirmParams): IConfirmOperation<factory.trans
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        // const sellerService = new chevre.service.Seller({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: transaction.project.id }
-        // });
         const seller = await repos.seller.findById({ id: String(transaction.seller.id) });
 
         // プロジェクトの対応決済サービスを確認するためにChevreプロジェクトを検索
