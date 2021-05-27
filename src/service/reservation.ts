@@ -33,8 +33,9 @@ type IReservation = factory.chevre.reservation.IReservation<factory.chevre.reser
 
 type IOwnershipInfoWithDetail = factory.ownershipInfo.IOwnershipInfo<factory.ownershipInfo.IGoodWithDetail>;
 
-export type ISearchEventReservationsOperation<T> = (repos: {
+export type ISearchReservationsOperation<T> = (repos: {
     ownershipInfo: chevre.service.OwnershipInfo;
+    reservation: chevre.service.Reservation;
 }) => Promise<T>;
 
 /**
@@ -229,9 +230,10 @@ export function searchScreeningEventReservations(
     params: factory.ownershipInfo.ISearchConditions & {
         project: factory.project.IProject;
     }
-): ISearchEventReservationsOperation<IOwnershipInfoWithDetail[]> {
+): ISearchReservationsOperation<IOwnershipInfoWithDetail[]> {
     return async (repos: {
         ownershipInfo: chevre.service.OwnershipInfo;
+        reservation: chevre.service.Reservation;
     }) => {
         let ownershipInfosWithDetail: IOwnershipInfoWithDetail[] = [];
         try {
@@ -253,13 +255,7 @@ export function searchScreeningEventReservations(
 
             let chevreReservations: IReservation[] = [];
             if (reservationIds.length > 0) {
-                const reservationService = new chevre.service.Reservation({
-                    endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient,
-                    project: { id: params.project.id }
-                });
-
-                const searchReservationsResult = await reservationService.search<factory.chevre.reservationType.EventReservation>({
+                const searchReservationsResult = await repos.reservation.search<factory.chevre.reservationType.EventReservation>({
                     project: { ids: [params.project.id] },
                     typeOf: factory.chevre.reservationType.EventReservation,
                     ids: reservationIds
