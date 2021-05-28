@@ -19,13 +19,10 @@ export function call(data: factory.task.IData<factory.taskName.VoidPayTransactio
         const actionRepo = new ActionRepo(settings.connection);
         const transactionRepo = new TransactionRepo(settings.connection);
 
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
+        const chevreAuthClient = settings.chevreAuthClient;
+        if (chevreAuthClient === undefined) {
+            throw new Error('settings.chevreAuthClient undefined');
+        }
 
         const assetTransactionService = new chevre.service.AssetTransaction({
             endpoint: credentials.chevre.endpoint,

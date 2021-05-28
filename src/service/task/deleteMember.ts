@@ -29,13 +29,10 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
 
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
+        const chevreAuthClient = settings.chevreAuthClient;
+        if (chevreAuthClient === undefined) {
+            throw new Error('settings.chevreAuthClient undefined');
+        }
 
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,

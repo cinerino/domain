@@ -8,10 +8,15 @@ import * as createDebug from 'debug';
 import { factory } from '../factory';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
+import * as chevre from '../chevre';
+
 const debug = createDebug('cinerino-domain:service');
 
-export type IConnectionSettings = service.task.IConnectionSettings;
-export type IOperation<T> = service.task.IOperation<T>;
+export type IConnectionSettings = service.task.IConnectionSettings & {
+    chevreAuthClient?: chevre.auth.ClientCredentials;
+};
+export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
+// export type IOperation<T> = service.task.IOperation<T>;
 
 /**
  * タスク名でタスクをひとつ実行する

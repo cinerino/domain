@@ -3,7 +3,6 @@
  */
 import * as moment from 'moment';
 
-// import { credentials } from '../../credentials';
 import { settings } from '../../settings';
 
 import * as chevre from '../../chevre';
@@ -18,14 +17,6 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import { createPotentialActions } from './returnOrder/potentialActions';
 
 import { MongoErrorCode } from '../../errorHandler';
-
-// const chevreAuthClient = new chevre.auth.ClientCredentials({
-//     domain: credentials.chevre.authorizeServerDomain,
-//     clientId: credentials.chevre.clientId,
-//     clientSecret: credentials.chevre.clientSecret,
-//     scopes: [],
-//     state: ''
-// });
 
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;

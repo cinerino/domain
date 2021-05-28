@@ -22,13 +22,10 @@ export function call(data: factory.task.IData<factory.taskName.ReturnOrder>): IO
         const transactionRepo = new TransactionRepo(settings.connection);
         const taskRepo = new TaskRepo(settings.connection);
 
-        const chevreAuthClient = new chevre.auth.ClientCredentials({
-            domain: credentials.chevre.authorizeServerDomain,
-            clientId: credentials.chevre.clientId,
-            clientSecret: credentials.chevre.clientSecret,
-            scopes: [],
-            state: ''
-        });
+        const chevreAuthClient = settings.chevreAuthClient;
+        if (chevreAuthClient === undefined) {
+            throw new Error('settings.chevreAuthClient undefined');
+        }
 
         const ownershipInfoService = new chevre.service.OwnershipInfo({
             endpoint: credentials.chevre.endpoint,

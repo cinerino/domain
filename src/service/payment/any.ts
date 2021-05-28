@@ -10,14 +10,6 @@ import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-// const chevreAuthClient = new chevre.auth.ClientCredentials({
-//     domain: credentials.chevre.authorizeServerDomain,
-//     clientId: credentials.chevre.clientId,
-//     clientSecret: credentials.chevre.clientSecret,
-//     scopes: [],
-//     state: ''
-// });
-
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     seller: chevre.service.Seller;
