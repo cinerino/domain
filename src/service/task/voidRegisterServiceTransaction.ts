@@ -8,6 +8,10 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as ProductOfferService from '../offer/product';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
+
 /**
  * タスク実行関数
  */
@@ -21,8 +25,23 @@ export function call(data: factory.task.IData<factory.taskName.VoidRegisterServi
         const registerActionInProgress = new RegisterServiceInProgressRepo(settings.redisClient);
         const transactionRepo = new TransactionRepo(settings.connection);
 
+        const chevreAuthClient = new chevre.auth.ClientCredentials({
+            domain: credentials.chevre.authorizeServerDomain,
+            clientId: credentials.chevre.clientId,
+            clientSecret: credentials.chevre.clientSecret,
+            scopes: [],
+            state: ''
+        });
+
+        const assetTransactionService = new chevre.service.AssetTransaction({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await ProductOfferService.voidTransaction(data)({
             action: actionRepo,
+            assetTransaction: assetTransactionService,
             registerActionInProgress: registerActionInProgress,
             transaction: transactionRepo
         });

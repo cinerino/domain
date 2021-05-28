@@ -25,6 +25,7 @@ import { factory } from '../../factory';
 
 export type IOrderOperation<T> = (repos: {
     action: ActionRepo;
+    assetTransaction: chevre.service.AssetTransaction;
     categoryCode: chevre.service.CategoryCode;
     confirmationNumber: ConfirmationNumberRepo;
     creditCard: CreditCardRepo;
@@ -48,6 +49,7 @@ export function orderProgramMembership(
 ): IOrderOperation<void> {
     return async (repos: {
         action: ActionRepo;
+        assetTransaction: chevre.service.AssetTransaction;
         categoryCode: chevre.service.CategoryCode;
         confirmationNumber: ConfirmationNumberRepo;
         creditCard: CreditCardRepo;

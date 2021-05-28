@@ -52,6 +52,7 @@ export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>) {
 export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayTransaction>) {
     return async (repos: {
         action: ActionRepo;
+        assetTransaction: chevreapi.service.AssetTransaction;
         transaction: TransactionRepo;
     }) => {
         // 決済承認アクションを検索

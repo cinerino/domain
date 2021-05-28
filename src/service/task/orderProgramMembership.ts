@@ -39,6 +39,12 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             state: ''
         });
 
+        const assetTransactionService = new chevre.service.AssetTransaction({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const categoryCodeService = new chevre.service.CategoryCode({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -97,6 +103,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
 
         await orderProgramMembership(data)({
             action: new ActionRepo(settings.connection),
+            assetTransaction: assetTransactionService,
             categoryCode: categoryCodeService,
             confirmationNumber: new ConfirmationNumberRepo(settings.redisClient),
             creditCard: creditCardRepo,

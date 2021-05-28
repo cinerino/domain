@@ -34,6 +34,7 @@ export type IAuthorizeSeatReservationResponse<T extends WebAPIIdentifier> =
 export function voidTransaction(params: factory.task.IData<factory.taskName.VoidReserveTransaction>) {
     return async (repos: {
         action: ActionRepo;
+        assetTransaction: chevre.service.AssetTransaction;
     }) => {
         // 座席仮予約アクション検索
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
@@ -70,7 +71,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
                     await processVoidTransaction4chevre({
                         action: <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.Chevre>>action,
                         project: params.project
-                    });
+                    })(repos);
             }
         }));
     };
@@ -130,34 +131,32 @@ async function processVoidTransaction4coa(params: {
     }
 }
 
-async function processVoidTransaction4chevre(params: {
+function processVoidTransaction4chevre(params: {
     action: factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier.Chevre>;
     project: { id: string };
 }) {
-    const transactionNumber = params.action.object.pendingTransaction?.transactionNumber;
-    if (typeof transactionNumber === 'string') {
-        // 取引が存在すれば中止
-        const transactionService = new chevre.service.AssetTransaction({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-
-        const { data } = await transactionService.search({
-            limit: 1,
-            project: { ids: [params.project.id] },
-            typeOf: chevre.factory.assetTransactionType.Reserve,
-            transactionNumber: { $eq: transactionNumber }
-        });
-        if (data.length > 0) {
-            // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
-            const reserveService = new chevre.service.assetTransaction.Reserve({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
+    return async (repos: {
+        assetTransaction: chevre.service.AssetTransaction;
+    }) => {
+        const transactionNumber = params.action.object.pendingTransaction?.transactionNumber;
+        if (typeof transactionNumber === 'string') {
+            // 取引が存在すれば中止
+            const { data } = await repos.assetTransaction.search({
+                limit: 1,
+                project: { ids: [params.project.id] },
+                typeOf: chevre.factory.assetTransactionType.Reserve,
+                transactionNumber: { $eq: transactionNumber }
             });
+            if (data.length > 0) {
+                // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
+                const reserveService = new chevre.service.assetTransaction.Reserve({
+                    endpoint: credentials.chevre.endpoint,
+                    auth: chevreAuthClient,
+                    project: { id: params.project.id }
+                });
 
-            await reserveService.cancel({ transactionNumber: transactionNumber });
+                await reserveService.cancel({ transactionNumber: transactionNumber });
+            }
         }
-    }
+    };
 }

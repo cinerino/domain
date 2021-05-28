@@ -162,6 +162,7 @@ export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>): IP
 export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayTransaction>) {
     return async (repos: {
         action: ActionRepo;
+        assetTransaction: chevre.service.AssetTransaction;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findById({
@@ -196,11 +197,6 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
             );
         }
 
-        const transactionService = new chevre.service.AssetTransaction({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
         const payService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -218,7 +214,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
                 // 取引が存在すれば中止
                 const transactionNumber = action.object.paymentMethodId;
                 if (typeof transactionNumber === 'string' && transactionNumber.length > 0) {
-                    const { data } = await transactionService.search({
+                    const { data } = await repos.assetTransaction.search({
                         limit: 1,
                         project: { ids: [action.project.id] },
                         typeOf: chevre.factory.assetTransactionType.Pay,
