@@ -24,6 +24,8 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 import { createOwnershipInfosFromOrder } from './delivery/factory';
 import { processUnlock } from './offer/product';
 
+import { handleChevreError } from '../errorHandler';
+
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -268,17 +270,25 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 project: { id: params.project.id }
             });
 
-            // Chevreで入金
-            const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
+            // Chevre口座取引で実装
+            const depositService = new chevre.service.accountTransaction.Deposit({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient,
                 project: { id: params.project.id }
             });
-
             const startParams = createGivePointAwardStartParams(params, transactionNumber);
-            await moneyTransferService.start(startParams);
+            await depositService.start(startParams);
+            await depositService.confirm({ transactionNumber });
 
-            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
+            // Chevreで入金
+            // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
+            // const startParams = createGivePointAwardStartParams2(params, transactionNumber);
+            // await moneyTransferService.start(startParams);
+            // await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -288,7 +298,7 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
                 // 失敗したら仕方ない
             }
 
-            throw error;
+            throw handleChevreError(error);
         }
 
         // アクション完了
@@ -300,14 +310,14 @@ export function givePointAward(params: factory.task.IData<factory.taskName.GiveP
 function createGivePointAwardStartParams(
     params: factory.task.IData<factory.taskName.GivePointAward>,
     transactionNumber: string
-): factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail {
-    const agent = {
-        typeOf: params.agent.typeOf,
-        id: params.agent.id,
+): factory.account.transaction.deposit.IStartParamsWithoutDetail {
+    const agent: factory.account.transaction.deposit.IAgent = {
+        typeOf: <any>params.agent.typeOf,
+        id: String(params.agent.id),
         name: (typeof params.agent.name === 'string')
             ? params.agent.name
             : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
-        url: params.agent.url
+        ...(typeof params.agent.url === 'string') ? { url: params.agent.url } : undefined
     };
 
     const recipient: factory.chevre.assetTransaction.moneyTransfer.IRecipient
@@ -334,33 +344,89 @@ function createGivePointAwardStartParams(
         identifier: identifier,
         transactionNumber: transactionNumber,
         project: { typeOf: params.project.typeOf, id: params.project.id },
-        typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+        typeOf: chevre.factory.account.transactionType.Deposit,
         agent: agent,
         expires: moment()
             .add(1, 'minutes')
             .toDate(),
         recipient: recipient,
         object: {
-            amount: {
-                typeOf: 'MonetaryAmount',
-                currency: params.object.toLocation.accountType,
-                value: params.object.amount
-            },
+            amount: params.object.amount,
             description: (typeof params.object.description === 'string')
                 ? params.object.description
                 : params.purpose.typeOf,
             fromLocation: agent,
             toLocation: {
-                typeOf: params.object.toLocation.typeOf,
-                identifier: params.object.toLocation.accountNumber
-            },
-            pendingTransaction: {
-                typeOf: factory.account.transactionType.Deposit,
-                id: '' // 空でok
+                accountNumber: params.object.toLocation.accountNumber
             }
         }
     };
 }
+
+// function createGivePointAwardStartParams2(
+//     params: factory.task.IData<factory.taskName.GivePointAward>,
+//     transactionNumber: string
+// ): factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail {
+//     const agent = {
+//         typeOf: params.agent.typeOf,
+//         id: params.agent.id,
+//         name: (typeof params.agent.name === 'string')
+//             ? params.agent.name
+//             : (typeof params.agent.name?.ja === 'string') ? params.agent.name?.ja : '',
+//         url: params.agent.url
+//     };
+
+//     const recipient: factory.chevre.assetTransaction.moneyTransfer.IRecipient
+//         // tslint:disable-next-line:no-object-literal-type-assertion
+//         = <factory.person.IPerson | factory.creativeWork.softwareApplication.webApplication.ICreativeWork>
+//         {
+//             typeOf: params.recipient.typeOf,
+//             id: params.recipient.id,
+//             name: (typeof params.recipient.name === 'string')
+//                 ? params.recipient.name
+//                 : (typeof (<factory.person.IPerson>params.recipient).givenName === 'string')
+//                     ? `${(<factory.person.IPerson>params.recipient).givenName} ${(<factory.person.IPerson>params.recipient).familyName}`
+//                     : ''
+//         };
+
+//     const identifier = createPointAwardIdentifier({
+//         project: params.project,
+//         purpose: params.purpose,
+//         toLocation: { accountNumber: params.object.toLocation.accountNumber }
+//     });
+
+//     return {
+//         // ユニークネスを保証するために識別子を指定する
+//         identifier: identifier,
+//         transactionNumber: transactionNumber,
+//         project: { typeOf: params.project.typeOf, id: params.project.id },
+//         typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+//         agent: agent,
+//         expires: moment()
+//             .add(1, 'minutes')
+//             .toDate(),
+//         recipient: recipient,
+//         object: {
+//             amount: {
+//                 typeOf: 'MonetaryAmount',
+//                 currency: params.object.toLocation.accountType,
+//                 value: params.object.amount
+//             },
+//             description: (typeof params.object.description === 'string')
+//                 ? params.object.description
+//                 : params.purpose.typeOf,
+//             fromLocation: agent,
+//             toLocation: {
+//                 typeOf: params.object.toLocation.typeOf,
+//                 identifier: params.object.toLocation.accountNumber
+//             },
+//             pendingTransaction: {
+//                 typeOf: factory.account.transactionType.Deposit,
+//                 id: '' // 空でok
+//             }
+//         }
+//     };
+// }
 
 export function createPointAwardIdentifier(params: {
     project: { id: string };
@@ -380,6 +446,7 @@ export function createPointAwardIdentifier(params: {
  * インセンティブ返却実行
  */
 export function returnPointAward(params: factory.task.IData<factory.taskName.ReturnPointAward>) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: ActionRepo;
         transactionNumber: chevre.service.TransactionNumber;
@@ -389,7 +456,8 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
         const order = givePointAwardAction.purpose;
         const givePointAwardActionObject = givePointAwardAction.object;
 
-        let moneyTransferTransaction: chevre.factory.assetTransaction.moneyTransfer.ITransaction;
+        let withdrawTransaction: chevre.factory.account.transaction.withdraw.ITransaction;
+        // let moneyTransferTransaction: chevre.factory.assetTransaction.moneyTransfer.ITransaction;
         const action = await repos.action.start(params);
 
         try {
@@ -398,12 +466,11 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
             });
 
             // Chevreで入金した分を出金
-            const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
+            const withdrawService = new chevre.service.accountTransaction.Withdraw({
                 endpoint: credentials.chevre.endpoint,
                 auth: chevreAuthClient,
                 project: { id: params.project.id }
             });
-
             const recipient = {
                 project: params.project,
                 typeOf: params.recipient.typeOf,
@@ -411,14 +478,13 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 name: order.seller.name,
                 url: params.recipient.url
             };
-
-            moneyTransferTransaction = await moneyTransferService.start({
+            withdrawTransaction = await withdrawService.start({
                 transactionNumber: transactionNumber,
                 project: { typeOf: order.project.typeOf, id: order.project.id },
-                typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+                typeOf: chevre.factory.account.transactionType.Withdraw,
                 agent: {
-                    typeOf: params.agent.typeOf,
-                    id: params.agent.id,
+                    typeOf: <any>params.agent.typeOf,
+                    id: String(params.agent.id),
                     name: String(order.customer.name),
                     url: params.agent.url
                 },
@@ -427,25 +493,64 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     .toDate(),
                 recipient: <factory.seller.ISeller>recipient,
                 object: {
-                    amount: {
-                        typeOf: 'MonetaryAmount',
-                        currency: givePointAwardActionObject.toLocation.accountType,
-                        value: givePointAwardActionObject.amount
-                    },
+                    amount: givePointAwardActionObject.amount,
                     fromLocation: {
-                        typeOf: givePointAwardActionObject.toLocation.typeOf,
-                        identifier: givePointAwardActionObject.toLocation.accountNumber
+                        accountNumber: givePointAwardActionObject.toLocation.accountNumber
                     },
                     toLocation: recipient,
-                    description: `[Return Award]${givePointAwardActionObject.description}`,
-                    pendingTransaction: {
-                        typeOf: factory.account.transactionType.Withdraw,
-                        id: '' // 空でok
-                    }
+                    description: `[Return Award]${givePointAwardActionObject.description}`
                 }
             });
+            await withdrawService.confirm({ transactionNumber });
 
-            await moneyTransferService.confirm({ transactionNumber: transactionNumber });
+            // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
+
+            // const recipient = {
+            //     project: params.project,
+            //     typeOf: params.recipient.typeOf,
+            //     id: params.recipient.id,
+            //     name: order.seller.name,
+            //     url: params.recipient.url
+            // };
+
+            // moneyTransferTransaction = await moneyTransferService.start({
+            //     transactionNumber: transactionNumber,
+            //     project: { typeOf: order.project.typeOf, id: order.project.id },
+            //     typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+            //     agent: {
+            //         typeOf: params.agent.typeOf,
+            //         id: params.agent.id,
+            //         name: String(order.customer.name),
+            //         url: params.agent.url
+            //     },
+            //     expires: moment()
+            //         .add(1, 'minutes')
+            //         .toDate(),
+            //     recipient: <factory.seller.ISeller>recipient,
+            //     object: {
+            //         amount: {
+            //             typeOf: 'MonetaryAmount',
+            //             currency: givePointAwardActionObject.toLocation.accountType,
+            //             value: givePointAwardActionObject.amount
+            //         },
+            //         fromLocation: {
+            //             typeOf: givePointAwardActionObject.toLocation.typeOf,
+            //             identifier: givePointAwardActionObject.toLocation.accountNumber
+            //         },
+            //         toLocation: recipient,
+            //         description: `[Return Award]${givePointAwardActionObject.description}`,
+            //         pendingTransaction: {
+            //             typeOf: factory.account.transactionType.Withdraw,
+            //             id: '' // 空でok
+            //         }
+            //     }
+            // });
+
+            // await moneyTransferService.confirm({ transactionNumber: transactionNumber });
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -455,12 +560,13 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                 // 失敗したら仕方ない
             }
 
-            throw error;
+            throw handleChevreError(error);
         }
 
         // アクション完了
         const actionResult: factory.action.transfer.returnAction.pointAward.IResult = {
-            pointTransaction: moneyTransferTransaction
+            pointTransaction: withdrawTransaction
+            // pointTransaction: moneyTransferTransaction
         };
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: actionResult });
     };

@@ -34,11 +34,11 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Deposit.prototype)
             .expects('start')
             .once()
             .resolves({ id: 'id' });
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Deposit.prototype)
             .expects('confirm')
             .once()
             .resolves();
@@ -77,7 +77,7 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Deposit.prototype)
             .expects('start')
             .once()
             .rejects(chevreError);
@@ -124,11 +124,11 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
             .expects('confirm')
             .once()
             .resolves();
@@ -174,11 +174,11 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
             .expects('start')
             .once()
             .rejects(chevreError);
-        sandbox.mock(domain.chevre.service.assetTransaction.MoneyTransfer.prototype)
+        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
             .expects('confirm')
             .never();
         sandbox.mock(actionRepo)
