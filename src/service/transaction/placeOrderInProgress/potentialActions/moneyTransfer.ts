@@ -17,7 +17,7 @@ export async function createMoneyTransferActions(params: {
     const paymentMethod = params.order.paymentMethods[0];
     authorizeMoneyTransferActions.forEach((a) => {
         const actionResult = a.result;
-        const pendingTransaction = a.object.pendingTransaction;
+        const pendingTransaction = <factory.account.transaction.deposit.ITransaction>a.object.pendingTransaction;
 
         if (actionResult !== undefined && pendingTransaction !== undefined) {
             moneyTransferActions.push({
@@ -28,7 +28,11 @@ export async function createMoneyTransferActions(params: {
                 },
                 agent: params.transaction.agent,
                 recipient: a.recipient,
-                amount: pendingTransaction.object.amount,
+                amount: {
+                    typeOf: a.object.itemOffered.typeOf,
+                    currency: a.object.itemOffered.currency,
+                    value: pendingTransaction.object.amount
+                },
                 fromLocation: (paymentMethod !== undefined)
                     ? {
                         accountId: paymentMethod.accountId,
@@ -42,7 +46,10 @@ export async function createMoneyTransferActions(params: {
                         id: params.transaction.agent.id,
                         name: <string>params.transaction.agent.name
                     },
-                toLocation: pendingTransaction.object.toLocation,
+                toLocation: {
+                    typeOf: pendingTransaction.object.toLocation.typeOf,
+                    identifier: pendingTransaction.object.toLocation.accountNumber
+                },
                 purpose: {
                     project: params.order.project,
                     typeOf: params.order.typeOf,

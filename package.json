@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@chevre/api-nodejs-client": "3.81.0",
-    "@chevre/domain": "15.47.0-alpha.45",
+    "@chevre/domain": "15.47.0-alpha.46",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.1.0",
     "@sendgrid/mail": "6.4.0",

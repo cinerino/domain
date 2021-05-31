@@ -307,7 +307,8 @@ function processAuthorizePaymentCard(params: {
             await repos.action.actionModel.findByIdAndUpdate(
                 action.id,
                 {
-                    'object.itemOffered.currency': responseBody.object.amount.currency,
+                    // 'object.itemOffered.currency': responseBody.object.amount.currency,
+                    'object.itemOffered.currency': params.object.itemOffered.currency,
                     'object.pendingTransaction': {
                         typeOf: responseBody.typeOf,
                         id: responseBody.id
@@ -379,38 +380,35 @@ async function processMoneyTransferTransaction(params: {
         .add(1, 'month')
         .toDate();
 
-    const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient,
-        project: { id: params.project.id }
-    });
+    // Chevre口座取引で実装
+    // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
+    //     endpoint: credentials.chevre.endpoint,
+    //     auth: chevreAuthClient,
+    //     project: { id: params.project.id }
+    // });
 
     if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
+        const withdrawService = new chevre.service.accountTransaction.Withdraw({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
+        });
         // 転送先口座が指定されていない場合は、出金取引
-        pendingTransaction = await moneyTransferService.start({
-            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+        pendingTransaction = await withdrawService.start({
+            typeOf: chevre.factory.account.transactionType.Withdraw,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: recipient,
             object: {
-                amount: {
-                    typeOf: 'MonetaryAmount',
-                    value: params.object.itemOffered.value,
-                    currency: params.object.itemOffered.currency
-                },
+                amount: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0,
                 description: description,
                 fromLocation: {
-                    typeOf: params.object.fromLocation.typeOf,
-                    identifier: params.object.fromLocation.identifier
+                    accountNumber: params.object.fromLocation.identifier
                 },
                 toLocation: {
                     typeOf: recipient.typeOf,
                     name: recipient.name
-                },
-                pendingTransaction: {
-                    typeOf: factory.account.transactionType.Withdraw,
-                    id: '' // 空でok
                 }
             },
             // ユニークネスを保証するために識別子を指定する
@@ -420,30 +418,25 @@ async function processMoneyTransferTransaction(params: {
                 : undefined
         });
     } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
-        pendingTransaction = await moneyTransferService.start({
-            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+        const transferService = new chevre.service.accountTransaction.Transfer({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
+        });
+        pendingTransaction = await transferService.start({
+            typeOf: chevre.factory.account.transactionType.Transfer,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: recipient,
             object: {
-                amount: {
-                    typeOf: 'MonetaryAmount',
-                    value: params.object.itemOffered.value,
-                    currency: params.object.itemOffered.currency
-                },
+                amount: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0,
                 description: description,
                 fromLocation: {
-                    typeOf: params.object.fromLocation.typeOf,
-                    identifier: params.object.fromLocation.identifier
+                    accountNumber: params.object.fromLocation.identifier
                 },
                 toLocation: {
-                    typeOf: params.object.toLocation.typeOf,
-                    identifier: params.object.toLocation.identifier
-                },
-                pendingTransaction: {
-                    typeOf: factory.account.transactionType.Transfer,
-                    id: '' // 空でok
+                    accountNumber: params.object.toLocation.identifier
                 }
             },
             // ユニークネスを保証するために識別子を指定する
@@ -453,30 +446,26 @@ async function processMoneyTransferTransaction(params: {
                 : undefined
         });
     } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
-        pendingTransaction = await moneyTransferService.start({
-            typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+        const depositService = new chevre.service.accountTransaction.Deposit({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: params.project.id }
+        });
+        pendingTransaction = await depositService.start({
+            typeOf: chevre.factory.account.transactionType.Deposit,
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             agent: agent,
             expires: expires,
             recipient: recipient,
             object: {
-                amount: {
-                    typeOf: 'MonetaryAmount',
-                    value: params.object.itemOffered.value,
-                    currency: params.object.itemOffered.currency
-                },
+                amount: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0,
                 description: description,
                 fromLocation: {
                     typeOf: agent.typeOf,
                     name: agent.name
                 },
                 toLocation: {
-                    typeOf: params.object.toLocation.typeOf,
-                    identifier: params.object.toLocation.identifier
-                },
-                pendingTransaction: {
-                    typeOf: factory.account.transactionType.Deposit,
-                    id: '' // 空でok
+                    accountNumber: params.object.toLocation.identifier
                 }
             },
             // ユニークネスを保証するために識別子を指定する

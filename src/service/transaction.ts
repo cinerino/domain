@@ -21,6 +21,10 @@ export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
 export import returnOrder = ReturnOrderTransactionService;
 
 export type ITransactionOperation<T> = (repos: { transaction: TransactionRepo }) => Promise<T>;
+export type IExportTasksOperation<T> = (repos: {
+    task: TaskRepo;
+    transaction: TransactionRepo;
+}) => Promise<T>;
 
 /**
  * 取引人プロフィール更新
@@ -121,7 +125,7 @@ export function exportTasks<T extends factory.transactionType>(params: {
     runsTasksAfterInSeconds?: number;
     status: factory.transactionStatusType;
     typeOf?: { $in: T[] };
-}) {
+}): IExportTasksOperation<factory.task.ITask<factory.taskName>[] | undefined> {
     return async (repos: {
         task: TaskRepo;
         transaction: TransactionRepo;
