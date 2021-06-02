@@ -351,7 +351,7 @@ function createGivePointAwardStartParams(
             .toDate(),
         recipient: recipient,
         object: {
-            amount: params.object.amount,
+            amount: { value: params.object.amount },
             description: (typeof params.object.description === 'string')
                 ? params.object.description
                 : params.purpose.typeOf,
@@ -493,7 +493,7 @@ export function returnPointAward(params: factory.task.IData<factory.taskName.Ret
                     .toDate(),
                 recipient: <factory.seller.ISeller>recipient,
                 object: {
-                    amount: givePointAwardActionObject.amount,
+                    amount: { value: givePointAwardActionObject.amount },
                     fromLocation: {
                         accountNumber: givePointAwardActionObject.toLocation.accountNumber
                     },

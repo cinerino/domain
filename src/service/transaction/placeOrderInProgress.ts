@@ -478,7 +478,7 @@ function createConfirmationNumber(params: {
         } else /* istanbul ignore next */ if (typeof params.result.order.url === 'function') {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore next */
-            url = params.result.order.url(params.order);
+            url = (<IOrderURLGenerator>params.result.order.url)(params.order);
         }
 
         const { confirmationNumber4identifier, confirmationPass } = createConfirmationNumber4identifier({

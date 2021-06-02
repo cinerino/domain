@@ -401,7 +401,9 @@ async function processMoneyTransferTransaction(params: {
             expires: expires,
             recipient: recipient,
             object: {
-                amount: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0,
+                amount: {
+                    value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
+                },
                 description: description,
                 fromLocation: {
                     accountNumber: params.object.fromLocation.identifier
@@ -430,7 +432,9 @@ async function processMoneyTransferTransaction(params: {
             expires: expires,
             recipient: recipient,
             object: {
-                amount: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0,
+                amount: {
+                    value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
+                },
                 description: description,
                 fromLocation: {
                     accountNumber: params.object.fromLocation.identifier
@@ -458,7 +462,9 @@ async function processMoneyTransferTransaction(params: {
             expires: expires,
             recipient: recipient,
             object: {
-                amount: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0,
+                amount: {
+                    value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
+                },
                 description: description,
                 fromLocation: {
                     typeOf: agent.typeOf,

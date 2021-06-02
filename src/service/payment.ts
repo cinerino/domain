@@ -7,7 +7,7 @@ import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-import * as AnyPaymentService from './payment/any';
+// import * as AnyPaymentService from './payment/any';
 import * as ChevrePaymentService from './payment/chevre';
 
 import { factory } from '../factory';
@@ -17,7 +17,7 @@ import * as chevreapi from '../chevre';
 /**
  * 汎用決済
  */
-export import any = AnyPaymentService;
+// export import any = AnyPaymentService;
 
 /**
  * Chevre決済

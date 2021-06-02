@@ -101,8 +101,7 @@ export function createMoneyTransferAcceptedOffers(params: {
         const pendingTransaction = authorizeMoneyTansferAction.object.pendingTransaction;
         if (pendingTransaction !== undefined) {
             const accountType = factory.chevre.priceCurrency.JPY;
-            // const price: number | undefined = pendingTransaction.object.amount.value;
-            const price: number | undefined = pendingTransaction.object.amount;
+            const price: number | undefined = pendingTransaction.object.amount.value;
 
             acceptedOffers.push({
                 project: { typeOf: params.transaction.project.typeOf, id: params.transaction.project.id },

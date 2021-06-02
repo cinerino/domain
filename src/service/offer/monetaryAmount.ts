@@ -157,7 +157,7 @@ async function processStartDepositTransaction(params: {
                     : String(params.transaction.seller.name?.ja)
             },
             object: {
-                amount: Number(params.object.itemOffered.value),
+                amount: { value: Number(params.object.itemOffered.value) },
                 fromLocation: {
                     typeOf: params.transaction.agent.typeOf,
                     id: params.transaction.agent.id,

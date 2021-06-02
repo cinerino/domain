@@ -147,7 +147,8 @@ function createConfirmReservationActionObject(params: {
     const order = params.order;
     const customer = order.customer;
     const paymentMethodNames = order.paymentMethods.map((p) => {
-        return (p.typeOf === factory.paymentMethodType.Others) ? String(p.name) : String(p.typeOf);
+        // return (p.typeOf === factory.paymentMethodType.Others) ? String(p.name) : String(p.typeOf);
+        return String(p.typeOf);
     })
         .join(',');
 

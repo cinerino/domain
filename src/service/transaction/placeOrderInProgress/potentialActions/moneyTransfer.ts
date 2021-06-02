@@ -31,7 +31,7 @@ export async function createMoneyTransferActions(params: {
                 amount: {
                     typeOf: a.object.itemOffered.typeOf,
                     currency: a.object.itemOffered.currency,
-                    value: pendingTransaction.object.amount
+                    value: pendingTransaction.object.amount.value
                 },
                 fromLocation: (paymentMethod !== undefined)
                     ? {

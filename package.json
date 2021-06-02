@@ -9,8 +9,8 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "3.81.0",
-    "@chevre/domain": "15.47.0-alpha.46",
+    "@chevre/api-nodejs-client": "3.83.0",
+    "@chevre/domain": "15.47.0-alpha.49",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.1.0",
     "@sendgrid/mail": "6.4.0",
@@ -52,10 +52,10 @@
     "rimraf": "^2.7.1",
     "sinon": "^4.5.0",
     "sinon-mongoose": "^2.3.0",
-    "ts-node": "^8.10.2",
+    "ts-node": "^10.0.0",
     "tslint": "^6.1.3",
     "tslint-microsoft-contrib": "^6.2.0",
-    "typescript": "^3.9.9"
+    "typescript": "^4.3.2"
   },
   "peerDependencies": {
     "mongoose": "^5.5.0",
