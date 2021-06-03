@@ -110,7 +110,7 @@ export function search(params: {
 
             ownershipInfosWithDetail = ownershipInfos;
         } catch (error) {
-            throw error;
+            throw handleChevreError(error);
         }
 
         return ownershipInfosWithDetail;

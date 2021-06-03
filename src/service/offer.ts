@@ -642,10 +642,12 @@ function coaSalesTicket2offer(params: {
             value: 1
         },
         itemOffered: {
-            serviceType: <any>{
-                project: { typeOf: params.project.typeOf, id: params.project.id },
-                typeOf: 'CategoryCode'
-            }
+            project: { typeOf: params.project.typeOf, id: params.project.id },
+            typeOf: factory.product.ProductType.EventService
+            // serviceType: <any>{
+            //     project: { typeOf: params.project.typeOf, id: params.project.id },
+            //     typeOf: 'CategoryCode'
+            // }
         }
     };
 }

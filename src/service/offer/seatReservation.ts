@@ -533,11 +533,11 @@ export function validateAcceptedOffers(params: {
                 let acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre> = {
                     ...offerWithoutDetail,
                     ...offer,
-                    itemOffered: {
-                        serviceType: offer.itemOffered.serviceType,
+                    itemOffered: <any>{
                         serviceOutput: (offerWithoutDetail.itemOffered !== undefined && offerWithoutDetail.itemOffered !== null)
                             ? offerWithoutDetail.itemOffered.serviceOutput
                             : undefined
+                        // serviceType: offer.itemOffered?.serviceType
                     },
                     addOn: (Array.isArray(offerWithoutDetail.addOn))
                         ? offerWithoutDetail.addOn.map((a) => {

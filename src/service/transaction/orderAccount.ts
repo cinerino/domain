@@ -181,7 +181,7 @@ function processPlaceOrder(params: {
             customer: customer,
             transaction: transaction,
             acceptedOffer: acceptedOffer,
-            product: { id: String(params.product.id) },
+            product: params.product,
             serviceOutputName: params.serviceOutputName,
             location: params.location
         })(repos);
@@ -210,7 +210,7 @@ function processAuthorizeProductOffer(params: {
     customer: factory.person.IPerson;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     acceptedOffer: factory.chevre.event.screeningEvent.ITicketOffer;
-    product: { id: string };
+    product: factory.chevre.product.IProduct;
     serviceOutputName?: string;
     /**
      * 利用アプリケーション
@@ -247,11 +247,11 @@ function processAuthorizeProductOffer(params: {
             priceCurrency: acceptedOffer.priceCurrency,
             itemOffered: {
                 project: project,
-                typeOf: factory.chevre.product.ProductType.MembershipService,
+                typeOf: params.product.typeOf,
                 id: params.product.id,
                 serviceOutput: {
                     project: project,
-                    typeOf: acceptedOffer.itemOffered.typeOf,
+                    typeOf: String(params.product.serviceOutput?.typeOf),
                     accessCode: (typeof customer.telephone === 'string')
                         // tslint:disable-next-line:no-magic-numbers
                         ? customer.telephone.slice(-4)
