@@ -17,6 +17,7 @@ import {
     acceptedOffers2amount,
     createAuthorizeSeatReservationActionAttributes,
     createReserveTransactionStartParams,
+    ICreateObject,
     responseBody2acceptedOffers4result
 } from './seatReservation/factory';
 
@@ -66,18 +67,6 @@ export type IMovieTicketTypeChargeSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification>;
 export type IAcceptedOfferWithoutDetail4chevre = factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail4chevre;
 // export type IAcceptedTicketOfferWithoutDetail = factory.event.screeningEvent.IAcceptedTicketOfferWithoutDetail;
-export type ICreateObject = {
-    acceptedOffer: IAcceptedOfferWithoutDetail4chevre[];
-} & {
-    // acceptedOffer?: factory.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[];
-    // acceptedOffer: IAcceptedTicketOfferWithoutDetail[];
-    broker?: factory.reservation.IBroker<factory.reservationType.EventReservation>;
-    clientUser?: factory.clientUser.IClientUser;
-    reservationFor?: {
-        id: string;
-    };
-    // onReservationStatusChanged?: IOnReservationStatusChanged;
-};
 
 /**
  * 座席予約承認
@@ -482,7 +471,8 @@ export function selectSeats(
  */
 export function validateAcceptedOffers(params: {
     project: factory.chevre.project.IProject;
-    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
+    // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
+    object: ICreateObject;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     seller: { typeOf: factory.chevre.organizationType; id: string };
 }) {
