@@ -65,13 +65,27 @@ export type IUnitPriceSpecification =
 export type IMovieTicketTypeChargeSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.MovieTicketTypeChargeSpecification>;
 export type IAcceptedOfferWithoutDetail4chevre = factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail4chevre;
+// export type IAcceptedTicketOfferWithoutDetail = factory.event.screeningEvent.IAcceptedTicketOfferWithoutDetail;
+export type ICreateObject = {
+    acceptedOffer: IAcceptedOfferWithoutDetail4chevre[];
+} & {
+    // acceptedOffer?: factory.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[];
+    // acceptedOffer: IAcceptedTicketOfferWithoutDetail[];
+    broker?: factory.reservation.IBroker<factory.reservationType.EventReservation>;
+    clientUser?: factory.clientUser.IClientUser;
+    reservationFor?: {
+        id: string;
+    };
+    // onReservationStatusChanged?: IOnReservationStatusChanged;
+};
 
 /**
  * 座席予約承認
  */
 export function create(params: {
     project: factory.project.IProject;
-    object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
+    // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
+    object: ICreateObject;
     agent: { id: string };
     transaction: { id: string };
     autoSeatSelection?: boolean;
@@ -92,15 +106,12 @@ export function create(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        if (params.object.event === undefined || params.object.event === null) {
-            throw new factory.errors.ArgumentNull('object.event');
+        if (typeof params.object.reservationFor?.id !== 'string' || params.object.reservationFor.id.length === 0) {
+            throw new factory.errors.ArgumentNull('object.reservationFor.id');
         }
 
         let event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
-
-        event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({
-            id: params.object.event.id
-        });
+        event = await repos.event.findById<factory.chevre.eventType.ScreeningEvent>({ id: params.object.reservationFor.id });
 
         let offeredThrough = event.offers?.offeredThrough;
         if (offeredThrough === undefined) {
