@@ -8,23 +8,24 @@ export type IReservationPriceSpecification =
     factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation>;
 export type IUnitPriceSpecification =
     factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>;
-export type ICreateObject = {
-    acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail4chevre[];
-} & {
-    // acceptedOffer?: factory.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[];
-    // acceptedOffer: IAcceptedTicketOfferWithoutDetail[];
-    broker?: factory.reservation.IBroker<factory.reservationType.EventReservation>;
-    clientUser?: factory.clientUser.IClientUser;
-    reservationFor?: {
-        id: string;
-    };
-    // onReservationStatusChanged?: IOnReservationStatusChanged;
-};
+export type IObjectWithoutDetail = factory.action.authorize.offer.seatReservation.IObjectWithoutDetail4chevre;
+// export type ICreateObject = {
+//     acceptedOffer: factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail4chevre[];
+// } & {
+//     // acceptedOffer?: factory.event.screeningEvent.IAcceptedTicketOfferWithoutDetail[];
+//     // acceptedOffer: IAcceptedTicketOfferWithoutDetail[];
+//     broker?: factory.reservation.IBroker<factory.reservationType.EventReservation>;
+//     clientUser?: factory.clientUser.IClientUser;
+//     reservationFor?: {
+//         id: string;
+//     };
+//     // onReservationStatusChanged?: IOnReservationStatusChanged;
+// };
 
 export function createReserveTransactionStartParams(params: {
     project: { id: string };
     // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
-    object: ICreateObject;
+    object: IObjectWithoutDetail;
     transaction: factory.transaction.ITransaction<any>;
     transactionNumber: string;
 }): factory.chevre.assetTransaction.reserve.IStartParamsWithoutDetail {
@@ -49,14 +50,17 @@ export function createReserveTransactionStartParams(params: {
             }
         },
         object: {
-            ...params.object,
-            event: { id: String(params.object.reservationFor?.id) },
+            // ...params.object,
+            acceptedOffer: params.object.acceptedOffer,
+            reservationFor: { id: String(params.object.reservationFor?.id) },
+            // event: { id: String(params.object.reservationFor?.id) },
             onReservationStatusChanged: {
                 // informReservation: (Array.isArray(informReservationParamsFromObject))
                 //     ? informReservationParamsFromObject
                 //     : []
                 informReservation: []
-            }
+            },
+            ...(params.object.broker !== undefined) ? { broker: params.object.broker } : undefined
         },
         expires: moment(params.transaction.expires)
             .add(1, 'month')

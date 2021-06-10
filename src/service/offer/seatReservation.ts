@@ -17,7 +17,7 @@ import {
     acceptedOffers2amount,
     createAuthorizeSeatReservationActionAttributes,
     createReserveTransactionStartParams,
-    ICreateObject,
+    IObjectWithoutDetail,
     responseBody2acceptedOffers4result
 } from './seatReservation/factory';
 
@@ -74,7 +74,7 @@ export type IAcceptedOfferWithoutDetail4chevre = factory.action.authorize.offer.
 export function create(params: {
     project: factory.project.IProject;
     // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
-    object: ICreateObject;
+    object: IObjectWithoutDetail;
     agent: { id: string };
     transaction: { id: string };
     autoSeatSelection?: boolean;
@@ -114,7 +114,7 @@ export function create(params: {
             params.object.acceptedOffer = await selectSeats(
                 params.project,
                 event,
-                params.object.acceptedOffer
+                (Array.isArray(params.object.acceptedOffer)) ? params.object.acceptedOffer : []
                 // params.transaction.id
             )(repos);
         }
@@ -186,12 +186,14 @@ export function create(params: {
                         titleBranchNum: coaInfo.titleBranchNum,
                         timeBegin: coaInfo.timeBegin,
                         screenCode: coaInfo.screenCode,
-                        listSeat: params.object.acceptedOffer.map((offer) => {
-                            return {
-                                seatSection: ((<any>offer).ticketedSeat !== undefined) ? (<any>offer).ticketedSeat.seatSection : '',
-                                seatNum: ((<any>offer).ticketedSeat !== undefined) ? (<any>offer).ticketedSeat.seatNumber : ''
-                            };
-                        })
+                        listSeat: (Array.isArray(params.object.acceptedOffer))
+                            ? params.object.acceptedOffer.map((offer) => {
+                                return {
+                                    seatSection: ((<any>offer).ticketedSeat !== undefined) ? (<any>offer).ticketedSeat.seatSection : '',
+                                    seatNum: ((<any>offer).ticketedSeat !== undefined) ? (<any>offer).ticketedSeat.seatNumber : ''
+                                };
+                            })
+                            : []
                     };
 
                     responseBody = await reserveService.updTmpReserveSeat(requestBody);
@@ -472,7 +474,7 @@ export function selectSeats(
 export function validateAcceptedOffers(params: {
     project: factory.chevre.project.IProject;
     // object: factory.action.authorize.offer.seatReservation.IObjectWithoutDetail<factory.service.webAPI.Identifier.Chevre>;
-    object: ICreateObject;
+    object: IObjectWithoutDetail;
     event: factory.event.IEvent<factory.chevre.eventType.ScreeningEvent>;
     seller: { typeOf: factory.chevre.organizationType; id: string };
 }) {
@@ -873,7 +875,7 @@ function addExtraProperties4COA(params: {
             //     offerWithDetails.ticketInfo.addGlasses = availableSalesTicket.addPriceGlasses;
             // }
         } else {
-            const coaInfoProperty = acceptedOffer.additionalProperty.find((p) => p.name === 'coaInfo');
+            const coaInfoProperty = acceptedOffer.additionalProperty?.find((p) => p.name === 'coaInfo');
             if (coaInfoProperty === undefined) {
                 throw new factory.errors.NotFound('Offer coaInfo');
             }
@@ -905,7 +907,9 @@ function addExtraProperties4COA(params: {
         }
 
         // coaInfoプロパティを上書きする
-        acceptedOffer.additionalProperty = acceptedOffer.additionalProperty.filter((p) => p.name !== 'coaInfo');
+        acceptedOffer.additionalProperty = (Array.isArray(acceptedOffer.additionalProperty))
+            ? acceptedOffer.additionalProperty.filter((p) => p.name !== 'coaInfo')
+            : [];
         acceptedOffer.additionalProperty.push({
             name: 'coaInfo',
             value: JSON.stringify(coaInfo)

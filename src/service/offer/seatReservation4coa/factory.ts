@@ -31,6 +31,7 @@ export type ICOAMvtkTicket = COA.factory.master.IMvtkTicketcodeResult & {
 
 export type IAcceptedOfferWithoutDetail =
     factory.action.authorize.offer.seatReservation.IAcceptedOfferWithoutDetail<WebAPIIdentifier.COA> & {
+        additionalProperty?: factory.propertyValue.IPropertyValue<string>[];
         ticketInfo: factory.offer.seatReservation.ICOATicketInfo & {
             spseatAdd1: number;
             spseatAdd2: number;
@@ -605,7 +606,7 @@ export function validateOffers(
             offersWithDetails.push({
                 ...offerWithDetails,
                 addOn: [],
-                additionalProperty: offer.additionalProperty,
+                additionalProperty: (Array.isArray(offer.additionalProperty)) ? offer.additionalProperty : [],
                 id: <string>offerWithDetails.id,
                 itemOffered: offerWithDetails.itemOffered,
                 ...{
