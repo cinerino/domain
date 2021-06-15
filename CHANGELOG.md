@@ -54,6 +54,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 口座所有権検索時に所有物詳細をChevre側で取得するように変更
 - 注文ポイント付与をChevre口座取引で実装
 - 通貨転送をChevre口座取引で実装
+- メンバーシップオファー承認時のアプリケーションクライアントに対する排他処理調整
 
 ### Deprecated
 

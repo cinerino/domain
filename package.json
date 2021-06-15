@@ -9,8 +9,8 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "3.84.4",
-    "@chevre/domain": "15.48.0-alpha.4",
+    "@chevre/api-nodejs-client": "3.85.1",
+    "@chevre/domain": "15.50.0",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.1.0",
     "@sendgrid/mail": "6.4.0",

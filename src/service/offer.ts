@@ -642,7 +642,7 @@ function coaSalesTicket2offer(params: {
             value: 1
         },
         itemOffered: {
-            project: { typeOf: params.project.typeOf, id: params.project.id },
+            // project: { typeOf: params.project.typeOf, id: params.project.id },
             typeOf: factory.product.ProductType.EventService
             // serviceType: <any>{
             //     project: { typeOf: params.project.typeOf, id: params.project.id },

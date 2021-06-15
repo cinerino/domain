@@ -128,7 +128,10 @@ export function search(params: {
 export function authorize(params: {
     project: factory.project.IProject;
     object: factory.action.authorize.offer.product.IObject;
-    agent: { id: string };
+    agent: {
+        id: string;
+        typeOf: factory.personType.Person | factory.creativeWorkType.WebApplication;
+    };
     /**
      * 利用アプリケーション
      */
@@ -171,11 +174,14 @@ export function authorize(params: {
             ...(typeof params.location?.id === 'string') ? { availableAt: { id: params.location.id } } : undefined
         })(repos);
 
-        await checkIfRegistered({
-            agent: { id: params.agent.id },
-            product: product,
-            now: now
-        })(repos);
+        // 会員の場合のみ既登録か確認
+        if (params.agent.typeOf === factory.personType.Person) {
+            await checkIfRegistered({
+                agent: { id: params.agent.id },
+                product: product,
+                now: now
+            })(repos);
+        }
 
         // ポイント特典の識別子に利用するため注文番号を先に発行
         const orderNumber = await publishOrderNumberIfNotExist({
@@ -211,11 +217,14 @@ export function authorize(params: {
         const action = await repos.action.start(actionAttributes);
 
         try {
-            await processLock({
-                agent: params.agent,
-                product: product,
-                purpose: { typeOf: transaction.typeOf, id: transaction.id }
-            })(repos);
+            // 会員の場合のみ排他ロック
+            if (params.agent.typeOf === factory.personType.Person) {
+                await processLock({
+                    agent: params.agent,
+                    product: product,
+                    purpose: { typeOf: transaction.typeOf, id: transaction.id }
+                })(repos);
+            }
 
             // サービス登録開始
             const registerService = new chevre.service.assetTransaction.RegisterService({

@@ -268,7 +268,7 @@ function processAuthorizeProductOffer(params: {
         // メンバーシップオファー承認
         return OfferService.product.authorize({
             project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-            agent: { id: customer.id },
+            agent: { id: customer.id, typeOf: customer.typeOf },
             object: object,
             location: params.location,
             transaction: { id: transaction.id }
