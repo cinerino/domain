@@ -100,7 +100,7 @@ export function createMoneyTransferAcceptedOffers(params: {
         // let responseBody = authorizeMoneyTansferAction.result.responseBody;
         const pendingTransaction = authorizeMoneyTansferAction.object.pendingTransaction;
         if (pendingTransaction !== undefined) {
-            const accountType = factory.chevre.priceCurrency.JPY;
+            const currencyType = factory.chevre.priceCurrency.JPY;
             const price: number | undefined = pendingTransaction.object.amount.value;
 
             acceptedOffers.push({
@@ -111,8 +111,8 @@ export function createMoneyTransferAcceptedOffers(params: {
                 itemOffered: {
                     typeOf: 'MonetaryAmount',
                     value: authorizeMoneyTansferAction.object.itemOffered.value,
-                    currency: accountType,
-                    name: `${authorizeMoneyTansferAction.object.itemOffered.value} ${accountType}`
+                    currency: currencyType,
+                    name: `${authorizeMoneyTansferAction.object.itemOffered.value} ${currencyType}`
                 },
                 price: price,
                 // priceSpecification: requestedOffer.priceSpecification,

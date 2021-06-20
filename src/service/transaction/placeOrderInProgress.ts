@@ -181,10 +181,10 @@ export function confirm(params: IConfirmParams): IConfirmOperation<factory.trans
         });
         const paymentServices = <chevre.factory.service.paymentService.IService[]>searchPaymentServicesResult.data;
 
-        // 利用可能な口座区分を検索
-        const searchAccountTypesResult = await repos.categoryCode.search({
+        // 利用可能な通貨区分を検索
+        const searchCurrencyTypesResult = await repos.categoryCode.search({
             project: { id: { $eq: transaction.project.id } },
-            inCodeSet: { identifier: { $eq: factory.chevre.categoryCode.CategorySetIdentifier.AccountType } }
+            inCodeSet: { identifier: { $eq: factory.chevre.categoryCode.CategorySetIdentifier.CurrencyType } }
         });
 
         // 取引に対する全ての承認アクションをマージ
@@ -201,7 +201,7 @@ export function confirm(params: IConfirmParams): IConfirmOperation<factory.trans
             orderNumber,
             transaction: transaction,
             paymentServices: paymentServices,
-            accountTypes: searchAccountTypesResult.data
+            currencyTypes: searchCurrencyTypesResult.data
         })(repos);
 
         const order4token: factory.order.ISimpleOrder = {
@@ -380,7 +380,7 @@ function createResult(params: IConfirmParams & {
     orderNumber: string;
     transaction: factory.transaction.ITransaction<factory.transactionType.PlaceOrder>;
     paymentServices?: factory.chevre.service.paymentService.IService[];
-    accountTypes?: factory.chevre.categoryCode.ICategoryCode[];
+    currencyTypes?: factory.chevre.categoryCode.ICategoryCode[];
 }) {
     return async (repos: {
         confirmationNumber: ConfirmationNumberRepo;
@@ -388,7 +388,7 @@ function createResult(params: IConfirmParams & {
         const transaction = params.transaction;
 
         // 取引の確定条件が全て整っているかどうか確認
-        validateTransaction(transaction, params.paymentServices, params.accountTypes);
+        validateTransaction(transaction, params.paymentServices, params.currencyTypes);
 
         // 注文作成
         const order = createOrder({

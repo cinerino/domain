@@ -29,14 +29,14 @@ export type IUnitPriceSpecification =
 export function validateTransaction(
     transaction: factory.transaction.placeOrder.ITransaction,
     paymentServices?: factory.chevre.service.paymentService.IService[],
-    accountTypes?: factory.chevre.categoryCode.ICategoryCode[]
+    currencyTypes?: factory.chevre.categoryCode.ICategoryCode[]
 ) {
     validateProfile(transaction);
     validatePrice(transaction);
 
     // 利用可能な通貨単位に対して取引検証
-    if (Array.isArray(accountTypes) && accountTypes.length > 0) {
-        validateMonetaryAmount(transaction, accountTypes.map((a) => a.codeValue));
+    if (Array.isArray(currencyTypes) && currencyTypes.length > 0) {
+        validateMonetaryAmount(transaction, currencyTypes.map((a) => a.codeValue));
     }
 
     // 利用可能なムビチケ系統決済方法タイプに対して動的にコーディング
@@ -107,7 +107,7 @@ function validateMonetaryAmount(
             && typeof a.result?.totalPaymentDue?.currency === 'string'
             && currencies.includes(a.result.totalPaymentDue.currency));
 
-    const requiredMonetaryAmountByAccountType: {
+    const requiredMonetaryAmountByCurrencyType: {
         currency: string;
         value: number;
     }[] = [];
@@ -121,7 +121,7 @@ function validateMonetaryAmount(
                 if (Array.isArray(amount)) {
                     amount.forEach((monetaryAmount) => {
                         if (typeof monetaryAmount.value === 'number') {
-                            requiredMonetaryAmountByAccountType.push({ currency: monetaryAmount.currency, value: monetaryAmount.value });
+                            requiredMonetaryAmountByCurrencyType.push({ currency: monetaryAmount.currency, value: monetaryAmount.value });
                         }
                     });
                 }
@@ -129,22 +129,22 @@ function validateMonetaryAmount(
             0
         );
 
-    const requiredAccountTypes = [...new Set(requiredMonetaryAmountByAccountType.map((m) => m.currency))];
-    const authorizedAccountTypes = [...new Set(authorizeMonetaryAmountActions.map(
+    const requiredCurrencyTypes = [...new Set(requiredMonetaryAmountByCurrencyType.map((m) => m.currency))];
+    const authorizedCurrencyTypes = [...new Set(authorizeMonetaryAmountActions.map(
         (m) => <string>m.result?.totalPaymentDue?.currency
     ))];
 
-    if (requiredAccountTypes.length !== authorizedAccountTypes.length) {
+    if (requiredCurrencyTypes.length !== authorizedCurrencyTypes.length) {
         throw new factory.errors.Argument('Transaction', 'MonetaryAmount account types not matched');
     }
 
-    const requireMonetaryAmountSatisfied = requiredAccountTypes.every((accountType) => {
-        const requiredMonetaryAmount = requiredMonetaryAmountByAccountType
-            .filter((m) => m.currency === accountType)
+    const requireMonetaryAmountSatisfied = requiredCurrencyTypes.every((currencyType) => {
+        const requiredMonetaryAmount = requiredMonetaryAmountByCurrencyType
+            .filter((m) => m.currency === currencyType)
             .reduce((a, b) => a + b.value, 0);
 
         const authorizedMonetaryAmount = authorizeMonetaryAmountActions
-            .filter((a) => a.result?.totalPaymentDue?.currency === accountType)
+            .filter((a) => a.result?.totalPaymentDue?.currency === currencyType)
             .reduce((a, b) => a + b.object.amount, 0);
 
         return requiredMonetaryAmount === authorizedMonetaryAmount;
