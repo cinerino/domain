@@ -3,8 +3,6 @@
  */
 import * as moment from 'moment';
 
-import { credentials } from '../../credentials';
-
 import * as chevre from '../../chevre';
 import { factory } from '../../factory';
 
@@ -17,18 +15,13 @@ import { IPassportValidator as IWaiterPassportValidator, validateWaiterPassport 
 
 import { handleChevreError } from '../../errorHandler';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 export type IStartOperation<T> = (repos: {
     action: ActionRepo;
     seller: chevre.service.Seller;
     transaction: TransactionRepo;
+    depositTransaction: chevre.service.accountTransaction.Deposit;
+    transferTransaction: chevre.service.accountTransaction.Transfer;
+    withdrawTransaction: chevre.service.accountTransaction.Withdraw;
 }) => Promise<T>;
 
 export type ITaskAndTransactionOperation<T> = (repos: {
@@ -55,6 +48,9 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         action: ActionRepo;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+        transferTransaction: chevre.service.accountTransaction.Transfer;
+        withdrawTransaction: chevre.service.accountTransaction.Withdraw;
     }) => {
         const seller = await repos.seller.findById({ id: params.seller.id });
 
@@ -125,6 +121,9 @@ function authorizePaymentCard(params: {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+        transferTransaction: chevre.service.accountTransaction.Transfer;
+        withdrawTransaction: chevre.service.accountTransaction.Withdraw;
     }) => {
         const transaction = params.transaction;
         const fromLocation = transaction.object.fromLocation;
@@ -225,6 +224,9 @@ function fixToLocation(
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     transaction: TransactionRepo;
+    depositTransaction: chevre.service.accountTransaction.Deposit;
+    transferTransaction: chevre.service.accountTransaction.Transfer;
+    withdrawTransaction: chevre.service.accountTransaction.Withdraw;
 }) => Promise<T>;
 
 /**
@@ -244,6 +246,9 @@ function processAuthorizePaymentCard(params: {
     return async (repos: {
         action: ActionRepo;
         transaction: TransactionRepo;
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+        transferTransaction: chevre.service.accountTransaction.Transfer;
+        withdrawTransaction: chevre.service.accountTransaction.Withdraw;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: params.purpose.typeOf,
@@ -301,7 +306,7 @@ function processAuthorizePaymentCard(params: {
                 object: params.object,
                 recipient: recipient,
                 transaction: transaction
-            });
+            })(repos);
 
             // アクションにchevre取引情報を保管
             await repos.action.actionModel.findByIdAndUpdate(
@@ -340,8 +345,7 @@ function processAuthorizePaymentCard(params: {
     };
 }
 
-// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
-async function processMoneyTransferTransaction(params: {
+function processMoneyTransferTransaction(params: {
     project: { id: string };
     object: factory.action.authorize.offer.monetaryAmount.IObject & {
         fromLocation?: factory.action.interact.confirm.moneyTransfer.IPaymentCard;
@@ -349,142 +353,142 @@ async function processMoneyTransferTransaction(params: {
     };
     recipient: factory.transaction.moneyTransfer.IRecipient | factory.transaction.placeOrder.ISeller;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
-}): Promise<factory.action.authorize.offer.monetaryAmount.IResponseBody> {
-    let pendingTransaction: factory.action.authorize.offer.monetaryAmount.IResponseBody;
+}) {
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+    return async (repos: {
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+        transferTransaction: chevre.service.accountTransaction.Transfer;
+        withdrawTransaction: chevre.service.accountTransaction.Withdraw;
+    }): Promise<factory.action.authorize.offer.monetaryAmount.IResponseBody> => {
+        let pendingTransaction: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
-    const transaction = params.transaction;
+        const transaction = params.transaction;
 
-    const agent = {
-        typeOf: transaction.agent.typeOf,
-        id: transaction.agent.id,
-        name: (typeof transaction.agent.name === 'string') ? transaction.agent.name : `${transaction.typeOf} Transaction ${transaction.id}`,
-        ...(typeof transaction.agent.url === 'string') ? { url: transaction.agent.url } : undefined
+        const agent = {
+            typeOf: transaction.agent.typeOf,
+            id: transaction.agent.id,
+            name: (typeof transaction.agent.name === 'string') ? transaction.agent.name : `${transaction.typeOf} Transaction ${transaction.id}`,
+            ...(typeof transaction.agent.url === 'string') ? { url: transaction.agent.url } : undefined
+        };
+
+        const recipient: factory.person.IPerson | factory.seller.ISeller = {
+            project: transaction.project,
+            typeOf: <any>params.recipient.typeOf,
+            id: params.recipient.id,
+            name: (typeof params.recipient.name === 'string')
+                ? params.recipient.name
+                : (typeof params.recipient.name?.ja === 'string')
+                    ? params.recipient.name.ja
+                    : `${transaction.typeOf} Transaction ${transaction.id}`,
+            ...(typeof params.recipient.url === 'string') ? { url: params.recipient.url } : undefined
+        };
+
+        const description = (typeof params.object.description === 'string') ? params.object.description : `${transaction.typeOf}:${transaction.id}`;
+
+        // 最大1ヵ月のオーソリ
+        const expires = moment()
+            .add(1, 'month')
+            .toDate();
+
+        if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
+            // const withdrawService = new chevre.service.accountTransaction.Withdraw({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
+            // 転送先口座が指定されていない場合は、出金取引
+            pendingTransaction = await repos.withdrawTransaction.start({
+                typeOf: chevre.factory.account.transactionType.Withdraw,
+                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+                agent: agent,
+                expires: expires,
+                recipient: recipient,
+                object: {
+                    amount: {
+                        value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
+                    },
+                    description: description,
+                    fromLocation: {
+                        accountNumber: params.object.fromLocation.identifier
+                    },
+                    toLocation: {
+                        typeOf: recipient.typeOf,
+                        name: recipient.name
+                    }
+                },
+                // ユニークネスを保証するために識別子を指定する
+                ...(transaction.typeOf === factory.transactionType.MoneyTransfer
+                    && typeof transaction.object.pendingTransaction?.identifier === 'string')
+                    ? { identifier: transaction.object.pendingTransaction.identifier }
+                    : undefined
+            });
+        } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
+            // const transferService = new chevre.service.accountTransaction.Transfer({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
+            pendingTransaction = await repos.transferTransaction.start({
+                typeOf: chevre.factory.account.transactionType.Transfer,
+                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+                agent: agent,
+                expires: expires,
+                recipient: recipient,
+                object: {
+                    amount: {
+                        value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
+                    },
+                    description: description,
+                    fromLocation: {
+                        accountNumber: params.object.fromLocation.identifier
+                    },
+                    toLocation: {
+                        accountNumber: params.object.toLocation.identifier
+                    }
+                },
+                // ユニークネスを保証するために識別子を指定する
+                ...(transaction.typeOf === factory.transactionType.MoneyTransfer
+                    && typeof transaction.object.pendingTransaction?.identifier === 'string')
+                    ? { identifier: transaction.object.pendingTransaction.identifier }
+                    : undefined
+            });
+        } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
+            // const depositService = new chevre.service.accountTransaction.Deposit({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
+            pendingTransaction = await repos.depositTransaction.start({
+                typeOf: chevre.factory.account.transactionType.Deposit,
+                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+                agent: agent,
+                expires: expires,
+                recipient: recipient,
+                object: {
+                    amount: {
+                        value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
+                    },
+                    description: description,
+                    fromLocation: {
+                        typeOf: agent.typeOf,
+                        name: agent.name
+                    },
+                    toLocation: {
+                        accountNumber: params.object.toLocation.identifier
+                    }
+                },
+                // ユニークネスを保証するために識別子を指定する
+                ...(transaction.typeOf === factory.transactionType.MoneyTransfer
+                    && typeof transaction.object.pendingTransaction?.identifier === 'string')
+                    ? { identifier: transaction.object.pendingTransaction.identifier }
+                    : undefined
+            });
+        } else {
+            throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
+        }
+
+        return pendingTransaction;
     };
-
-    const recipient: factory.person.IPerson | factory.seller.ISeller = {
-        project: transaction.project,
-        typeOf: <any>params.recipient.typeOf,
-        id: params.recipient.id,
-        name: (typeof params.recipient.name === 'string')
-            ? params.recipient.name
-            : (typeof params.recipient.name?.ja === 'string')
-                ? params.recipient.name.ja
-                : `${transaction.typeOf} Transaction ${transaction.id}`,
-        ...(typeof params.recipient.url === 'string') ? { url: params.recipient.url } : undefined
-    };
-
-    const description = (typeof params.object.description === 'string') ? params.object.description : `${transaction.typeOf}:${transaction.id}`;
-
-    // 最大1ヵ月のオーソリ
-    const expires = moment()
-        .add(1, 'month')
-        .toDate();
-
-    // Chevre口座取引で実装
-    // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
-    //     endpoint: credentials.chevre.endpoint,
-    //     auth: chevreAuthClient,
-    //     project: { id: params.project.id }
-    // });
-
-    if (params.object.fromLocation !== undefined && params.object.toLocation === undefined) {
-        const withdrawService = new chevre.service.accountTransaction.Withdraw({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        // 転送先口座が指定されていない場合は、出金取引
-        pendingTransaction = await withdrawService.start({
-            typeOf: chevre.factory.account.transactionType.Withdraw,
-            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-            agent: agent,
-            expires: expires,
-            recipient: recipient,
-            object: {
-                amount: {
-                    value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
-                },
-                description: description,
-                fromLocation: {
-                    accountNumber: params.object.fromLocation.identifier
-                },
-                toLocation: {
-                    typeOf: recipient.typeOf,
-                    name: recipient.name
-                }
-            },
-            // ユニークネスを保証するために識別子を指定する
-            ...(transaction.typeOf === factory.transactionType.MoneyTransfer
-                && typeof transaction.object.pendingTransaction?.identifier === 'string')
-                ? { identifier: transaction.object.pendingTransaction.identifier }
-                : undefined
-        });
-    } else if (params.object.fromLocation !== undefined && params.object.toLocation !== undefined) {
-        const transferService = new chevre.service.accountTransaction.Transfer({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        pendingTransaction = await transferService.start({
-            typeOf: chevre.factory.account.transactionType.Transfer,
-            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-            agent: agent,
-            expires: expires,
-            recipient: recipient,
-            object: {
-                amount: {
-                    value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
-                },
-                description: description,
-                fromLocation: {
-                    accountNumber: params.object.fromLocation.identifier
-                },
-                toLocation: {
-                    accountNumber: params.object.toLocation.identifier
-                }
-            },
-            // ユニークネスを保証するために識別子を指定する
-            ...(transaction.typeOf === factory.transactionType.MoneyTransfer
-                && typeof transaction.object.pendingTransaction?.identifier === 'string')
-                ? { identifier: transaction.object.pendingTransaction.identifier }
-                : undefined
-        });
-    } else if (params.object.fromLocation === undefined && params.object.toLocation !== undefined) {
-        const depositService = new chevre.service.accountTransaction.Deposit({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        pendingTransaction = await depositService.start({
-            typeOf: chevre.factory.account.transactionType.Deposit,
-            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-            agent: agent,
-            expires: expires,
-            recipient: recipient,
-            object: {
-                amount: {
-                    value: (typeof params.object.itemOffered.value === 'number') ? params.object.itemOffered.value : 0
-                },
-                description: description,
-                fromLocation: {
-                    typeOf: agent.typeOf,
-                    name: agent.name
-                },
-                toLocation: {
-                    accountNumber: params.object.toLocation.identifier
-                }
-            },
-            // ユニークネスを保証するために識別子を指定する
-            ...(transaction.typeOf === factory.transactionType.MoneyTransfer
-                && typeof transaction.object.pendingTransaction?.identifier === 'string')
-                ? { identifier: transaction.object.pendingTransaction.identifier }
-                : undefined
-        });
-    } else {
-        throw new factory.errors.Argument('Object', 'At least one of accounts from and to must be specified');
-    }
-
-    return pendingTransaction;
 }
 
 /**

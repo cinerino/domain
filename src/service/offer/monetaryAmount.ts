@@ -1,7 +1,5 @@
 import * as moment from 'moment';
 
-import { credentials } from '../../credentials';
-
 import * as chevre from '../../chevre';
 import { factory } from '../../factory';
 
@@ -10,16 +8,9 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import { handleChevreError } from '../../errorHandler';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
+    depositTransaction: chevre.service.accountTransaction.Deposit;
     transaction: TransactionRepo;
 }) => Promise<T>;
 
@@ -31,6 +22,7 @@ export function authorize(params: {
 }): ICreateOperation<factory.action.authorize.offer.monetaryAmount.IAction> {
     return async (repos: {
         action: ActionRepo;
+        depositTransaction: chevre.service.accountTransaction.Deposit;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -47,7 +39,7 @@ export function authorize(params: {
             project: params.project,
             transaction: transaction,
             object: params.object
-        });
+        })(repos);
 
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.offer.monetaryAmount.IAttributes = {
@@ -111,147 +103,144 @@ export function authorize(params: {
     };
 }
 
-// tslint:disable-next-line:max-func-body-length
-async function processStartDepositTransaction(params: {
+function processStartDepositTransaction(params: {
     project: factory.project.IProject;
     transaction: factory.transaction.ITransaction<factory.transactionType>;
     object: factory.action.authorize.offer.monetaryAmount.IObject;
-}): Promise<{
-    requestBody: factory.account.transaction.deposit.IStartParamsWithoutDetail;
-    // requestBody: factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail;
-    responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
-}> {
-    let requestBody: factory.account.transaction.deposit.IStartParamsWithoutDetail;
-    // let requestBody: factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail;
-    let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
+}) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+    }): Promise<{
+        requestBody: factory.account.transaction.deposit.IStartParamsWithoutDetail;
+        // requestBody: factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail;
+        responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
+    }> => {
+        let requestBody: factory.account.transaction.deposit.IStartParamsWithoutDetail;
+        // let requestBody: factory.chevre.assetTransaction.moneyTransfer.IStartParamsWithoutDetail;
+        let responseBody: factory.action.authorize.offer.monetaryAmount.IResponseBody;
 
-    try {
-        const depositService = new chevre.service.accountTransaction.Deposit({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
-        //     endpoint: credentials.chevre.endpoint,
-        //     auth: chevreAuthClient,
-        //     project: { id: params.project.id }
-        // });
+        try {
+            // const depositService = new chevre.service.accountTransaction.Deposit({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
 
-        const description = `for ${params.transaction.typeOf} Transaction ${params.transaction.id}`;
+            const description = `for ${params.transaction.typeOf} Transaction ${params.transaction.id}`;
 
-        // 最大1ヵ月のオーソリ
-        const expires = moment()
-            .add(1, 'month')
-            .toDate();
+            // 最大1ヵ月のオーソリ
+            const expires = moment()
+                .add(1, 'month')
+                .toDate();
 
-        // 販売者が取引人に入金
-        requestBody = {
-            typeOf: chevre.factory.account.transactionType.Deposit,
-            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-            agent: {
-                project: params.transaction.project,
-                typeOf: params.transaction.seller.typeOf,
-                id: params.transaction.seller.id,
-                name: (typeof params.transaction.seller.name === 'string')
-                    ? params.transaction.seller.name
-                    : String(params.transaction.seller.name?.ja)
-            },
-            object: {
-                amount: { value: Number(params.object.itemOffered.value) },
-                fromLocation: {
+            // 販売者が取引人に入金
+            requestBody = {
+                typeOf: chevre.factory.account.transactionType.Deposit,
+                project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+                agent: {
+                    project: params.transaction.project,
+                    typeOf: params.transaction.seller.typeOf,
+                    id: params.transaction.seller.id,
+                    name: (typeof params.transaction.seller.name === 'string')
+                        ? params.transaction.seller.name
+                        : String(params.transaction.seller.name?.ja)
+                },
+                object: {
+                    amount: { value: Number(params.object.itemOffered.value) },
+                    fromLocation: {
+                        typeOf: params.transaction.agent.typeOf,
+                        id: params.transaction.agent.id,
+                        name: (typeof params.transaction.agent.name === 'string')
+                            ? params.transaction.agent.name
+                            : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
+                    },
+                    toLocation: { accountNumber: params.object.toLocation.identifier },
+                    description: description
+                },
+                recipient: {
                     typeOf: params.transaction.agent.typeOf,
                     id: params.transaction.agent.id,
                     name: (typeof params.transaction.agent.name === 'string')
                         ? params.transaction.agent.name
                         : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
                 },
-                toLocation: { accountNumber: params.object.toLocation.identifier },
-                description: description
-            },
-            recipient: {
-                typeOf: params.transaction.agent.typeOf,
-                id: params.transaction.agent.id,
-                name: (typeof params.transaction.agent.name === 'string')
-                    ? params.transaction.agent.name
-                    : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
-            },
-            expires: expires
-        };
-        // requestBody = {
-        //     typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
-        //     project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
-        //     agent: {
-        //         typeOf: params.transaction.seller.typeOf,
-        //         id: params.transaction.seller.id,
-        //         name: (typeof params.transaction.seller.name === 'string')
-        //             ? params.transaction.seller.name
-        //             : String(params.transaction.seller.name?.ja)
-        //     },
-        //     object: {
-        //         amount: {
-        //             typeOf: 'MonetaryAmount',
-        //             value: Number(params.object.itemOffered.value),
-        //             currency: factory.chevre.priceCurrency.JPY
-        //         },
-        //         fromLocation: {
-        //             typeOf: params.transaction.agent.typeOf,
-        //             id: params.transaction.agent.id,
-        //             name: (typeof params.transaction.agent.name === 'string')
-        //                 ? params.transaction.agent.name
-        //                 : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
-        //         },
-        //         toLocation: params.object.toLocation,
-        //         description: description,
-        //         pendingTransaction: {
-        //             typeOf: factory.account.transactionType.Deposit,
-        //             id: '' // 空でok
-        //         }
-        //     },
-        //     recipient: {
-        //         typeOf: params.transaction.agent.typeOf,
-        //         id: params.transaction.agent.id,
-        //         name: (typeof params.transaction.agent.name === 'string')
-        //             ? params.transaction.agent.name
-        //             : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
-        //     },
-        //     expires: expires
-        // };
+                expires: expires
+            };
+            // requestBody = {
+            //     typeOf: chevre.factory.assetTransactionType.MoneyTransfer,
+            //     project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
+            //     agent: {
+            //         typeOf: params.transaction.seller.typeOf,
+            //         id: params.transaction.seller.id,
+            //         name: (typeof params.transaction.seller.name === 'string')
+            //             ? params.transaction.seller.name
+            //             : String(params.transaction.seller.name?.ja)
+            //     },
+            //     object: {
+            //         amount: {
+            //             typeOf: 'MonetaryAmount',
+            //             value: Number(params.object.itemOffered.value),
+            //             currency: factory.chevre.priceCurrency.JPY
+            //         },
+            //         fromLocation: {
+            //             typeOf: params.transaction.agent.typeOf,
+            //             id: params.transaction.agent.id,
+            //             name: (typeof params.transaction.agent.name === 'string')
+            //                 ? params.transaction.agent.name
+            //                 : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
+            //         },
+            //         toLocation: params.object.toLocation,
+            //         description: description,
+            //         pendingTransaction: {
+            //             typeOf: factory.account.transactionType.Deposit,
+            //             id: '' // 空でok
+            //         }
+            //     },
+            //     recipient: {
+            //         typeOf: params.transaction.agent.typeOf,
+            //         id: params.transaction.agent.id,
+            //         name: (typeof params.transaction.agent.name === 'string')
+            //             ? params.transaction.agent.name
+            //             : `${params.transaction.typeOf} Transaction ${params.transaction.id}`
+            //     },
+            //     expires: expires
+            // };
 
-        responseBody = await depositService.start(requestBody);
-        // responseBody = await moneyTransferService.start(requestBody);
-    } catch (error) {
-        error = handleChevreError(error);
-        throw error;
-    }
+            responseBody = await repos.depositTransaction.start(requestBody);
+            // responseBody = await moneyTransferService.start(requestBody);
+        } catch (error) {
+            error = handleChevreError(error);
+            throw error;
+        }
 
-    return { requestBody, responseBody };
+        return { requestBody, responseBody };
+    };
 }
 
 export function voidTransaction(params: factory.task.IData<factory.taskName.VoidMoneyTransferTransaction>) {
     return async (repos: {
         action: ActionRepo;
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+        transferTransaction: chevre.service.accountTransaction.Transfer;
+        withdrawTransaction: chevre.service.accountTransaction.Withdraw;
         transaction: TransactionRepo;
     }) => {
-        // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
+        // const depositService = new chevre.service.accountTransaction.Deposit({
         //     endpoint: credentials.chevre.endpoint,
         //     auth: chevreAuthClient,
         //     project: { id: params.project.id }
         // });
-        const depositService = new chevre.service.accountTransaction.Deposit({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const transferService = new chevre.service.accountTransaction.Transfer({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
-        const withdrawService = new chevre.service.accountTransaction.Withdraw({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
+        // const transferService = new chevre.service.accountTransaction.Transfer({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
+        // const withdrawService = new chevre.service.accountTransaction.Withdraw({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
         let transaction: factory.transaction.ITransaction<factory.transactionType> | undefined;
         if (params.agent !== undefined && params.agent !== null && typeof params.agent.id === 'string') {
@@ -295,15 +284,15 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
             if (pendingTransaction !== undefined && pendingTransaction !== null) {
                 switch (pendingTransaction.typeOf) {
                     case factory.account.transactionType.Deposit:
-                        await depositService.cancel({ id: pendingTransaction.id });
+                        await repos.depositTransaction.cancel({ id: pendingTransaction.id });
                         break;
 
                     case factory.account.transactionType.Transfer:
-                        await transferService.cancel({ id: pendingTransaction.id });
+                        await repos.transferTransaction.cancel({ id: pendingTransaction.id });
                         break;
 
                     case factory.account.transactionType.Withdraw:
-                        await withdrawService.cancel({ id: pendingTransaction.id });
+                        await repos.withdrawTransaction.cancel({ id: pendingTransaction.id });
                         break;
 
                     default:
@@ -319,6 +308,9 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
 export function settleTransaction(params: factory.task.IData<factory.taskName.ConfirmMoneyTransfer>) {
     return async (repos: {
         action: ActionRepo;
+        depositTransaction: chevre.service.accountTransaction.Deposit;
+        transferTransaction: chevre.service.accountTransaction.Transfer;
+        withdrawTransaction: chevre.service.accountTransaction.Withdraw;
     }) => {
         const action = await repos.action.start(params);
 
@@ -326,47 +318,38 @@ export function settleTransaction(params: factory.task.IData<factory.taskName.Co
         try {
             switch (pendingTransaction.typeOf) {
                 case factory.account.transactionType.Deposit:
-                    const depositService = new chevre.service.accountTransaction.Deposit({
-                        endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient,
-                        project: { id: params.project.id }
-                    });
-                    await depositService.confirm({ id: pendingTransaction.id });
+                    // const depositService = new chevre.service.accountTransaction.Deposit({
+                    //     endpoint: credentials.chevre.endpoint,
+                    //     auth: chevreAuthClient,
+                    //     project: { id: params.project.id }
+                    // });
+                    await repos.depositTransaction.confirm({ id: pendingTransaction.id });
 
                     break;
 
                 case factory.account.transactionType.Transfer:
-                    const transferService = new chevre.service.accountTransaction.Transfer({
-                        endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient,
-                        project: { id: params.project.id }
-                    });
-                    await transferService.confirm({ id: pendingTransaction.id });
+                    // const transferService = new chevre.service.accountTransaction.Transfer({
+                    //     endpoint: credentials.chevre.endpoint,
+                    //     auth: chevreAuthClient,
+                    //     project: { id: params.project.id }
+                    // });
+                    await repos.transferTransaction.confirm({ id: pendingTransaction.id });
 
                     break;
 
                 case factory.account.transactionType.Withdraw:
-                    const withdrawService = new chevre.service.accountTransaction.Withdraw({
-                        endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient,
-                        project: { id: params.project.id }
-                    });
-                    await withdrawService.confirm({ id: pendingTransaction.id });
+                    // const withdrawService = new chevre.service.accountTransaction.Withdraw({
+                    //     endpoint: credentials.chevre.endpoint,
+                    //     auth: chevreAuthClient,
+                    //     project: { id: params.project.id }
+                    // });
+                    await repos.withdrawTransaction.confirm({ id: pendingTransaction.id });
 
                     break;
 
                 default:
                     throw new factory.errors.NotImplemented(`'${(<any>pendingTransaction).typeOf}' not implemented`);
             }
-            // const moneyTransferService = new chevre.service.assetTransaction.MoneyTransfer({
-            //     endpoint: credentials.chevre.endpoint,
-            //     auth: chevreAuthClient,
-            //     project: { id: params.project.id }
-            // });
-
-            // const pendingTransaction = params.object.pendingTransaction;
-
-            // await moneyTransferService.confirm({ id: pendingTransaction.id });
         } catch (error) {
             try {
                 // tslint:disable-next-line:max-line-length no-single-line-block-comment

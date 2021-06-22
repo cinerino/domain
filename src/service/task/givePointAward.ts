@@ -32,8 +32,15 @@ export function call(data: factory.task.IData<factory.taskName.GivePointAward>):
             project: { id: data.project.id }
         });
 
+        const depositTransaction = new chevre.service.accountTransaction.Deposit({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await DeliveryService.givePointAward(data)({
             action: new ActionRepo(settings.connection),
+            depositTransaction,
             transactionNumber: transactionNumberService
         });
     };

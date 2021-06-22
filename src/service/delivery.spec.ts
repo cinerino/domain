@@ -17,7 +17,7 @@ before(() => {
     sandbox = sinon.createSandbox();
 });
 
-describe('ポイントインセンティブを適用する', () => {
+describe('ポイント特典付与', () => {
     beforeEach(() => {
         sandbox.restore();
     });
@@ -25,6 +25,7 @@ describe('ポイントインセンティブを適用する', () => {
     it('Chevreサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionNumberRepo = new domain.chevre.service.TransactionNumber(<any>{});
+        const depositTransaction = new domain.chevre.service.accountTransaction.Deposit(<any>{});
 
         sandbox.mock(actionRepo)
             .expects('start')
@@ -34,11 +35,11 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.accountTransaction.Deposit.prototype)
+        sandbox.mock(depositTransaction)
             .expects('start')
             .once()
             .resolves({ id: 'id' });
-        sandbox.mock(domain.chevre.service.accountTransaction.Deposit.prototype)
+        sandbox.mock(depositTransaction)
             .expects('confirm')
             .once()
             .resolves();
@@ -57,6 +58,7 @@ describe('ポイントインセンティブを適用する', () => {
             purpose: {}
         })({
             action: actionRepo,
+            depositTransaction,
             transactionNumber: transactionNumberRepo
         });
         assert.equal(result, undefined);
@@ -68,6 +70,7 @@ describe('ポイントインセンティブを適用する', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionNumberRepo = new domain.chevre.service.TransactionNumber(<any>{});
+        const depositTransaction = new domain.chevre.service.accountTransaction.Deposit(<any>{});
 
         sandbox.mock(actionRepo)
             .expects('start')
@@ -77,7 +80,7 @@ describe('ポイントインセンティブを適用する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.accountTransaction.Deposit.prototype)
+        sandbox.mock(depositTransaction)
             .expects('start')
             .once()
             .rejects(chevreError);
@@ -99,6 +102,7 @@ describe('ポイントインセンティブを適用する', () => {
             purpose: {}
         })({
             action: actionRepo,
+            depositTransaction,
             transactionNumber: transactionNumberRepo
         })
             .catch((err) => err);
@@ -107,7 +111,7 @@ describe('ポイントインセンティブを適用する', () => {
     });
 });
 
-describe('ポイントインセンティブを返却する', () => {
+describe('ポイント特典返却', () => {
     beforeEach(() => {
         sandbox.restore();
     });
@@ -115,6 +119,7 @@ describe('ポイントインセンティブを返却する', () => {
     it('Chevreサービスが正常であればアクションを完了できるはず', async () => {
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionNumberRepo = new domain.chevre.service.TransactionNumber(<any>{});
+        const withdrawTransaction = new domain.chevre.service.accountTransaction.Withdraw(<any>{});
 
         sandbox.mock(actionRepo)
             .expects('start')
@@ -124,11 +129,11 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
+        sandbox.mock(withdrawTransaction)
             .expects('start')
             .once()
             .resolves({});
-        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
+        sandbox.mock(withdrawTransaction)
             .expects('confirm')
             .once()
             .resolves();
@@ -154,7 +159,8 @@ describe('ポイントインセンティブを返却する', () => {
             }
         })({
             action: actionRepo,
-            transactionNumber: transactionNumberRepo
+            transactionNumber: transactionNumberRepo,
+            withdrawTransaction
         });
         assert.equal(result, undefined);
         sandbox.verify();
@@ -165,6 +171,7 @@ describe('ポイントインセンティブを返却する', () => {
 
         const actionRepo = new domain.repository.Action(mongoose.connection);
         const transactionNumberRepo = new domain.chevre.service.TransactionNumber(<any>{});
+        const withdrawTransaction = new domain.chevre.service.accountTransaction.Withdraw(<any>{});
 
         sandbox.mock(actionRepo)
             .expects('start')
@@ -174,11 +181,11 @@ describe('ポイントインセンティブを返却する', () => {
             .expects('publish')
             .once()
             .resolves({ transactionNumber: 'transactionNumber' });
-        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
+        sandbox.mock(withdrawTransaction)
             .expects('start')
             .once()
             .rejects(chevreError);
-        sandbox.mock(domain.chevre.service.accountTransaction.Withdraw.prototype)
+        sandbox.mock(withdrawTransaction)
             .expects('confirm')
             .never();
         sandbox.mock(actionRepo)
@@ -206,7 +213,8 @@ describe('ポイントインセンティブを返却する', () => {
             }
         })({
             action: actionRepo,
-            transactionNumber: transactionNumberRepo
+            transactionNumber: transactionNumberRepo,
+            withdrawTransaction
         })
             .catch((err) => err);
         assert.deepEqual(result, chevreError);

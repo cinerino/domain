@@ -32,9 +32,16 @@ export function call(data: factory.task.IData<factory.taskName.ReturnPointAward>
             project: { id: data.project.id }
         });
 
+        const withdrawTransaction = new chevre.service.accountTransaction.Withdraw({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await DeliveryService.returnPointAward(data)({
             action: new ActionRepo(settings.connection),
-            transactionNumber: transactionNumberService
+            transactionNumber: transactionNumberService,
+            withdrawTransaction
         });
     };
 }

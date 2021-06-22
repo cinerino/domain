@@ -19,14 +19,6 @@ import { createAuthorizeResult, creatPayTransactionStartParams } from './chevre/
 
 import { handleChevreError } from '../../errorHandler';
 
-// const chevreAuthClient = new chevre.auth.ClientCredentials({
-//     domain: credentials.chevre.authorizeServerDomain,
-//     clientId: credentials.chevre.clientId,
-//     clientSecret: credentials.chevre.clientSecret,
-//     scopes: [],
-//     state: ''
-// });
-
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     payTransaction: chevre.service.assetTransaction.Pay;
