@@ -13,14 +13,6 @@ import { factory } from '../factory';
 import { handleChevreError } from '../errorHandler';
 import { MongoRepository as ActionRepo } from '../repo/action';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 // tslint:disable-next-line:no-magic-numbers
 const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
 
@@ -44,6 +36,7 @@ export type ISearchReservationsOperation<T> = (repos: {
 export function cancelReservation(params: factory.task.IData<factory.taskName.ConfirmCancelReserve>) {
     return async (repos: {
         action: ActionRepo;
+        cancelReservationTransaction: chevre.service.assetTransaction.CancelReservation;
     }) => {
         const action = await repos.action.start(params);
 
@@ -67,7 +60,7 @@ export function cancelReservation(params: factory.task.IData<factory.taskName.Co
                     await processCancelReservation4chevre({
                         ...params,
                         project: params.project
-                    });
+                    })(repos);
             }
         } catch (error) {
             try {
@@ -112,40 +105,44 @@ async function processCancelReservation4coa(params: {
     }
 }
 
-async function processCancelReservation4chevre(params: factory.task.IData<factory.taskName.ConfirmCancelReserve> & {
+function processCancelReservation4chevre(params: factory.task.IData<factory.taskName.ConfirmCancelReserve> & {
     project: factory.project.IProject;
 }) {
-    const cancelReservationObject = params.object;
-    const project = params.project;
+    return async (repos: {
+        cancelReservationTransaction: chevre.service.assetTransaction.CancelReservation;
+    }) => {
+        const cancelReservationObject = params.object;
+        const project = params.project;
 
-    const cancelReservationService = new chevre.service.assetTransaction.CancelReservation({
-        endpoint: credentials.chevre.endpoint,
-        auth: chevreAuthClient,
-        project: { id: params.project.id }
-    });
+        // const cancelReservationService = new chevre.service.assetTransaction.CancelReservation({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
-    await cancelReservationService.startAndConfirm({
-        project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
-        typeOf: factory.chevre.assetTransactionType.CancelReservation,
-        agent: {
-            typeOf: params.agent.typeOf,
-            id: params.agent.id,
-            name: String(params.agent.name)
-        },
-        object: {
-            // transaction: {
-            //     typeOf: cancelReservationObject.typeOf,
-            //     id: cancelReservationObject.id
-            // },
-            reservation: {
-                reservationNumber: (<any>cancelReservationObject).transactionNumber
-            }
-        },
-        expires: moment()
-            .add(1, 'minutes')
-            .toDate(),
-        potentialActions: params.potentialActions
-    });
+        await repos.cancelReservationTransaction.startAndConfirm({
+            project: { typeOf: factory.chevre.organizationType.Project, id: project.id },
+            typeOf: factory.chevre.assetTransactionType.CancelReservation,
+            agent: {
+                typeOf: params.agent.typeOf,
+                id: params.agent.id,
+                name: String(params.agent.name)
+            },
+            object: {
+                // transaction: {
+                //     typeOf: cancelReservationObject.typeOf,
+                //     id: cancelReservationObject.id
+                // },
+                reservation: {
+                    reservationNumber: (<any>cancelReservationObject).transactionNumber
+                }
+            },
+            expires: moment()
+                .add(1, 'minutes')
+                .toDate(),
+            potentialActions: params.potentialActions
+        });
+    };
 }
 
 /**
