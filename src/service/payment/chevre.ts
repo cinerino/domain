@@ -3,7 +3,7 @@
  */
 import * as moment from 'moment';
 
-import { credentials } from '../../credentials';
+// import { credentials } from '../../credentials';
 
 import * as chevre from '../../chevre';
 import { factory } from '../../factory';
@@ -19,22 +19,24 @@ import { createAuthorizeResult, creatPayTransactionStartParams } from './chevre/
 
 import { handleChevreError } from '../../errorHandler';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const chevreAuthClient = new chevre.auth.ClientCredentials({
+//     domain: credentials.chevre.authorizeServerDomain,
+//     clientId: credentials.chevre.clientId,
+//     clientSecret: credentials.chevre.clientSecret,
+//     scopes: [],
+//     state: ''
+// });
 
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
+    payTransaction: chevre.service.assetTransaction.Pay;
     transaction: TransactionRepo;
     transactionNumber: chevre.service.TransactionNumber;
 }) => Promise<T>;
 
 export type IPayOperation<T> = (repos: {
     action: ActionRepo;
+    payTransaction: chevre.service.assetTransaction.Pay;
 }) => Promise<T>;
 
 export function authorize(params: {
@@ -46,6 +48,7 @@ export function authorize(params: {
 }): IAuthorizeOperation<factory.action.authorize.paymentMethod.any.IAction> {
     return async (repos: {
         action: ActionRepo;
+        payTransaction: chevre.service.assetTransaction.Pay;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
     }) => {
@@ -81,11 +84,11 @@ export function authorize(params: {
 
         try {
             // 決済取引開始
-            const payService = new chevre.service.assetTransaction.Pay({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
-            });
+            // const payService = new chevre.service.assetTransaction.Pay({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
 
             const startParams = creatPayTransactionStartParams({
                 object: params.object,
@@ -94,7 +97,7 @@ export function authorize(params: {
                 transactionNumber: transactionNumber
             });
 
-            payTransaction = await payService.start(startParams);
+            payTransaction = await repos.payTransaction.start(startParams);
         } catch (error) {
             try {
                 const actionError = { ...error, message: error.message, name: error.name };
@@ -116,19 +119,20 @@ export function authorize(params: {
 export function pay(params: factory.task.IData<factory.taskName.ConfirmPay>): IPayOperation<factory.action.interact.confirm.pay.IAction> {
     return async (repos: {
         action: ActionRepo;
+        payTransaction: chevre.service.assetTransaction.Pay;
     }) => {
-        const payService = new chevre.service.assetTransaction.Pay({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
+        // const payService = new chevre.service.assetTransaction.Pay({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
         // アクション開始
         const action = await repos.action.start(params);
 
         try {
             for (const paymentMethod of params.object) {
-                await payService.confirm({
+                await repos.payTransaction.confirm({
                     transactionNumber: paymentMethod.paymentMethod.paymentMethodId,
                     potentialActions: { pay: { purpose: params.purpose } }
                 });
@@ -163,6 +167,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
     return async (repos: {
         action: ActionRepo;
         assetTransaction: chevre.service.AssetTransaction;
+        payTransaction: chevre.service.assetTransaction.Pay;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findById({
@@ -197,11 +202,11 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
             );
         }
 
-        const payService = new chevre.service.assetTransaction.Pay({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
+        // const payService = new chevre.service.assetTransaction.Pay({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
         const errors: any[] = [];
         for (const action of authorizeActions) {
@@ -221,7 +226,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
                         transactionNumber: { $eq: transactionNumber }
                     });
                     if (data.length > 0) {
-                        await payService.cancel({ transactionNumber });
+                        await repos.payTransaction.cancel({ transactionNumber });
                     }
                 }
 
@@ -243,17 +248,18 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
         order: OrderRepo;
         product: chevre.service.Product;
         project: ProjectRepo;
+        refundTransaction: chevre.service.assetTransaction.Refund;
         task: TaskRepo;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
-        const refundService = new chevre.service.assetTransaction.Refund({
-            endpoint: credentials.chevre.endpoint,
-            auth: chevreAuthClient,
-            project: { id: params.project.id }
-        });
+        // const refundService = new chevre.service.assetTransaction.Refund({
+        //     endpoint: credentials.chevre.endpoint,
+        //     auth: chevreAuthClient,
+        //     project: { id: params.project.id }
+        // });
 
         const { transactionNumber } = await repos.transactionNumber.publish({
             project: { id: params.project.id }
@@ -301,7 +307,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
             }
 
             // no op
-            refundTransaction = await refundService.start({
+            refundTransaction = await repos.refundTransaction.start({
                 project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
                 typeOf: chevre.factory.assetTransactionType.Refund,
                 transactionNumber: transactionNumber,
@@ -345,7 +351,7 @@ export function refund(params: factory.task.IData<factory.taskName.ConfirmRefund
                     project: { typeOf: order.project.typeOf, id: order.project.id }
                 }
             };
-            await refundService.confirm({
+            await repos.refundTransaction.confirm({
                 transactionNumber,
                 potentialActions: { refund: { purpose: refundPurpose } }
             });

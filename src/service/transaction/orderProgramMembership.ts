@@ -31,6 +31,7 @@ export type IOrderOperation<T> = (repos: {
     creditCard: CreditCardRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
+    payTransaction: chevre.service.assetTransaction.Pay;
     person: PersonRepo;
     product: chevre.service.Product;
     project: ProjectRepo;
@@ -55,6 +56,7 @@ export function orderProgramMembership(
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         ownershipInfo: chevre.service.OwnershipInfo;
+        payTransaction: chevre.service.assetTransaction.Pay;
         person: PersonRepo;
         product: chevre.service.Product;
         project: ProjectRepo;
@@ -157,6 +159,7 @@ function processPlaceOrder(params: {
         creditCard: CreditCardRepo;
         orderNumber: OrderNumberRepo;
         person: PersonRepo;
+        payTransaction: chevre.service.assetTransaction.Pay;
         product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
@@ -350,6 +353,7 @@ function processAuthorizeCreditCard(params: {
         creditCard: CreditCardRepo;
         person: PersonRepo;
         project: ProjectRepo;
+        payTransaction: chevre.service.assetTransaction.Pay;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
     }) => {

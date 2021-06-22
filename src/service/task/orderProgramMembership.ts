@@ -23,6 +23,7 @@ import { orderProgramMembership } from '../transaction/orderProgramMembership';
  * タスク実行関数
  */
 export function call(data: factory.task.IData<factory.taskName.OrderProgramMembership>): IOperation<void> {
+    // tslint:disable-next-line:max-func-body-length
     return async (settings: IConnectionSettings) => {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -50,6 +51,12 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
         });
 
         const ownershipInfoService = new chevre.service.OwnershipInfo({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
+        const payTransactionService = new chevre.service.assetTransaction.Pay({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
             project: { id: data.project.id }
@@ -107,6 +114,7 @@ export function call(data: factory.task.IData<factory.taskName.OrderProgramMembe
             creditCard: creditCardRepo,
             orderNumber: new OrderNumberRepo(settings.redisClient),
             ownershipInfo: ownershipInfoService,
+            payTransaction: payTransactionService,
             person: personRepo,
             product: productService,
             project: projectRepo,

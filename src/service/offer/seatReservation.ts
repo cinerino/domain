@@ -49,6 +49,7 @@ enum SeatingType {
 export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     event: chevre.service.Event;
+    payTransaction: chevre.service.assetTransaction.Pay;
     seller: chevre.service.Seller;
     transaction: TransactionRepo;
     transactionNumber: chevre.service.TransactionNumber;
@@ -83,6 +84,7 @@ export function create(params: {
     return async (repos: {
         action: ActionRepo;
         event: chevre.service.Event;
+        payTransaction: chevre.service.assetTransaction.Pay;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
@@ -481,6 +483,7 @@ export function validateAcceptedOffers(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         event: chevre.service.Event;
+        payTransaction: chevre.service.assetTransaction.Pay;
         seller: chevre.service.Seller;
     }): Promise<factory.action.authorize.offer.seatReservation.IAcceptedOffer<factory.service.webAPI.Identifier.Chevre>[]> => {
         // 利用可能なチケットオファーを検索
@@ -649,6 +652,7 @@ function addExtraProperties4COA(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
+        payTransaction: chevre.service.assetTransaction.Pay;
         seller: chevre.service.Seller;
     }) => {
         const masterService = new COA.service.Master(
@@ -696,12 +700,12 @@ function addExtraProperties4COA(params: {
             }
 
             // ムビチケ認証
-            const payService = new chevre.service.assetTransaction.Pay({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
-            });
-            const checkAction = await payService.check({
+            // const payService = new chevre.service.assetTransaction.Pay({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
+            const checkAction = await repos.payTransaction.check({
                 project: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },
                 typeOf: chevre.factory.actionType.CheckAction,
                 agent: { id: params.project.id, typeOf: chevre.factory.organizationType.Project },

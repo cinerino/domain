@@ -30,6 +30,12 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmRefund>): 
             throw new Error('settings.chevreAuthClient undefined');
         }
 
+        const refundTransactionService = new chevre.service.assetTransaction.Refund({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         const productService = new chevre.service.Product({
             endpoint: credentials.chevre.endpoint,
             auth: chevreAuthClient,
@@ -47,6 +53,7 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmRefund>): 
             order: orderRepo,
             product: productService,
             project: projectRepo,
+            refundTransaction: refundTransactionService,
             task: taskRepo,
             transaction: transactionRepo,
             transactionNumber: transactionNumberService

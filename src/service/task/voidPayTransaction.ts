@@ -30,9 +30,16 @@ export function call(data: factory.task.IData<factory.taskName.VoidPayTransactio
             project: { id: data.project.id }
         });
 
+        const payTransactionService = new chevre.service.assetTransaction.Pay({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await PaymentService.voidPayment(data)({
             action: actionRepo,
             assetTransaction: assetTransactionService,
+            payTransaction: payTransactionService,
             transaction: transactionRepo
         });
     };
