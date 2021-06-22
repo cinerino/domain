@@ -154,8 +154,9 @@ async function processCancelReservation4chevre(params: factory.task.IData<factor
 export function confirmReservation(params: factory.action.interact.confirm.reservation.IAttributes<factory.service.webAPI.Identifier>) {
     return async (repos: {
         action: ActionRepo;
+        reserveTransaction: chevre.service.assetTransaction.Reserve;
     }) => {
-        let reserveService: COA.service.Reserve | chevre.service.assetTransaction.Reserve;
+        let reserveService: COA.service.Reserve;
 
         // アクション開始
         const confirmActionAttributes = params;
@@ -195,14 +196,14 @@ export function confirmReservation(params: factory.action.interact.confirm.reser
 
                 default:
                     // 座席予約確定
-                    reserveService = new chevre.service.assetTransaction.Reserve({
-                        endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient,
-                        project: { id: params.project.id }
-                    });
+                    // reserveService = new chevre.service.assetTransaction.Reserve({
+                    //     endpoint: credentials.chevre.endpoint,
+                    //     auth: chevreAuthClient,
+                    //     project: { id: params.project.id }
+                    // });
 
                     object = <factory.action.interact.confirm.reservation.IObject4Chevre>object;
-                    await reserveService.confirm(object);
+                    await repos.reserveTransaction.confirm(object);
             }
         } catch (error) {
             // actionにエラー結果を追加

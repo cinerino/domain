@@ -23,14 +23,6 @@ import {
 
 const debug = createDebug('cinerino-domain:service');
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 // tslint:disable-next-line:no-magic-numbers
 const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
 
@@ -50,6 +42,7 @@ export type ICreateOperation<T> = (repos: {
     action: ActionRepo;
     event: chevre.service.Event;
     payTransaction: chevre.service.assetTransaction.Pay;
+    reserveTransaction: chevre.service.assetTransaction.Reserve;
     seller: chevre.service.Seller;
     transaction: TransactionRepo;
     transactionNumber: chevre.service.TransactionNumber;
@@ -85,6 +78,7 @@ export function create(params: {
         action: ActionRepo;
         event: chevre.service.Event;
         payTransaction: chevre.service.assetTransaction.Pay;
+        reserveTransaction: chevre.service.assetTransaction.Reserve;
         seller: chevre.service.Seller;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
@@ -130,7 +124,7 @@ export function create(params: {
 
         let requestBody: factory.action.authorize.offer.seatReservation.IRequestBody<typeof offeredThrough.identifier>;
         let responseBody: factory.action.authorize.offer.seatReservation.IResponseBody<typeof offeredThrough.identifier>;
-        let reserveService: COA.service.Reserve | chevre.service.assetTransaction.Reserve | undefined;
+        let reserveService: COA.service.Reserve | undefined;
         let acceptedOffers4result: factory.action.authorize.offer.seatReservation.IResultAcceptedOffer[] = [];
         let transactionNumber: string | undefined;
 
@@ -208,11 +202,11 @@ export function create(params: {
                         throw new factory.errors.ServiceUnavailable('Unexpected error occurred: reserve transactionNumber not found');
                     }
 
-                    reserveService = new chevre.service.assetTransaction.Reserve({
-                        endpoint: credentials.chevre.endpoint,
-                        auth: chevreAuthClient,
-                        project: { id: params.project.id }
-                    });
+                    // reserveService = new chevre.service.assetTransaction.Reserve({
+                    //     endpoint: credentials.chevre.endpoint,
+                    //     auth: chevreAuthClient,
+                    //     project: { id: params.project.id }
+                    // });
 
                     // Chevreで仮予約
                     const startParams = createReserveTransactionStartParams({
@@ -222,7 +216,7 @@ export function create(params: {
                         transactionNumber: transactionNumber
                     });
                     requestBody = startParams;
-                    responseBody = await reserveService.start(startParams);
+                    responseBody = await repos.reserveTransaction.start(startParams);
 
                     // 座席仮予約からオファー情報を生成する
                     acceptedOffers4result = responseBody2acceptedOffers4result({
@@ -1167,6 +1161,7 @@ export function cancel(params: {
 }) {
     return async (repos: {
         action: ActionRepo;
+        reserveTransaction: chevre.service.assetTransaction.Reserve;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
@@ -1216,15 +1211,15 @@ export function cancel(params: {
                 break;
 
             default:
-                const reserveService = new chevre.service.assetTransaction.Reserve({
-                    endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient,
-                    project: { id: params.project.id }
-                });
+                // const reserveService = new chevre.service.assetTransaction.Reserve({
+                //     endpoint: credentials.chevre.endpoint,
+                //     auth: chevreAuthClient,
+                //     project: { id: params.project.id }
+                // });
 
                 if (typeof action.object.pendingTransaction?.transactionNumber === 'string') {
                     // すでに取消済であったとしても、すべて取消処理(actionStatusに関係なく)
-                    await reserveService.cancel({ transactionNumber: action.object.pendingTransaction?.transactionNumber });
+                    await repos.reserveTransaction.cancel({ transactionNumber: action.object.pendingTransaction?.transactionNumber });
                 }
         }
     };

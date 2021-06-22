@@ -28,9 +28,16 @@ export function call(data: factory.task.IData<factory.taskName.VoidReserveTransa
             project: { id: data.project.id }
         });
 
+        const reserveService = new chevre.service.assetTransaction.Reserve({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await ReservationOfferService.voidTransaction(data)({
             action: actionRepo,
-            assetTransaction: assetTransactionService
+            assetTransaction: assetTransactionService,
+            reserveTransaction: reserveService
         });
     };
 }

@@ -1,5 +1,8 @@
 import { IConnectionSettings, IOperation } from '../task';
 
+import { credentials } from '../../credentials';
+
+import * as chevre from '../../chevre';
 import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
@@ -13,8 +16,20 @@ export function call(data: factory.task.IData<factory.taskName.ConfirmReservatio
     return async (settings: IConnectionSettings) => {
         const actionRepo = new ActionRepo(settings.connection);
 
+        const chevreAuthClient = settings.chevreAuthClient;
+        if (chevreAuthClient === undefined) {
+            throw new Error('settings.chevreAuthClient undefined');
+        }
+
+        const reserveService = new chevre.service.assetTransaction.Reserve({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await ReservationService.confirmReservation(data)({
-            action: actionRepo
+            action: actionRepo,
+            reserveTransaction: reserveService
         });
     };
 }

@@ -8,14 +8,6 @@ import { factory } from '../../factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 // tslint:disable-next-line:no-magic-numbers
 const COA_TIMEOUT = (typeof process.env.COA_TIMEOUT === 'string') ? Number(process.env.COA_TIMEOUT) : 20000;
 
@@ -35,6 +27,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
     return async (repos: {
         action: ActionRepo;
         assetTransaction: chevre.service.AssetTransaction;
+        reserveTransaction: chevre.service.assetTransaction.Reserve;
     }) => {
         // 座席仮予約アクション検索
         const authorizeActions = <factory.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
@@ -137,6 +130,7 @@ function processVoidTransaction4chevre(params: {
 }) {
     return async (repos: {
         assetTransaction: chevre.service.AssetTransaction;
+        reserveTransaction: chevre.service.assetTransaction.Reserve;
     }) => {
         const transactionNumber = params.action.object.pendingTransaction?.transactionNumber;
         if (typeof transactionNumber === 'string') {
@@ -149,13 +143,13 @@ function processVoidTransaction4chevre(params: {
             });
             if (data.length > 0) {
                 // Chevreの場合、objectの進行中取引情報を元に、予約取引を取り消す
-                const reserveService = new chevre.service.assetTransaction.Reserve({
-                    endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient,
-                    project: { id: params.project.id }
-                });
+                // const reserveService = new chevre.service.assetTransaction.Reserve({
+                //     endpoint: credentials.chevre.endpoint,
+                //     auth: chevreAuthClient,
+                //     project: { id: params.project.id }
+                // });
 
-                await reserveService.cancel({ transactionNumber: transactionNumber });
+                await repos.reserveTransaction.cancel({ transactionNumber: transactionNumber });
             }
         }
     };
