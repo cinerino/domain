@@ -1,7 +1,5 @@
 import * as moment from 'moment';
 
-import { credentials } from '../../credentials';
-
 import * as chevre from '../../chevre';
 
 import { factory } from '../../factory';
@@ -23,20 +21,13 @@ import {
     createResult
 } from './product/factory';
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 export type IAuthorizeOperation<T> = (repos: {
     action: ActionRepo;
     orderNumber: OrderNumberRepo;
     ownershipInfo: chevre.service.OwnershipInfo;
     product: chevre.service.Product;
     registerActionInProgress: RegisterServiceInProgressRepo;
+    registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
     serviceOutput: chevre.service.ServiceOutput;
     transaction: TransactionRepo;
     transactionNumber: chevre.service.TransactionNumber;
@@ -145,6 +136,7 @@ export function authorize(params: {
         ownershipInfo: chevre.service.OwnershipInfo;
         product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
         serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;
@@ -227,11 +219,11 @@ export function authorize(params: {
             }
 
             // サービス登録開始
-            const registerService = new chevre.service.assetTransaction.RegisterService({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: transaction.project.id }
-            });
+            // const registerService = new chevre.service.assetTransaction.RegisterService({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: transaction.project.id }
+            // });
 
             const startParams = createRegisterServiceStartParams({
                 project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
@@ -240,7 +232,7 @@ export function authorize(params: {
                 transactionNumber
             });
             requestBody = startParams;
-            responseBody = await registerService.start(startParams);
+            responseBody = await repos.registerServiceTransaction.start(startParams);
 
         } catch (error) {
             try {
@@ -282,6 +274,7 @@ export function voidTransaction(params: factory.task.IData<factory.taskName.Void
         action: ActionRepo;
         assetTransaction: chevre.service.AssetTransaction;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
         transaction: TransactionRepo;
     }) => {
         const transaction = await repos.transaction.findById({
@@ -358,6 +351,7 @@ function processVoidRegisterServiceTransaction(params: {
 }) {
     return async (repos: {
         assetTransaction: chevre.service.AssetTransaction;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
     }) => {
         const transactionNumber = params.action.instrument?.transactionNumber;
         if (typeof transactionNumber === 'string') {
@@ -369,13 +363,13 @@ function processVoidRegisterServiceTransaction(params: {
                 transactionNumber: { $eq: transactionNumber }
             });
             if (data.length > 0) {
-                const registerService = new chevre.service.assetTransaction.RegisterService({
-                    endpoint: credentials.chevre.endpoint,
-                    auth: chevreAuthClient,
-                    project: { id: params.project.id }
-                });
+                // const registerService = new chevre.service.assetTransaction.RegisterService({
+                //     endpoint: credentials.chevre.endpoint,
+                //     auth: chevreAuthClient,
+                //     project: { id: params.project.id }
+                // });
 
-                await registerService.cancel({ transactionNumber: transactionNumber });
+                await repos.registerServiceTransaction.cancel({ transactionNumber: transactionNumber });
             }
         }
     };

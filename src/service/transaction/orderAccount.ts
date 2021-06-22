@@ -27,6 +27,7 @@ export type IOrderOperation<T> = (repos: {
     product: chevre.service.Product;
     project: ProjectRepo;
     registerActionInProgress: RegisterServiceInProgressRepo;
+    registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
     seller: chevre.service.Seller;
     serviceOutput: chevre.service.ServiceOutput;
     transaction: TransactionRepo;
@@ -59,6 +60,7 @@ export function orderAccount(params: {
         product: chevre.service.Product;
         project: ProjectRepo;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
         seller: chevre.service.Seller;
         serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
@@ -165,6 +167,7 @@ function processPlaceOrder(params: {
         person: PersonRepo;
         product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
         seller: chevre.service.Seller;
         serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
@@ -222,6 +225,7 @@ function processAuthorizeProductOffer(params: {
         orderNumber: OrderNumberRepo;
         product: chevre.service.Product;
         registerActionInProgress: RegisterServiceInProgressRepo;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
         serviceOutput: chevre.service.ServiceOutput;
         transaction: TransactionRepo;
         transactionNumber: chevre.service.TransactionNumber;

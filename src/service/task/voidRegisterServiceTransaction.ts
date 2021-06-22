@@ -36,10 +36,17 @@ export function call(data: factory.task.IData<factory.taskName.VoidRegisterServi
             project: { id: data.project.id }
         });
 
+        const registerService = new chevre.service.assetTransaction.RegisterService({
+            endpoint: credentials.chevre.endpoint,
+            auth: chevreAuthClient,
+            project: { id: data.project.id }
+        });
+
         await ProductOfferService.voidTransaction(data)({
             action: actionRepo,
             assetTransaction: assetTransactionService,
             registerActionInProgress: registerActionInProgress,
+            registerServiceTransaction: registerService,
             transaction: transactionRepo
         });
     };

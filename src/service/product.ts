@@ -1,8 +1,6 @@
 /**
  * プロダクトサービス
  */
-import { credentials } from '../credentials';
-
 import * as chevre from '../chevre';
 import { factory } from '../factory';
 
@@ -14,14 +12,6 @@ import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as OfferService from './offer';
-
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
 
 export type ICreateOrderTaskOperation<T> = (repos: {
     product: chevre.service.Product;
@@ -171,6 +161,7 @@ export function unRegister(params: factory.action.interact.unRegister.programMem
 export function registerService(params: factory.action.interact.confirm.registerService.IAttributes) {
     return async (repos: {
         action: ActionRepo;
+        registerServiceTransaction: chevre.service.assetTransaction.RegisterService;
         task: TaskRepo;
     }) => {
         // アクション開始
@@ -180,13 +171,13 @@ export function registerService(params: factory.action.interact.confirm.register
         try {
             const object = registerActionAttributes.object;
 
-            const registerServiceTransaction = new chevre.service.assetTransaction.RegisterService({
-                endpoint: credentials.chevre.endpoint,
-                auth: chevreAuthClient,
-                project: { id: params.project.id }
-            });
+            // const registerServiceTransaction = new chevre.service.assetTransaction.RegisterService({
+            //     endpoint: credentials.chevre.endpoint,
+            //     auth: chevreAuthClient,
+            //     project: { id: params.project.id }
+            // });
 
-            await registerServiceTransaction.confirm(object);
+            await repos.registerServiceTransaction.confirm(object);
         } catch (error) {
             // actionにエラー結果を追加
             try {
