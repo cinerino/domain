@@ -48,7 +48,10 @@ export function call(data: factory.task.IData<factory.taskName.DeleteMember>): I
         const creditCardRepo = new CreditCardRepo({
             siteId: paymentServiceCredentials.siteId,
             sitePass: paymentServiceCredentials.sitePass,
-            cardService: new GMO.service.Card({ endpoint: paymentServiceCredentials.endpoint })
+            cardService: new GMO.service.Card(
+                { endpoint: paymentServiceCredentials.endpoint },
+                { timeout: credentials.gmo.timeout }
+            )
         });
 
         const personRepo = new PersonRepo({

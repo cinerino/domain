@@ -1,3 +1,6 @@
+
+import { credentials as chevreCredentials } from '@chevre/domain';
+
 /**
  * 外部サービスを使用するための認証情報
  */
@@ -15,6 +18,9 @@ export const credentials = {
     coa: {
         endpoint: <string>process.env.COA_ENDPOINT,
         refreshToken: <string>process.env.COA_REFRESH_TOKEN
+    },
+    gmo: {
+        timeout: chevreCredentials.gmo.timeout
     },
     lineNotify: {
         url: <string>process.env.LINE_NOTIFY_URL,

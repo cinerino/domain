@@ -57,6 +57,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - メンバーシップオファー承認時のアプリケーションクライアントに対する排他処理調整
 - @cinerino/sdkで再構築
 - AccountTypeの使用を廃止してCurrencyTypeに変更
+- GMOリクエストにタイムアウトを設定
 
 ### Deprecated
 
