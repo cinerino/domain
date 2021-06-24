@@ -137,7 +137,7 @@ function processVoidTransaction4chevre(params: {
             // 取引が存在すれば中止
             const { data } = await repos.assetTransaction.search({
                 limit: 1,
-                project: { ids: [params.project.id] },
+                project: { id: { $eq: params.project.id } },
                 typeOf: chevre.factory.assetTransactionType.Reserve,
                 transactionNumber: { $eq: transactionNumber }
             });

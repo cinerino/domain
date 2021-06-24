@@ -213,7 +213,7 @@ export function voidPayment(params: factory.task.IData<factory.taskName.VoidPayT
                 if (typeof transactionNumber === 'string' && transactionNumber.length > 0) {
                     const { data } = await repos.assetTransaction.search({
                         limit: 1,
-                        project: { ids: [action.project.id] },
+                        project: { id: { $eq: action.project.id } },
                         typeOf: chevre.factory.assetTransactionType.Pay,
                         transactionNumber: { $eq: transactionNumber }
                     });
