@@ -9,7 +9,7 @@
     }
   ],
   "dependencies": {
-    "@chevre/domain": "15.54.0-alpha.1",
+    "@chevre/domain": "15.54.0",
     "@cinerino/sdk": "3.6.0",
     "@motionpicture/coa-service": "^9.0.0",
     "@motionpicture/gmo-service": "^5.1.0",
