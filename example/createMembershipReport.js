@@ -4,7 +4,7 @@ const request = require('request-promise-native');
 const util = require('util');
 const domain = require('../lib');
 
-const project = { typeOf: 'Project', id: 'sskts-development' };
+const project = { typeOf: 'Project', id: '' };
 
 const chevreAuthClient = new domain.chevre.auth.ClientCredentials({
     domain: domain.credentials.chevre.authorizeServerDomain,
@@ -53,7 +53,6 @@ async function main() {
 
         const ownershipInfosCount = await ownershipInfoRepo.ownershipInfoModel.countDocuments({
             'project.id': {
-                $exists: true,
                 $eq: project.id
             },
             'typeOfGood.typeOf': {

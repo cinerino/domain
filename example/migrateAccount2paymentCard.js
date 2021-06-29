@@ -12,7 +12,6 @@ async function main() {
     const cursor = await ownershipInfoRepo.ownershipInfoModel.find(
         {
             'project.id': {
-                $exists: true,
                 $eq: project.id
             },
             'typeOfGood.typeOf': {

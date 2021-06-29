@@ -11,7 +11,7 @@ async function main() {
 
     const cursor = await oldActionRepo.actionModel.find(
         {
-            // 'project.id': { $exists: true, $eq: 'sskts-production' },
+            // 'project.id': { $eq: '' },
             startDate: {
                 $gte: moment('2020-10-01T00:00:00+09:00').toDate(),
                 $lt: moment('2020-11-01T00:00:00+09:00').toDate(),

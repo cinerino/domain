@@ -9,7 +9,7 @@ async function main() {
 
     const cursor = await orderRepo.orderModel.find(
         {
-            // 'project.id': { $exists: true, $eq: '' },
+            // 'project.id': { $eq: '' },
             orderDate: {
                 $gte: moment('2020-10-01T00:00:00+09:00').toDate(),
                 // $lte: moment('2020-04-26T00:00:00+09:00').toDate(),

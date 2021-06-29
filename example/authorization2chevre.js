@@ -22,7 +22,7 @@ async function main() {
 
     const cursor = await codeRepo.authorizationModel.find(
         {
-            // 'project.id': { $exists: true, $eq: '' },
+            // 'project.id': { $eq: '' },
             validFrom: {
                 $gte: moment('2021-01-01T00:00:00+09:00').toDate(),
             }

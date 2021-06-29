@@ -22,7 +22,7 @@ async function main() {
 
     const cursor = await ownershipInfoRepo.ownershipInfoModel.find(
         {
-            'project.id': { $exists: true, $eq: 'sskts-production' },
+            'project.id': { $eq: '' },
             'ownedBy.memberOf.membershipNumber': { $exists: true },
             'typeOfGood.typeOf': { $exists: true, $eq: 'EventReservation' },
             ownedFrom: {

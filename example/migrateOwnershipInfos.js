@@ -11,7 +11,7 @@ async function main() {
 
     const cursor = await oldOwnershipInfoRepo.ownershipInfoModel.find(
         {
-            'project.id': { $exists: true, $eq: 'sskts-production' },
+            'project.id': { $eq: '' },
             ownedFrom: {
                 $exists: true,
                 $gte: moment('2019-12-22T00:00:00+09:00').toDate(),

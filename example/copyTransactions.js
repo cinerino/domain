@@ -20,7 +20,7 @@ async function main() {
 
     const cursor = await oldTransactionRepo.transactionModel.find(
         {
-            // 'project.id': { $exists: true, $eq: 'sskts-production' },
+            // 'project.id': { $eq: '' },
             startDate: {
                 $gte: moment('2020-04-01T00:00:00+09:00').toDate(),
                 $lt: moment('2020-05-01T00:00:00+09:00').toDate(),

@@ -18,7 +18,7 @@ async function main() {
 
     const cursor = await oldOrderRepo.orderModel.find(
         {
-            'project.id': { $exists: true, $eq: 'sskts-production' },
+            'project.id': { $eq: '' },
             orderDate: {
                 $gte: moment('2020-04-22T00:00:00+09:00').toDate(),
                 // $lt: moment('2020-04-22T00:00:00+09:00').toDate()
