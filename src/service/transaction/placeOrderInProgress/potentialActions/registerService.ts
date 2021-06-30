@@ -102,10 +102,12 @@ function createOrderProgramMembershipTask(params: {
 
     const acceptedOffer = params.authorizeAction.object[0];
 
-    // ssktsへの互換性対応なので、限定的に
+    // ssktsへの互換性対応なので、限定的に(暫定対応のautomaticRenewal設定で判定)
     const serviceOutput = acceptedOffer.itemOffered.serviceOutput;
     if (acceptedOffer.itemOffered.typeOf === factory.chevre.product.ProductType.MembershipService
-        && serviceOutput?.typeOf === factory.chevre.programMembership.ProgramMembershipType.ProgramMembership) {
+        && typeof serviceOutput?.typeOf === 'string'
+        && serviceOutput.typeOf.length > 0
+        && (<any>serviceOutput).automaticRenewal === true) {
         const memebershipFor = {
             typeOf: String(acceptedOffer.itemOffered.typeOf),
             id: String(acceptedOffer.itemOffered.id)
@@ -122,7 +124,7 @@ function createOrderProgramMembershipTask(params: {
                 ...acceptedOffer,
                 itemOffered: {
                     project: { typeOf: factory.chevre.organizationType.Project, id: params.order.project.id },
-                    typeOf: serviceOutput?.typeOf,
+                    typeOf: <any>serviceOutput.typeOf,
                     name: serviceOutput.name,
                     hostingOrganization: serviceOutput.issuedBy,
                     membershipFor: memebershipFor,
