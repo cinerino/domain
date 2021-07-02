@@ -207,15 +207,21 @@ export function responseBody2acceptedOffers4result(params: {
                         return {
                             ...c,
                             // 勘定科目情報を最低限にする
-                            accounting: (typeof c.accounting?.typeOf === 'string')
-                                ? <any>{
-                                    typeOf: c.accounting.typeOf,
-                                    operatingRevenue: {
-                                        project: c.accounting.operatingRevenue?.project,
-                                        typeOf: c.accounting.operatingRevenue?.typeOf,
-                                        codeValue: c.accounting.operatingRevenue?.codeValue
+                            ...(typeof c.accounting?.typeOf === 'string')
+                                ? {
+                                    accounting: {
+                                        typeOf: c.accounting.typeOf,
+                                        ...(typeof c.accounting.operatingRevenue?.typeOf === 'string')
+                                            ? {
+                                                operatingRevenue: {
+                                                    project: c.accounting.operatingRevenue.project,
+                                                    typeOf: c.accounting.operatingRevenue.typeOf,
+                                                    codeValue: c.accounting.operatingRevenue.codeValue
+                                                }
+                                            }
+                                            : undefined
+                                        // accountsReceivable: c.accounting.accountsReceivable
                                     }
-                                    // accountsReceivable: c.accounting.accountsReceivable
                                 }
                                 : undefined
                         };
