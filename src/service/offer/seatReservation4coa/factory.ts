@@ -815,6 +815,7 @@ export function responseBody2acceptedOffers4result(params: {
             project: { typeOf: event.project.typeOf, id: event.project.id },
             typeOf: factory.chevre.reservationType.EventReservation,
             id: reservationId,
+            issuedThrough: { typeOf: factory.product.ProductType.EventService },
             bookingTime: params.bookingTime,
             ...(Array.isArray(additionalProperty)) ? { additionalProperty } : undefined,
             ...(typeof additionalTicketText === 'string') ? { additionalTicketText } : undefined,

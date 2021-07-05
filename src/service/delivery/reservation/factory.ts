@@ -58,7 +58,10 @@ export function createReservationOwnershipInfo(params: {
                 typeOf: itemOffered.typeOf,
                 id: itemOffered.id,
                 reservationNumber: itemOffered.reservationNumber,
-                bookingService: bookingService
+                bookingService: bookingService,
+                ...(typeof itemOffered.issuedThrough?.typeOf === 'string')
+                    ? { issuedThrough: itemOffered.issuedThrough }
+                    : undefined
             }
         };
     }
