@@ -341,6 +341,9 @@ function createReservation(params: {
         id: itemOffered.id,
         reservationNumber: itemOffered.reservationNumber,
         reservationFor: reservationFor,
-        reservedTicket: reservedTicket
+        reservedTicket: reservedTicket,
+        ...(typeof itemOffered.issuedThrough?.typeOf === 'string')
+            ? { issuedThrough: itemOffered.issuedThrough }
+            : undefined
     };
 }
