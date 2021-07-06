@@ -478,10 +478,13 @@ function checkIfRegistered(params: {
         // メンバーシップについては、登録済かどうか確認する
         if (params.product.typeOf === factory.chevre.product.ProductType.MembershipService) {
             if (typeof serviceOutputType === 'string') {
+                // プロダクトによって発行されたPermitを所有していれば、登録済
                 const searchOwnershipInfosResult = await repos.ownershipInfo.search({
                     project: { id: { $eq: params.product.project.id } },
+                    // プロダクトIDで検索
                     typeOfGood: {
-                        typeOf: serviceOutputType
+                        // typeOf: serviceOutputType,
+                        issuedThrough: { id: { $eq: params.product.id } }
                     },
                     ownedBy: { id: params.agent.id },
                     ownedFrom: params.now,
@@ -489,10 +492,14 @@ function checkIfRegistered(params: {
                 });
                 const ownershipInfos = searchOwnershipInfosResult.data;
 
-                const selectedProgramMembership = ownershipInfos.find(
-                    (o) => (<any>o.typeOfGood).membershipFor?.id === params.product.id
-                );
-                if (selectedProgramMembership !== undefined) {
+                // const selectedProgramMembership = ownershipInfos.find(
+                //     (o) => (<any>o.typeOfGood).membershipFor?.id === params.product.id
+                // );
+                // if (selectedProgramMembership !== undefined) {
+                //     // Already registered
+                //     throw new factory.errors.Argument('object', ERROR_MESSAGE_ALREADY_REGISTERED);
+                // }
+                if (ownershipInfos.length > 0) {
                     // Already registered
                     throw new factory.errors.Argument('object', ERROR_MESSAGE_ALREADY_REGISTERED);
                 }
