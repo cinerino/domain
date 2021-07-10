@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 - ABORTED_TASKS_WITHOUT_REPORT設定を追加
+- 決済URL発行ファンクションを追加
 
 ### Changed
 
@@ -61,6 +62,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 各リソースのプロジェクトID検索条件指定を最適化($exists: trueを削除)
 - 予約所有権のtypeOfGoodにissuedThroughを追加
 - メンバーシップ登録済チェック時の所有権検索をプロダクトIDに依存するように調整
+- クレジットカード決済承認時に決済IDを明示的に指定できるように調整
 
 ### Deprecated
 

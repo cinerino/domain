@@ -31,6 +31,78 @@ export type IPayOperation<T> = (repos: {
     payTransaction: chevre.service.assetTransaction.Pay;
 }) => Promise<T>;
 
+export type IPublishPaymentUrlOperation<T> = (repos: {
+    payTransaction: chevre.service.assetTransaction.Pay;
+    transaction: TransactionRepo;
+    transactionNumber: chevre.service.TransactionNumber;
+}) => Promise<T>;
+
+export interface IPublishPaymentUrlResult {
+    paymentMethodId: string;
+    paymentUrl: string;
+}
+
+/**
+ * 外部決済ロケーションを発行する
+ */
+export function publishPaymentUrl(params: {
+    project: { id: string };
+    agent: { id: string };
+    object: factory.action.authorize.paymentMethod.any.IObject;
+    purpose: factory.action.authorize.paymentMethod.any.IPurpose;
+    paymentServiceType: chevre.factory.service.paymentService.PaymentServiceType;
+}): IPublishPaymentUrlOperation<IPublishPaymentUrlResult> {
+    return async (repos: {
+        payTransaction: chevre.service.assetTransaction.Pay;
+        transaction: TransactionRepo;
+        transactionNumber: chevre.service.TransactionNumber;
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({ typeOf: params.purpose.typeOf, id: params.purpose.id });
+
+        const paymentServiceType = params.paymentServiceType;
+
+        // 取引番号生成
+        const { transactionNumber } = await repos.transactionNumber.publish({
+            project: { id: params.project.id }
+        });
+
+        let result: IPublishPaymentUrlResult;
+
+        try {
+            // URL発行
+            const startParams = creatPayTransactionStartParams({
+                object: params.object,
+                paymentServiceType,
+                transaction: transaction,
+                transactionNumber: transactionNumber
+            });
+
+            result = await repos.payTransaction.publishPaymentUrl(startParams);
+
+            // 取引に保管
+            await repos.transaction.transactionModel.findOneAndUpdate(
+                { _id: transaction.id },
+                {
+                    'object.paymentMethods.paymentMethodId': result.paymentMethodId,
+                    'object.paymentMethods.paymentUrl': result.paymentUrl
+                }
+            )
+                .exec();
+        } catch (error) {
+            // try {
+            //     const actionError = { ...error, message: error.message, name: error.name };
+            //     await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            // } catch (__) {
+            //     // no op
+            // }
+
+            throw handleChevreError(error);
+        }
+
+        return result;
+    };
+}
+
 export function authorize(params: {
     project: { id: string };
     agent: { id: string };
@@ -49,9 +121,22 @@ export function authorize(params: {
         const paymentServiceType = params.paymentServiceType;
 
         // 取引番号生成
-        const { transactionNumber } = await repos.transactionNumber.publish({
-            project: { id: params.project.id }
-        });
+        let transactionNumber: string | undefined;
+
+        // リクエストでpaymentMethodIdを指定された場合、取引に保管されたpaymentMethodIdに一致すればそちらを適用(外部サイト決済対応)
+        if (typeof params.object.paymentMethodId === 'string' && params.object.paymentMethodId.length > 0) {
+            const paymentMethodIdByTransaction = (<any>transaction).object.paymentMethods?.paymentMethodId;
+            if (params.object.paymentMethodId === paymentMethodIdByTransaction) {
+                transactionNumber = params.object.paymentMethodId;
+            }
+        }
+
+        if (typeof transactionNumber !== 'string') {
+            const publishTransactionNumberResult = await repos.transactionNumber.publish({
+                project: { id: params.project.id }
+            });
+            transactionNumber = publishTransactionNumberResult.transactionNumber;
+        }
 
         // 承認アクションを開始する
         const actionAttributes: factory.action.authorize.paymentMethod.any.IAttributes = {
