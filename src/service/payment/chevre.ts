@@ -471,13 +471,10 @@ function getPaymentServiceType(params: {
                     chevre.factory.service.paymentService.PaymentServiceType.PaymentCard
                 ]
             },
-            serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
+            serviceType: { codeValue: { $eq: params.paymentMethodType } }
         });
         const paymentServiceSetting = <chevre.factory.service.paymentService.IService | undefined>
             searchPaymentServicesResult.data.shift();
-        // if (paymentServiceSetting === undefined) {
-        //     throw new factory.errors.NotFound('object.paymentMethod', `Payment method type '${params.paymentMethodType}' not found`);
-        // }
 
         return paymentServiceSetting?.typeOf;
     };
@@ -500,7 +497,7 @@ export function getCreditCardPaymentServiceChannel(params: {
             limit: 1,
             project: { id: { $eq: params.project.id } },
             typeOf: { $eq: chevre.factory.service.paymentService.PaymentServiceType.CreditCard },
-            serviceOutput: { typeOf: { $eq: params.paymentMethodType } }
+            serviceType: { codeValue: { $eq: params.paymentMethodType } }
         });
         const paymentServiceSetting = searchPaymentServicesResult.data.shift();
         if (paymentServiceSetting === undefined) {
