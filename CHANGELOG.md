@@ -63,6 +63,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 予約所有権のtypeOfGoodにissuedThroughを追加
 - メンバーシップ登録済チェック時の所有権検索をプロダクトIDに依存するように調整
 - クレジットカード決済承認時に決済IDを明示的に指定できるように調整
+- 決済サービスのserviceOutputへの依存をserviceTypeへの依存に変更
 
 ### Deprecated
 

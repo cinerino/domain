@@ -45,7 +45,7 @@ export function validateTransaction(
             (s) => s.typeOf === factory.chevre.service.paymentService.PaymentServiceType.MovieTicket
         );
         movieTicketPaymentServices.forEach((s) => {
-            const paymentMethodType = s.serviceOutput?.typeOf;
+            const paymentMethodType = s.serviceType?.codeValue;
             if (typeof paymentMethodType === 'string') {
                 validateMovieTicket(paymentMethodType, transaction);
             }
