@@ -203,7 +203,11 @@ export function findAccount(params: {
                 // 最も古い所有口座をデフォルト口座として扱う使用なので、ソート条件はこの通り
                 sort: { ownedFrom: factory.sortType.Ascending },
                 limit: 1,
-                typeOfGood: { typeOf: { $eq: <string>accountProduct.serviceOutput?.typeOf } },
+                typeOfGood: {
+                    // typeOfGood.typeOf: Permitに対応
+                    // typeOf: { $eq: <string>accountProduct.serviceOutput?.typeOf }
+                    issuedThrough: { id: { $eq: accountProduct.id } }
+                },
                 ownedBy: { id: params.customer.id },
                 ownedFrom: params.now,
                 ownedThrough: params.now
