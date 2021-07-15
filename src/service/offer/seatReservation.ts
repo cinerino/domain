@@ -333,9 +333,12 @@ export function selectSeats(
                 throw new factory.errors.NotFound('Offer', `Offer ${offer.id} not found`);
             }
 
-            let ticketTypeCategory = SeatingType.Normal;
+            let ticketTypeCategory: string | undefined;
             if (typeof ticketOffer.category?.codeValue === 'string') {
-                ticketTypeCategory = <SeatingType>ticketOffer.category.codeValue;
+                ticketTypeCategory = ticketOffer.category.codeValue;
+            }
+            if (typeof ticketTypeCategory !== 'string') {
+                throw new Error('ticketOffer.category.codeValue undefined');
             }
 
             // まず利用可能な座席は全座席
@@ -369,7 +372,8 @@ export function selectSeats(
 
             // 車椅子予約の場合、車椅子座席に絞る
             // 一般予約は、車椅子座席でも予約可能
-            const isWheelChairOffer = ticketTypeCategory === SeatingType.Wheelchair;
+            // 互換性維持として2つのオファーカテゴリーに対応
+            const isWheelChairOffer = ticketTypeCategory === 'Wheelchair' || ticketTypeCategory === 'WheelchairOffer';
             if (isWheelChairOffer) {
                 // 車椅子予約の場合、車椅子タイプ座席のみ
                 availableSeats = availableSeats.filter(
