@@ -206,7 +206,8 @@ export function findAccount(params: {
                 typeOfGood: {
                     // typeOfGood.typeOf: Permitに対応
                     // typeOf: { $eq: <string>accountProduct.serviceOutput?.typeOf }
-                    issuedThrough: { id: { $eq: accountProduct.id } }
+                    // issuedThrough: { id: { $eq: accountProduct.id } }
+                    issuedThrough: { typeOf: { $eq: chevre.factory.product.ProductType.PaymentCard } }
                 },
                 ownedBy: { id: params.customer.id },
                 ownedFrom: params.now,
