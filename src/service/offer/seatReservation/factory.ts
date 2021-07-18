@@ -51,7 +51,33 @@ export function createReserveTransactionStartParams(params: {
         },
         object: {
             // ...params.object,
-            acceptedOffer: params.object.acceptedOffer,
+            acceptedOffer: (Array.isArray(params.object.acceptedOffer))
+                ? params.object.acceptedOffer.map((o) => {
+                    const issuedBy: factory.reservation.IUnderName<factory.reservationType.EventReservation> = {
+                        typeOf: params.transaction.seller.typeOf,
+                        name: (typeof params.transaction.seller.name === 'string')
+                            ? params.transaction.seller.name
+                            : String(params.transaction.seller.name?.ja)
+                    };
+
+                    return {
+                        ...o,
+                        itemOffered: {
+                            ...o.itemOffered,
+                            serviceOutput: {
+                                ...o.itemOffered?.serviceOutput,
+                                reservedTicket: {
+                                    ...o.itemOffered?.serviceOutput?.reservedTicket,
+                                    // issuedByを明示的に指定する
+                                    issuedBy,
+                                    typeOf: 'Ticket'
+                                },
+                                typeOf: factory.reservationType.EventReservation
+                            }
+                        }
+                    };
+                })
+                : undefined,
             reservationFor: { id: String(params.object.reservationFor?.id) },
             // event: { id: String(params.object.reservationFor?.id) },
             onReservationStatusChanged: {
