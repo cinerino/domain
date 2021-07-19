@@ -162,8 +162,8 @@ function createConfirmReservationActionObject(params: {
                 ? [{ name: 'age', value: customer.age }]
                 : [],
             ...(Array.isArray(customer.identifier)) ? customer.identifier : [],
-            ...(typeof customer.memberOf?.membershipNumber === 'string')
-                ? [{ name: 'username', value: customer.memberOf?.membershipNumber }]
+            ...(customer.typeOf === factory.personType.Person && typeof customer.memberOf?.membershipNumber === 'string')
+                ? [{ name: 'username', value: customer.memberOf.membershipNumber }]
                 : []
         ];
 

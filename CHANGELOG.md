@@ -66,6 +66,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 決済サービスのserviceOutputへの依存をserviceTypeへの依存に変更
 - メンバーシップ注文タスクをペイメントカード所有権のtypeOfGood.typeOf: Permitに対応
 - 予約取引開始時にissuedByを明示的に指定するように調整
+- 注文カスタマーインターフェースをウェブアプリケーションにも拡張
 
 ### Deprecated
 

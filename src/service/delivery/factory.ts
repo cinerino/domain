@@ -107,10 +107,10 @@ function createOwnedby(params: {
     const customer = params.order.customer;
 
     return {
-        typeOf: customer.typeOf,
+        typeOf: <any>customer.typeOf,
         id: customer.id,
         ...(customer.identifier !== undefined) ? { identifier: customer.identifier } : undefined,
-        ...(customer.memberOf !== undefined) ? { memberOf: customer.memberOf } : undefined,
+        ...(customer.typeOf === factory.personType.Person && customer.memberOf !== undefined) ? { memberOf: customer.memberOf } : undefined,
         ...(customer.familyName !== undefined) ? { familyName: customer.familyName } : undefined,
         ...(customer.givenName !== undefined) ? { givenName: customer.givenName } : undefined,
         ...(customer.name !== undefined) ? { name: customer.name } : undefined

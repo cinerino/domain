@@ -86,7 +86,8 @@ export function updateAgent(params: {
                     ...(Array.isArray(transaction.object.customer.identifier))
                         ? { identifier: transaction.object.customer.identifier }
                         : undefined,
-                    ...(typeof transaction.object.customer.memberOf?.typeOf === 'string')
+                    ...(transaction.object.customer.typeOf === factory.personType.Person
+                        && typeof transaction.object.customer.memberOf?.typeOf === 'string')
                         ? { memberOf: transaction.object.customer.memberOf }
                         : undefined,
                     ...(Array.isArray(params.agent.additionalProperty)) ? { additionalProperty: params.agent.additionalProperty } : {},
