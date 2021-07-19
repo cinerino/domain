@@ -536,6 +536,7 @@ describe('action.authorize.seatReservation.create()', () => {
 
     it('COAが正常であれば、エラーにならないはず(会員の場合)', async () => {
         const agent = {
+            typeOf: domain.factory.personType.Person,
             id: 'agentId',
             memberOf: {} // 会員
         };

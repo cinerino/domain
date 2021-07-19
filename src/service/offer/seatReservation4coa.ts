@@ -80,7 +80,7 @@ export function create(params: {
 
         const acceptedOffer = await validateOffers(
             params.project,
-            (transaction.agent.memberOf !== undefined),
+            (transaction.agent.typeOf === factory.personType.Person && transaction.agent.memberOf !== undefined),
             screeningEvent,
             acceptedOffersWithoutDetails
         )(repos);
@@ -277,7 +277,7 @@ export function changeOffers(params: {
         });
         const acceptedOffer = await validateOffers(
             params.project,
-            (transaction.agent.memberOf !== undefined),
+            (transaction.agent.typeOf === factory.personType.Person && transaction.agent.memberOf !== undefined),
             screeningEvent,
             acceptedOffersWithoutDetails
         )(repos);

@@ -155,7 +155,9 @@ export function createAuthorizeSeatReservationActionAttributes(params: {
             typeOf: transaction.agent.typeOf,
             id: transaction.agent.id,
             ...(transaction.agent.identifier !== undefined) ? { identifier: transaction.agent.identifier } : undefined,
-            ...(transaction.agent.memberOf !== undefined) ? { memberOf: transaction.agent.memberOf } : undefined
+            ...(transaction.agent.typeOf === factory.personType.Person && transaction.agent.memberOf !== undefined)
+                ? { memberOf: transaction.agent.memberOf }
+                : undefined
         },
         purpose: { typeOf: transaction.typeOf, id: transaction.id },
         instrument: offeredThrough

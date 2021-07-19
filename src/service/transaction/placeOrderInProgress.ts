@@ -527,7 +527,7 @@ export function authorizeAward(params: {
             throw new factory.errors.Forbidden('Transaction not yours');
         }
 
-        if (transaction.agent.memberOf === undefined) {
+        if (transaction.agent.typeOf !== factory.personType.Person || transaction.agent.memberOf === undefined) {
             throw new factory.errors.Forbidden('Membership required');
         }
 
