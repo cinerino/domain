@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - ABORTED_TASKS_WITHOUT_REPORT設定を追加
 - 決済URL発行ファンクションを追加
+- 取引期限変更メソッドを追加
 
 ### Changed
 
