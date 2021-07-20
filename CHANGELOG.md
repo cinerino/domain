@@ -69,6 +69,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文カスタマーインターフェースをウェブアプリケーションにも拡張
 - 所有権の所有者インターフェースをウェブアプリケーションにも拡張
 - 取引のIAgentをウェブアプリケーションにも拡張
+- 注文カスタマーインターフェースを顧客組織にも拡張
 
 ### Deprecated
 

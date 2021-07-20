@@ -81,8 +81,11 @@ export function updateAgent(params: {
             // いったんtransaction.object.customer?.typeOfは取引開始時にセットされている前提
             if (typeof transaction.object.customer?.typeOf === 'string') {
                 customer = {
-                    typeOf: transaction.object.customer?.typeOf,
-                    id: transaction.object.customer?.id,
+                    typeOf: <any>transaction.object.customer.typeOf,
+                    id: transaction.object.customer.id,
+                    ...(transaction.object.customer.typeOf === factory.organizationType.Organization)
+                        ? { project: transaction.object.customer.project }
+                        : undefined,
                     ...(Array.isArray(transaction.object.customer.identifier))
                         ? { identifier: transaction.object.customer.identifier }
                         : undefined,

@@ -106,13 +106,28 @@ function createOwnedby(params: {
     // 最低限の情報に絞る
     const customer = params.order.customer;
 
-    return {
-        typeOf: customer.typeOf,
-        id: customer.id,
-        ...(customer.identifier !== undefined) ? { identifier: customer.identifier } : undefined,
-        ...(customer.typeOf === factory.personType.Person && customer.memberOf !== undefined) ? { memberOf: customer.memberOf } : undefined,
-        ...(customer.familyName !== undefined) ? { familyName: customer.familyName } : undefined,
-        ...(customer.givenName !== undefined) ? { givenName: customer.givenName } : undefined,
-        ...(customer.name !== undefined) ? { name: customer.name } : undefined
-    };
+    // 顧客組織の場合
+    if (customer.typeOf === factory.organizationType.Organization) {
+        return {
+            typeOf: customer.typeOf,
+            id: customer.id,
+            project: customer.project,
+            ...(Array.isArray(customer.identifier)) ? { identifier: customer.identifier } : undefined,
+            ...(typeof customer.familyName === 'string') ? { familyName: customer.familyName } : undefined,
+            ...(typeof customer.givenName === 'string') ? { givenName: customer.givenName } : undefined,
+            ...(customer.name !== undefined) ? { name: customer.name } : undefined
+        };
+    } else {
+        return {
+            typeOf: customer.typeOf,
+            id: customer.id,
+            ...(Array.isArray(customer.identifier)) ? { identifier: customer.identifier } : undefined,
+            ...(customer.typeOf === factory.personType.Person && typeof customer.memberOf?.typeOf === 'string')
+                ? { memberOf: customer.memberOf }
+                : undefined,
+            ...(typeof customer.familyName === 'string') ? { familyName: customer.familyName } : undefined,
+            ...(typeof customer.givenName === 'string') ? { givenName: customer.givenName } : undefined,
+            ...(customer.name !== undefined) ? { name: customer.name } : undefined
+        };
+    }
 }
